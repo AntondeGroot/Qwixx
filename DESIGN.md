@@ -10,7 +10,7 @@
 
 ---
 
-## Layer 1: Value Objects
+## Layer 1: Value Objects ✅
 
 ### Color
 ```
@@ -21,7 +21,7 @@ One color per die. Colors are also the primary scoring buckets.
 ### CellTag
 ```
 CellTag (sealed interface)
-  AutoCross(List<CellId> targets)  // rule-time: auto-crosses targets when this cell is crossed
+  AutoCross(String target)         // rule-time: auto-crosses target when this cell is crossed
   ExtraBucket                      // score-time: cell also contributes +1 to the EXTRA scoring bucket
   BonusPoints(int amount)          // score-time: crossing awards flat bonus points
   DoubleCross                      // score-time: cell counts twice in its primary color bucket
@@ -32,7 +32,7 @@ CellTag (sealed interface)
 ### Cell
 ```
 Cell {
-  CellId        id
+  String        id
   int           position          // ordinal index in the row (engine uses this, not displayValue)
   String        displayValue      // shown to the player ("2".."12", "2".."16", etc.)
   Color         color             // the die color that can target this cell; also its primary scoring bucket
@@ -48,10 +48,10 @@ The frontend derives visual styling from tags (e.g. thick black border for `Extr
 ### LockCell
 ```
 LockCell {
-  CellId       id
+  String       id
   Color        color           // determines which die is removed when this lock is crossed
   int          minCrosses      // crosses needed before lock is available (5 standard, 6 longo)
-  List<CellId> requiredCells   // at least one of these must be crossed before lock is available
+  List<String> requiredCells   // at least one of these must be crossed before lock is available
                                // standard: [cell_12] or [cell_2]
                                // longo:    [cell_15, cell_16] or [cell_3, cell_2]
 }
@@ -75,8 +75,7 @@ All rows enforce progression: a player can only cross a cell whose position is s
 ### Die
 ```
 Die {
-  DieId  id
-  Color  color   // WHITE_1, WHITE_2, RED, YELLOW, GREEN, BLUE
+  Color  color   // WHITE, RED, YELLOW, GREEN, BLUE
   int    faces   // 6 for standard, 8 for longo
 }
 ```
@@ -86,7 +85,7 @@ Die {
 RollResult {
   int             white1
   int             white2
-  Map<Color, int> colored   // only colors whose die is still in play
+  Map<Color, int> coloredDice   // only colors whose die is still in play
 }
 ```
 
@@ -131,7 +130,7 @@ Key rules:
 ### RowState
 ```
 RowState {
-  Set<CellId> crossedCells
+  Set<String> crossedCells
   boolean     lockCrossed
 }
 ```
@@ -227,7 +226,7 @@ GameAction (interface)
 CrossCellAction implements GameAction
   PlayerId        playerId
   RowId           rowId
-  CellId          cellId
+  String          cellId
   DiceCombination combination   // WHITE_WHITE | WHITE_COLOR
 
 DeclareLockIntentAction implements GameAction  // active player announces intent to close a row;

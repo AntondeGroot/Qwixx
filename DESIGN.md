@@ -62,7 +62,7 @@ The lock gives the crossing player a bonus cross toward their color score for `l
 ### Row
 ```
 Row {
-  RowId      id
+  int        index             // ordinal position top-to-bottom (0 = top row)
   List<Cell> cells   // ordered by position
   LockCell   lock    // nullable — for variants that define a row without a closing lock
 }
@@ -151,7 +151,7 @@ A player's crossing progress. Changes every turn.
 
 ```
 SheetProgress {
-  Map<RowId, RowState> rowStates
+  Map<Integer, RowState> rowStates  // key is row index (0-based, top to bottom)
   int                  punishments
 }
 ```
@@ -168,9 +168,9 @@ The dynamic state of the board — what has been established across all turns.
 
 ```
 BoardState {
-  Map<PlayerId, SheetProgress> sheetProgress  // crossing progress per player
-  List<Die>                    activeDice     // shrinks as rows are locked (color die removed)
-  Map<RowId, PlayerId>         closedRows     // rowId → player who closed it
+  Map<UUID, SheetProgress> sheetProgress  // crossing progress per player
+  List<Die>                activeDice     // shrinks as rows are locked (color die removed)
+  Map<Integer, UUID>       closedRows     // row index → player who closed it
 }
 ```
 
@@ -179,15 +179,15 @@ Everything scoped to the turn currently in progress. Rebuilt at the start of eac
 
 ```
 TurnState {
-  PlayerId                    activePlayerId         // next is players[(indexOf(activePlayerId) + 1) % players.size()]
+  UUID                        activePlayerId         // next is players[(indexOf(activePlayerId) + 1) % players.size()]
   TurnPhase                   phase
-  List<PlayerId>              passivePlayerQueue     // derived from players minus activePlayerId at turn start;
+  List<UUID>                  passivePlayerQueue     // derived from players minus activePlayerId at turn start;
                                                      // shrinks as each passive player finishes their move
   RollResult                  currentRoll            // null during ROLL phase
   ActiveTurnState             activeTurnState        // null outside ACTIVE_MOVE
-  RowId                       pendingLockRowId       // null outside LOCK_PENDING; the row the active player intends to close
-  Set<PlayerId>               lockAcknowledged       // players who have either undone or passed during LOCK_PENDING
-  Map<PlayerId, SheetProgress> moveStartProgress     // snapshot of each player's progress taken when their
+  Integer                     pendingLockRowIndex    // null outside LOCK_PENDING; the row the active player intends to close
+  Set<UUID>                   lockAcknowledged       // players who have either undone or passed during LOCK_PENDING
+  Map<UUID, SheetProgress>    moveStartProgress     // snapshot of each player's progress taken when their
                                                      // move phase begins; ResetTurnAction restores only
                                                      // that player's SheetProgress entry
 }
@@ -199,9 +199,9 @@ Top-level envelope. `SheetLayout` lives here as it is static; `BoardState` holds
 ```
 GameState {
   CardMode                    cardMode
-  List<PlayerId>              players        // ordered; defines turn order
+  List<UUID>.                 players        // ordered; defines turn order
   VariantData                 variantData    // opaque, variant-specific data
-  Map<PlayerId, SheetLayout>  sheetLayouts   // static layout per player
+  Map<UUID, SheetLayout>.     sheetLayouts   // static layout per player
   BoardState                  boardState
   TurnState                   turnState
   boolean                     gameOver
@@ -221,33 +221,33 @@ Clients poll a lightweight endpoint that returns only the current `version`. If 
 
 ```
 GameAction (interface)
-  PlayerId playerId()
+  UUID playerId()
 
 CrossCellAction implements GameAction
-  PlayerId        playerId
-  RowId           rowId
+  UUID.           playerId
+  int             rowIndex
   String          cellId
   DiceCombination combination   // WHITE_WHITE | WHITE_COLOR
 
 DeclareLockIntentAction implements GameAction  // active player announces intent to close a row;
-  PlayerId  playerId                           // transitions phase to LOCK_PENDING
-  RowId     rowId
+  UUID      playerId                           // transitions phase to LOCK_PENDING
+  int       rowIndex
 
 CrossLockAction implements GameAction          // active player confirms the lock after all players
-  PlayerId  playerId                           // have acknowledged; only valid in LOCK_PENDING phase
-  RowId     rowId
+  UUID  playerId                           // have acknowledged; only valid in LOCK_PENDING phase
+  int       rowIndex
 
 UndoLastCrossAction implements GameAction      // any player removes their single most recent cross
-  PlayerId  playerId                           // during LOCK_PENDING; does not affect other crosses
+  UUID  playerId                           // during LOCK_PENDING; does not affect other crosses
 
 GiveUpAction implements GameAction     // active player forfeits the turn and takes a punishment cross;
-  PlayerId  playerId                   // any crosses made this turn are discarded
+  UUID  playerId                   // any crosses made this turn are discarded
 
 ResetTurnAction implements GameAction  // reverts the acting player's crosses back to their playerMoveStartState snapshot; always available
-  PlayerId  playerId
+  UUID  playerId
 
 EndTurnAction implements GameAction    // player signals they are done
-  PlayerId  playerId
+  UUID  playerId
 ```
 
 **Active player** buttons: "Confirm" (end turn), "Give Up" (forfeit + punishment), "Reset" (undo this turn's crosses).
@@ -260,7 +260,7 @@ EndTurnAction implements GameAction    // player signals they are done
 ### TurnRules
 ```
 TurnRules (interface)
-  List<GameAction> getValidActions(GameState state, PlayerId playerId)
+  List<GameAction> getValidActions(GameState state, UUID playerId)
   GameState        apply(GameState state, GameAction action)
   boolean          isGameOver(GameState state)
 ```
@@ -343,7 +343,7 @@ A single configurable factory driven by `GameSettings`. Internally it composes r
 ```
 GameStyleFactory (interface)
   GameSettings             settings()
-  Map<PlayerId, List<Row>> buildRows(List<PlayerId> players)
+  Map<UUID, List<Row>> buildRows(List<UUID> players)
   List<Die>                buildDice()
   TurnRules                buildTurnRules()
   ScoringEngine            buildScoringEngine()
@@ -385,7 +385,7 @@ GameSession {
 
   GameState applyAction(GameAction action)
   startNewGame(GameSettings settings)   // null = reuse current settings
-  ScoreCard getScore(PlayerId playerId)
+  ScoreCard getScore(UUID playerId)
 }
 ```
 

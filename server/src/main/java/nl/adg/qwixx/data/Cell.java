@@ -27,4 +27,15 @@ public class Cell {
   public void setClosingEligible(boolean isClosingEligible){
     this.isClosingEligible = isClosingEligible;
   }
+
+  public void setTags(List<CellTag> tags){
+    this.tags = tags;
+  }
+
+  public String id()           { return id; }
+  public int position()        { return position; }
+  public String displayValue() { return displayValue; }
+  public Color color()         { return color; }
+  public List<CellTag> tags()  { return tags; }
+  public boolean isClosingEligible() { return isClosingEligible; }
 }

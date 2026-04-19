@@ -1,0 +1,565 @@
+openapi: 3.1.0
+info:
+  title: Qwixx Game API
+  version: 1.0.0
+  description: |
+    OpenApi definition for the Qwixx dice game.
+    This API manages players, games, moves, and game state.
+
+servers:
+  - url: http://localhost:4300
+    description: Local development server
+
+paths:
+  /games:
+    get:
+      summary: List all active games
+      description: Get stats like number of players, max nr players, whether the game is in progress.
+      operationId: getAllGames
+      tags:
+        - games
+      responses:
+        '200':
+          description: A list of games
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GameInfo'
+    post:
+      summary: Create a new game
+      description: |
+        To start playing:
+        1. Create a game
+        2. Add players
+        3. Start the game
+      operationId: createNewGame
+      tags:
+        - games
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewGameRequest'
+      responses:
+        '201':
+          description: Game created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessionId:
+                    type: string
+        '409':
+          description: Game already exists with that name
+
+  /games/{sessionId}:
+    get:
+      summary: Get details of a specific game
+      operationId: getGame
+      tags:
+        - games
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+      responses:
+        '200':
+          description: Game details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameInfo'
+        '404':
+          description: Game not found
+
+  /games/{sessionId}/start:
+    post:
+      summary: Start a game
+      operationId: startGame
+      tags:
+        - games
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+      responses:
+        '200':
+          description: Game was started
+        '404':
+          description: Game could not be found
+        '409':
+          description: Game was already started
+
+  /games/{sessionId}/stop:
+    delete:
+      summary: Stop a game
+      operationId: stopGame
+      tags:
+        - games
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+      responses:
+        '204':
+          description: Game was stopped
+        '404':
+          description: Game could not be found
+
+  /games/{sessionId}/players:
+    get:
+      summary: Get all players in a game
+      operationId: getAllPlayersInGame
+      tags:
+        - players
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+      responses:
+        '200':
+          description: An array of all players in the session
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Player'
+    post:
+      summary: Add a player to a game
+      operationId: addPlayerToGame
+      tags:
+        - players
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewPlayerRequest'
+      responses:
+        '201':
+          description: Player was added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  playerId:
+                    type: string
+        '400':
+          description: Player could not be added
+        '404':
+          description: Game not found
+        '409':
+          description: Game already started; no more players can join
+
+  /games/{sessionId}/players/{playerId}:
+    delete:
+      summary: Remove a player from a game (player leaves voluntarily)
+      operationId: leaveGame
+      tags:
+        - players
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+        - $ref: '#/components/parameters/playerId'
+      responses:
+        '204':
+          description: Player left the game
+        '404':
+          description: Game or player not found
+
+  /moves/{sessionId}/{playerId}:
+    post:
+      summary: Make a move for a player
+      description: |
+        The active player can:
+        - Roll the dice (ROLL phase)
+        - Cross a cell using the white+white dice sum (ACTIVE_MOVE phase)
+        - Cross a cell using white+color dice sum (ACTIVE_MOVE phase)
+        - Pass without taking a punishment (ACTIVE_MOVE phase, only if white+white was already used)
+
+        Passive players can:
+        - Cross a cell using the white+white dice sum (PASSIVE_MOVE phase)
+        - Pass and take a punishment (PASSIVE_MOVE phase)
+      operationId: makeMove
+      tags:
+        - moves
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+        - $ref: '#/components/parameters/playerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveRequest'
+      responses:
+        '200':
+          description: Move accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MoveResponse'
+        '400':
+          description: Move is not allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Game or player not found
+
+  /gamestates/{sessionId}:
+    get:
+      summary: Get the game state for a specific game
+      operationId: getGameState
+      tags:
+        - gamestates
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+        - name: stateVersion
+          in: query
+          description: The version of the game state currently held by the client
+          required: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Game state (new version)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameState'
+        '304':
+          description: Game state not modified (client is up-to-date)
+        '404':
+          description: Game not found
+
+  /game-options:
+    get:
+      summary: Get available game options
+      description: >
+        Returns the configurable options this game supports, including type,
+        description, and default value. Intended for lobby UIs to discover and
+        display options before a game is created.
+      operationId: getGameOptions
+      tags:
+        - games
+      responses:
+        '200':
+          description: List of configurable game options
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GameOption'
+
+components:
+  parameters:
+    sessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+    playerId:
+      name: playerId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    Color:
+      type: string
+      enum:
+        - RED
+        - YELLOW
+        - GREEN
+        - BLUE
+
+    TurnPhase:
+      type: string
+      enum:
+        - ROLL
+        - ACTIVE_MOVE
+        - PASSIVE_MOVE
+        - LOCK_PENDING
+        - EVALUATE
+
+    MoveType:
+      type: string
+      enum:
+        - ROLL
+        - CROSS_WHITE_WHITE
+        - CROSS_COLOR_DIE
+        - TAKE_PUNISHMENT
+        - PASS
+
+    GameStatus:
+      type: string
+      enum:
+        - waiting
+        - inProgress
+        - finished
+
+    GameInfo:
+      type: object
+      required:
+        - id
+        - roomName
+        - nrPlayers
+        - maxNrPlayers
+        - status
+      properties:
+        id:
+          type: string
+        roomName:
+          type: string
+        nrPlayers:
+          type: integer
+        maxNrPlayers:
+          type: integer
+        status:
+          $ref: '#/components/schemas/GameStatus'
+
+    Player:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        profilePic:
+          type: string
+
+    NewPlayerRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+
+    NewGameRequest:
+      type: object
+      required:
+        - roomName
+        - maxPlayers
+      properties:
+        roomName:
+          type: string
+          minLength: 3
+          maxLength: 50
+        maxPlayers:
+          type: integer
+          minimum: 2
+          maximum: 6
+        gameOptions:
+          type: object
+          additionalProperties: {}
+          description: Optional key-value map of game settings (e.g. {"cardMode":"DETERMINISTIC"})
+
+    MoveRequest:
+      type: object
+      required:
+        - moveType
+      properties:
+        moveType:
+          $ref: '#/components/schemas/MoveType'
+        cellId:
+          description: The ID of the cell to cross. Required for CROSS_WHITE_WHITE and CROSS_COLOR_DIE moves.
+          type: string
+        rowId:
+          description: The ID of the row containing the cell.
+          type: string
+
+    MoveResponse:
+      type: object
+      properties:
+        result:
+          $ref: '#/components/schemas/MoveResult'
+        crossedCellId:
+          type: string
+          description: The cell that was crossed, if any.
+        lockClosed:
+          type: boolean
+          description: Whether a row was locked as a result of this move.
+        lockedRowId:
+          type: string
+          description: The ID of the row that was locked, if any.
+
+    MoveResult:
+      type: string
+      enum:
+        - ACCEPTED
+        - REJECTED
+        - GAME_OVER
+
+    RollResult:
+      type: object
+      description: The result of a dice roll.
+      required:
+        - white1
+        - white2
+        - coloredDice
+      properties:
+        white1:
+          type: integer
+          minimum: 1
+          maximum: 6
+        white2:
+          type: integer
+          minimum: 1
+          maximum: 6
+        coloredDice:
+          type: object
+          description: Map of color to die face value.
+          additionalProperties:
+            type: integer
+            minimum: 1
+            maximum: 6
+
+    RowState:
+      type: object
+      required:
+        - crossedCells
+        - lockCrossed
+      properties:
+        crossedCells:
+          type: array
+          items:
+            type: string
+          description: IDs of crossed cells in this row.
+        lockCrossed:
+          type: boolean
+
+    SheetProgress:
+      type: object
+      description: A player's crossing progress across all rows.
+      required:
+        - rowStates
+        - punishments
+      properties:
+        rowStates:
+          type: object
+          description: Map of rowId to RowState.
+          additionalProperties:
+            $ref: '#/components/schemas/RowState'
+        punishments:
+          type: integer
+          description: Number of punishment marks taken.
+
+    TurnState:
+      type: object
+      required:
+        - activePlayerId
+        - phase
+      properties:
+        activePlayerId:
+          type: string
+        phase:
+          $ref: '#/components/schemas/TurnPhase'
+        currentRoll:
+          $ref: '#/components/schemas/RollResult'
+        passivePlayerQueue:
+          type: array
+          items:
+            type: string
+          description: Players still to complete their passive move this turn.
+        whiteWhiteUsed:
+          type: boolean
+          description: Whether the active player has already used the white+white option this turn.
+        colorDieUsed:
+          type: boolean
+          description: Whether the active player has already used the color die option this turn.
+
+    GameState:
+      type: object
+      required:
+        - players
+        - sheetProgress
+        - turnState
+        - gameOver
+        - version
+      properties:
+        players:
+          type: array
+          items:
+            $ref: '#/components/schemas/Player'
+          description: Ordered list of players; defines turn order.
+        sheetProgress:
+          type: object
+          description: Map of playerId to SheetProgress.
+          additionalProperties:
+            $ref: '#/components/schemas/SheetProgress'
+        closedRows:
+          type: object
+          description: Map of rowId to the playerId who closed it.
+          additionalProperties:
+            type: string
+        activeDiceColors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Color'
+          description: Colors of dice still in play (shrinks as rows are locked).
+        turnState:
+          $ref: '#/components/schemas/TurnState'
+        gameOver:
+          type: boolean
+        version:
+          type: integer
+          format: int64
+          description: Increments on every state change; used by clients to detect updates.
+
+    GameOption:
+      type: object
+      required:
+        - key
+        - label
+        - description
+        - type
+        - defaultValue
+      properties:
+        key:
+          type: string
+          description: Identifier used when sending options in NewGameRequest.
+        label:
+          type: string
+          description: Short human-readable name for display in a lobby UI.
+        description:
+          type: string
+          description: Explanation of what the option does.
+        type:
+          type: string
+          enum: [BOOLEAN, INTEGER, ENUM]
+        defaultValue:
+          type: string
+          description: Default value serialised as a string.
+        choices:
+          type: array
+          items:
+            type: string
+          description: Allowed values — only relevant for ENUM type.
+        minValue:
+          type: integer
+          description: Minimum value — only relevant for INTEGER type.
+        maxValue:
+          type: integer
+          description: Maximum value — only relevant for INTEGER type.
+
+    ErrorResponse:
+      type: object
+      required:
+        - message
+        - code
+      properties:
+        message:
+          type: string
+          description: Human-readable error message.
+        code:
+          type: integer
+          description: HTTP status code.

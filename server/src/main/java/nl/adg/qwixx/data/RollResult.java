@@ -12,4 +12,8 @@ public class RollResult {
     this.white2 = white2;
     this.coloredDice = coloredDice;
   }
+
+  public int white1()                        { return white1; }
+  public int white2()                        { return white2; }
+  public Map<Color, Integer> coloredDice()   { return coloredDice; }
 }

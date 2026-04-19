@@ -13,4 +13,7 @@ public class SheetProgress {
 
   public Map<Integer, RowState> rowStates()  { return rowStates; }
   public int punishments()                   { return punishments; }
+
+  public void updateRowState(int rowIndex, RowState state) { rowStates.put(rowIndex, state); }
+  public void addPunishment()                              { punishments++; }
 }

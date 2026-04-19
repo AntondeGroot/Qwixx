@@ -12,9 +12,8 @@ public class ActiveTurnState {
     colorDieUsed = true;
   }
 
-  public void reset(){
-    whiteWhiteUsed = false;
-    colorDieUsed = false;
-  }
+  public void reset()             { whiteWhiteUsed = false; colorDieUsed = false; }
 
+  public boolean whiteWhiteUsed() { return whiteWhiteUsed; }
+  public boolean colorDieUsed()   { return colorDieUsed; }
 }

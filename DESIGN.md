@@ -248,10 +248,15 @@ ResetTurnAction implements GameAction  // reverts the acting player's crosses ba
 
 EndTurnAction implements GameAction    // player signals they are done
   UUID  playerId
+
+TakePunishmentAction implements GameAction  // offline mode only: player manually records a punishment cross
+  UUID  playerId
 ```
 
 **Active player** buttons: "Confirm" (end turn), "Give Up" (forfeit + punishment), "Reset" (undo this turn's crosses).
 **Passive players** buttons: "Done", "Reset". Passive players cannot give up — they are never punished for passing.
+
+`TakePunishmentAction` is only valid in `OFFLINE` mode. It increments the player's punishment count by one and immediately checks game-end conditions — a player reaching maximum punishments ends the game.
 
 ---
 
@@ -277,7 +282,13 @@ When a `CrossLockAction` is applied:
 ```
 StandardTurnRules implements TurnRules
 LongoTurnRules    implements TurnRules   // adds bonus number logic via LongoVariantData
+OfflineTurnRules  implements TurnRules   // wraps a base TurnRules; skips turn/dice validation entirely
 ```
+
+`OfflineTurnRules` delegates row-building and scoring to the underlying variant's factory but replaces all turn management:
+- `getValidActions` returns a `CrossCellAction` for every cell that passes the progression check (position strictly greater than rightmost crossed), for every player, regardless of phase or dice. Also returns `CrossLockAction` for any row that meets lock pre-conditions, and `TakePunishmentAction` for any player.
+- `apply` accepts those same actions without a phase check. `TurnState` is kept as `null` throughout — `apply` never reads or writes it. `AutoCross` tags are still honored: when a cell with an `AutoCross` tag is crossed, all target cells are also crossed automatically (bypassing the progression check, exactly as in online mode).
+- `isGameOver` is identical to online mode: two or more rows closed, or any player at maximum punishments.
 
 Longo bonus number logic: when any die value matches a bonus number in `LongoVariantData.bonusNumbers`, an additional action becomes available — the player may either cross that number in any row, or cross the leftmost uncrossed cell in the row with the fewest crosses.
 
@@ -310,6 +321,13 @@ Scoring steps:
 
 ## Layer 5: Settings, Factories & Registry
 
+### GameMode
+```
+enum GameMode { ONLINE, OFFLINE }
+```
+- `ONLINE`: the server manages turn order, validates dice combinations, and enforces progression. All rules from `TurnRules` apply.
+- `OFFLINE`: players use real physical dice. The server does not track whose turn it is, does not validate dice combinations, and does not enforce progression (skipping a cell is still allowed, but crossing to the left of the rightmost crossed position is not — the board must remain consistent for scoring). The server only tracks game-end conditions.
+
 ### GameSettings
 Captures all choices for a game. Features can be combined freely on top of a base variant.
 
@@ -321,12 +339,18 @@ GameSettings {
   boolean     extraRow        // add ExtraBucket-tagged cells forming a sinus wave across the 4 rows
   boolean     mixedColors     // cells within rows have varying colors (dice logic TBD)
   CardMode    cardMode        // DETERMINISTIC | PROBABILISTIC
+  GameMode    gameMode        // ONLINE | OFFLINE
 }
 ```
 
 Example: longo + random order + connected cells + extra row:
 ```
-GameSettings { base: LONGO, randomOrder: true, connectedCells: true, extraRow: true, cardMode: DETERMINISTIC }
+GameSettings { base: LONGO, randomOrder: true, connectedCells: true, extraRow: true, cardMode: DETERMINISTIC, gameMode: ONLINE }
+```
+
+Example: standard offline game (real dice, shared scorecard):
+```
+GameSettings { base: STANDARD, cardMode: DETERMINISTIC, gameMode: OFFLINE }
 ```
 
 ### VariantData
@@ -481,3 +505,31 @@ During `LOCK_PENDING`, any other eligible player may fire `CrossLockAction` dire
 - Cells within a row have varying colors
 - Dice-to-cell mapping: white + colorDie can cross any cell on the board with that color in its `colors` list, regardless of which row it sits in
 - Full logic: TBD
+
+---
+
+## Mode: Offline
+
+Selected via `GameSettings.gameMode = OFFLINE`. Compatible with any base variant and any feature flag.
+
+**What the server does not do in offline mode:**
+- Track whose turn it is (no active/passive distinction, no `TurnPhase`).
+- Validate dice combinations (no `RollResult`, no `DiceCombination`).
+- Enforce turn order or phase transitions.
+
+**What the server still does:**
+- Enforce left-to-right progression per player per row (a cell can only be crossed if its position is strictly greater than that player's current rightmost crossed position). This keeps the scorecard consistent.
+- Honor `AutoCross` tags: crossing a cell that carries an `AutoCross` tag also crosses its targets automatically, bypassing the progression check (same behavior as online mode).
+- Enforce lock pre-conditions (`minCrosses`, `requiredCells`) before allowing `CrossLockAction`.
+- Track closed rows in `boardState.closedRows`.
+- Track punishment crosses via `TakePunishmentAction`.
+- Detect game end: two or more rows closed, or any player at maximum punishments (4 standard).
+- Maintain `version` for polling.
+
+**`TurnState`** is `null` for the lifetime of an offline session. `GameState.turnState` is nullable; code that reads it must guard on `gameMode`.
+
+**`GameStyleFactory`** behaviour in offline mode: `buildTurnRules()` returns `new OfflineTurnRules(baseRules)` where `baseRules` is the variant's own `TurnRules`. Row building, dice, and scoring are unchanged.
+
+**Game-end conditions** (unchanged from online):
+1. `boardState.closedRows.size() >= 2`
+2. Any player has 4 punishment crosses.

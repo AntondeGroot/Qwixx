@@ -20,4 +20,8 @@ public class Row {
   public void addLock(LockCell lock){
     this.lock = lock;
   }
+
+  public String id()          { return id; }
+  public List<Cell> cells()   { return cells; }
+  public LockCell lock()      { return lock; }
 }

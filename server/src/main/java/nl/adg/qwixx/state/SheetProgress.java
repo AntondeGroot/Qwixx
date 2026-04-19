@@ -5,4 +5,12 @@ import java.util.Map;
 public class SheetProgress {
   Map<Integer, RowState> rowStates;
   int punishments;
+
+  public SheetProgress(Map<Integer, RowState> rowStates, int punishments) {
+    this.rowStates = rowStates;
+    this.punishments = punishments;
+  }
+
+  public Map<Integer, RowState> rowStates()  { return rowStates; }
+  public int punishments()                   { return punishments; }
 }

@@ -117,7 +117,8 @@ public synchronized GameState applyAction(GameAction action) {
 ```java
 public sealed interface GameAction permits
     RollAction, CrossCellAction, DeclareLockIntentAction, CrossLockAction,
-    UndoLastCrossAction, GiveUpAction, ResetTurnAction, EndTurnAction {
+    UndoLastCrossAction, GiveUpAction, ResetTurnAction, EndTurnAction,
+    TakePunishmentAction {
   UUID playerId();
 }
 ```
@@ -190,6 +191,50 @@ The game ends when either of these becomes true after an action:
 
 ---
 
+## Offline mode
+
+When `GameSettings.gameMode == OFFLINE`, `ConfigurableGameStyleFactory.buildTurnRules()` wraps the variant's own `TurnRules` in `OfflineTurnRules`:
+
+```java
+public class OfflineTurnRules implements TurnRules {
+  private final TurnRules base;   // StandardTurnRules or LongoTurnRules — used only for isGameOver
+
+  @Override
+  public List<GameAction> getValidActions(GameState state, UUID playerId) {
+    // Any uncrossed cell that passes the player's progression check is a valid CrossCellAction.
+    // Any row that meets lock pre-conditions is a valid CrossLockAction.
+    // TakePunishmentAction is always valid.
+    // No phase check. No dice check.
+  }
+
+  @Override
+  public GameState apply(GameState state, GameAction action) {
+    return switch (action) {
+      case CrossCellAction a   -> applyCross(state, a);    // progression-only guard; AutoCross tags still fire
+      case CrossLockAction a   -> applyLock(state, a);     // lock pre-conditions guard
+      case TakePunishmentAction a -> applyPunishment(state, a);
+      default -> throw new IllegalMoveException("action not valid in offline mode");
+    };
+    // After applying, check isGameOver and set gameOver flag if true.
+  }
+
+  @Override
+  public boolean isGameOver(GameState state) {
+    return state.boardState().closedRows().size() >= 2
+        || state.boardState().sheetProgress().values().stream()
+               .anyMatch(p -> p.punishments() >= MAX_PUNISHMENTS);
+  }
+}
+```
+
+`TurnState` is `null` for the full lifetime of an offline session. `GameState.turnState()` returns `null`; all callers that would normally read `TurnState` (delegates, mappers) must guard on `settings.gameMode()`.
+
+`GameStateDto` omits turn-state fields (`currentRoll`, `activePlayerId`, `phase`, `passivePlayerQueue`) when `gameMode == OFFLINE`, since they carry no meaning and would be `null` anyway.
+
+`TakePunishmentAction` is added to the `GameAction` sealed interface. The `MovesApiDelegateImpl` mapper maps move type `TAKE_PUNISHMENT` to this action. The action is rejected by `StandardTurnRules` and `LongoTurnRules` (online mode) — only `OfflineTurnRules` accepts it.
+
+---
+
 ## ScoringEngine
 
 `ScoringEngine.calculate(SheetLayout, SheetProgress)` is a pure function — no state, no side effects. It needs both objects because the tags that affect scoring (`ExtraBucket`, `DoubleCross`, `BonusPoints`) live on the cell definitions in `SheetLayout`, not in `SheetProgress`.
@@ -211,6 +256,11 @@ public class QwixxGameOptions {
 
   public static List<GameOption> all() {
     return List.of(
+        new GameOption("gameMode", "Game mode",
+            "ONLINE enforces turn order and dice rules on the server. " +
+            "OFFLINE lets players use real dice — the server only tracks crossings and game-end conditions.",
+            TypeEnum.ENUM, "ONLINE")
+            .choices(List.of("ONLINE", "OFFLINE")),
         new GameOption("cardMode", "Card mode",
             "DETERMINISTIC gives all players identical row layouts. " +
             "PROBABILISTIC gives each player their own random layout.",
@@ -229,6 +279,7 @@ public class QwixxGameOptions {
     if (options == null) return;
     for (var entry : options.entrySet()) {
       switch (entry.getKey()) {
+        case "gameMode"     -> builder.gameMode(GameMode.valueOf(toString(entry.getValue())));
         case "cardMode"     -> builder.cardMode(CardMode.valueOf(toString(entry.getValue())));
         case "randomOrder"  -> builder.randomOrder(toBoolean(entry.getValue()));
         case "extraRow"     -> builder.extraRow(toBoolean(entry.getValue()));

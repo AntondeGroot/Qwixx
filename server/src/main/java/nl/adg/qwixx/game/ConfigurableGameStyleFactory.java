@@ -6,7 +6,9 @@ import nl.adg.qwixx.data.Die;
 import nl.adg.qwixx.data.LockCell;
 import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.rules.ScoringEngine;
+import nl.adg.qwixx.rules.StandardTurnRules;
 import nl.adg.qwixx.rules.StandardScoringEngine;
+import nl.adg.qwixx.rules.TurnRules;
 import nl.adg.qwixx.state.CardMode;
 
 import java.util.ArrayList;
@@ -47,14 +49,19 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
     @Override
     public List<Die> buildDice() {
         int faces = diceFaces();
-        return List.of(
+        return new ArrayList<>(List.of(
             new Die(Color.WHITE,  faces),
             new Die(Color.WHITE,  faces),
             new Die(Color.RED,    faces),
             new Die(Color.YELLOW, faces),
             new Die(Color.GREEN,  faces),
             new Die(Color.BLUE,   faces)
-        );
+        ));
+    }
+
+    @Override
+    public TurnRules buildTurnRules() {
+        return new StandardTurnRules();
     }
 
     @Override

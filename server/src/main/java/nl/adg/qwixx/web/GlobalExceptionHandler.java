@@ -1,6 +1,7 @@
 package nl.adg.qwixx.web;
 
 import nl.adg.qwixx.game.GameAlreadyStartedException;
+import nl.adg.qwixx.game.GameNotFinishedException;
 import nl.adg.qwixx.game.GameNotStartedException;
 import nl.adg.qwixx.game.SessionNotFoundException;
 import nl.adg.qwixx.generated.model.ErrorResponse;
@@ -18,7 +19,8 @@ public class GlobalExceptionHandler {
         return response(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
-    @ExceptionHandler({GameAlreadyStartedException.class, GameNotStartedException.class})
+    @ExceptionHandler({GameAlreadyStartedException.class, GameNotStartedException.class,
+                        GameNotFinishedException.class})
     public ResponseEntity<ErrorResponse> handleConflict(RuntimeException ex) {
         return response(HttpStatus.CONFLICT, ex.getMessage());
     }

@@ -234,6 +234,29 @@ paths:
         '404':
           description: Game not found
 
+  /games/{sessionId}/scores:
+    get:
+      summary: Get scores for all players
+      description: Returns per-player score breakdown. Only available after game over.
+      operationId: getScores
+      tags:
+        - games
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+      responses:
+        '200':
+          description: Map of playerId to ScoreCard
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/ScoreCard'
+        '404':
+          description: Game not found
+        '409':
+          description: Game not yet finished
+
   /game-options:
     get:
       summary: Get available game options
@@ -647,6 +670,43 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SheetRow'
+
+    ScoreCard:
+      type: object
+      required:
+        - crossesPerColor
+        - pointsPerColor
+        - extraCrosses
+        - extraPoints
+        - bonusPoints
+        - punishmentPoints
+        - total
+      properties:
+        crossesPerColor:
+          type: object
+          description: Number of crossed cells per color.
+          additionalProperties:
+            type: integer
+        pointsPerColor:
+          type: object
+          description: Triangular score per color.
+          additionalProperties:
+            type: integer
+        extraCrosses:
+          type: integer
+          description: Crossed cells tagged ExtraBucket.
+        extraPoints:
+          type: integer
+          description: Triangular score from extra crosses.
+        bonusPoints:
+          type: integer
+          description: Flat bonus points from BonusPoints tags.
+        punishmentPoints:
+          type: integer
+          description: Negative points from punishments (-5 each).
+        total:
+          type: integer
+          description: Sum of all points.
 
     ErrorResponse:
       type: object

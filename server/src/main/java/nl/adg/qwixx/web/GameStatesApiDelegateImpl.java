@@ -5,7 +5,6 @@ import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSession;
 import nl.adg.qwixx.game.SessionNotFoundException;
 import nl.adg.qwixx.generated.api.GamestatesApiDelegate;
-import nl.adg.qwixx.state.GameState;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -16,10 +15,8 @@ public class GameStatesApiDelegateImpl implements GamestatesApiDelegate {
     @Override
     public ResponseEntity<nl.adg.qwixx.generated.model.GameState> getGameState(
             String sessionId, Long stateVersion) {
-        GameSession session = GameRegistry.getGame(sessionId);
-        if (session == null) throw new SessionNotFoundException(sessionId);
-
-        GameState state = session.currentState();
+        GameSession session = require(sessionId);
+        nl.adg.qwixx.state.GameState state = session.currentState();
         if (state == null) throw new GameNotStartedException(sessionId);
 
         if (stateVersion != null && stateVersion == state.version()) {
@@ -27,5 +24,11 @@ public class GameStatesApiDelegateImpl implements GamestatesApiDelegate {
         }
 
         return ResponseEntity.ok(GameStateMapper.toDto(state, session));
+    }
+
+    private GameSession require(String sessionId) {
+        GameSession session = GameRegistry.getGame(sessionId);
+        if (session == null) throw new SessionNotFoundException(sessionId);
+        return session;
     }
 }

@@ -214,4 +214,44 @@ class GamesApiDelegateImplTest {
                         "00000000-0000-0000-0000-000000000000"))
                 .andExpect(status().isNotFound());
     }
+
+    // --- GET /games/{sessionId}/scores ---
+
+    @Test
+    void getScoresReturns404ForUnknownSession() throws Exception {
+        mvc.perform(get("/games/ghost/scores"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getScoresReturns409WhenGameNotFinished() throws Exception {
+        String id = GameRegistry.createGame("room", 2, GameSettings.builder().build());
+        Player alice = Player.of("Alice");
+        GameRegistry.getGame(id).addPlayer(alice);
+        GameRegistry.getGame(id).start();
+
+        mvc.perform(get("/games/{id}/scores", id))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void getScoresReturns200WithScoreDataAfterGameOver() throws Exception {
+        nl.adg.qwixx.game.GameSettings settings = nl.adg.qwixx.game.GameSettings.builder()
+                .gameMode(nl.adg.qwixx.game.GameMode.OFFLINE).build();
+        String id = GameRegistry.createGame("room", 2, settings);
+        Player alice = Player.of("Alice");
+        GameRegistry.getGame(id).addPlayer(alice);
+        GameRegistry.getGame(id).start();
+
+        // 4 punishments trigger game over in offline mode
+        nl.adg.qwixx.game.GameSession session = GameRegistry.getGame(id);
+        for (int i = 0; i < 4; i++) {
+            session.applyAction(new nl.adg.qwixx.action.TakePunishmentAction(alice.id()));
+        }
+
+        mvc.perform(get("/games/{id}/scores", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$['" + alice.id() + "'].total").isNumber())
+                .andExpect(jsonPath("$['" + alice.id() + "'].punishmentPoints").value(-20));
+    }
 }

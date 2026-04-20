@@ -293,6 +293,7 @@ components:
         - ROLL
         - CROSS_WHITE_WHITE
         - CROSS_COLOR_DIE
+        - CROSS_LOCK
         - TAKE_PUNISHMENT
         - PASS
 

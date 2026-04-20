@@ -81,6 +81,7 @@ class GameStateMapper {
     }
 
     private static nl.adg.qwixx.generated.model.TurnState mapTurnState(TurnState turn) {
+        if (turn == null) return null;
         nl.adg.qwixx.generated.model.TurnState dto = new nl.adg.qwixx.generated.model.TurnState(
                 turn.activePlayerId().toString(),
                 mapPhase(turn.phase()))

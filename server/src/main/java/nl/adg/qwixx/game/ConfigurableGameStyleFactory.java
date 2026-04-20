@@ -7,6 +7,7 @@ import nl.adg.qwixx.data.Die;
 import nl.adg.qwixx.data.LockCell;
 import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.rules.LongoTurnRules;
+import nl.adg.qwixx.rules.OfflineTurnRules;
 import nl.adg.qwixx.rules.ScoringEngine;
 import nl.adg.qwixx.rules.StandardScoringEngine;
 import nl.adg.qwixx.rules.StandardTurnRules;
@@ -100,6 +101,7 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
 
     @Override
     public TurnRules buildTurnRules() {
+        if (settings.gameMode() == GameMode.OFFLINE) return new OfflineTurnRules();
         return switch (settings.base()) {
             case STANDARD -> new StandardTurnRules();
             case LONGO    -> new LongoTurnRules();

@@ -191,15 +191,33 @@ Package: `client/`
 
 ---
 
-## MR 16 — Frontend: Lobby
+## MR 16 — Frontend: Settings page + routing
 
 Package: `client/`
 
-- List games page, create game form (options from `/game-options`), join game (add player), routing between lobby and board
+GameRoom creates the game session via the Qwixx API and navigates to `/game/:sessionId/:playerId` directly — no lobby needed. The settings page is only shown on fresh standalone load or after game over.
+
+- Route `/game/:sessionId/:playerId` → `BoardComponent` (reads both IDs from URL)
+- Route `/settings` (and `''`) → `SettingsComponent`
+- `SettingsComponent`: fetch game options from `/game-options`, render each option as its appropriate input (ENUM → select, BOOLEAN → checkbox), player name input; Start button calls POST /games → POST /games/{id}/players → POST /games/{id}/start → navigates to board
+- `BoardComponent`: placeholder; shows "Back to Settings" when game is over
 
 ---
 
-## MR 17 — Frontend: Board rendering (static)
+## MR 17 — Layout preview endpoint
+
+Packages: `server/`, OpenAPI spec, `client/`
+
+Stateless endpoint that returns a sample `SheetLayout` for given settings without creating a game session. Used by the settings page to render a visual preview of each variant's board before starting.
+
+- `POST /game-options/preview` with a `NewGameRequest.gameOptions`-style body → returns `SheetLayout`
+- Server builds the layout via `ConfigurableGameStyleFactory` without persisting any state
+- Settings page calls this when the variant selector changes to show a live board preview
+- Tests
+
+---
+
+## MR 18 — Frontend: Board rendering (static)
 
 Package: `client/`
 
@@ -209,11 +227,11 @@ Package: `client/`
 
 ---
 
-## MR 18 — Frontend: Styling
+## MR 19 — Frontend: Styling
 
 Package: `client/`
 
-All visual polish in one place; components from MR 17 already exist and carry the right CSS classes/structure.
+All visual polish in one place; components from MR 18 already exist and carry the right CSS classes/structure.
 
 - Color palette, typography, global reset (`styles.css`)
 - Row colors (red/yellow/green/blue), cell shape, crossed-cell mark, closing-eligible highlight
@@ -224,8 +242,7 @@ All visual polish in one place; components from MR 17 already exist and carry th
 
 ---
 
-## MR 19 — Frontend: Online play — roll & cross
-
+## MR 20 — Frontend: Online play — roll & cross
 
 Package: `client/`
 
@@ -235,7 +252,7 @@ Package: `client/`
 
 ---
 
-## MR 20 — Frontend: Online play — lock flow
+## MR 21 — Frontend: Online play — lock flow
 
 Package: `client/`
 
@@ -243,7 +260,7 @@ Package: `client/`
 
 ---
 
-## MR 21 — Frontend: Game over + scores
+## MR 22 — Frontend: Game over + scores
 
 Package: `client/`
 
@@ -251,7 +268,7 @@ Package: `client/`
 
 ---
 
-## MR 22 — Frontend: Offline mode
+## MR 23 — Frontend: Offline mode
 
 Package: `client/`
 
@@ -259,7 +276,7 @@ Package: `client/`
 
 ---
 
-## MR 23 — Frontend: Longo bonus number display
+## MR 24 — Frontend: Longo bonus number display
 
 Package: `client/`
 
@@ -271,21 +288,7 @@ The only Longo-specific UI is surfacing each player's personal bonus numbers.
 
 ---
 
-## MR 25 — Deployment wiring
-
-Packages: `server/`, `client/`, `GWT_GameRoom/nginx.conf`
-
-Connects the Angular frontend to the Spring Boot backend in the same way as GWT_GameRoom and GWT_Keezenspel2: the compiled Angular app is served as static files from inside the Spring Boot server, and the shared nginx routes Qwixx traffic to port 4300.
-
-- Add a Maven Exec/Resources plugin step (or npm build hook) that copies `client/dist/client/browser/` into `server/src/main/resources/public/` as part of `mvn package`
-- Verify Spring Boot serves the Angular `index.html` for all non-API paths (may need a catch-all controller for client-side routing)
-- Add a `/qwixx/` block to `GWT_GameRoom/nginx.conf` that strips the prefix and proxies to `localhost:4300`, matching the pattern used for `/keezen/` → 4200
-- Add a `server.servlet.context-path=/qwixx` production override (equivalent to Keezenspel's `/opt/keezen/application-override.yaml`)
-- Smoke-test the full path: nginx → Spring Boot → Angular app + API
-
----
-
-## MR 24 — Audio + attributions
+## MR 25 — Audio + attributions
 
 Packages: `server/`, `client/`
 
@@ -296,3 +299,17 @@ Audio files are served as static resources by the Spring Boot server; the Angula
 - Angular `AudioService`: loads sounds by URL, exposes `play(event)`, mute toggle, volume control
 - Wire `AudioService` calls to game events: cell crossed, lock closed, dice rolled, punishment taken, game over
 - `ATTRIBUTIONS.md` at the repo root listing each audio file, its source, licence, and any modifications
+
+---
+
+## MR 26 — Deployment wiring
+
+Packages: `server/`, `client/`, `GWT_GameRoom/nginx.conf`
+
+Connects the Angular frontend to the Spring Boot backend in the same way as GWT_GameRoom and GWT_Keezenspel2: the compiled Angular app is served as static files from inside the Spring Boot server, and the shared nginx routes Qwixx traffic to port 4300.
+
+- Add a Maven Exec/Resources plugin step (or npm build hook) that copies `client/dist/client/browser/` into `server/src/main/resources/public/` as part of `mvn package`
+- Verify Spring Boot serves the Angular `index.html` for all non-API paths (may need a catch-all controller for client-side routing)
+- Add a `/qwixx/` block to `GWT_GameRoom/nginx.conf` that strips the prefix and proxies to `localhost:4300`, matching the pattern used for `/keezen/` → 4200
+- Add a `server.servlet.context-path=/qwixx` production override (equivalent to Keezenspel's `/opt/keezen/application-override.yaml`)
+- Smoke-test the full path: nginx → Spring Boot → Angular app + API

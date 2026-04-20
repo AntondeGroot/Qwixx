@@ -14,6 +14,9 @@ public class QwixxGameOptions {
 
     public static List<GameOption> all() {
         return List.of(
+            GameOption.enumOption("base", "Variant",
+                "STANDARD uses cells 2–12 per row. LONGO uses cells 2–16 with personal bonus numbers.",
+                "STANDARD", List.of("STANDARD", "LONGO")),
             GameOption.enumOption("gameMode", "Game mode",
                 "ONLINE enforces turn order and dice rules on the server. " +
                 "OFFLINE lets players use real dice — the server only tracks crossings and game-end conditions.",
@@ -33,6 +36,7 @@ public class QwixxGameOptions {
         if (options == null) return;
         for (var entry : options.entrySet()) {
             switch (entry.getKey()) {
+                case "base"        -> builder.base(BaseVariant.valueOf(str(entry.getValue())));
                 case "gameMode"    -> builder.gameMode(GameMode.valueOf(str(entry.getValue())));
                 case "cardMode"    -> builder.cardMode(CardMode.valueOf(str(entry.getValue())));
                 case "randomOrder" -> builder.randomOrder(bool(entry.getValue()));

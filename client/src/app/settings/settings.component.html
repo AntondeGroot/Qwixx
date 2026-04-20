@@ -1,0 +1,32 @@
+<form [formGroup]="form" (ngSubmit)="startGame()">
+  <div>
+    <label for="playerName">Your name</label>
+    <input id="playerName" type="text" formControlName="playerName" autocomplete="off" />
+  </div>
+
+  @for (opt of gameOptions(); track opt.key) {
+    <div>
+      <label [for]="opt.key">{{ opt.label }}</label>
+
+      @if (opt.type === TypeEnum.BOOLEAN) {
+        <input [id]="opt.key" type="checkbox" [formControlName]="opt.key" />
+      } @else if (opt.type === TypeEnum.ENUM) {
+        <select [id]="opt.key" [formControlName]="opt.key">
+          @for (val of opt.choices ?? []; track val) {
+            <option [value]="val">{{ val }}</option>
+          }
+        </select>
+      } @else if (opt.type === TypeEnum.INTEGER) {
+        <input [id]="opt.key" type="number" [formControlName]="opt.key" />
+      }
+    </div>
+  }
+
+  @if (error()) {
+    <p>{{ error() }}</p>
+  }
+
+  <button type="submit" [disabled]="form.invalid || loading()">
+    {{ loading() ? 'Starting…' : 'Start game' }}
+  </button>
+</form>

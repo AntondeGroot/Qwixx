@@ -1,6 +1,7 @@
 package nl.adg.qwixx.web;
 
 import nl.adg.qwixx.action.CrossCellAction;
+import nl.adg.qwixx.action.CrossLockAction;
 import nl.adg.qwixx.action.DiceCombination;
 import nl.adg.qwixx.action.EndTurnAction;
 import nl.adg.qwixx.action.GameAction;
@@ -62,6 +63,7 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
                     pid, parseRowIndex(req.getRowId()), req.getCellId(), DiceCombination.WHITE_WHITE);
             case CROSS_COLOR_DIE   -> new CrossCellAction(
                     pid, parseRowIndex(req.getRowId()), req.getCellId(), DiceCombination.WHITE_COLOR);
+            case CROSS_LOCK        -> new CrossLockAction(pid, parseRowIndex(req.getRowId()));
             case TAKE_PUNISHMENT   -> new TakePunishmentAction(pid);
             case PASS              -> new EndTurnAction(pid);
         };

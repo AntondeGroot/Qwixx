@@ -443,13 +443,13 @@ public class StandardTurnRules implements TurnRules {
         return lock.requiredCells().stream().anyMatch(id -> rowState.crossedCells().contains(id));
     }
 
-    private void markLockCrossed(GameState state, UUID playerId, int rowIndex) {
+    protected void markLockCrossed(GameState state, UUID playerId, int rowIndex) {
         SheetProgress prog = state.boardState().sheetProgress().get(playerId);
         RowState current   = rowStateOf(prog, rowIndex);
         prog.updateRowState(rowIndex, new RowState(current.crossedCells(), true));
     }
 
-    private void closeRowGlobally(GameState state, UUID playerId, int rowIndex) {
+    protected void closeRowGlobally(GameState state, UUID playerId, int rowIndex) {
         BoardState board    = state.boardState();
         board.closedRows().put(rowIndex, playerId);
 
@@ -469,7 +469,7 @@ public class StandardTurnRules implements TurnRules {
     // Cross a cell + follow AutoCross tags
     // -------------------------------------------------------------------------
 
-    private Map<Integer, Set<String>> crossCellWithAutoTags(GameState state, UUID playerId, int rowIndex, String cellId) {
+    protected Map<Integer, Set<String>> crossCellWithAutoTags(GameState state, UUID playerId, int rowIndex, String cellId) {
         Map<Integer, Set<String>> crossed = new HashMap<>();
         crossCellRecursive(state, playerId, rowIndex, cellId, crossed, false);
         return crossed;

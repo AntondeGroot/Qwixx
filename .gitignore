@@ -32,3 +32,4 @@ yarn-error.log*
 .idea/
 /client/node_modules/
 server/target/
+/target/

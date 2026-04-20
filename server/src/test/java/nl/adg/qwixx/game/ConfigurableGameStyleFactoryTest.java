@@ -1,6 +1,7 @@
 package nl.adg.qwixx.game;
 
 import nl.adg.qwixx.data.Cell;
+import nl.adg.qwixx.data.CellTag;
 import nl.adg.qwixx.data.Color;
 import nl.adg.qwixx.data.Die;
 import nl.adg.qwixx.data.Row;
@@ -165,6 +166,60 @@ class ConfigurableGameStyleFactoryTest {
         UUID p1 = UUID.randomUUID();
         UUID p2 = UUID.randomUUID();
         Map<UUID, List<Row>> result = factory(CardMode.PROBABILISTIC).buildRows(List.of(p1, p2));
+        assertNotSame(result.get(p1), result.get(p2));
+    }
+
+    // --- extra row ---
+
+    @Test
+    void noExtraRowTagsByDefault() {
+        long count = rows(factory(CardMode.DETERMINISTIC)).stream()
+                .flatMap(row -> row.cells().stream())
+                .filter(cell -> cell.tags().stream().anyMatch(t -> t instanceof CellTag.ExtraBucket))
+                .count();
+        assertEquals(0, count);
+    }
+
+    @Test
+    void extraRowTagsExactlyOneCellPerColumn() {
+        ConfigurableGameStyleFactory f = new ConfigurableGameStyleFactory(
+            GameSettings.builder().extraRow(true).build(), new Random(0));
+        List<Row> rows = f.buildRows(List.of(UUID.randomUUID())).values().iterator().next();
+        int numCols = rows.get(0).cells().size();
+        for (int col = 0; col < numCols; col++) {
+            final int c = col;
+            long tagged = rows.stream()
+                    .filter(row -> row.cells().get(c).tags().stream().anyMatch(t -> t instanceof CellTag.ExtraBucket))
+                    .count();
+            assertEquals(1, tagged, "column " + col + " should have exactly one ExtraBucket cell");
+        }
+    }
+
+    @Test
+    void extraRowAdjacentColumnsAreInAdjacentRows() {
+        ConfigurableGameStyleFactory f = new ConfigurableGameStyleFactory(
+            GameSettings.builder().extraRow(true).build(), new Random(0));
+        List<Row> rows = f.buildRows(List.of(UUID.randomUUID())).values().iterator().next();
+        int numCols = rows.get(0).cells().size();
+        int[] assigned = new int[numCols];
+        for (int col = 0; col < numCols; col++) {
+            for (int r = 0; r < rows.size(); r++) {
+                if (rows.get(r).cells().get(col).tags().stream().anyMatch(t -> t instanceof CellTag.ExtraBucket))
+                    assigned[col] = r;
+            }
+        }
+        for (int col = 1; col < numCols; col++) {
+            assertEquals(1, Math.abs(assigned[col] - assigned[col - 1]),
+                    "columns " + (col - 1) + " and " + col + " should be in adjacent rows");
+        }
+    }
+
+    @Test
+    void extraRowAlwaysPerPlayerEvenInDeterministicMode() {
+        UUID p1 = UUID.randomUUID(), p2 = UUID.randomUUID();
+        ConfigurableGameStyleFactory f = new ConfigurableGameStyleFactory(
+            GameSettings.builder().extraRow(true).cardMode(CardMode.DETERMINISTIC).build(), new Random(0));
+        Map<UUID, List<Row>> result = f.buildRows(List.of(p1, p2));
         assertNotSame(result.get(p1), result.get(p2));
     }
 

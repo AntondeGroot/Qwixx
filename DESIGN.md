@@ -485,7 +485,9 @@ During `LOCK_PENDING`, any other eligible player may fire `CrossLockAction` dire
 - Dice have 8 faces
 
 ### Feature: Extra Row
-- Cells tagged with `ExtraBucket` are added, forming a sinus wave across the 4 rows
+- One cell per column (excluding the lock) is tagged `ExtraBucket`, forming a bouncing pattern across the 4 rows
+- The bounce follows the period-6 sequence `{0,1,2,3,2,1}` (0-indexed row), repeating indefinitely
+- A random start offset (0–5) is drawn independently per player at game start — the pattern is always probabilistic, even in `DETERMINISTIC` card mode
 - No Row object for the EXTRA scoring bucket — it exists only in `ScoreCard`
 - Tagged cells score in both their primary `cell.color` bucket and the EXTRA bucket
 - Frontend renders a thick black border on cells with the `ExtraBucket` tag

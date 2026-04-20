@@ -85,4 +85,15 @@ class GameStatesApiDelegateImplTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.activeDiceColors").isArray());
     }
+
+    @Test
+    void getGameStateIncludesSheetLayoutsWithCells() throws Exception {
+        mvc.perform(get("/gamestates/{sid}", sessionId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sheetLayouts").isMap())
+                .andExpect(jsonPath("$.sheetLayouts['" + alice.id() + "'].rows").isArray())
+                .andExpect(jsonPath("$.sheetLayouts['" + alice.id() + "'].rows[0].cells").isArray())
+                .andExpect(jsonPath("$.sheetLayouts['" + alice.id() + "'].rows[0].lock").exists())
+                .andExpect(jsonPath("$.sheetLayouts['" + alice.id() + "'].rows[0].cells[0].displayValue").exists());
+    }
 }

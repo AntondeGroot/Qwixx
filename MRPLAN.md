@@ -165,7 +165,6 @@ Critical prerequisite for the frontend — without the layout the client cannot 
 
 Packages: `web/`, OpenAPI spec
 
-- `GET /gamestates/{sessionId}/{playerId}/valid-actions` → returns the list of currently valid moves for that player (move type + cell/row targets)
 - `GET /games/{sessionId}/scores` → returns per-player `ScoreCard`; only available after game over
 - Tests
 

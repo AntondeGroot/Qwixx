@@ -2,11 +2,15 @@ package nl.adg.qwixx.web;
 
 import nl.adg.qwixx.action.CrossCellAction;
 import nl.adg.qwixx.action.CrossLockAction;
+import nl.adg.qwixx.action.DeclareLockIntentAction;
 import nl.adg.qwixx.action.DiceCombination;
 import nl.adg.qwixx.action.EndTurnAction;
 import nl.adg.qwixx.action.GameAction;
+import nl.adg.qwixx.action.GiveUpAction;
+import nl.adg.qwixx.action.ResetTurnAction;
 import nl.adg.qwixx.action.RollAction;
 import nl.adg.qwixx.action.TakePunishmentAction;
+import nl.adg.qwixx.action.UndoLastCrossAction;
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSession;
 import nl.adg.qwixx.game.SessionNotFoundException;
@@ -63,9 +67,13 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
                     pid, parseRowIndex(req.getRowId()), req.getCellId(), DiceCombination.WHITE_WHITE);
             case CROSS_COLOR_DIE   -> new CrossCellAction(
                     pid, parseRowIndex(req.getRowId()), req.getCellId(), DiceCombination.WHITE_COLOR);
-            case CROSS_LOCK        -> new CrossLockAction(pid, parseRowIndex(req.getRowId()));
-            case TAKE_PUNISHMENT   -> new TakePunishmentAction(pid);
-            case PASS              -> new EndTurnAction(pid);
+            case CROSS_LOCK          -> new CrossLockAction(pid, parseRowIndex(req.getRowId()));
+            case TAKE_PUNISHMENT     -> new TakePunishmentAction(pid);
+            case PASS                -> new EndTurnAction(pid);
+            case DECLARE_LOCK_INTENT -> new DeclareLockIntentAction(pid, parseRowIndex(req.getRowId()));
+            case RESET_TURN          -> new ResetTurnAction(pid);
+            case GIVE_UP             -> new GiveUpAction(pid);
+            case UNDO_LAST_CROSS     -> new UndoLastCrossAction(pid);
         };
     }
 

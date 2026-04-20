@@ -144,3 +144,142 @@ Touches several layers — keep the MR focused by implementing only what the des
 - DTO mapper: omit `TurnState` fields (`currentRoll`, `activePlayerId`, `phase`, `passivePlayerQueue`) when `gameMode == OFFLINE`
 - `MovesApiDelegateImpl`: route `TAKE_PUNISHMENT` → `TakePunishmentAction`
 - Tests
+
+---
+
+## MR 12 — SheetLayout in game state
+
+Packages: `web/`, OpenAPI spec
+
+Critical prerequisite for the frontend — without the layout the client cannot render the board.
+
+- Add `SheetCell`, `SheetRow`, `LockConfig`, `SheetLayout` DTO schemas to OpenAPI spec
+- Extend `GET /gamestates/{sessionId}` response to include `sheetLayouts` (map of playerId → layout)
+- Fix `turnState` as optional (not required) in the `GameState` schema — it is `null` in offline mode
+- Update `GameStateMapper` to include the layout
+- Tests
+
+---
+
+## MR 13 — Valid actions + scores endpoints
+
+Packages: `web/`, OpenAPI spec
+
+- `GET /gamestates/{sessionId}/{playerId}/valid-actions` → returns the list of currently valid moves for that player (move type + cell/row targets)
+- `GET /games/{sessionId}/scores` → returns per-player `ScoreCard`; only available after game over
+- Tests
+
+---
+
+## MR 14 — Complete online move types
+
+Packages: `web/`, OpenAPI spec
+
+Fills the remaining gap in the online lock flow and turn management.
+
+- Add `DECLARE_LOCK_INTENT`, `RESET_TURN`, `GIVE_UP`, `UNDO_LAST_CROSS` to `MoveType`
+- Route each to the corresponding `GameAction` in `MovesApiDelegateImpl`
+- Tests
+
+---
+
+## MR 15 — Frontend: API service layer
+
+Package: `client/`
+
+- Configure OpenAPI Generator for TypeScript/Angular; generate services + models
+- HTTP client setup, CORS proxy config, environment base URL
+
+---
+
+## MR 16 — Frontend: Lobby
+
+Package: `client/`
+
+- List games page, create game form (options from `/game-options`), join game (add player), routing between lobby and board
+
+---
+
+## MR 17 — Frontend: Board rendering (static)
+
+Package: `client/`
+
+- Row and Cell components driven by `SheetLayout` from game state
+- Crossed / closed / lock visual states; no interaction yet
+- Works for any row length (standard 11 cells, longo 15 cells)
+
+---
+
+## MR 18 — Frontend: Styling
+
+Package: `client/`
+
+All visual polish in one place; components from MR 17 already exist and carry the right CSS classes/structure.
+
+- Color palette, typography, global reset (`styles.css`)
+- Row colors (red/yellow/green/blue), cell shape, crossed-cell mark, closing-eligible highlight
+- Lock cell appearance with lock icon SVG, closed-row overlay
+- Dice display, punishment track, turn indicator
+- Responsive layout for 2–6 player scoreboards
+- No interaction logic in this MR — pure HTML/CSS
+
+---
+
+## MR 19 — Frontend: Online play — roll & cross
+
+
+Package: `client/`
+
+- Active player: roll button → dice display → tap cell to cross
+- Passive player: tap matching white+white cell or pass
+- Poll or version-check `/gamestates` for reactive updates
+
+---
+
+## MR 20 — Frontend: Online play — lock flow
+
+Package: `client/`
+
+- Declare lock intent, lock-pending acknowledge screen, cross-lock or undo
+
+---
+
+## MR 21 — Frontend: Game over + scores
+
+Package: `client/`
+
+- Score breakdown screen, per-color points, punishment deductions, winner highlight
+
+---
+
+## MR 22 — Frontend: Offline mode
+
+Package: `client/`
+
+- No turn indicator; any player can cross any reachable cell; take-punishment button; lock button per row
+
+---
+
+## MR 23 — Frontend: Longo bonus number display
+
+Package: `client/`
+
+Board rows need no special treatment — they render longer via the existing cell component.
+The only Longo-specific UI is surfacing each player's personal bonus numbers.
+
+- Show each player's 2 bonus numbers as a chip/badge on their sheet (sourced from `variantData`)
+- Highlight the matching bonus number when `white1 + white2` equals one of them (derived from `turnState.currentRoll`)
+
+---
+
+## MR 24 — Audio + attributions
+
+Packages: `server/`, `client/`
+
+Audio files are served as static resources by the Spring Boot server; the Angular client fetches and plays them by URL.
+
+- Place audio files under `server/src/main/resources/static/audio/`
+- Spring Boot serves them automatically at `/audio/<filename>`
+- Angular `AudioService`: loads sounds by URL, exposes `play(event)`, mute toggle, volume control
+- Wire `AudioService` calls to game events: cell crossed, lock closed, dice rolled, punishment taken, game over
+- `ATTRIBUTIONS.md` at the repo root listing each audio file, its source, licence, and any modifications

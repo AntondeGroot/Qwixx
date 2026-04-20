@@ -271,6 +271,20 @@ The only Longo-specific UI is surfacing each player's personal bonus numbers.
 
 ---
 
+## MR 25 — Deployment wiring
+
+Packages: `server/`, `client/`, `GWT_GameRoom/nginx.conf`
+
+Connects the Angular frontend to the Spring Boot backend in the same way as GWT_GameRoom and GWT_Keezenspel2: the compiled Angular app is served as static files from inside the Spring Boot server, and the shared nginx routes Qwixx traffic to port 4300.
+
+- Add a Maven Exec/Resources plugin step (or npm build hook) that copies `client/dist/client/browser/` into `server/src/main/resources/public/` as part of `mvn package`
+- Verify Spring Boot serves the Angular `index.html` for all non-API paths (may need a catch-all controller for client-side routing)
+- Add a `/qwixx/` block to `GWT_GameRoom/nginx.conf` that strips the prefix and proxies to `localhost:4300`, matching the pattern used for `/keezen/` → 4200
+- Add a `server.servlet.context-path=/qwixx` production override (equivalent to Keezenspel's `/opt/keezen/application-override.yaml`)
+- Smoke-test the full path: nginx → Spring Boot → Angular app + API
+
+---
+
 ## MR 24 — Audio + attributions
 
 Packages: `server/`, `client/`

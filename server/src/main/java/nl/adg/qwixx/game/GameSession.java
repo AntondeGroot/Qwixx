@@ -81,7 +81,7 @@ public class GameSession {
         turn.setActivePlayerId(playerIds.get(0));
         turn.setPhase(TurnPhase.ROLL);
 
-        state = new GameState(settings.cardMode(), playerIds, factory.buildVariantData(), layouts, board, turn);
+        state = new GameState(settings.cardMode(), playerIds, factory.buildVariantData(playerIds), layouts, board, turn);
         rules = factory.buildTurnRules();
         status = SessionStatus.IN_PROGRESS;
     }

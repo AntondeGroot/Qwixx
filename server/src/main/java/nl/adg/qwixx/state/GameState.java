@@ -39,7 +39,8 @@ public class GameState {
     public boolean gameOver()                    { return gameOver; }
     public long version()                        { return version; }
 
-    public void setTurnState(TurnState turnState) { this.turnState = turnState; }
-    public void setGameOver(boolean gameOver)      { this.gameOver = gameOver; }
-    public void incrementVersion()                 { this.version++; }
+    public void setTurnState(TurnState turnState)   { this.turnState = turnState; }
+    public void setGameOver(boolean gameOver)       { this.gameOver = gameOver; }
+    public void setVariantData(VariantData vd)      { this.variantData = vd; }
+    public void incrementVersion()                  { this.version++; }
 }

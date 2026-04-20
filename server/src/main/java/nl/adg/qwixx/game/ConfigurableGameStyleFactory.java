@@ -5,9 +5,10 @@ import nl.adg.qwixx.data.Color;
 import nl.adg.qwixx.data.Die;
 import nl.adg.qwixx.data.LockCell;
 import nl.adg.qwixx.data.Row;
+import nl.adg.qwixx.rules.LongoTurnRules;
 import nl.adg.qwixx.rules.ScoringEngine;
-import nl.adg.qwixx.rules.StandardTurnRules;
 import nl.adg.qwixx.rules.StandardScoringEngine;
+import nl.adg.qwixx.rules.StandardTurnRules;
 import nl.adg.qwixx.rules.TurnRules;
 import nl.adg.qwixx.state.CardMode;
 
@@ -15,14 +16,21 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 
 public class ConfigurableGameStyleFactory implements GameStyleFactory {
 
     private final GameSettings settings;
+    private final Random       random;
 
     public ConfigurableGameStyleFactory(GameSettings settings) {
+        this(settings, new Random());
+    }
+
+    ConfigurableGameStyleFactory(GameSettings settings, Random random) {
         this.settings = settings;
+        this.random   = random;
     }
 
     @Override
@@ -61,7 +69,10 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
 
     @Override
     public TurnRules buildTurnRules() {
-        return new StandardTurnRules();
+        return switch (settings.base()) {
+            case STANDARD -> new StandardTurnRules();
+            case LONGO    -> new LongoTurnRules();
+        };
     }
 
     @Override
@@ -70,8 +81,23 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
     }
 
     @Override
-    public VariantData buildVariantData() {
-        return null;
+    public VariantData buildVariantData(List<UUID> playerIds) {
+        return switch (settings.base()) {
+            case STANDARD -> null;
+            case LONGO -> {
+                int[] pool = {5, 6, 7, 11, 12, 13};
+                Map<UUID, List<Integer>> perPlayer = new HashMap<>();
+                for (UUID id : playerIds) {
+                    int first, second;
+                    do {
+                        first  = pool[random.nextInt(pool.length)];
+                        second = pool[random.nextInt(pool.length)];
+                    } while ((first == 7 && second == 11) || (first == 11 && second == 7));
+                    perPlayer.put(id, List.of(first, second));
+                }
+                yield new LongoVariantData(perPlayer);
+            }
+        };
     }
 
     private int maxDisplayValue() {
@@ -97,21 +123,27 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
         return rows;
     }
 
+    private int lockMinCrosses() {
+        return switch (settings.base()) {
+            case STANDARD -> 5;
+            case LONGO    -> 6;
+        };
+    }
+
     // Builds a row with displayValues 2..maxDisplayValue (left to right)
     private Row buildAscendingRow(Color color) {
         int max = maxDisplayValue();
         Row row = new Row();
-        Cell lastCell = null;
+        List<Cell> cells = new ArrayList<>();
         for (int i = 0; i <= max - 2; i++) {
             Cell cell = new Cell(i);
             cell.setColor(color);
             cell.setDisplayValue(String.valueOf(i + 2));
             cell.setTags(List.of());
             row.addCell(cell);
-            lastCell = cell;
+            cells.add(cell);
         }
-        lastCell.setClosingEligible(true);
-        row.addLock(new LockCell(UUID.randomUUID().toString(), color, 5, List.of(lastCell.id())));
+        row.addLock(buildLock(color, cells));
         return row;
     }
 
@@ -119,17 +151,31 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
     private Row buildDescendingRow(Color color) {
         int max = maxDisplayValue();
         Row row = new Row();
-        Cell lastCell = null;
+        List<Cell> cells = new ArrayList<>();
         for (int i = 0; i <= max - 2; i++) {
             Cell cell = new Cell(i);
             cell.setColor(color);
             cell.setDisplayValue(String.valueOf(max - i));
             cell.setTags(List.of());
             row.addCell(cell);
-            lastCell = cell;
+            cells.add(cell);
         }
-        lastCell.setClosingEligible(true);
-        row.addLock(new LockCell(UUID.randomUUID().toString(), color, 5, List.of(lastCell.id())));
+        row.addLock(buildLock(color, cells));
         return row;
+    }
+
+    private LockCell buildLock(Color color, List<Cell> cells) {
+        int minCrosses = lockMinCrosses();
+        if (settings.base() == BaseVariant.LONGO) {
+            Cell second = cells.get(cells.size() - 2);
+            Cell last   = cells.get(cells.size() - 1);
+            second.setClosingEligible(true);
+            last.setClosingEligible(true);
+            return new LockCell(UUID.randomUUID().toString(), color, minCrosses,
+                    List.of(second.id(), last.id()));
+        }
+        Cell last = cells.get(cells.size() - 1);
+        last.setClosingEligible(true);
+        return new LockCell(UUID.randomUUID().toString(), color, minCrosses, List.of(last.id()));
     }
 }

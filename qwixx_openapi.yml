@@ -319,6 +319,10 @@ components:
         - CROSS_LOCK
         - TAKE_PUNISHMENT
         - PASS
+        - DECLARE_LOCK_INTENT
+        - RESET_TURN
+        - GIVE_UP
+        - UNDO_LAST_CROSS
 
     GameStatus:
       type: string

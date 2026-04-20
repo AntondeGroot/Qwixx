@@ -112,4 +112,45 @@ class MovesApiDelegateImplTest {
                                 """))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void declareLockIntentWithoutRowIdReturns400() throws Exception {
+        mvc.perform(post("/moves/{sid}/{pid}", sessionId, alice.id())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"moveType":"DECLARE_LOCK_INTENT"}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void giveUpInRollPhaseIsIllegal() throws Exception {
+        mvc.perform(post("/moves/{sid}/{pid}", sessionId, alice.id())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"moveType":"GIVE_UP"}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void resetTurnInRollPhaseIsNoOp() throws Exception {
+        mvc.perform(post("/moves/{sid}/{pid}", sessionId, alice.id())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"moveType":"RESET_TURN"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result").value("ACCEPTED"));
+    }
+
+    @Test
+    void undoLastCrossInRollPhaseIsIllegal() throws Exception {
+        mvc.perform(post("/moves/{sid}/{pid}", sessionId, alice.id())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"moveType":"UNDO_LAST_CROSS"}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
 }

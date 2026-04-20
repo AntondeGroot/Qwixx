@@ -15,5 +15,5 @@ public interface GameStyleFactory {
     List<Die> buildDice();
     TurnRules buildTurnRules();
     ScoringEngine buildScoringEngine();
-    VariantData buildVariantData();
+    VariantData buildVariantData(List<UUID> playerIds);
 }

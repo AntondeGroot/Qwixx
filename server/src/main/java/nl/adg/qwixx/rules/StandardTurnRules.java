@@ -166,7 +166,10 @@ public class StandardTurnRules implements TurnRules {
         turn.setLockAcknowledged(new HashSet<>());
 
         turn.setPhase(TurnPhase.ACTIVE_MOVE);
+        onAfterRoll(state, roll);
     }
+
+    protected void onAfterRoll(GameState state, RollResult roll) {}
 
     private void applyCrossCell(GameState state, CrossCellAction action) {
         TurnState turn = state.turnState();
@@ -400,7 +403,7 @@ public class StandardTurnRules implements TurnRules {
                 || String.valueOf(roll.white2() + colorValue).equals(display);
     }
 
-    private int rightmostCrossedPosition(Row row, RowState rowState) {
+    protected int rightmostCrossedPosition(Row row, RowState rowState) {
         if (rowState.crossedCells().isEmpty()) return -1;
         return row.cells().stream()
                 .filter(c -> rowState.crossedCells().contains(c.id()))
@@ -426,7 +429,7 @@ public class StandardTurnRules implements TurnRules {
         }
     }
 
-    private boolean canCrossLock(GameState state, UUID playerId, int rowIndex) {
+    protected boolean canCrossLock(GameState state, UUID playerId, int rowIndex) {
         SheetLayout layout  = state.sheetLayouts().get(playerId);
         SheetProgress prog  = state.boardState().sheetProgress().get(playerId);
         Row row             = layout.rows().get(rowIndex);
@@ -548,7 +551,7 @@ public class StandardTurnRules implements TurnRules {
         return new SheetProgress(copy, p.punishments());
     }
 
-    private RowState rowStateOf(SheetProgress progress, int rowIndex) {
+    protected RowState rowStateOf(SheetProgress progress, int rowIndex) {
         return progress.rowStates().getOrDefault(rowIndex, new RowState(new HashSet<>(), false));
     }
 

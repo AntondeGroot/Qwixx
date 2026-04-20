@@ -290,7 +290,7 @@ OfflineTurnRules  implements TurnRules   // wraps a base TurnRules; skips turn/d
 - `apply` accepts those same actions without a phase check. `TurnState` is kept as `null` throughout — `apply` never reads or writes it. `AutoCross` tags are still honored: when a cell with an `AutoCross` tag is crossed, all target cells are also crossed automatically (bypassing the progression check, exactly as in online mode).
 - `isGameOver` is identical to online mode: two or more rows closed, or any player at maximum punishments.
 
-Longo bonus number logic: when any die value matches a bonus number in `LongoVariantData.bonusNumbers`, an additional action becomes available — the player may either cross that number in any row, or cross the leftmost uncrossed cell in the row with the fewest crosses.
+Longo bonus number logic: each player is assigned two personal bonus numbers at game start — each drawn independently from {5, 6, 7, 11, 12, 13}; the pair {7, 11} (in either order) is forbidden and re-drawn. When `white1 + white2` equals one of a player's bonus numbers, an additional `CrossCellAction(WHITE_WHITE)` becomes available: the player may cross the leftmost uncrossed cell in the row with the fewest crosses. Using the bonus consumes the white+white slot; white+color is still available afterward.
 
 ### ScoringEngine
 ```
@@ -358,7 +358,7 @@ GameSettings { base: STANDARD, cardMode: DETERMINISTIC, gameMode: OFFLINE }
 VariantData (interface)           // opaque; each variant defines its own subtype
 
 LongoVariantData implements VariantData
-  List<Integer> bonusNumbers      // 2 bonus numbers for the longo base variant
+  Map<UUID, List<Integer>> bonusNumbersPerPlayer  // 2 bonus numbers per player; assigned at game start
 ```
 
 ### GameStyleFactory
@@ -371,7 +371,7 @@ GameStyleFactory (interface)
   List<Die>                buildDice()
   TurnRules                buildTurnRules()
   ScoringEngine            buildScoringEngine()
-  VariantData              buildVariantData()
+  VariantData              buildVariantData(List<UUID> playerIds)
 
 ConfigurableGameStyleFactory implements GameStyleFactory   // default implementation
 ```

@@ -1,6 +1,7 @@
 package nl.adg.qwixx.game;
 
 import nl.adg.qwixx.data.Cell;
+import nl.adg.qwixx.data.CellTag;
 import nl.adg.qwixx.data.Color;
 import nl.adg.qwixx.data.Die;
 import nl.adg.qwixx.data.LockCell;
@@ -42,20 +43,35 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
     @Override
     public Map<UUID, List<Row>> buildRows(List<UUID> players) {
         Map<UUID, List<Row>> result = new HashMap<>();
-        if (settings.cardMode() == CardMode.DETERMINISTIC) {
+        // extraRow is always per-player (each player gets an independently drawn bounce offset)
+        boolean perPlayer = settings.cardMode() == CardMode.PROBABILISTIC || settings.extraRow();
+        if (!perPlayer) {
             List<Row> shared = buildStandardRows();
             if (settings.randomOrder()) shuffleDisplayValues(shared);
-            for (UUID player : players) {
-                result.put(player, shared);
-            }
+            for (UUID player : players) result.put(player, shared);
         } else {
             for (UUID player : players) {
                 List<Row> playerRows = buildStandardRows();
                 if (settings.randomOrder()) shuffleDisplayValues(playerRows);
+                if (settings.extraRow()) applyExtraRow(playerRows);
                 result.put(player, playerRows);
             }
         }
         return result;
+    }
+
+    private static final int[] BOUNCE = {0, 1, 2, 3, 2, 1};
+
+    private void applyExtraRow(List<Row> rows) {
+        int startOffset = random.nextInt(BOUNCE.length);
+        int numCols = rows.get(0).cells().size();
+        for (int col = 0; col < numCols; col++) {
+            int rowIndex = BOUNCE[(startOffset + col) % BOUNCE.length];
+            Cell cell = rows.get(rowIndex).cells().get(col);
+            List<CellTag> tags = new ArrayList<>(cell.tags());
+            tags.add(new CellTag.ExtraBucket());
+            cell.setTags(tags);
+        }
     }
 
     private void shuffleDisplayValues(List<Row> rows) {

@@ -483,7 +483,7 @@ components:
       required:
         - players
         - sheetProgress
-        - turnState
+        - sheetLayouts
         - gameOver
         - version
       properties:
@@ -497,6 +497,11 @@ components:
           description: Map of playerId to SheetProgress.
           additionalProperties:
             $ref: '#/components/schemas/SheetProgress'
+        sheetLayouts:
+          type: object
+          description: Map of playerId to SheetLayout (static board structure).
+          additionalProperties:
+            $ref: '#/components/schemas/SheetLayout'
         closedRows:
           type: object
           description: Map of rowId to the playerId who closed it.
@@ -509,6 +514,7 @@ components:
           description: Colors of dice still in play (shrinks as rows are locked).
         turnState:
           $ref: '#/components/schemas/TurnState'
+          description: Absent in offline mode.
         gameOver:
           type: boolean
         version:
@@ -551,6 +557,96 @@ components:
         maxValue:
           type: integer
           description: Maximum value — only relevant for INTEGER type.
+
+    CellTag:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum: [EXTRA_BUCKET, AUTO_CROSS, BONUS_POINTS, DOUBLE_CROSS]
+        target:
+          type: string
+          description: Target cell ID — only present for AUTO_CROSS.
+        amount:
+          type: integer
+          description: Bonus point amount — only present for BONUS_POINTS.
+
+    SheetCell:
+      type: object
+      required:
+        - id
+        - position
+        - displayValue
+        - color
+        - closingEligible
+        - tags
+      properties:
+        id:
+          type: string
+        position:
+          type: integer
+          description: Ordinal index in the row; engine uses this for progression checks.
+        displayValue:
+          type: string
+          description: Value shown to the player (e.g. "7", "12").
+        color:
+          $ref: '#/components/schemas/Color'
+        closingEligible:
+          type: boolean
+          description: Whether this cell can satisfy the lock's required-cells condition.
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/CellTag'
+
+    LockConfig:
+      type: object
+      required:
+        - id
+        - color
+        - minCrosses
+        - requiredCells
+      properties:
+        id:
+          type: string
+        color:
+          $ref: '#/components/schemas/Color'
+        minCrosses:
+          type: integer
+          description: Minimum number of crossed cells required before the lock can be triggered.
+        requiredCells:
+          type: array
+          items:
+            type: string
+          description: Cell IDs that must all be crossed before the lock can be triggered.
+
+    SheetRow:
+      type: object
+      required:
+        - id
+        - cells
+        - lock
+      properties:
+        id:
+          type: string
+        cells:
+          type: array
+          items:
+            $ref: '#/components/schemas/SheetCell'
+        lock:
+          $ref: '#/components/schemas/LockConfig'
+
+    SheetLayout:
+      type: object
+      required:
+        - rows
+      properties:
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/SheetRow'
 
     ErrorResponse:
       type: object

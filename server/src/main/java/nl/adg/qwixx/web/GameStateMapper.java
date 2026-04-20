@@ -1,18 +1,24 @@
 package nl.adg.qwixx.web;
 
+import nl.adg.qwixx.data.Cell;
+import nl.adg.qwixx.data.CellTag;
+import nl.adg.qwixx.data.LockCell;
 import nl.adg.qwixx.data.RollResult;
+import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.game.GameSession;
 import nl.adg.qwixx.game.Player;
 import nl.adg.qwixx.state.ActiveTurnState;
 import nl.adg.qwixx.state.BoardState;
 import nl.adg.qwixx.state.GameState;
 import nl.adg.qwixx.state.RowState;
+import nl.adg.qwixx.state.SheetLayout;
 import nl.adg.qwixx.state.SheetProgress;
 import nl.adg.qwixx.state.TurnPhase;
 import nl.adg.qwixx.state.TurnState;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
@@ -39,9 +45,10 @@ class GameStateMapper {
                         })
                         .toList(),
                 mapSheetProgress(board),
-                mapTurnState(turn),
+                mapSheetLayouts(state),
                 state.gameOver(),
                 state.version())
+                .turnState(mapTurnState(turn))
                 .closedRows(mapClosedRows(board))
                 .activeDiceColors(mapActiveDiceColors(board));
     }
@@ -113,5 +120,63 @@ class GameStateMapper {
         Map<String, Integer> coloredDice = new HashMap<>();
         rr.coloredDice().forEach((color, value) -> coloredDice.put(color.name(), value));
         return new nl.adg.qwixx.generated.model.RollResult(rr.white1(), rr.white2(), coloredDice);
+    }
+
+    private static Map<String, nl.adg.qwixx.generated.model.SheetLayout> mapSheetLayouts(GameState state) {
+        Map<String, nl.adg.qwixx.generated.model.SheetLayout> result = new HashMap<>();
+        state.sheetLayouts().forEach((playerId, layout) ->
+                result.put(playerId.toString(), mapSheetLayout(layout)));
+        return result;
+    }
+
+    private static nl.adg.qwixx.generated.model.SheetLayout mapSheetLayout(SheetLayout layout) {
+        List<nl.adg.qwixx.generated.model.SheetRow> rows = layout.rows().stream()
+                .map(GameStateMapper::mapRow)
+                .toList();
+        return new nl.adg.qwixx.generated.model.SheetLayout(rows);
+    }
+
+    private static nl.adg.qwixx.generated.model.SheetRow mapRow(Row row) {
+        List<nl.adg.qwixx.generated.model.SheetCell> cells = row.cells().stream()
+                .map(GameStateMapper::mapCell)
+                .toList();
+        return new nl.adg.qwixx.generated.model.SheetRow(row.id(), cells, mapLock(row.lock()));
+    }
+
+    private static nl.adg.qwixx.generated.model.SheetCell mapCell(Cell cell) {
+        nl.adg.qwixx.generated.model.Color color =
+                nl.adg.qwixx.generated.model.Color.fromValue(cell.color().name());
+        List<nl.adg.qwixx.generated.model.CellTag> tags = cell.tags().stream()
+                .map(GameStateMapper::mapTag)
+                .toList();
+        return new nl.adg.qwixx.generated.model.SheetCell(
+                cell.id(), cell.position(), cell.displayValue(), color, cell.isClosingEligible(), tags);
+    }
+
+    private static nl.adg.qwixx.generated.model.LockConfig mapLock(LockCell lock) {
+        if (lock == null) return null;
+        nl.adg.qwixx.generated.model.Color color =
+                nl.adg.qwixx.generated.model.Color.fromValue(lock.color().name());
+        return new nl.adg.qwixx.generated.model.LockConfig(
+                lock.id(), color, lock.minCrosses(), new ArrayList<>(lock.requiredCells()));
+    }
+
+    private static nl.adg.qwixx.generated.model.CellTag mapTag(CellTag tag) {
+        return switch (tag) {
+            case CellTag.ExtraBucket ignored ->
+                    new nl.adg.qwixx.generated.model.CellTag(
+                            nl.adg.qwixx.generated.model.CellTag.TypeEnum.EXTRA_BUCKET);
+            case CellTag.DoubleCross ignored ->
+                    new nl.adg.qwixx.generated.model.CellTag(
+                            nl.adg.qwixx.generated.model.CellTag.TypeEnum.DOUBLE_CROSS);
+            case CellTag.AutoCross a ->
+                    new nl.adg.qwixx.generated.model.CellTag(
+                            nl.adg.qwixx.generated.model.CellTag.TypeEnum.AUTO_CROSS)
+                            .target(a.target());
+            case CellTag.BonusPoints b ->
+                    new nl.adg.qwixx.generated.model.CellTag(
+                            nl.adg.qwixx.generated.model.CellTag.TypeEnum.BONUS_POINTS)
+                            .amount(b.amount());
+        };
     }
 }

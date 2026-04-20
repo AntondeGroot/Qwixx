@@ -1,6 +1,7 @@
 package nl.adg.qwixx.web;
 
 import nl.adg.qwixx.game.GameAlreadyStartedException;
+import nl.adg.qwixx.game.GameNotFinishedException;
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSession;
 import nl.adg.qwixx.game.GameSettings;
@@ -14,11 +15,14 @@ import nl.adg.qwixx.generated.model.GameInfo;
 import nl.adg.qwixx.generated.model.GameStatus;
 import nl.adg.qwixx.generated.model.NewGameRequest;
 import nl.adg.qwixx.generated.model.NewPlayerRequest;
+import nl.adg.qwixx.generated.model.ScoreCard;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -97,6 +101,29 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
             throw new SessionNotFoundException(playerId);
         }
         return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<Map<String, ScoreCard>> getScores(String sessionId) {
+        GameSession session = require(sessionId);
+        if (session.status() != nl.adg.qwixx.game.SessionStatus.FINISHED)
+            throw new GameNotFinishedException(sessionId);
+
+        Map<String, ScoreCard> result = new HashMap<>();
+        for (Player p : session.players()) {
+            nl.adg.qwixx.rules.ScoreCard sc = session.getScore(p.id());
+            result.put(p.id().toString(), toDto(sc));
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    private static ScoreCard toDto(nl.adg.qwixx.rules.ScoreCard sc) {
+        Map<String, Integer> crosses = new HashMap<>();
+        sc.crossesPerColor().forEach((c, v) -> crosses.put(c.name(), v));
+        Map<String, Integer> points = new HashMap<>();
+        sc.pointsPerColor().forEach((c, v) -> points.put(c.name(), v));
+        return new ScoreCard(crosses, points, sc.extraCrosses(), sc.extraPoints(),
+                sc.bonusPoints(), sc.punishmentPoints(), sc.total());
     }
 
     private GameSession require(String sessionId) {

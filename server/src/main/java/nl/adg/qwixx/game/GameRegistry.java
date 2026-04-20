@@ -50,7 +50,7 @@ public class GameRegistry {
     }
 
     // visible for testing
-    static void clear() {
+    public static void clear() {
         SESSIONS.clear();
     }
 }

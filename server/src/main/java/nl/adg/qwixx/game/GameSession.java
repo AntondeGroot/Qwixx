@@ -45,6 +45,13 @@ public class GameSession {
         players.add(player);
     }
 
+    public void removePlayer(UUID playerId) {
+        if (status != SessionStatus.WAITING)
+            throw new IllegalStateException("cannot remove players after game has started");
+        boolean removed = players.removeIf(p -> p.id().equals(playerId));
+        if (!removed) throw new IllegalArgumentException("player not found: " + playerId);
+    }
+
     public synchronized void start() {
         if (status != SessionStatus.WAITING)
             throw new IllegalStateException("game already started");

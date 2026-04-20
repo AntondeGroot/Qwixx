@@ -1,0 +1,6 @@
+{
+  "/games": { "target": "http://localhost:4300", "secure": false, "changeOrigin": true },
+  "/moves": { "target": "http://localhost:4300", "secure": false, "changeOrigin": true },
+  "/gamestates": { "target": "http://localhost:4300", "secure": false, "changeOrigin": true },
+  "/game-options": { "target": "http://localhost:4300", "secure": false, "changeOrigin": true }
+}

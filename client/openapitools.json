@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/@openapitools/openapi-generator-cli/config.schema.json",
+  "spaces": 2,
+  "generator-cli": {
+    "version": "7.15.0",
+    "generators": {
+      "qwixx": {
+        "generatorName": "typescript-angular",
+        "inputSpec": "../qwixx_openapi.yml",
+        "output": "src/generated",
+        "additionalProperties": {
+          "ngVersion": "21",
+          "withInterfaces": true,
+          "fileNaming": "camelCase",
+          "supportsES6": true,
+          "enumPropertyNaming": "UPPERCASE"
+        }
+      }
+    }
+  }
+}

@@ -13,6 +13,7 @@ import nl.adg.qwixx.rules.TurnRules;
 import nl.adg.qwixx.state.CardMode;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,15 +44,29 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
         Map<UUID, List<Row>> result = new HashMap<>();
         if (settings.cardMode() == CardMode.DETERMINISTIC) {
             List<Row> shared = buildStandardRows();
+            if (settings.randomOrder()) shuffleDisplayValues(shared);
             for (UUID player : players) {
                 result.put(player, shared);
             }
         } else {
             for (UUID player : players) {
-                result.put(player, buildStandardRows());
+                List<Row> playerRows = buildStandardRows();
+                if (settings.randomOrder()) shuffleDisplayValues(playerRows);
+                result.put(player, playerRows);
             }
         }
         return result;
+    }
+
+    private void shuffleDisplayValues(List<Row> rows) {
+        for (Row row : rows) {
+            List<String> values = new ArrayList<>(row.cells().stream().map(Cell::displayValue).toList());
+            Collections.shuffle(values, random);
+            List<Cell> cells = row.cells();
+            for (int i = 0; i < cells.size(); i++) {
+                cells.get(i).setDisplayValue(values.get(i));
+            }
+        }
     }
 
     @Override

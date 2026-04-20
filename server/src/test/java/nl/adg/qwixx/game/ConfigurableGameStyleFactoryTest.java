@@ -7,8 +7,11 @@ import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.state.CardMode;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -162,6 +165,46 @@ class ConfigurableGameStyleFactoryTest {
         UUID p1 = UUID.randomUUID();
         UUID p2 = UUID.randomUUID();
         Map<UUID, List<Row>> result = factory(CardMode.PROBABILISTIC).buildRows(List.of(p1, p2));
+        assertNotSame(result.get(p1), result.get(p2));
+    }
+
+    // --- random order ---
+
+    @Test
+    void randomOrderPreservesAllValues() {
+        ConfigurableGameStyleFactory f = new ConfigurableGameStyleFactory(
+            GameSettings.builder().randomOrder(true).build(), new Random(1));
+        List<Row> rows = rows(f);
+        Set<String> expected = Set.of("2","3","4","5","6","7","8","9","10","11","12");
+        for (Row row : rows) {
+            assertEquals(expected, new HashSet<>(row.cells().stream().map(Cell::displayValue).toList()));
+        }
+    }
+
+    @Test
+    void randomOrderChangesDisplayValueOrder() {
+        ConfigurableGameStyleFactory f = new ConfigurableGameStyleFactory(
+            GameSettings.builder().randomOrder(true).build(), new Random(1));
+        List<Row> rows = rows(f);
+        assertNotEquals(List.of("2","3","4","5","6","7","8","9","10","11","12"),
+            rows.get(0).cells().stream().map(Cell::displayValue).toList());
+    }
+
+    @Test
+    void randomOrderDeterministicAllPlayersShareSameLayout() {
+        UUID p1 = UUID.randomUUID(), p2 = UUID.randomUUID();
+        ConfigurableGameStyleFactory f = new ConfigurableGameStyleFactory(
+            GameSettings.builder().randomOrder(true).cardMode(CardMode.DETERMINISTIC).build(), new Random(1));
+        Map<UUID, List<Row>> result = f.buildRows(List.of(p1, p2));
+        assertSame(result.get(p1), result.get(p2));
+    }
+
+    @Test
+    void randomOrderProbabilisticPlayersGetIndependentInstances() {
+        UUID p1 = UUID.randomUUID(), p2 = UUID.randomUUID();
+        ConfigurableGameStyleFactory f = new ConfigurableGameStyleFactory(
+            GameSettings.builder().randomOrder(true).cardMode(CardMode.PROBABILISTIC).build(), new Random(1));
+        Map<UUID, List<Row>> result = f.buildRows(List.of(p1, p2));
         assertNotSame(result.get(p1), result.get(p2));
     }
 

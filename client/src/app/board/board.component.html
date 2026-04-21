@@ -5,14 +5,21 @@
     <section [class.current-player]="player.id === playerId()">
       <h2>{{ playerName(player.id) }}</h2>
       @if (layoutFor(player.id); as layout) {
-        @for (row of layout.rows; track row.id) {
-          <app-row
-            [row]="row"
-            [rowState]="rowStateFor(player.id, row.id)"
-            [closed]="isRowClosed(row.id)" />
-        }
+        <div class="sheet">
+          @for (row of layout.rows; track row.id) {
+            <app-row
+              [row]="row"
+              [rowState]="rowStateFor(player.id, row.id)"
+              [closed]="isRowClosed(row.id)" />
+          }
+          <div class="punishment-track">
+            <span class="punishment-label">Punishments</span>
+            @for (i of [0, 1, 2, 3]; track i) {
+              <div class="punishment-box" [class.taken]="(state.sheetProgress[player.id]?.punishments ?? 0) > i"></div>
+            }
+          </div>
+        </div>
       }
-      <p>Punishments: {{ state.sheetProgress[player.id]?.punishments ?? 0 }}</p>
     </section>
   }
   @if (state.gameOver) {

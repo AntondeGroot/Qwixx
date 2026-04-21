@@ -9,7 +9,8 @@ import { RowComponent } from '../row/row.component';
 @Component({
   selector: 'app-board',
   imports: [RouterLink, RowComponent],
-  templateUrl: './board.component.html'
+  templateUrl: './board.component.html',
+  styleUrl: './board.component.css'
 })
 export class BoardComponent implements OnInit {
   private route            = inject(ActivatedRoute);

@@ -1,10 +1,15 @@
 <div class="row" [class.closed]="closed()" [attr.data-color]="row().cells[0]?.color">
-  @for (cell of row().cells; track cell.id) {
+  @for (cell of regularCells(); track cell.id) {
     <app-cell [cell]="cell" [crossed]="isCrossed(cell.id)" />
   }
-  <div class="lock-cell"
-       [class.lock-crossed]="rowState()?.lockCrossed"
-       [class.lock-closed]="closed()">
-    <img src="lock_icon.svg" alt="lock" class="lock-icon" />
+  <div class="lock-zone" [class.lock-zone-crossed]="rowState()?.lockCrossed">
+    @for (cell of closingEligibleCells(); track cell.id) {
+      <app-cell [cell]="cell" [crossed]="isCrossed(cell.id)" />
+    }
+    <div class="lock-cell"
+         [class.lock-crossed]="rowState()?.lockCrossed"
+         [class.lock-closed]="closed()">
+      <img src="lock_icon.svg" alt="lock" class="lock-icon" />
+    </div>
   </div>
 </div>

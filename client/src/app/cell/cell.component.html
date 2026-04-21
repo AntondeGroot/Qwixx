@@ -2,7 +2,9 @@
      [class.crossed]="crossed()"
      [class.closing-eligible]="cell().closingEligible"
      [class.extra-bucket]="hasTag()(TagEnum.EXTRA_BUCKET)"
-     [attr.data-color]="cell().color">
+     [class.clickable]="clickable()"
+     [attr.data-color]="cell().color"
+     (click)="clickable() && clicked.emit()">
   <span class="cell-value">{{ cell().displayValue }}</span>
   @if (crossed()) {
     <span class="cell-cross">✕</span>

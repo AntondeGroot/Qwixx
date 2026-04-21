@@ -23,13 +23,9 @@
   }
 
   @if (previewLayout(); as layout) {
-    <div>
+    <div class="board-preview">
       @for (row of layout.rows; track row.id) {
-        <div>
-          @for (cell of row.cells; track cell.id) {
-            <span>{{ cell.displayValue }}</span>
-          }
-        </div>
+        <app-row [row]="row" />
       }
     </div>
   }

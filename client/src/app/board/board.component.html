@@ -1,3 +1,23 @@
-<p>Session: {{ sessionId() }}</p>
-<p>Player: {{ playerId() }}</p>
-<a routerLink="/settings">Back to settings</a>
+@if (error()) {
+  <p>{{ error() }}</p>
+} @else if (gameState(); as state) {
+  @for (player of state.players; track player.id) {
+    <section [class.current-player]="player.id === playerId()">
+      <h2>{{ playerName(player.id) }}</h2>
+      @if (layoutFor(player.id); as layout) {
+        @for (row of layout.rows; track row.id) {
+          <app-row
+            [row]="row"
+            [rowState]="rowStateFor(player.id, row.id)"
+            [closed]="isRowClosed(row.id)" />
+        }
+      }
+      <p>Punishments: {{ state.sheetProgress[player.id]?.punishments ?? 0 }}</p>
+    </section>
+  }
+  @if (state.gameOver) {
+    <a routerLink="/settings">Back to settings</a>
+  }
+} @else {
+  <p>Loading…</p>
+}

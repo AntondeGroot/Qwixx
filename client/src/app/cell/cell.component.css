@@ -1,0 +1,43 @@
+.cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  user-select: none;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.cell[data-color="RED"]    { background: #d32f2f; color: white; }
+.cell[data-color="YELLOW"] { background: #f9a825; color: #333; }
+.cell[data-color="GREEN"]  { background: #388e3c; color: white; }
+.cell[data-color="BLUE"]   { background: #1565c0; color: white; }
+
+.cell-value {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  transition: opacity 0.15s;
+}
+
+.cell.crossed .cell-value {
+  opacity: 0.25;
+}
+
+.cell-cross {
+  position: absolute;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+}
+
+
+.cell.extra-bucket {
+  border-color: #000;
+  border-width: 5px;
+}

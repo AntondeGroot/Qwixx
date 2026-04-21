@@ -1,6 +1,7 @@
 <div class="cell"
      [class.crossed]="crossed()"
      [class.closing-eligible]="cell().closingEligible"
+     [class.extra-bucket]="hasTag()(TagEnum.EXTRA_BUCKET)"
      [attr.data-color]="cell().color">
   <span class="cell-value">{{ cell().displayValue }}</span>
   @if (crossed()) {

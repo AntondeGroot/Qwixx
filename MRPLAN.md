@@ -236,7 +236,7 @@ All visual polish in one place; components from MR 18 already exist and carry th
 - Color palette, typography, global reset (`styles.css`)
 - Row colors (red/yellow/green/blue), cell shape, crossed-cell mark, closing-eligible highlight
 - Lock cell appearance with lock icon SVG, closed-row overlay
-- Dice display, punishment track, turn indicator
+- Punishment track: 4 bordered boxes, crossed left-to-right per punishment taken, right-aligned under each sheet
 - Responsive layout for 2–6 player scoreboards
 - No interaction logic in this MR — pure HTML/CSS
 
@@ -249,6 +249,7 @@ Package: `client/`
 - Active player: roll button → dice display → tap cell to cross
 - Passive player: tap matching white+white cell or pass
 - Poll or version-check `/gamestates` for reactive updates
+- Dice display styling, turn indicator styling
 
 ---
 

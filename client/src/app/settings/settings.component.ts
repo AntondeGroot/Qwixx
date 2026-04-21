@@ -11,7 +11,8 @@ import { RowComponent } from '../row/row.component';
 @Component({
   selector: 'app-settings',
   imports: [ReactiveFormsModule, RowComponent],
-  templateUrl: './settings.component.html'
+  templateUrl: './settings.component.html',
+  styleUrl: './settings.component.css'
 })
 export class SettingsComponent implements OnInit, OnDestroy {
   private gamesService   = inject(GamesService);

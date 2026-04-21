@@ -152,7 +152,6 @@ export class BoardComponent implements OnInit, OnDestroy {
         if (crossed.has(cell.id)) continue;
         if (cell.position <= lastPos) continue;
         if (parseInt(cell.displayValue) !== targetValue) continue;
-        if (cell.closingEligible && crossed.size < (row.lock?.minCrosses ?? 5)) continue;
         result.add(cell.id);
       }
     }

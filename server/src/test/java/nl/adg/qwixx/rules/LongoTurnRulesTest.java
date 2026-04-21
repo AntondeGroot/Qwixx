@@ -317,13 +317,42 @@ class LongoTurnRulesTest {
         return new SheetProgress(new HashMap<>(), 0);
     }
 
+    // --- closing-eligible cell reachability ---
+
+    @Test
+    void closingEligibleCellIsReachableAsNormalCrossBeforeLockConditionsMet() {
+        // Regression: white1=1, white2=3, blue=2 → white1+blue=3 must appear in valid actions
+        // even though value "3" is the second-to-last cell in the descending blue row
+        // (closingEligible=true) and the player has 0 crosses (well below minCrosses=6).
+        LongoTurnRules specific = new LongoTurnRules(rollSequence(0, 2, 0, 0, 0, 1)); // white1=1, white2=3, blue=2
+        GameState state = stateInRoll(p1, p1, p2);
+        specific.apply(state, new RollAction(p1));
+
+        assertEquals(1, state.turnState().currentRoll().white1());
+        assertEquals(3, state.turnState().currentRoll().white2());
+        assertEquals(2, state.turnState().currentRoll().coloredDice().get(Color.BLUE));
+
+        Row blueRow = state.sheetLayouts().get(p1).rows().get(3); // blue descending row
+        Cell cell3 = blueRow.cells().stream()
+                .filter(c -> "3".equals(c.displayValue()))
+                .findFirst().orElseThrow();
+
+        assertTrue(cell3.isClosingEligible(), "value-3 cell should be closingEligible in Longo");
+
+        boolean reachable = specific.getValidActions(state, p1).stream()
+                .anyMatch(a -> a instanceof CrossCellAction cc && cc.cellId().equals(cell3.id()));
+        assertTrue(reachable,
+                "closingEligible cell (value 3) must be reachable via white1+blue before lock pre-conditions are met");
+    }
+
     private Random fixedRandom() {
+        return rollSequence(2, 3, 1, 2, 3, 4); // → white1=3, white2=4, ..., blue=5
+    }
+
+    private Random rollSequence(int... seq) {
         return new Random() {
-            private final int[] seq = { 2, 3, 1, 2, 3, 4 }; // → 3,4,2,3,4,5
             private int pos = 0;
-            @Override public int nextInt(int bound) {
-                return seq[pos++ % seq.length];
-            }
+            @Override public int nextInt(int bound) { return seq[pos++ % seq.length]; }
         };
     }
 }

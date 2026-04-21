@@ -1,0 +1,9 @@
+<div class="cell"
+     [class.crossed]="crossed()"
+     [class.closing-eligible]="cell().closingEligible"
+     [attr.data-color]="cell().color">
+  <span class="cell-value">{{ cell().displayValue }}</span>
+  @if (crossed()) {
+    <span class="cell-cross">✕</span>
+  }
+</div>

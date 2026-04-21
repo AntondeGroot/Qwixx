@@ -6,10 +6,11 @@ import { GamesService } from '../../generated/api/games.service';
 import { PlayersService } from '../../generated/api/players.service';
 import { GameOption } from '../../generated/model/gameOption';
 import { SheetLayout } from '../../generated/model/sheetLayout';
+import { RowComponent } from '../row/row.component';
 
 @Component({
   selector: 'app-settings',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RowComponent],
   templateUrl: './settings.component.html'
 })
 export class SettingsComponent implements OnInit, OnDestroy {

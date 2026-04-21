@@ -129,6 +129,10 @@ class GameStateMapper {
         return result;
     }
 
+    static nl.adg.qwixx.generated.model.SheetLayout toSheetLayoutDto(SheetLayout layout) {
+        return mapSheetLayout(layout);
+    }
+
     private static nl.adg.qwixx.generated.model.SheetLayout mapSheetLayout(SheetLayout layout) {
         List<nl.adg.qwixx.generated.model.SheetRow> rows = layout.rows().stream()
                 .map(GameStateMapper::mapRow)

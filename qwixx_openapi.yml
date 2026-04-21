@@ -277,6 +277,32 @@ paths:
                 items:
                   $ref: '#/components/schemas/GameOption'
 
+  /game-options/preview:
+    post:
+      summary: Preview sheet layout for given settings
+      description: >
+        Stateless endpoint that builds and returns a sample SheetLayout for the
+        given game settings without creating a game session. Intended for the
+        settings page to show a board preview when the user changes variant options.
+      operationId: previewLayout
+      tags:
+        - games
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: {}
+              description: Game option key-value map (same keys as NewGameRequest.gameOptions).
+      responses:
+        '200':
+          description: Sample SheetLayout for the given settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SheetLayout'
+
 components:
   parameters:
     sessionId:

@@ -22,6 +22,18 @@
     </div>
   }
 
+  @if (previewLayout(); as layout) {
+    <div>
+      @for (row of layout.rows; track row.id) {
+        <div>
+          @for (cell of row.cells; track cell.id) {
+            <span>{{ cell.displayValue }}</span>
+          }
+        </div>
+      }
+    </div>
+  }
+
   @if (error()) {
     <p>{{ error() }}</p>
   }

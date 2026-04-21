@@ -1,24 +1,28 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { GamesService } from '../../generated/api/games.service';
 import { PlayersService } from '../../generated/api/players.service';
 import { GameOption } from '../../generated/model/gameOption';
+import { SheetLayout } from '../../generated/model/sheetLayout';
 
 @Component({
   selector: 'app-settings',
   imports: [ReactiveFormsModule],
   templateUrl: './settings.component.html'
 })
-export class SettingsComponent implements OnInit {
+export class SettingsComponent implements OnInit, OnDestroy {
   private gamesService   = inject(GamesService);
   private playersService = inject(PlayersService);
   private router         = inject(Router);
   private fb             = inject(FormBuilder);
+  private previewSub?: Subscription;
 
-  gameOptions = signal<GameOption[]>([]);
-  error       = signal<string | null>(null);
-  loading     = signal(false);
+  gameOptions   = signal<GameOption[]>([]);
+  previewLayout = signal<SheetLayout | null>(null);
+  error         = signal<string | null>(null);
+  loading       = signal(false);
 
   form!: FormGroup;
 
@@ -38,6 +42,26 @@ export class SettingsComponent implements OnInit {
         ));
       }
       this.gameOptions.set(opts);
+      this.fetchPreview();
+
+      this.form.valueChanges.subscribe(() => this.fetchPreview());
+    });
+  }
+
+  ngOnDestroy() {
+    this.previewSub?.unsubscribe();
+  }
+
+  private fetchPreview() {
+    this.previewSub?.unsubscribe();
+    const { playerName, ...optionValues } = this.form.value;
+    const gameOptions: Record<string, unknown> = {};
+    for (const opt of this.gameOptions()) {
+      gameOptions[opt.key] = optionValues[opt.key];
+    }
+    this.previewSub = this.gamesService.previewLayout(gameOptions).subscribe({
+      next: layout => this.previewLayout.set(layout),
+      error: () => this.previewLayout.set(null)
     });
   }
 

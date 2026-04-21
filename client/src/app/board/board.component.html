@@ -1,6 +1,46 @@
 @if (error()) {
-  <p>{{ error() }}</p>
+  <p class="error">{{ error() }}</p>
 } @else if (gameState(); as state) {
+
+  @if (state.turnState; as turn) {
+    <div class="turn-bar" [class.my-turn]="isMyTurn() || isInPassiveQueue()">
+      <span class="turn-label">
+        {{ isMyTurn() ? 'Your turn' : playerName(turn.activePlayerId) + '\'s turn' }}
+        — {{ turn.phase }}
+      </span>
+
+      @if (turn.currentRoll; as roll) {
+        <div class="dice-area">
+          <app-dice [value]="roll.white1" color="WHITE" [faces]="gameFaces()" [rolling]="rollingDice()" />
+          <app-dice [value]="roll.white2" color="WHITE" [faces]="gameFaces()" [rolling]="rollingDice()" />
+          @for (entry of coloredDiceEntries(); track entry.color) {
+            <app-dice [value]="entry.value" [color]="entry.color" [faces]="gameFaces()" [rolling]="rollingDice()" />
+          }
+        </div>
+      } @else if (canRoll()) {
+        <div class="dice-area">
+          <app-dice [value]="null" color="WHITE" [faces]="gameFaces()" [rolling]="rollingDice()" />
+          <app-dice [value]="null" color="WHITE" [faces]="gameFaces()" [rolling]="rollingDice()" />
+          @for (entry of coloredDiceEntries(); track entry.color) {
+            <app-dice [value]="null" [color]="entry.color" [faces]="gameFaces()" [rolling]="rollingDice()" />
+          }
+        </div>
+      }
+
+      <div class="action-bar">
+        @if (canRoll()) {
+          <button class="btn-roll" (click)="sendRoll()" [disabled]="rollingDice()">Roll</button>
+        }
+        @if (canPassActive()) {
+          <button class="btn-pass" (click)="passActive()">End Turn</button>
+        }
+        @if (canPassPassive()) {
+          <button class="btn-pass" (click)="passPassive()">Pass</button>
+        }
+      </div>
+    </div>
+  }
+
   @for (player of state.players; track player.id) {
     <section [class.current-player]="player.id === playerId()">
       <h2>{{ playerName(player.id) }}</h2>
@@ -10,21 +50,26 @@
             <app-row
               [row]="row"
               [rowState]="rowStateFor(player.id, row.id)"
-              [closed]="isRowClosed(row.id)" />
+              [closed]="isRowClosed(row.id)"
+              [clickableCellIds]="player.id === playerId() ? clickableCellIds() : emptySet"
+              (cellClicked)="onCellClicked(row.id, $event)" />
           }
           <div class="punishment-track">
             <span class="punishment-label">Punishments</span>
             @for (i of [0, 1, 2, 3]; track i) {
-              <div class="punishment-box" [class.taken]="(state.sheetProgress[player.id]?.punishments ?? 0) > i"></div>
+              <div class="punishment-box"
+                   [class.taken]="(state.sheetProgress[player.id]?.punishments ?? 0) > i"></div>
             }
           </div>
         </div>
       }
     </section>
   }
+
   @if (state.gameOver) {
     <a routerLink="/settings">Back to settings</a>
   }
+
 } @else {
   <p>Loading…</p>
 }

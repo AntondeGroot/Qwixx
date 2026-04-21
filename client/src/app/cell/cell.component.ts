@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { SheetCell } from '../../generated/model/sheetCell';
 import { CellTag } from '../../generated/model/cellTag';
 
@@ -8,8 +8,11 @@ import { CellTag } from '../../generated/model/cellTag';
   styleUrl: './cell.component.css'
 })
 export class CellComponent {
-  cell    = input.required<SheetCell>();
-  crossed = input(false);
+  cell      = input.required<SheetCell>();
+  crossed   = input(false);
+  clickable = input(false);
+
+  clicked = output<void>();
 
   hasTag = computed(() => (type: CellTag.TypeEnum) =>
     this.cell().tags.some(t => t.type === type)

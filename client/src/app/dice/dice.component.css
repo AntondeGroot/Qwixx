@@ -1,0 +1,29 @@
+.dice {
+  width: 64px;
+  height: 64px;
+  background-repeat: no-repeat;
+  background-size: auto 64px;
+  flex-shrink: 0;
+}
+
+/* d6: 2048×256 → 512px wide at 64px height, 8 frames */
+@keyframes roll-d6 {
+  from { background-position: 0 0; }
+  to   { background-position: -512px 0; }
+}
+
+/* d8: 1792×256 → 448px wide at 64px height, 7 frames */
+@keyframes roll-d8 {
+  from { background-position: 0 0; }
+  to   { background-position: -448px 0; }
+}
+
+.dice.rolling-d6 {
+  animation: roll-d6 steps(8, end) 0.7s infinite;
+  filter: blur(1px);
+}
+
+.dice.rolling-d8 {
+  animation: roll-d8 steps(7, end) 0.7s infinite;
+  filter: blur(1px);
+}

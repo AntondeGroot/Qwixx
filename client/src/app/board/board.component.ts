@@ -40,6 +40,8 @@ export class BoardComponent implements OnInit, OnDestroy {
   readonly emptySet  = new Set<string>();
   readonly TurnPhase = TurnPhase;
 
+  isOffline = computed(() => this.gameState() !== null && this.gameState()!.turnState == null);
+
   ngOnInit() {
     const sid = this.route.snapshot.paramMap.get('sessionId') ?? '';
     const pid = this.route.snapshot.paramMap.get('playerId') ?? '';
@@ -171,10 +173,16 @@ export class BoardComponent implements OnInit, OnDestroy {
   }
 
   passPassive() {
-    this.sendMove({ moveType: MoveType.TAKE_PUNISHMENT });
+    this.sendMoveAs(this.playerId(), { moveType: MoveType.TAKE_PUNISHMENT });
   }
 
-  onCellClicked(rowId: string, cellId: string) {
+  onCellClicked(rowId: string, cellId: string, ownerPid?: string) {
+    if (this.isOffline()) {
+      const pid = ownerPid ?? this.playerId();
+      this.sendMoveAs(pid, { moveType: MoveType.CROSS_WHITE_WHITE, rowId, cellId });
+      return;
+    }
+
     const state = this.gameState();
     const pid   = this.playerId();
     const turn  = this.turnState();
@@ -197,6 +205,66 @@ export class BoardComponent implements OnInit, OnDestroy {
 
     const moveType = (isColor && !isWW) ? MoveType.CROSS_COLOR_DIE : MoveType.CROSS_WHITE_WHITE;
     this.sendMove({ moveType, rowId, cellId });
+  }
+
+  canTakePunishment(pid: string): boolean {
+    const punishments = this.gameState()?.sheetProgress[pid]?.punishments ?? 0;
+    if (punishments >= 4) return false;
+    if (this.isOffline()) return true;
+    return this.canPassPassive() && pid === this.playerId();
+  }
+
+  onPunishmentClicked(pid: string) {
+    if (!this.canTakePunishment(pid)) return;
+    this.sendMoveAs(pid, { moveType: MoveType.TAKE_PUNISHMENT });
+  }
+
+  offlineLock(pid: string, rowId: string) {
+    this.sendMoveAs(pid, { moveType: MoveType.CROSS_LOCK, rowId });
+  }
+
+  offlineClickableCellIds(pid: string): Set<string> {
+    const state = this.gameState();
+    if (!state) return this.emptySet;
+    const layout   = state.sheetLayouts[pid];
+    const progress = state.sheetProgress[pid];
+    const closed   = state.closedRows ?? {};
+    if (!layout) return this.emptySet;
+
+    const result = new Set<string>();
+    for (const row of layout.rows) {
+      if (closed[row.id]) continue;
+      const crossed  = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
+      const lastPos  = Math.max(-1, ...row.cells.filter(c => crossed.has(c.id)).map(c => c.position));
+      for (const cell of row.cells) {
+        if (!crossed.has(cell.id) && cell.position > lastPos) result.add(cell.id);
+      }
+    }
+    return result;
+  }
+
+  isLockEligible(pid: string, rowId: string): boolean {
+    const state = this.gameState();
+    if (!state) return false;
+    const layout   = state.sheetLayouts[pid];
+    const progress = state.sheetProgress[pid];
+    if (!layout) return false;
+    const row = layout.rows.find(r => r.id === rowId);
+    if (!row?.lock) return false;
+    const rowState = progress?.rowStates[rowId];
+    if (rowState?.lockCrossed) return false;
+    const crossed = new Set(rowState?.crossedCells ?? []);
+    return crossed.size >= row.lock.minCrosses &&
+           row.lock.requiredCells.every(id => crossed.has(id));
+  }
+
+  private sendMoveAs(pid: string, req: MoveRequest) {
+    this.moveSub?.unsubscribe();
+    this.moveSub = this.movesService.makeMove(this.sessionId(), pid, req)
+      .subscribe({
+        next: () => this.fetchState(),
+        error: e => console.error('Move rejected:', e)
+      });
   }
 
   private sendMove(req: MoveRequest) {

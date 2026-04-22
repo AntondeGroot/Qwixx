@@ -16,7 +16,10 @@ export class RowComponent {
   closed           = input(false);
   clickableCellIds = input<Set<string>>(new Set());
 
+  lockClickable = input(false);
+
   cellClicked = output<string>();
+  lockClicked  = output<void>();
 
   regularCells         = computed(() => this.row().cells.filter(c => !c.closingEligible));
   closingEligibleCells = computed(() => this.row().cells.filter(c => c.closingEligible));

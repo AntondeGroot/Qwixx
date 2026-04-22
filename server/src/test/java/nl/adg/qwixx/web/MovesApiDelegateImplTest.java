@@ -1,5 +1,6 @@
 package nl.adg.qwixx.web;
 
+import nl.adg.qwixx.game.GameMode;
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSettings;
 import nl.adg.qwixx.game.Player;
@@ -162,5 +163,77 @@ class MovesApiDelegateImplTest {
                                 {"moveType":"UNDO_LAST_CROSS"}
                                 """))
                 .andExpect(status().isBadRequest());
+    }
+
+    // ── Offline mode ──────────────────────────────────────────────────────────
+
+    @Test
+    void offlineTakePunishmentIsAccepted() throws Exception {
+        String sid = offlineSession();
+        Player bob = offlinePlayer(sid);
+
+        mvc.perform(post("/moves/{sid}/{pid}", sid, bob.id())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"moveType":"TAKE_PUNISHMENT"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result").value("ACCEPTED"));
+    }
+
+    @Test
+    void offlineCrossWhiteWhiteIsAccepted() throws Exception {
+        String sid = offlineSession();
+        Player bob = offlinePlayer(sid);
+        nl.adg.qwixx.state.SheetLayout layout =
+                GameRegistry.getGame(sid).currentState().sheetLayouts().get(bob.id());
+        nl.adg.qwixx.data.Row row   = layout.rows().get(0);
+        nl.adg.qwixx.data.Cell cell = row.cells().get(0);
+
+        mvc.perform(post("/moves/{sid}/{pid}", sid, bob.id())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"moveType":"CROSS_WHITE_WHITE","rowId":"%s","cellId":"%s"}
+                                """.formatted(row.id(), cell.id())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result").value("ACCEPTED"));
+    }
+
+    @Test
+    void offlineRollIsRejected() throws Exception {
+        String sid = offlineSession();
+        Player bob = offlinePlayer(sid);
+
+        mvc.perform(post("/moves/{sid}/{pid}", sid, bob.id())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"moveType":"ROLL"}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void offlineCrossLockWithoutRowIdReturns400() throws Exception {
+        String sid = offlineSession();
+        Player bob = offlinePlayer(sid);
+
+        mvc.perform(post("/moves/{sid}/{pid}", sid, bob.id())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"moveType":"CROSS_LOCK"}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    private String offlineSession() {
+        return GameRegistry.createGame("offline", 4,
+                GameSettings.builder().gameMode(GameMode.OFFLINE).build());
+    }
+
+    private Player offlinePlayer(String sid) {
+        Player p = Player.of("Bob");
+        GameRegistry.getGame(sid).addPlayer(p);
+        GameRegistry.getGame(sid).start();
+        return p;
     }
 }

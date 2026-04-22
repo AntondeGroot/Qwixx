@@ -12,6 +12,10 @@
   margin: 0 auto;
 }
 
+.board-layout.offline-layout {
+  grid-template-columns: 1fr;
+}
+
 .player-list-panel {
   background: white;
   border-radius: 12px;
@@ -90,6 +94,7 @@
   cursor: pointer;
 }
 
+
 .error {
   color: #c62828;
   padding: 12px;
@@ -145,6 +150,16 @@ h2 {
   border: 3px solid #555;
   border-radius: 3px;
   flex-shrink: 0;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.punishment-box.clickable {
+  cursor: pointer;
+}
+
+.punishment-box.clickable:hover {
+  transform: scale(1.25) translateY(-3px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
 }
 
 .punishment-box.taken::before,

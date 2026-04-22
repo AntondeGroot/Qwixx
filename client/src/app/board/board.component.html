@@ -2,18 +2,20 @@
   <p class="error">{{ error() }}</p>
 } @else if (gameState(); as state) {
 
-  <div class="board-layout">
+  <div class="board-layout" [class.offline-layout]="isOffline()">
 
-    <!-- Left column: other players -->
-    <div class="player-list-panel">
-      <app-player-list
-        [players]="state.players"
-        [myPlayerId]="playerId()"
-        [activePlayerId]="state.turnState?.activePlayerId ?? null"
-        [sheetLayouts]="state.sheetLayouts"
-        [sheetProgress]="state.sheetProgress"
-        [closedRows]="state.closedRows ?? {}" />
-    </div>
+    <!-- Left column: other players (online only) -->
+    @if (!isOffline()) {
+      <div class="player-list-panel">
+        <app-player-list
+          [players]="state.players"
+          [myPlayerId]="playerId()"
+          [activePlayerId]="state.turnState?.activePlayerId ?? null"
+          [sheetLayouts]="state.sheetLayouts"
+          [sheetProgress]="state.sheetProgress"
+          [closedRows]="state.closedRows ?? {}" />
+      </div>
+    }
 
     <!-- Right column: turn bar + all player sheets -->
     <div class="right-column">
@@ -50,15 +52,12 @@
             @if (canPassActive()) {
               <button class="btn-pass" (click)="passActive()">End Turn</button>
             }
-            @if (canPassPassive()) {
-              <button class="btn-pass" (click)="passPassive()">Pass</button>
-            }
           </div>
         </div>
       }
 
       @for (player of state.players; track player.id) {
-        <section [class.current-player]="player.id === playerId()">
+        <section [class.current-player]="!isOffline() && player.id === playerId()">
           <h2>{{ playerName(player.id) }}</h2>
           @if (layoutFor(player.id); as layout) {
             <div class="sheet">
@@ -67,14 +66,18 @@
                   [row]="row"
                   [rowState]="rowStateFor(player.id, row.id)"
                   [closed]="isRowClosed(row.id)"
-                  [clickableCellIds]="player.id === playerId() ? clickableCellIds() : emptySet"
-                  (cellClicked)="onCellClicked(row.id, $event)" />
+                  [clickableCellIds]="isOffline() ? offlineClickableCellIds(player.id) : (player.id === playerId() ? clickableCellIds() : emptySet)"
+                  [lockClickable]="isOffline() && isLockEligible(player.id, row.id)"
+                  (cellClicked)="onCellClicked(row.id, $event, player.id)"
+                  (lockClicked)="offlineLock(player.id, row.id)" />
               }
               <div class="punishment-track">
                 <span class="punishment-label">Punishments</span>
                 @for (i of [0, 1, 2, 3]; track i) {
                   <div class="punishment-box"
-                       [class.taken]="(state.sheetProgress[player.id]?.punishments ?? 0) > i"></div>
+                       [class.taken]="(state.sheetProgress[player.id]?.punishments ?? 0) > i"
+                       [class.clickable]="canTakePunishment(player.id)"
+                       (click)="onPunishmentClicked(player.id)"></div>
                 }
               </div>
             </div>

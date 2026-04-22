@@ -84,9 +84,12 @@ public class GameSession {
         List<Die> dice = new ArrayList<>(factory.buildDice());
         BoardState board = new BoardState(progress, dice, new HashMap<>());
 
-        TurnState turn = new TurnState();
-        turn.setActivePlayerId(playerIds.get(0));
-        turn.setPhase(TurnPhase.ROLL);
+        TurnState turn = null;
+        if (settings.gameMode() != GameMode.OFFLINE) {
+            turn = new TurnState();
+            turn.setActivePlayerId(playerIds.get(0));
+            turn.setPhase(TurnPhase.ROLL);
+        }
 
         state = new GameState(settings.cardMode(), playerIds, factory.buildVariantData(playerIds), layouts, board, turn);
         rules = factory.buildTurnRules();

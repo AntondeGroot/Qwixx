@@ -1,0 +1,44 @@
+<div class="player-list">
+  @for (player of otherPlayers(); track player.id) {
+    <div class="player-card" [class.active-turn]="isActive(player.id)">
+
+      <div class="player-header">
+        <div class="avatar">
+          @if (player.profilePic) {
+            <img [src]="player.profilePic" [alt]="player.name" />
+          } @else {
+            <span class="initials">{{ initials(player.name) }}</span>
+          }
+        </div>
+        <span class="player-name" [class.active-name]="isActive(player.id)">
+          {{ player.name }}
+        </span>
+        @if (isActive(player.id)) {
+          <span class="turn-pip"></span>
+        }
+      </div>
+
+      <div class="mini-sheet">
+        @for (row of rowsFor(player.id); track row.id) {
+          <div class="mini-row" [attr.data-color]="row.cells[0]?.color"
+               [class.row-closed]="isRowClosed(row.id)">
+            @for (cell of row.cells; track cell.id) {
+              <div class="mini-cell"
+                   [class.crossed]="isCrossed(player.id, row.id, cell.id)"
+                   [class.closing-eligible]="cell.closingEligible"></div>
+            }
+            <div class="mini-lock">
+              <img src="lock_icon.svg" alt="" class="mini-lock-icon"
+                   [class.lock-crossed]="sheetProgress()[player.id]?.rowStates?.[row.id]?.lockCrossed" />
+            </div>
+          </div>
+        }
+      </div>
+
+    </div>
+  }
+
+  @if (otherPlayers().length === 0) {
+    <p class="no-others">No other players yet.</p>
+  }
+</div>

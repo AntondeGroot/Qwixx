@@ -12,11 +12,12 @@ import { SheetLayout } from '../../generated/model/sheetLayout';
 import { SheetProgress } from '../../generated/model/sheetProgress';
 import { TurnPhase } from '../../generated/model/turnPhase';
 import { DiceComponent } from '../dice/dice.component';
+import { PlayerListComponent } from '../player-list/player-list.component';
 import { RowComponent } from '../row/row.component';
 
 @Component({
   selector: 'app-board',
-  imports: [RouterLink, RowComponent, DiceComponent],
+  imports: [RouterLink, RowComponent, DiceComponent, PlayerListComponent],
   templateUrl: './board.component.html',
   styleUrl: './board.component.css'
 })

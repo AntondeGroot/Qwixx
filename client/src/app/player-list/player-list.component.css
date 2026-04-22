@@ -1,0 +1,174 @@
+.player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+}
+
+/* ── Player card ─────────────────────────────────────────────── */
+
+.player-card {
+  background: white;
+  border-radius: 10px;
+  border: 2px solid #e0e0e0;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.player-card.active-turn {
+  border-color: #f9a825;
+  box-shadow: 0 0 10px rgba(249, 168, 37, 0.35);
+}
+
+/* ── Header row: avatar + name + active pip ──────────────────── */
+
+.player-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid #ccc;
+  background: #e8e8e8;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.player-card.active-turn .avatar {
+  border-color: #f9a825;
+  box-shadow: 0 0 6px rgba(249, 168, 37, 0.5);
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.initials {
+  font-size: 13px;
+  font-weight: 700;
+  color: #555;
+  line-height: 1;
+}
+
+.player-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #444;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.player-name.active-name {
+  color: #b8860b;
+}
+
+.turn-pip {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f9a825;
+  flex-shrink: 0;
+  box-shadow: 0 0 4px rgba(249, 168, 37, 0.8);
+}
+
+/* ── Mini sheet ──────────────────────────────────────────────── */
+
+.mini-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mini-row {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  opacity: 1;
+  transition: opacity 0.2s;
+}
+
+.mini-row.row-closed {
+  opacity: 0.4;
+}
+
+/* Color bands */
+.mini-row[data-color="RED"]    .mini-cell { background: #d32f2f; }
+.mini-row[data-color="YELLOW"] .mini-cell { background: #f9a825; }
+.mini-row[data-color="GREEN"]  .mini-cell { background: #388e3c; }
+.mini-row[data-color="BLUE"]   .mini-cell { background: #1565c0; }
+
+.mini-cell {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* Closing-eligible cells get a slightly lighter shade via opacity */
+.mini-cell.closing-eligible {
+  opacity: 0.75;
+}
+
+/* Crossed = black dot in center */
+.mini-cell.crossed::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.75);
+  transform: translate(-50%, -50%);
+}
+
+/* ── Mini lock ───────────────────────────────────────────────── */
+
+.mini-lock {
+  width: 10px;
+  height: 10px;
+  margin-left: 2px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mini-lock-icon {
+  width: 10px;
+  height: 10px;
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+
+.mini-lock-icon.lock-crossed {
+  opacity: 0.9;
+  filter: none;
+}
+
+/* ── No-others placeholder ───────────────────────────────────── */
+
+.no-others {
+  font-size: 12px;
+  color: #999;
+  text-align: center;
+  padding: 16px 0;
+  margin: 0;
+}

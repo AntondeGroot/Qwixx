@@ -83,6 +83,15 @@ class GameSessionTest {
     }
 
     @Test
+    void offlineModeStartsWithNullTurnState() {
+        GameSession s = new GameSession(java.util.UUID.randomUUID().toString(), "test", 4,
+                GameSettings.builder().gameMode(GameMode.OFFLINE).build());
+        s.addPlayer(Player.of("Alice"));
+        s.start();
+        assertNull(s.currentState().turnState());
+    }
+
+    @Test
     void initialStateHasFourRows() {
         GameSession s = session(4);
         Player alice = Player.of("Alice");

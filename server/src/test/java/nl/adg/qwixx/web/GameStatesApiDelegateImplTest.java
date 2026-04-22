@@ -120,4 +120,18 @@ class GameStatesApiDelegateImplTest {
                     "rowStates must be keyed by row UUID, missing key: " + rowId);
         }
     }
+
+    @Test
+    void offlineGameStateHasNoTurnState() throws Exception {
+        String offlineId = GameRegistry.createGame("offline", 4,
+                nl.adg.qwixx.game.GameSettings.builder()
+                        .gameMode(nl.adg.qwixx.game.GameMode.OFFLINE).build());
+        Player bob = Player.of("Bob");
+        GameRegistry.getGame(offlineId).addPlayer(bob);
+        GameRegistry.getGame(offlineId).start();
+
+        mvc.perform(get("/gamestates/{sid}", offlineId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.turnState").doesNotExist());
+    }
 }

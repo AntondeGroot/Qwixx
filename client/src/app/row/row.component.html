@@ -11,8 +11,11 @@
                 (clicked)="cellClicked.emit(cell.id)" />
     }
     <div class="lock-cell"
+         [attr.data-color]="row().cells[0]?.color"
          [class.lock-crossed]="rowState()?.lockCrossed"
-         [class.lock-closed]="closed()">
+         [class.lock-closed]="closed()"
+         [class.lock-clickable]="lockClickable() && !rowState()?.lockCrossed && !closed()"
+         (click)="lockClickable() && !rowState()?.lockCrossed && !closed() && lockClicked.emit()">
       <img src="lock_icon.svg" alt="lock" class="lock-icon" />
     </div>
   </div>

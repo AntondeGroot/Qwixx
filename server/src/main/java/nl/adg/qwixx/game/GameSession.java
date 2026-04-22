@@ -8,6 +8,7 @@ import nl.adg.qwixx.rules.TurnRules;
 import nl.adg.qwixx.state.BoardState;
 import nl.adg.qwixx.state.CardMode;
 import nl.adg.qwixx.state.GameState;
+import nl.adg.qwixx.state.RowState;
 import nl.adg.qwixx.state.SheetLayout;
 import nl.adg.qwixx.state.SheetProgress;
 import nl.adg.qwixx.state.TurnPhase;
@@ -15,6 +16,7 @@ import nl.adg.qwixx.state.TurnState;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -72,7 +74,12 @@ public class GameSession {
         }
 
         Map<UUID, SheetProgress> progress = new HashMap<>();
-        for (UUID id : playerIds) progress.put(id, new SheetProgress(new HashMap<>(), 0));
+        for (UUID id : playerIds) {
+            Map<Integer, RowState> rowStates = new HashMap<>();
+            List<Row> rows = rowsByPlayer.get(id);
+            for (int i = 0; i < rows.size(); i++) rowStates.put(i, new RowState(new HashSet<>(), false));
+            progress.put(id, new SheetProgress(rowStates, 0));
+        }
 
         List<Die> dice = new ArrayList<>(factory.buildDice());
         BoardState board = new BoardState(progress, dice, new HashMap<>());

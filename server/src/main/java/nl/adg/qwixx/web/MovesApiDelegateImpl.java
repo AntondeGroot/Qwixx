@@ -11,8 +11,10 @@ import nl.adg.qwixx.action.ResetTurnAction;
 import nl.adg.qwixx.action.RollAction;
 import nl.adg.qwixx.action.TakePunishmentAction;
 import nl.adg.qwixx.action.UndoLastCrossAction;
+import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSession;
+import nl.adg.qwixx.state.SheetLayout;
 import nl.adg.qwixx.game.SessionNotFoundException;
 import nl.adg.qwixx.generated.api.MovesApiDelegate;
 import nl.adg.qwixx.generated.model.MoveRequest;
@@ -24,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -35,7 +38,7 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
             MoveRequest req) {
         GameSession session = require(sessionId);
         UUID pid = parsePlayerId(playerId);
-        GameAction action = toAction(pid, req);
+        GameAction action = toAction(pid, req, session);
 
         Map<Integer, UUID> closedBefore = new HashMap<>(
                 session.currentState().boardState().closedRows());
@@ -60,30 +63,31 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
         return ResponseEntity.ok(response);
     }
 
-    private GameAction toAction(UUID pid, MoveRequest req) {
+    private GameAction toAction(UUID pid, MoveRequest req, GameSession session) {
         return switch (req.getMoveType()) {
             case ROLL              -> new RollAction(pid);
             case CROSS_WHITE_WHITE -> new CrossCellAction(
-                    pid, parseRowIndex(req.getRowId()), req.getCellId(), DiceCombination.WHITE_WHITE);
+                    pid, parseRowIndex(req.getRowId(), session), req.getCellId(), DiceCombination.WHITE_WHITE);
             case CROSS_COLOR_DIE   -> new CrossCellAction(
-                    pid, parseRowIndex(req.getRowId()), req.getCellId(), DiceCombination.WHITE_COLOR);
-            case CROSS_LOCK          -> new CrossLockAction(pid, parseRowIndex(req.getRowId()));
+                    pid, parseRowIndex(req.getRowId(), session), req.getCellId(), DiceCombination.WHITE_COLOR);
+            case CROSS_LOCK          -> new CrossLockAction(pid, parseRowIndex(req.getRowId(), session));
             case TAKE_PUNISHMENT     -> new TakePunishmentAction(pid);
             case PASS                -> new EndTurnAction(pid);
-            case DECLARE_LOCK_INTENT -> new DeclareLockIntentAction(pid, parseRowIndex(req.getRowId()));
+            case DECLARE_LOCK_INTENT -> new DeclareLockIntentAction(pid, parseRowIndex(req.getRowId(), session));
             case RESET_TURN          -> new ResetTurnAction(pid);
             case GIVE_UP             -> new GiveUpAction(pid);
             case UNDO_LAST_CROSS     -> new UndoLastCrossAction(pid);
         };
     }
 
-    private static int parseRowIndex(String rowId) {
+    private static int parseRowIndex(String rowId, GameSession session) {
         if (rowId == null) throw new IllegalMoveException("rowId is required for cross moves");
-        try {
-            return Integer.parseInt(rowId);
-        } catch (NumberFormatException e) {
-            throw new IllegalMoveException("invalid rowId: " + rowId);
+        SheetLayout layout = session.currentState().sheetLayouts().values().iterator().next();
+        List<Row> rows = layout.rows();
+        for (int i = 0; i < rows.size(); i++) {
+            if (rows.get(i).id().equals(rowId)) return i;
         }
+        throw new IllegalMoveException("invalid rowId: " + rowId);
     }
 
     private static UUID parsePlayerId(String playerId) {

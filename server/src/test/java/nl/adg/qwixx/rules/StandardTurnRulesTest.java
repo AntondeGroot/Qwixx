@@ -127,6 +127,45 @@ class StandardTurnRulesTest {
         assertTrue(rules.getValidActions(state, p2).isEmpty());
     }
 
+    @Test
+    void cannotUseWhiteWhiteAfterColorDieUsed() {
+        GameState state = stateAfterRoll(p1, p1, p2);
+        CrossCellAction colorCross = rules.getValidActions(state, p1).stream()
+                .filter(a -> a instanceof CrossCellAction cc && cc.combination() == DiceCombination.WHITE_COLOR)
+                .map(a -> (CrossCellAction) a)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("expected a WHITE_COLOR action to be available"));
+        rules.apply(state, colorCross);
+        assertTrue(rules.getValidActions(state, p1).stream()
+                .filter(a -> a instanceof CrossCellAction)
+                .map(a -> (CrossCellAction) a)
+                .noneMatch(cc -> cc.combination() == DiceCombination.WHITE_WHITE),
+                "white+white must not be offered after the color die has been used");
+    }
+
+    @Test
+    void crossingWhiteWhiteAfterColorDieUsedIsRejected() {
+        GameState state = stateAfterRoll(p1, p1, p2);
+        CrossCellAction colorCross = rules.getValidActions(state, p1).stream()
+                .filter(a -> a instanceof CrossCellAction cc && cc.combination() == DiceCombination.WHITE_COLOR)
+                .map(a -> (CrossCellAction) a)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("expected a WHITE_COLOR action to be available"));
+        rules.apply(state, colorCross);
+        // Attempt white+white cross directly — server must reject it
+        RollResult roll = state.turnState().currentRoll();
+        int wwValue = roll.white1() + roll.white2();
+        SheetLayout layout = state.sheetLayouts().get(p1);
+        CrossCellAction wwCross = layout.rows().stream()
+                .flatMap(row -> row.cells().stream()
+                        .filter(c -> c.displayValue().equals(String.valueOf(wwValue)))
+                        .map(c -> new CrossCellAction(p1,
+                                layout.rows().indexOf(row), c.id(), DiceCombination.WHITE_WHITE)))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no cell with white+white value found"));
+        assertThrows(IllegalMoveException.class, () -> rules.apply(state, wwCross));
+    }
+
     // -------------------------------------------------------------------------
     // ACTIVE_MOVE → PASSIVE_MOVE transition
     // -------------------------------------------------------------------------

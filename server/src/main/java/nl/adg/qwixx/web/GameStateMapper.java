@@ -44,26 +44,30 @@ class GameStateMapper {
                                     p != null ? p.name() : id.toString());
                         })
                         .toList(),
-                mapSheetProgress(board),
+                mapSheetProgress(state),
                 mapSheetLayouts(state),
                 state.gameOver(),
                 state.version())
                 .turnState(mapTurnState(turn))
-                .closedRows(mapClosedRows(board))
+                .closedRows(mapClosedRows(state))
                 .activeDiceColors(mapActiveDiceColors(board));
     }
 
-    private static Map<String, nl.adg.qwixx.generated.model.SheetProgress> mapSheetProgress(BoardState board) {
+    private static Map<String, nl.adg.qwixx.generated.model.SheetProgress> mapSheetProgress(GameState state) {
         Map<String, nl.adg.qwixx.generated.model.SheetProgress> result = new HashMap<>();
-        board.sheetProgress().forEach((playerId, sp) ->
-                result.put(playerId.toString(), mapSheetProgress(sp)));
+        state.boardState().sheetProgress().forEach((playerId, sp) -> {
+            SheetLayout layout = state.sheetLayouts().get(playerId);
+            result.put(playerId.toString(), mapSheetProgress(sp, layout));
+        });
         return result;
     }
 
-    private static nl.adg.qwixx.generated.model.SheetProgress mapSheetProgress(SheetProgress sp) {
+    private static nl.adg.qwixx.generated.model.SheetProgress mapSheetProgress(SheetProgress sp, SheetLayout layout) {
         Map<String, nl.adg.qwixx.generated.model.RowState> rowStates = new HashMap<>();
-        sp.rowStates().forEach((rowIndex, rs) ->
-                rowStates.put(rowIndex.toString(), mapRowState(rs)));
+        sp.rowStates().forEach((rowIndex, rs) -> {
+            String rowId = layout.rows().get(rowIndex).id();
+            rowStates.put(rowId, mapRowState(rs));
+        });
         return new nl.adg.qwixx.generated.model.SheetProgress(rowStates, sp.punishments());
     }
 
@@ -73,10 +77,15 @@ class GameStateMapper {
                 rs.lockCrossed());
     }
 
-    private static Map<String, String> mapClosedRows(BoardState board) {
+    private static Map<String, String> mapClosedRows(GameState state) {
         Map<String, String> result = new HashMap<>();
-        board.closedRows().forEach((rowIndex, playerId) ->
-                result.put(rowIndex.toString(), playerId.toString()));
+        BoardState board = state.boardState();
+        if (board.closedRows().isEmpty()) return result;
+        SheetLayout anyLayout = state.sheetLayouts().values().iterator().next();
+        board.closedRows().forEach((rowIndex, playerId) -> {
+            String rowId = anyLayout.rows().get(rowIndex).id();
+            result.put(rowId, playerId.toString());
+        });
         return result;
     }
 

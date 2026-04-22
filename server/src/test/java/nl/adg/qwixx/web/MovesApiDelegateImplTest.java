@@ -76,6 +76,16 @@ class MovesApiDelegateImplTest {
     }
 
     @Test
+    void crossWithIntegerRowIdReturns400() throws Exception {
+        mvc.perform(post("/moves/{sid}/{pid}", sessionId, alice.id())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"moveType":"CROSS_WHITE_WHITE","rowId":"0","cellId":"some-cell"}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void rollAfterRollIsIllegalMove() throws Exception {
         // first roll succeeds, second roll in ACTIVE_MOVE phase is illegal
         mvc.perform(post("/moves/{sid}/{pid}", sessionId, alice.id())

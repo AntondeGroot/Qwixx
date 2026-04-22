@@ -188,10 +188,17 @@ public class StandardTurnRules implements TurnRules {
         turn.undoBuffer().put(playerId, crossed);
 
         if (isActive) {
+            ActiveTurnState ats = turn.activeTurnState();
             if (action.combination() == DiceCombination.WHITE_WHITE) {
-                turn.activeTurnState().setWhiteWhiteUsed();
+                if (ats.colorDieUsed())
+                    throw new IllegalMoveException("white+white is not allowed after the color die has been used");
+                if (ats.whiteWhiteUsed())
+                    throw new IllegalMoveException("white+white already used this turn");
+                ats.setWhiteWhiteUsed();
             } else {
-                turn.activeTurnState().setColorDieUsed();
+                if (ats.colorDieUsed())
+                    throw new IllegalMoveException("color die already used this turn");
+                ats.setColorDieUsed();
             }
         }
     }

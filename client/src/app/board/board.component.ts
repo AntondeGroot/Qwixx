@@ -113,7 +113,7 @@ export class BoardComponent implements OnInit, OnDestroy {
     const closedRows = state.closedRows ?? {};
 
     if (turn.phase === TurnPhase.ACTIVE_MOVE && this.isMyTurn()) {
-      if (!turn.whiteWhiteUsed) {
+      if (!turn.whiteWhiteUsed && !turn.colorDieUsed) {
         this.collectCells(layout, progress, closedRows, roll.white1 + roll.white2, null, result);
       }
       if (!turn.colorDieUsed) {

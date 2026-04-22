@@ -96,4 +96,28 @@ class GameStatesApiDelegateImplTest {
                 .andExpect(jsonPath("$.sheetLayouts['" + alice.id() + "'].rows[0].lock").exists())
                 .andExpect(jsonPath("$.sheetLayouts['" + alice.id() + "'].rows[0].cells[0].displayValue").exists());
     }
+
+    @Test
+    void sheetProgressRowStateKeysMatchLayoutRowIds() throws Exception {
+        var result = mvc.perform(get("/gamestates/{sid}", sessionId))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String body = result.getResponse().getContentAsString();
+        com.fasterxml.jackson.databind.JsonNode root =
+                new com.fasterxml.jackson.databind.ObjectMapper().readTree(body);
+
+        com.fasterxml.jackson.databind.JsonNode layoutRows =
+                root.path("sheetLayouts").path(alice.id().toString()).path("rows");
+        com.fasterxml.jackson.databind.JsonNode rowStates =
+                root.path("sheetProgress").path(alice.id().toString()).path("rowStates");
+
+        // Every layout row ID must appear as a key in rowStates
+        for (com.fasterxml.jackson.databind.JsonNode row : layoutRows) {
+            String rowId = row.path("id").asText();
+            org.junit.jupiter.api.Assertions.assertTrue(
+                    rowStates.has(rowId),
+                    "rowStates must be keyed by row UUID, missing key: " + rowId);
+        }
+    }
 }

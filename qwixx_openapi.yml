@@ -568,6 +568,13 @@ components:
         turnState:
           $ref: '#/components/schemas/TurnState'
           description: Absent in offline mode.
+        bonusNumbers:
+          type: object
+          description: Map of playerId to bonus numbers (Longo variant only; absent for standard games).
+          additionalProperties:
+            type: array
+            items:
+              type: integer
         gameOver:
           type: boolean
         version:

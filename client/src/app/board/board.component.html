@@ -71,14 +71,26 @@
                   (cellClicked)="onCellClicked(row.id, $event, player.id)"
                   (lockClicked)="offlineLock(player.id, row.id)" />
               }
-              <div class="punishment-track">
-                <span class="punishment-label">Punishments</span>
-                @for (i of [0, 1, 2, 3]; track i) {
-                  <div class="punishment-box"
-                       [class.taken]="(state.sheetProgress[player.id]?.punishments ?? 0) > i"
-                       [class.clickable]="canTakePunishment(player.id)"
-                       (click)="onPunishmentClicked(player.id)"></div>
+              <div class="game-hud">
+                @if (bonusNumbersFor(player.id).length > 0) {
+                  <div class="bonus-track">
+                    @for (n of bonusNumbersFor(player.id); track n) {
+                      <div class="bonus-chip" [class.bonus-active]="isBonusNumberActive(player.id, n)">
+                        <img src="star_icon.svg" alt="" class="bonus-star" />
+                        <span  class="bonus-number">{{ n }}</span>
+                      </div>
+                    }
+                  </div>
                 }
+                <div class="punishment-track">
+                  <span class="punishment-label">Punishments</span>
+                  @for (i of [0, 1, 2, 3]; track i) {
+                    <div class="punishment-box"
+                         [class.taken]="(state.sheetProgress[player.id]?.punishments ?? 0) > i"
+                         [class.clickable]="canTakePunishment(player.id)"
+                         (click)="onPunishmentClicked(player.id)"></div>
+                  }
+                </div>
               </div>
             </div>
           }

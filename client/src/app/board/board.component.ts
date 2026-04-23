@@ -95,6 +95,14 @@ export class BoardComponent implements OnInit, OnDestroy {
     return (layout?.rows[0]?.cells.length ?? 11) > 11 ? 8 : 6;
   });
 
+  scoreRows = computed(() => {
+    const max = this.gameFaces() * 2;
+    return Array.from({ length: max }, (_, i) => {
+      const n = i + 1;
+      return { crosses: n, points: n * (n + 1) / 2 };
+    });
+  });
+
   bonusNumbersFor(pid: string): number[] {
     return this.gameState()?.bonusNumbers?.[pid] ?? [];
   }
@@ -325,4 +333,6 @@ export class BoardComponent implements OnInit, OnDestroy {
   playerName(pid: string): string {
     return this.gameState()?.players.find(p => p.id === pid)?.name ?? pid;
   }
+
+  protected readonly DiceComponent = DiceComponent;
 }

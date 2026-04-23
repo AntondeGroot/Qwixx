@@ -58,7 +58,6 @@
 
       @for (player of state.players; track player.id) {
         <section [class.current-player]="!isOffline() && player.id === playerId()">
-          <h2>{{ playerName(player.id) }}</h2>
           @if (layoutFor(player.id); as layout) {
             <div class="sheet">
               @for (row of layout.rows; track row.id) {
@@ -71,6 +70,18 @@
                   (cellClicked)="onCellClicked(row.id, $event, player.id)"
                   (lockClicked)="offlineLock(player.id, row.id)" />
               }
+              <div class="score-strip">
+                <div class="score-labels">
+                  <span>Kruisjes</span>
+                  <span>Punten</span>
+                </div>
+                @for (col of scoreRows(); track col.crosses) {
+                  <div class="score-box">
+                    <div class="score-box__top">{{ col.crosses }}×</div>
+                    <div class="score-box__bottom">{{ col.points }}</div>
+                  </div>
+                }
+              </div>
               <div class="game-hud">
                 @if (bonusNumbersFor(player.id).length > 0) {
                   <div class="bonus-track">

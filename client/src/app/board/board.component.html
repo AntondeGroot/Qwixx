@@ -27,20 +27,12 @@
             — {{ turn.phase }}
           </span>
 
-          @if (turn.currentRoll; as roll) {
+          @if (turn.currentRoll || canRoll()) {
             <div class="dice-area">
-              <app-dice [value]="roll.white1" color="WHITE" [faces]="gameFaces()" [rolling]="rollingDice()" />
-              <app-dice [value]="roll.white2" color="WHITE" [faces]="gameFaces()" [rolling]="rollingDice()" />
+              <app-dice [value]="turn.currentRoll?.white1 ?? null" color="WHITE" [faces]="gameFaces()" [rolling]="rollingDice()" />
+              <app-dice [value]="turn.currentRoll?.white2 ?? null" color="WHITE" [faces]="gameFaces()" [rolling]="rollingDice()" />
               @for (entry of coloredDiceEntries(); track entry.color) {
                 <app-dice [value]="entry.value" [color]="entry.color" [faces]="gameFaces()" [rolling]="rollingDice()" />
-              }
-            </div>
-          } @else if (canRoll()) {
-            <div class="dice-area">
-              <app-dice [value]="null" color="WHITE" [faces]="gameFaces()" [rolling]="rollingDice()" />
-              <app-dice [value]="null" color="WHITE" [faces]="gameFaces()" [rolling]="rollingDice()" />
-              @for (entry of coloredDiceEntries(); track entry.color) {
-                <app-dice [value]="null" [color]="entry.color" [faces]="gameFaces()" [rolling]="rollingDice()" />
               }
             </div>
           }

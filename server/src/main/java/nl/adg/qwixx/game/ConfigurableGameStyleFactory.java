@@ -125,7 +125,7 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
                     do {
                         first  = pool[random.nextInt(pool.length)];
                         second = pool[random.nextInt(pool.length)];
-                    } while ((first == 7 && second == 11) || (first == 11 && second == 7));
+                    } while ((first == 7 && second == 11) || (first == 11 && second == 7) || first == second);
                     perPlayer.put(id, List.of(first, second));
                 }
                 yield new LongoVariantData(perPlayer);

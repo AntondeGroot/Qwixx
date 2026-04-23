@@ -95,6 +95,16 @@ export class BoardComponent implements OnInit, OnDestroy {
     return (layout?.rows[0]?.cells.length ?? 11) > 11 ? 8 : 6;
   });
 
+  bonusNumbersFor(pid: string): number[] {
+    return this.gameState()?.bonusNumbers?.[pid] ?? [];
+  }
+
+  isBonusNumberActive(pid: string, n: number): boolean {
+    const roll = this.turnState()?.currentRoll;
+    if (!roll) return false;
+    return roll.white1 + roll.white2 === n;
+  }
+
   coloredDiceEntries = computed(() => {
     const roll = this.turnState()?.currentRoll;
     const active = this.gameState()?.activeDiceColors ?? [];

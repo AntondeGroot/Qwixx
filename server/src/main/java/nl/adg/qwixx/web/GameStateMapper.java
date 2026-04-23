@@ -6,6 +6,7 @@ import nl.adg.qwixx.data.LockCell;
 import nl.adg.qwixx.data.RollResult;
 import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.game.GameSession;
+import nl.adg.qwixx.game.LongoVariantData;
 import nl.adg.qwixx.game.Player;
 import nl.adg.qwixx.state.ActiveTurnState;
 import nl.adg.qwixx.state.BoardState;
@@ -50,7 +51,8 @@ class GameStateMapper {
                 state.version())
                 .turnState(mapTurnState(turn))
                 .closedRows(mapClosedRows(state))
-                .activeDiceColors(mapActiveDiceColors(board));
+                .activeDiceColors(mapActiveDiceColors(board))
+                .bonusNumbers(mapBonusNumbers(state));
     }
 
     private static Map<String, nl.adg.qwixx.generated.model.SheetProgress> mapSheetProgress(GameState state) {
@@ -94,6 +96,13 @@ class GameStateMapper {
                 .filter(die -> die.color() != nl.adg.qwixx.data.Color.WHITE)
                 .map(die -> nl.adg.qwixx.generated.model.Color.fromValue(die.color().name()))
                 .toList();
+    }
+
+    private static Map<String, List<Integer>> mapBonusNumbers(GameState state) {
+        if (!(state.variantData() instanceof LongoVariantData longo)) return null;
+        Map<String, List<Integer>> result = new HashMap<>();
+        longo.bonusNumbersPerPlayer().forEach((id, nums) -> result.put(id.toString(), nums));
+        return result;
     }
 
     private static nl.adg.qwixx.generated.model.TurnState mapTurnState(TurnState turn) {

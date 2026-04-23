@@ -129,14 +129,16 @@ h2 {
   width: fit-content;
 }
 
-.game-hud{
-  display: flex;
-  position: relative;
-  justify-content: center;
+.game-hud {
+  display: grid;
+  grid-template-columns: 1fr;
   align-items: center;
   margin-top: 4px;
 }
+
 .bonus-track {
+  grid-row: 1;
+  grid-column: 1;
   display: flex;
   justify-content: center;
   gap: 6px;
@@ -190,11 +192,10 @@ h2 {
 }
 
 .punishment-track {
-  position: absolute;
-  right: 20px;
-  top: 8px;
-  /*top: 50%;*/
-  transform: translateY(-50%);
+  grid-row: 1;
+  grid-column: 1;
+  justify-self: end;
+  align-self: start;
   display: flex;
   align-items: center;
   gap: 5px;

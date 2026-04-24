@@ -42,6 +42,11 @@ export class BoardComponent implements OnInit, OnDestroy {
 
   isOffline = computed(() => this.gameState() !== null && this.gameState()!.turnState == null);
 
+  pendingCellIds = computed(() => {
+    const ids = this.gameState()?.turnState?.pendingCrosses?.[this.playerId()] ?? [];
+    return new Set<string>(ids);
+  });
+
 
   ngOnInit() {
     const sid = this.route.snapshot.paramMap.get('sessionId') ?? '';
@@ -83,13 +88,30 @@ export class BoardComponent implements OnInit, OnDestroy {
     this.isMyTurn() && this.turnState()?.phase === TurnPhase.ROLL
   );
 
-  canPassActive = computed(() =>
-    this.isMyTurn() && this.turnState()?.phase === TurnPhase.ACTIVE_MOVE
+  canPassActive = computed(() => {
+    const turn = this.turnState();
+    return this.isMyTurn()
+      && turn?.phase === TurnPhase.ACTIVE_MOVE
+      && (turn.whiteWhiteUsed === true || turn.colorDieUsed === true);
+  });
+
+  canGiveUp = computed(() => {
+    const turn = this.turnState();
+    return this.isMyTurn()
+      && turn?.phase === TurnPhase.ACTIVE_MOVE
+      && !turn.whiteWhiteUsed
+      && !turn.colorDieUsed;
+  });
+
+  hasPendingPassiveCross = computed(() =>
+    this.isInPassiveQueue() && this.pendingCellIds().size > 0
   );
 
-  canPassPassive = computed(() =>
-    this.isInPassiveQueue() && this.turnState()?.phase === TurnPhase.PASSIVE_MOVE
-  );
+  canPassPassive = computed(() => {
+    const phase = this.turnState()?.phase;
+    return this.isInPassiveQueue()
+      && (phase === TurnPhase.PASSIVE_MOVE || phase === TurnPhase.ACTIVE_MOVE);
+  });
 
   gameFaces = computed((): 6 | 8 => {
     const layout = this.gameState()?.sheetLayouts[this.playerId()];
@@ -150,7 +172,8 @@ export class BoardComponent implements OnInit, OnDestroy {
           }
         }
       }
-    } else if (turn.phase === TurnPhase.PASSIVE_MOVE && this.isInPassiveQueue()) {
+    } else if ((turn.phase === TurnPhase.PASSIVE_MOVE || turn.phase === TurnPhase.ACTIVE_MOVE)
+               && this.isInPassiveQueue()) {
       this.collectCells(layout, progress, closedRows, roll.white1 + roll.white2, null, result);
     }
 
@@ -202,6 +225,11 @@ export class BoardComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (this.pendingCellIds().has(cellId)) {
+      this.sendMove({ moveType: MoveType.RESET_TURN });
+      return;
+    }
+
     const state = this.gameState();
     const pid   = this.playerId();
     const turn  = this.turnState();
@@ -230,7 +258,7 @@ export class BoardComponent implements OnInit, OnDestroy {
     const punishments = this.gameState()?.sheetProgress[pid]?.punishments ?? 0;
     if (punishments >= 4) return false;
     if (this.isOffline()) return true;
-    return this.canPassActive() && pid === this.playerId();
+    return this.canGiveUp() && pid === this.playerId();
   }
 
   onPunishmentClicked(pid: string) {

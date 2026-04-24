@@ -122,9 +122,15 @@ class StandardTurnRulesTest {
     }
 
     @Test
-    void passivePlayerGetsNoActionsInActiveMovePhase() {
+    void passivePlayerGetsWhiteWhiteActionsInActiveMovePhase() {
         GameState state = stateAfterRoll(p1, p1, p2);
-        assertTrue(rules.getValidActions(state, p2).isEmpty());
+        List<GameAction> actions = rules.getValidActions(state, p2);
+        assertFalse(actions.isEmpty());
+        assertTrue(actions.stream().anyMatch(a -> a instanceof EndTurnAction));
+        assertTrue(actions.stream()
+                .filter(a -> a instanceof CrossCellAction cc)
+                .map(a -> (CrossCellAction) a)
+                .allMatch(cc -> cc.combination() == DiceCombination.WHITE_WHITE));
     }
 
     @Test
@@ -179,11 +185,27 @@ class StandardTurnRulesTest {
     }
 
     @Test
-    void endTurnSnapshotsPassivePlayers() {
+    void rollSnapshotsAllPlayers() {
         GameState state = stateAfterRoll(p1, p1, p2);
-        rules.apply(state, firstCrossAction(state, p1));
-        rules.apply(state, new EndTurnAction(p1));
+        assertNotNull(state.turnState().moveStartProgress().get(p1));
         assertNotNull(state.turnState().moveStartProgress().get(p2));
+    }
+
+    @Test
+    void passiveEndTurnDuringActiveMoveStaysInActiveMove() {
+        GameState state = stateAfterRoll(p1, p1, p2);
+        rules.apply(state, new EndTurnAction(p2));
+        assertEquals(TurnPhase.ACTIVE_MOVE, state.turnState().phase());
+        assertFalse(state.turnState().passivePlayerQueue().contains(p2));
+    }
+
+    @Test
+    void activeEndTurnEvaluatesWhenAllPassivesAlreadyDone() {
+        GameState state = stateAfterRoll(p1, p1, p2);
+        rules.apply(state, new EndTurnAction(p2));          // passive acts first
+        rules.apply(state, firstCrossAction(state, p1));
+        rules.apply(state, new EndTurnAction(p1));          // active ends — queue already empty
+        assertEquals(TurnPhase.ROLL, state.turnState().phase());
     }
 
     @Test
@@ -636,11 +658,9 @@ class StandardTurnRulesTest {
         }
         rules.apply(state, firstCrossAction(state, active));
         rules.apply(state, new EndTurnAction(active));
-        if (state.turnState().phase() == TurnPhase.PASSIVE_MOVE) {
-            for (UUID passive : passives) {
-                if (state.turnState().passivePlayerQueue().contains(passive)) {
-                    rules.apply(state, new EndTurnAction(passive));
-                }
+        for (UUID passive : passives) {
+            if (state.turnState().passivePlayerQueue().contains(passive)) {
+                rules.apply(state, new EndTurnAction(passive));
             }
         }
     }

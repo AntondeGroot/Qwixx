@@ -1,12 +1,13 @@
 <div class="cell"
      [class.crossed]="crossed()"
+     [class.pending]="pending()"
      [class.closing-eligible]="cell().closingEligible"
      [class.extra-bucket]="hasTag()(TagEnum.EXTRA_BUCKET)"
      [class.clickable]="clickable()"
      [attr.data-color]="cell().color"
-     (click)="clickable() && clicked.emit()">
+     (click)="(clickable() || pending()) && clicked.emit()">
   <span class="cell-value">{{ cell().displayValue }}</span>
-  @if (crossed()) {
+  @if (crossed() || pending()) {
     <span class="cell-cross">✕</span>
   }
 </div>

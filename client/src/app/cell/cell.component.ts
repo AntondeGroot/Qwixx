@@ -10,6 +10,7 @@ import { CellTag } from '../../generated/model/cellTag';
 export class CellComponent {
   cell      = input.required<SheetCell>();
   crossed   = input(false);
+  pending   = input(false);
   clickable = input(false);
 
   clicked = output<void>();

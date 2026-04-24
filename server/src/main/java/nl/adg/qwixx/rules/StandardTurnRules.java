@@ -66,17 +66,30 @@ public class StandardTurnRules implements TurnRules {
             case ROLL -> isActive ? List.of(new RollAction(playerId)) : List.of();
 
             case ACTIVE_MOVE -> {
-                if (!isActive) yield List.of();
-                List<GameAction> actions = new ArrayList<>();
-                addReachableCells(state, playerId, actions, true);
-                addLockIntents(state, playerId, actions);
-                actions.add(new GiveUpAction(playerId));
-                actions.add(new ResetTurnAction(playerId));
-                ActiveTurnState ats = turn.activeTurnState();
-                if (ats.whiteWhiteUsed() || ats.colorDieUsed()) {
+                if (isActive) {
+                    List<GameAction> actions = new ArrayList<>();
+                    addReachableCells(state, playerId, actions, true);
+                    addLockIntents(state, playerId, actions);
+                    actions.add(new GiveUpAction(playerId));
+                    actions.add(new ResetTurnAction(playerId));
+                    ActiveTurnState ats = turn.activeTurnState();
+                    if (ats.whiteWhiteUsed() || ats.colorDieUsed()) {
+                        actions.add(new EndTurnAction(playerId));
+                    }
+                    yield actions;
+                } else if (turn.passivePlayerQueue().contains(playerId)) {
+                    List<GameAction> actions = new ArrayList<>();
+                    boolean hasCrossed = turn.undoBuffer().containsKey(playerId);
+                    if (!hasCrossed) {
+                        addReachableCells(state, playerId, actions, false);
+                    } else {
+                        actions.add(new ResetTurnAction(playerId));
+                    }
                     actions.add(new EndTurnAction(playerId));
+                    yield actions;
+                } else {
+                    yield List.of();
                 }
-                yield actions;
             }
 
             case PASSIVE_MOVE -> {
@@ -160,7 +173,9 @@ public class StandardTurnRules implements TurnRules {
         turn.setPassivePlayerQueue(passive);
 
         Map<UUID, SheetProgress> snap = new HashMap<>();
-        snap.put(action.playerId(), deepCopy(state.boardState().sheetProgress().get(action.playerId())));
+        for (UUID pid : state.players()) {
+            snap.put(pid, deepCopy(state.boardState().sheetProgress().get(pid)));
+        }
         turn.setMoveStartProgress(snap);
         turn.setUndoBuffer(new HashMap<>());
         turn.setLockAcknowledged(new HashSet<>());
@@ -179,7 +194,8 @@ public class StandardTurnRules implements TurnRules {
         if (isActive) {
             requirePhase(turn, TurnPhase.ACTIVE_MOVE);
         } else {
-            requirePhase(turn, TurnPhase.PASSIVE_MOVE);
+            if (turn.phase() != TurnPhase.ACTIVE_MOVE && turn.phase() != TurnPhase.PASSIVE_MOVE)
+                throw new IllegalMoveException("expected phase ACTIVE_MOVE or PASSIVE_MOVE but was " + turn.phase());
             if (!turn.passivePlayerQueue().contains(playerId))
                 throw new IllegalMoveException("player not in passive queue");
         }
@@ -290,26 +306,25 @@ public class StandardTurnRules implements TurnRules {
     private void applyEndTurn(GameState state, EndTurnAction action) {
         TurnState turn = state.turnState();
         UUID playerId  = action.playerId();
+        boolean isActive = playerId.equals(turn.activePlayerId());
 
         switch (turn.phase()) {
             case ACTIVE_MOVE -> {
-                requireActivePlayer(turn, playerId);
-                ActiveTurnState ats = turn.activeTurnState();
-                if (!ats.whiteWhiteUsed() && !ats.colorDieUsed())
-                    throw new IllegalMoveException("must make at least one move before ending turn");
-
-                // snapshot passive players before their move phase starts
-                Map<UUID, SheetProgress> snap = new HashMap<>(turn.moveStartProgress());
-                for (UUID passive : turn.passivePlayerQueue()) {
-                    snap.put(passive, deepCopy(state.boardState().sheetProgress().get(passive)));
-                }
-                turn.setMoveStartProgress(snap);
-                turn.setUndoBuffer(new HashMap<>());
-
-                if (turn.passivePlayerQueue().isEmpty()) {
-                    evaluate(state);
+                if (isActive) {
+                    ActiveTurnState ats = turn.activeTurnState();
+                    if (!ats.whiteWhiteUsed() && !ats.colorDieUsed())
+                        throw new IllegalMoveException("must make at least one move before ending turn");
+                    turn.undoBuffer().remove(playerId);
+                    if (turn.passivePlayerQueue().isEmpty()) {
+                        evaluate(state);
+                    } else {
+                        turn.setPhase(TurnPhase.PASSIVE_MOVE);
+                    }
                 } else {
-                    turn.setPhase(TurnPhase.PASSIVE_MOVE);
+                    if (!turn.passivePlayerQueue().contains(playerId))
+                        throw new IllegalMoveException("player not in passive queue");
+                    turn.passivePlayerQueue().remove(playerId);
+                    turn.undoBuffer().remove(playerId);
                 }
             }
             case PASSIVE_MOVE -> {

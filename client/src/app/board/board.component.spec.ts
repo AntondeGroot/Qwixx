@@ -147,6 +147,67 @@ describe('BoardComponent — punishment / pass', () => {
     });
   });
 
+  // ── canPassActive ─────────────────────────────────────────────────────────
+
+  describe('canPassActive', () => {
+    it('returns false before any cross is made', () => {
+      component.gameState.set(makeState({
+        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE,
+                     passivePlayerQueue: [OTHER_ID] },
+      }));
+      expect(component.canPassActive()).toBe(false);
+    });
+
+    it('returns true after white+white cross', () => {
+      component.gameState.set(makeState({
+        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE,
+                     passivePlayerQueue: [OTHER_ID], whiteWhiteUsed: true },
+      }));
+      expect(component.canPassActive()).toBe(true);
+    });
+
+    it('returns true after color die cross', () => {
+      component.gameState.set(makeState({
+        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE,
+                     passivePlayerQueue: [OTHER_ID], colorDieUsed: true },
+      }));
+      expect(component.canPassActive()).toBe(true);
+    });
+
+    it('returns false for a different player even if they are active', () => {
+      component.gameState.set(makeState({
+        turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ACTIVE_MOVE,
+                     passivePlayerQueue: [PLAYER_ID], whiteWhiteUsed: true },
+      }));
+      expect(component.canPassActive()).toBe(false);
+    });
+  });
+
+  // ── canPassPassive — simultaneous play ────────────────────────────────────
+
+  describe('canPassPassive', () => {
+    it('returns true for passive player in PASSIVE_MOVE', () => {
+      component.gameState.set(makeState({
+        turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.PASSIVE_MOVE, passivePlayerQueue: [PLAYER_ID] },
+      }));
+      expect(component.canPassPassive()).toBe(true);
+    });
+
+    it('returns true for passive player in ACTIVE_MOVE (simultaneous play)', () => {
+      component.gameState.set(makeState({
+        turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ACTIVE_MOVE, passivePlayerQueue: [PLAYER_ID] },
+      }));
+      expect(component.canPassPassive()).toBe(true);
+    });
+
+    it('returns false when player is not in passive queue during ACTIVE_MOVE', () => {
+      component.gameState.set(makeState({
+        turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ACTIVE_MOVE, passivePlayerQueue: [] },
+      }));
+      expect(component.canPassPassive()).toBe(false);
+    });
+  });
+
   // ── passPassive ────────────────────────────────────────────────────────────
 
   describe('passPassive', () => {

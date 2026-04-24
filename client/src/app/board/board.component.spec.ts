@@ -208,6 +208,90 @@ describe('BoardComponent — punishment / pass', () => {
     });
   });
 
+  // ── canRoll ───────────────────────────────────────────────────────────────
+
+  describe('canRoll', () => {
+    it('returns true for active player in ROLL phase', () => {
+      component.gameState.set(makeState({
+        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ROLL },
+      }));
+      expect(component.canRoll()).toBe(true);
+    });
+
+    it('returns false for active player in ACTIVE_MOVE phase', () => {
+      component.gameState.set(makeState({
+        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE },
+      }));
+      expect(component.canRoll()).toBe(false);
+    });
+
+    it('returns false for non-active player in ROLL phase', () => {
+      component.gameState.set(makeState({
+        turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ROLL },
+      }));
+      expect(component.canRoll()).toBe(false);
+    });
+  });
+
+  // ── canGiveUp ─────────────────────────────────────────────────────────────
+
+  describe('canGiveUp', () => {
+    it('returns true for active player in ACTIVE_MOVE before any cross', () => {
+      component.gameState.set(makeState({
+        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE,
+                     passivePlayerQueue: [OTHER_ID] },
+      }));
+      expect(component.canGiveUp()).toBe(true);
+    });
+
+    it('returns false after white+white cross (can End Turn instead)', () => {
+      component.gameState.set(makeState({
+        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE,
+                     passivePlayerQueue: [OTHER_ID], whiteWhiteUsed: true },
+      }));
+      expect(component.canGiveUp()).toBe(false);
+    });
+
+    it('returns false for passive player', () => {
+      component.gameState.set(makeState({
+        turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ACTIVE_MOVE,
+                     passivePlayerQueue: [PLAYER_ID] },
+      }));
+      expect(component.canGiveUp()).toBe(false);
+    });
+  });
+
+  // ── hasPendingPassiveCross ─────────────────────────────────────────────────
+
+  describe('hasPendingPassiveCross', () => {
+    it('returns false when not in passive queue', () => {
+      component.gameState.set(makeState({
+        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE,
+                     passivePlayerQueue: [] },
+      }));
+      expect(component.hasPendingPassiveCross()).toBe(false);
+    });
+
+    it('returns false when in passive queue but no pending cross', () => {
+      component.gameState.set(makeState({
+        turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ACTIVE_MOVE,
+                     passivePlayerQueue: [PLAYER_ID] },
+      }));
+      expect(component.hasPendingPassiveCross()).toBe(false);
+    });
+
+    it('returns true when in passive queue and has pending cross', () => {
+      component.gameState.set(makeState({
+        turnState: {
+          activePlayerId: OTHER_ID, phase: TurnPhase.ACTIVE_MOVE,
+          passivePlayerQueue: [PLAYER_ID],
+          pendingCrosses: { [PLAYER_ID]: ['cell-1'] },
+        },
+      }));
+      expect(component.hasPendingPassiveCross()).toBe(true);
+    });
+  });
+
   // ── passPassive ────────────────────────────────────────────────────────────
 
   describe('passPassive', () => {

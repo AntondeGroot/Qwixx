@@ -72,7 +72,9 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
     public ResponseEntity<AddPlayerToGame201Response> addPlayerToGame(String sessionId,
             NewPlayerRequest req) {
         GameSession session = require(sessionId);
-        Player player = Player.of(req.getName());
+        Player player = req.getId() != null && !req.getId().isBlank()
+                ? new Player(UUID.fromString(req.getId()), req.getName())
+                : Player.of(req.getName());
         try {
             session.addPlayer(player);
         } catch (IllegalStateException ex) {

@@ -89,20 +89,20 @@ class GamesApiDelegateImplTest {
                 .andExpect(jsonPath("$.code").value(404));
     }
 
-    // --- POST /games/{sessionId}/start ---
+    // --- POST /games/{sessionId} ---
 
     @Test
     void startGameReturns200WhenSessionHasPlayers() throws Exception {
         String id = GameRegistry.createGame("room", 4, GameSettings.builder().build());
         GameRegistry.getGame(id).addPlayer(Player.of("Alice"));
 
-        mvc.perform(post("/games/{id}/start", id))
+        mvc.perform(post("/games/{id}", id))
                 .andExpect(status().isOk());
     }
 
     @Test
     void startGameReturns404ForUnknownSession() throws Exception {
-        mvc.perform(post("/games/ghost/start"))
+        mvc.perform(post("/games/ghost"))
                 .andExpect(status().isNotFound());
     }
 
@@ -112,18 +112,18 @@ class GamesApiDelegateImplTest {
         GameRegistry.getGame(id).addPlayer(Player.of("Alice"));
         GameRegistry.getGame(id).start();
 
-        mvc.perform(post("/games/{id}/start", id))
+        mvc.perform(post("/games/{id}", id))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value(409));
     }
 
-    // --- DELETE /games/{sessionId}/stop ---
+    // --- DELETE /games/{sessionId} ---
 
     @Test
     void stopGameReturns204AndRemovesSession() throws Exception {
         String id = GameRegistry.createGame("room", 4, GameSettings.builder().build());
 
-        mvc.perform(delete("/games/{id}/stop", id))
+        mvc.perform(delete("/games/{id}", id))
                 .andExpect(status().isNoContent());
 
         mvc.perform(get("/games/{id}", id))
@@ -132,7 +132,7 @@ class GamesApiDelegateImplTest {
 
     @Test
     void stopGameReturns404ForUnknownSession() throws Exception {
-        mvc.perform(delete("/games/ghost/stop"))
+        mvc.perform(delete("/games/ghost"))
                 .andExpect(status().isNotFound());
     }
 

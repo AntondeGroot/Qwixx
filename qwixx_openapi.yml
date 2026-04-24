@@ -73,8 +73,6 @@ paths:
                 $ref: '#/components/schemas/GameInfo'
         '404':
           description: Game not found
-
-  /games/{sessionId}/start:
     post:
       summary: Start a game
       operationId: startGame
@@ -89,8 +87,6 @@ paths:
           description: Game could not be found
         '409':
           description: Game was already started
-
-  /games/{sessionId}/stop:
     delete:
       summary: Stop a game
       operationId: stopGame
@@ -410,8 +406,8 @@ components:
           maxLength: 50
         maxPlayers:
           type: integer
-          minimum: 2
-          maximum: 6
+          minimum: 1
+          maximum: 5
         gameOptions:
           type: object
           additionalProperties: {}

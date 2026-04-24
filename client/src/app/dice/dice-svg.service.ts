@@ -79,7 +79,7 @@ export class DiceSvgService {
 
   private async load(faces: 6 | 8, color: DiceColor, type: DiceType): Promise<string> {
     const base = color === 'white' ? 'white' : 'red';
-    let text = await fetch(`/dice/d${faces}_${base}_${type}.svg`).then(r => r.text());
+    let text = await fetch(`dice/d${faces}_${base}_${type}.svg`).then(r => r.text());
 
     if (color !== 'white' && color !== 'red') {
       const map = COLOR_MAPS[color];

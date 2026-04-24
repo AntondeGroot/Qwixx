@@ -9,6 +9,13 @@ export const routes: Routes = [
     path: 'settings',
     loadComponent: () => import('./settings/settings.component').then(m => m.SettingsComponent)
   },
-  { path: '', redirectTo: 'settings', pathMatch: 'full' },
+  {
+    path: '',
+    pathMatch: 'full',
+    redirectTo: ({ queryParams }) =>
+      queryParams['sessionid'] && queryParams['playerid']
+        ? `/game/${queryParams['sessionid']}/${queryParams['playerid']}`
+        : '/settings'
+  },
   { path: '**', redirectTo: 'settings' }
 ];

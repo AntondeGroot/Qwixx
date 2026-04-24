@@ -391,6 +391,9 @@ components:
       required:
         - name
       properties:
+        id:
+          type: string
+          description: Caller-supplied player ID. If omitted a UUID is generated.
         name:
           type: string
 

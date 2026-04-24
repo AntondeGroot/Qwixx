@@ -42,6 +42,7 @@ export class BoardComponent implements OnInit, OnDestroy {
 
   isOffline = computed(() => this.gameState() !== null && this.gameState()!.turnState == null);
 
+
   ngOnInit() {
     const sid = this.route.snapshot.paramMap.get('sessionId') ?? '';
     const pid = this.route.snapshot.paramMap.get('playerId') ?? '';

@@ -59,6 +59,7 @@
         <artifactId>spring-boot-maven-plugin</artifactId>
       </plugin>
 
+
       <!-- Generate Spring controllers and model from the OpenAPI spec -->
       <plugin>
         <groupId>org.openapitools</groupId>

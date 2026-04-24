@@ -44,6 +44,9 @@
             @if (canPassActive()) {
               <button class="btn-pass" (click)="passActive()">End Turn</button>
             }
+            @if (canPassPassive()) {
+              <button class="btn-pass" (click)="passPassive()">Pass</button>
+            }
           </div>
         </div>
       }

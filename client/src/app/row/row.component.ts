@@ -15,6 +15,7 @@ export class RowComponent {
   rowState         = input<RowState | null>(null);
   closed           = input(false);
   clickableCellIds = input<Set<string>>(new Set());
+  pendingCellIds   = input<Set<string>>(new Set());
 
   lockClickable = input(false);
 

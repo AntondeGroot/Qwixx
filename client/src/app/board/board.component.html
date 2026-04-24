@@ -45,7 +45,9 @@
               <button class="btn-pass" (click)="passActive()">End Turn</button>
             }
             @if (canPassPassive()) {
-              <button class="btn-pass" (click)="passPassive()">Pass</button>
+              <button class="btn-pass" (click)="passPassive()">
+                {{ hasPendingPassiveCross() ? 'Confirm' : 'Pass' }}
+              </button>
             }
           </div>
         </div>
@@ -60,6 +62,7 @@
                 [rowState]="rowStateFor(playerId(), row.id)"
                 [closed]="isRowClosed(row.id)"
                 [clickableCellIds]="isOffline() ? offlineClickableCellIds(playerId()) : clickableCellIds()"
+                [pendingCellIds]="pendingCellIds()"
                 [lockClickable]="isOffline() && isLockEligible(playerId(), row.id)"
                 (cellClicked)="onCellClicked(row.id, $event, playerId())"
                 (lockClicked)="offlineLock(playerId(), row.id)" />

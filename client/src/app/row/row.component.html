@@ -1,12 +1,14 @@
 <div class="row" [class.closed]="closed()" [attr.data-color]="row().cells[0]?.color">
   @for (cell of regularCells(); track cell.id) {
     <app-cell [cell]="cell" [crossed]="isCrossed(cell.id)"
+              [pending]="pendingCellIds().has(cell.id)"
               [clickable]="clickableCellIds().has(cell.id)"
               (clicked)="cellClicked.emit(cell.id)" />
   }
   <div class="lock-zone" [class.lock-zone-crossed]="rowState()?.lockCrossed">
     @for (cell of closingEligibleCells(); track cell.id) {
       <app-cell [cell]="cell" [crossed]="isCrossed(cell.id)"
+                [pending]="pendingCellIds().has(cell.id)"
                 [clickable]="clickableCellIds().has(cell.id)"
                 (clicked)="cellClicked.emit(cell.id)" />
     }

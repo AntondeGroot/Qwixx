@@ -529,6 +529,13 @@ components:
         colorDieUsed:
           type: boolean
           description: Whether the active player has already used the color die option this turn.
+        pendingCrosses:
+          type: object
+          description: Map of playerId to cell IDs crossed this turn but not yet confirmed. Empty once the turn ends.
+          additionalProperties:
+            type: array
+            items:
+              type: string
 
     GameState:
       type: object

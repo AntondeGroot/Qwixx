@@ -37,6 +37,20 @@
 }
 
 
+.cell.pending .cell-value {
+  opacity: 0.25;
+}
+
+.cell.pending .cell-cross {
+  opacity: 0.45;
+}
+
+.cell.pending {
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+}
+
 .cell.extra-bucket {
   border-color: #000;
   border-width: 5px;

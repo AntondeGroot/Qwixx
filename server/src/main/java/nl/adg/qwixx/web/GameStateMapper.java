@@ -121,6 +121,18 @@ class GameStateMapper {
             dto.setWhiteWhiteUsed(ats.whiteWhiteUsed());
             dto.setColorDieUsed(ats.colorDieUsed());
         }
+
+        if (!turn.undoBuffer().isEmpty()) {
+            Map<String, List<String>> pending = new java.util.HashMap<>();
+            turn.undoBuffer().forEach((pid, rowMap) -> {
+                List<String> cellIds = rowMap.values().stream()
+                        .flatMap(java.util.Set::stream)
+                        .toList();
+                pending.put(pid.toString(), cellIds);
+            });
+            dto.setPendingCrosses(pending);
+        }
+
         return dto;
     }
 

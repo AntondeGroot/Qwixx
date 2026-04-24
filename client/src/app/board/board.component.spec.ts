@@ -1,0 +1,171 @@
+import { TestBed } from '@angular/core/testing';
+import { ActivatedRoute } from '@angular/router';
+import { of } from 'rxjs';
+import type { Mocked } from 'vitest';
+import { GamestatesService } from '../../generated/api/gamestates.service';
+import { MovesService } from '../../generated/api/moves.service';
+import { GameState } from '../../generated/model/gameState';
+import { MoveType } from '../../generated/model/moveType';
+import { TurnPhase } from '../../generated/model/turnPhase';
+import { BoardComponent } from './board.component';
+
+const PLAYER_ID = 'player-1';
+const OTHER_ID  = 'player-2';
+
+function makeState(overrides: Partial<GameState> = {}): GameState {
+  return {
+    players: [{ id: PLAYER_ID, name: 'P1' }, { id: OTHER_ID, name: 'P2' }],
+    sheetProgress: {
+      [PLAYER_ID]: { punishments: 0, rowStates: {} },
+      [OTHER_ID]:  { punishments: 0, rowStates: {} },
+    },
+    sheetLayouts: { [PLAYER_ID]: { rows: [] }, [OTHER_ID]: { rows: [] } },
+    gameOver: false,
+    version: 1,
+    ...overrides,
+  };
+}
+
+describe('BoardComponent — punishment / pass', () => {
+  let component: BoardComponent;
+  let movesService: Mocked<MovesService>;
+
+  beforeEach(async () => {
+    movesService = { makeMove: vi.fn().mockReturnValue(of({ result: 'ACCEPTED' } as any)) } as unknown as Mocked<MovesService>;
+
+    await TestBed.configureTestingModule({
+      imports: [BoardComponent],
+      providers: [
+        { provide: ActivatedRoute,      useValue: { snapshot: { paramMap: { get: () => '' } } } },
+        { provide: GamestatesService,   useValue: { getGameState: () => of(makeState()) } },
+        { provide: MovesService,        useValue: movesService },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(BoardComponent);
+    component = fixture.componentInstance;
+    component.playerId.set(PLAYER_ID);
+  });
+
+  // ── canTakePunishment ──────────────────────────────────────────────────────
+
+  describe('canTakePunishment', () => {
+    it('returns false when player already has 4 punishments', () => {
+      component.gameState.set(makeState({
+        sheetProgress: { [PLAYER_ID]: { punishments: 4, rowStates: {} } },
+        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE },
+      }));
+      expect(component.canTakePunishment(PLAYER_ID)).toBe(false);
+    });
+
+    it('returns true for own player in ACTIVE_MOVE (give up)', () => {
+      component.gameState.set(makeState({
+        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE },
+      }));
+      expect(component.canTakePunishment(PLAYER_ID)).toBe(true);
+    });
+
+    it('returns false for another player in ACTIVE_MOVE', () => {
+      component.gameState.set(makeState({
+        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE },
+      }));
+      expect(component.canTakePunishment(OTHER_ID)).toBe(false);
+    });
+
+    it('returns false when it is not the player\'s active turn', () => {
+      component.gameState.set(makeState({
+        turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ACTIVE_MOVE },
+      }));
+      expect(component.canTakePunishment(PLAYER_ID)).toBe(false);
+    });
+
+    it('returns false for passive player in PASSIVE_MOVE (use Pass button instead)', () => {
+      component.gameState.set(makeState({
+        turnState: {
+          activePlayerId: OTHER_ID,
+          phase: TurnPhase.PASSIVE_MOVE,
+          passivePlayerQueue: [PLAYER_ID],
+        },
+      }));
+      expect(component.canTakePunishment(PLAYER_ID)).toBe(false);
+    });
+
+    it('returns true for offline mode regardless of phase', () => {
+      component.gameState.set(makeState({ turnState: undefined }));
+      expect(component.canTakePunishment(PLAYER_ID)).toBe(true);
+    });
+  });
+
+  // ── onPunishmentClicked ────────────────────────────────────────────────────
+
+  describe('onPunishmentClicked', () => {
+    it('sends GIVE_UP when active player clicks punishment box (online)', () => {
+      component.gameState.set(makeState({
+        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE },
+      }));
+      component.sessionId.set('s1');
+
+      component.onPunishmentClicked(PLAYER_ID);
+
+      expect(movesService.makeMove).toHaveBeenCalledWith(
+        's1', PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.GIVE_UP })
+      );
+    });
+
+    it('sends TAKE_PUNISHMENT for offline mode', () => {
+      component.gameState.set(makeState({ turnState: undefined }));
+      component.sessionId.set('s1');
+
+      component.onPunishmentClicked(PLAYER_ID);
+
+      expect(movesService.makeMove).toHaveBeenCalledWith(
+        's1', PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.TAKE_PUNISHMENT })
+      );
+    });
+
+    it('does nothing when punishment boxes are maxed out', () => {
+      component.gameState.set(makeState({
+        sheetProgress: { [PLAYER_ID]: { punishments: 4, rowStates: {} } },
+        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE },
+      }));
+
+      component.onPunishmentClicked(PLAYER_ID);
+
+      expect(movesService.makeMove).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when it is not the player\'s turn', () => {
+      component.gameState.set(makeState({
+        turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ACTIVE_MOVE },
+      }));
+
+      component.onPunishmentClicked(PLAYER_ID);
+
+      expect(movesService.makeMove).not.toHaveBeenCalled();
+    });
+  });
+
+  // ── passPassive ────────────────────────────────────────────────────────────
+
+  describe('passPassive', () => {
+    it('sends PASS (not TAKE_PUNISHMENT) so the server accepts it', () => {
+      component.gameState.set(makeState({
+        turnState: {
+          activePlayerId: OTHER_ID,
+          phase: TurnPhase.PASSIVE_MOVE,
+          passivePlayerQueue: [PLAYER_ID],
+        },
+      }));
+      component.sessionId.set('s1');
+
+      component.passPassive();
+
+      expect(movesService.makeMove).toHaveBeenCalledWith(
+        's1', PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.PASS })
+      );
+    });
+  });
+});

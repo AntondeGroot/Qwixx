@@ -191,7 +191,7 @@ export class BoardComponent implements OnInit, OnDestroy {
   }
 
   passPassive() {
-    this.sendMoveAs(this.playerId(), { moveType: MoveType.TAKE_PUNISHMENT });
+    this.sendMoveAs(this.playerId(), { moveType: MoveType.PASS });
   }
 
   onCellClicked(rowId: string, cellId: string, ownerPid?: string) {
@@ -229,12 +229,16 @@ export class BoardComponent implements OnInit, OnDestroy {
     const punishments = this.gameState()?.sheetProgress[pid]?.punishments ?? 0;
     if (punishments >= 4) return false;
     if (this.isOffline()) return true;
-    return this.canPassPassive() && pid === this.playerId();
+    return this.canPassActive() && pid === this.playerId();
   }
 
   onPunishmentClicked(pid: string) {
     if (!this.canTakePunishment(pid)) return;
-    this.sendMoveAs(pid, { moveType: MoveType.TAKE_PUNISHMENT });
+    if (this.isOffline()) {
+      this.sendMoveAs(pid, { moveType: MoveType.TAKE_PUNISHMENT });
+    } else {
+      this.sendMove({ moveType: MoveType.GIVE_UP });
+    }
   }
 
   offlineLock(pid: string, rowId: string) {

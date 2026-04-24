@@ -357,6 +357,15 @@ class StandardTurnRulesTest {
     // -------------------------------------------------------------------------
 
     @Test
+    void giveUpWithoutAnyCrossAddsPunishment() {
+        // Exact user scenario: roll the dice, want to cross nothing, take punishment.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        int before = state.boardState().sheetProgress().get(p1).punishments();
+        rules.apply(state, new GiveUpAction(p1));
+        assertEquals(before + 1, state.boardState().sheetProgress().get(p1).punishments());
+    }
+
+    @Test
     void giveUpRestoresProgressAndAddsPunishment() {
         GameState state = stateAfterRoll(p1, p1, p2);
         rules.apply(state, firstCrossAction(state, p1));  // cross a cell

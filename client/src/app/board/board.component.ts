@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { AfterViewInit, Component, computed, ElementRef, HostListener, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { interval, Subscription, switchMap } from 'rxjs';
 import { GamestatesService } from '../../generated/api/gamestates.service';
@@ -21,10 +21,11 @@ import { RowComponent } from '../row/row.component';
   templateUrl: './board.component.html',
   styleUrl: './board.component.css'
 })
-export class BoardComponent implements OnInit, OnDestroy {
+export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   private route             = inject(ActivatedRoute);
   private gameStatesService = inject(GamestatesService);
   private movesService      = inject(MovesService);
+  private host              = inject(ElementRef<HTMLElement>);
 
   sessionId   = signal('');
   playerId    = signal('');
@@ -35,6 +36,11 @@ export class BoardComponent implements OnInit, OnDestroy {
   private pollSub?: Subscription;
   private moveSub?: Subscription;
   private rollStartTime = 0;
+
+  // Fixed landscape design height (CSS px, derived from known element sizes).
+  // Scale = phone-portrait-width / MOBILE_DESIGN_H.  Computed once on init and
+  // on resize — never per game-state change, so the board never jumps mid-game.
+  private readonly MOBILE_DESIGN_H = 541;
   private readonly ROLL_ANIM_MIN_MS = 2800;
 
   readonly emptySet  = new Set<string>();
@@ -65,6 +71,20 @@ export class BoardComponent implements OnInit, OnDestroy {
       },
       error: () => {}
     });
+  }
+
+  ngAfterViewInit() {
+    this.applyMobileScale();
+  }
+
+  @HostListener('window:resize')
+  applyMobileScale() {
+    const el = this.host.nativeElement as HTMLElement;
+    if (window.innerHeight > window.innerWidth) {
+      el.style.setProperty('--mobile-scale', (window.innerWidth / this.MOBILE_DESIGN_H).toFixed(4));
+    } else {
+      el.style.removeProperty('--mobile-scale');
+    }
   }
 
   ngOnDestroy() {

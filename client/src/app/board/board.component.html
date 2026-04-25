@@ -27,7 +27,7 @@
             — {{ turn.phase }}
           </span>
 
-          @if (turn.currentRoll || canRoll()) {
+          @if (turn.currentRoll || canRoll() || isInPassiveQueue()) {
             <div class="dice-area">
               <app-dice [value]="turn.currentRoll?.white1 ?? null" color="WHITE" [faces]="gameFaces()" [rolling]="rollingDice()" />
               <app-dice [value]="turn.currentRoll?.white2 ?? null" color="WHITE" [faces]="gameFaces()" [rolling]="rollingDice()" />

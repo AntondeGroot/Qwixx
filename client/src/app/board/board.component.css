@@ -3,6 +3,23 @@
   padding: 16px;
 }
 
+@media (orientation: portrait) {
+  :host {
+    position: fixed;
+    top:    calc((100vh - 100vw) / 2);
+    left:   calc((100vw - 100vh) / 2);
+    width:  100vh;
+    height: 100vw;
+    overflow: hidden;
+    transform: rotate(90deg);
+    transform-origin: 50% 50%;
+  }
+
+  .board-layout {
+    zoom: var(--mobile-scale, 1);
+  }
+}
+
 .board-layout {
   display: grid;
   grid-template-columns: 200px auto 1fr;
@@ -59,6 +76,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  min-height: 64px;
 }
 
 .action-bar {

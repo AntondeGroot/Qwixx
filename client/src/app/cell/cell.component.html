@@ -3,7 +3,7 @@
      [class.pending]="pending()"
      [class.closing-eligible]="cell().closingEligible"
      [class.extra-bucket]="hasTag()(TagEnum.EXTRA_BUCKET)"
-     [class.clickable]="clickable()"
+     [class.clickable]="showClickable() ?? clickable()"
      [attr.data-color]="cell().color"
      (click)="(clickable() || pending()) && clicked.emit()">
   <span class="cell-value">{{ cell().displayValue }}</span>

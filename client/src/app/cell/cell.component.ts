@@ -8,10 +8,11 @@ import { CellTag } from '../../generated/model/cellTag';
   styleUrl: './cell.component.css'
 })
 export class CellComponent {
-  cell      = input.required<SheetCell>();
-  crossed   = input(false);
-  pending   = input(false);
-  clickable = input(false);
+  cell        = input.required<SheetCell>();
+  crossed     = input(false);
+  pending     = input(false);
+  clickable   = input(false);
+  showClickable = input<boolean | undefined>(undefined); // undefined = follow clickable
 
   clicked = output<void>();
 

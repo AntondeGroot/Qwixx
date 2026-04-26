@@ -48,6 +48,10 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   isOffline = computed(() => this.gameState() !== null && this.gameState()!.turnState == null);
 
+  visibleClickableCellIds = computed((): Set<string> =>
+    this.rollingDice() ? this.emptySet : this.clickableCellIds()
+  );
+
   pendingCellIds = computed(() => {
     const ids = this.gameState()?.turnState?.pendingCrosses?.[this.playerId()] ?? [];
     return new Set<string>(ids);
@@ -66,6 +70,14 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     ).subscribe({
       next: (s: GameState) => {
         if (s.version !== this.gameState()?.version) {
+          // If the active player just rolled (currentRoll appeared) and we are a
+          // passive observer, start our own dice animation so the roll feels live.
+          const prevRoll = this.gameState()?.turnState?.currentRoll;
+          const newRoll  = s.turnState?.currentRoll;
+          if (this.gameState() !== null && !prevRoll && newRoll) {
+            this.rollingDice.set(true);
+            this.rollStartTime = Date.now();
+          }
           this.applyState(s);
         }
       },

@@ -58,8 +58,8 @@
 
 .cell.clickable {
   cursor: pointer;
-  outline: 3px solid rgba(255, 255, 255, 0.9);
-  outline-offset: 1px;
+  outline: 3px solid rgb(186 66 255 / 0.9);
+  /*outline-offset: 1px;*/
 }
 
 .cell.clickable:hover {

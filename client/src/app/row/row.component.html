@@ -3,6 +3,7 @@
     <app-cell [cell]="cell" [crossed]="isCrossed(cell.id)"
               [pending]="pendingCellIds().has(cell.id)"
               [clickable]="clickableCellIds().has(cell.id)"
+              [showClickable]="showClickableCellIds()?.has(cell.id)"
               (clicked)="cellClicked.emit(cell.id)" />
   }
   <div class="lock-zone" [class.lock-zone-crossed]="rowState()?.lockCrossed">
@@ -10,6 +11,7 @@
       <app-cell [cell]="cell" [crossed]="isCrossed(cell.id)"
                 [pending]="pendingCellIds().has(cell.id)"
                 [clickable]="clickableCellIds().has(cell.id)"
+                [showClickable]="showClickableCellIds()?.has(cell.id)"
                 (clicked)="cellClicked.emit(cell.id)" />
     }
     <div class="lock-cell"

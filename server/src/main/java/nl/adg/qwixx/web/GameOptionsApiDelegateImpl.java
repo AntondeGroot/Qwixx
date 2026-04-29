@@ -40,12 +40,12 @@ public class GameOptionsApiDelegateImpl implements GameOptionsApiDelegate {
     private GameOption toDto(nl.adg.qwixx.game.GameOption o) {
         GameOption dto = new GameOption(
                 o.key(),
-                o.label(),
-                o.description(),
+                o.labelKey(),
                 o.type() == OptionType.BOOLEAN
                         ? GameOption.TypeEnum.BOOLEAN
                         : GameOption.TypeEnum.ENUM,
                 o.defaultValue());
+        dto.setDescriptionKey(o.descriptionKey());
         if (!o.choices().isEmpty()) dto.setChoices(o.choices());
         return dto;
     }

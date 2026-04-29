@@ -12,10 +12,13 @@ export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: ({ queryParams }) =>
-      queryParams['sessionid'] && queryParams['playerid']
-        ? `/game/${queryParams['sessionid']}/${queryParams['playerid']}`
-        : '/settings'
+    redirectTo: ({ queryParams }) => {
+      const localeParam = queryParams['locale'] ? `?locale=${queryParams['locale']}` : '';
+      if (queryParams['sessionid'] && queryParams['playerid']) {
+        return `/game/${queryParams['sessionid']}/${queryParams['playerid']}${localeParam}`;
+      }
+      return `/settings${localeParam}`;
+    }
   },
   { path: '**', redirectTo: 'settings' }
 ];

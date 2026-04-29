@@ -1,0 +1,32 @@
+{
+  "crosses": "Croix",
+  "points": "Points",
+  "punishment": "Points de pénalité",
+  "yourTurn": "À toi de jouer",
+  "roll": "Lancer",
+  "pass": "Passer",
+  "endTurn": "Fin du tour",
+  "changeLanguage": "Changer de langue",
+  "startGame": "Démarrer le jeu",
+  "starting": "Démarrage en cours…",
+  "gameOption": {
+    "base": "Variante",
+    "baseDescription": "STANDARD utilise les cellules 2–12 par ligne. LONGO utilise les cellules 2–16 avec des numéros bonus.",
+    "gameMode": "Mode de jeu",
+    "gameModeDescription": "ONLINE applique l'ordre des tours et les règles de dés sur le serveur. OFFLINE permet aux joueurs d'utiliser de vrais dés.",
+    "cardMode": "Mode de carte",
+    "cardModeDescription": "DÉTERMINISTE donne à tous les joueurs des dispositions identiques. PROBABILISTE donne à chaque joueur la sienne.",
+    "randomOrder": "Ordre aléatoire",
+    "randomOrderDescription": "Mélanger les valeurs d'affichage dans chaque ligne.",
+    "extraRow": "Rangée supplémentaire",
+    "extraRowDescription": "Ajouter une rangée bonus de cellules formant une vague sur quatre rangées.",
+    "choice": {
+      "STANDARD": "Standard",
+      "LONGO": "Longo",
+      "ONLINE": "En ligne",
+      "OFFLINE": "Hors ligne",
+      "DETERMINISTIC": "Déterministe",
+      "PROBABILISTIC": "Probabiliste"
+    }
+  }
+}

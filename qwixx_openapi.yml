@@ -592,20 +592,19 @@ components:
       type: object
       required:
         - key
-        - label
-        - description
+        - labelKey
         - type
         - defaultValue
       properties:
         key:
           type: string
           description: Identifier used when sending options in NewGameRequest.
-        label:
+        labelKey:
           type: string
-          description: Short human-readable name for display in a lobby UI.
-        description:
+          description: i18n key for the option label (e.g. "gameOption.base").
+        descriptionKey:
           type: string
-          description: Explanation of what the option does.
+          description: i18n key for the option description (optional).
         type:
           type: string
           enum: [BOOLEAN, INTEGER, ENUM]

@@ -6,7 +6,7 @@
 
   @for (opt of gameOptions(); track opt.key) {
     <div>
-      <label [for]="opt.key">{{ opt.label }}</label>
+      <label [for]="opt.key">{{ getGameOptionLabel(opt.key) }}</label>
 
       @if (opt.type === TypeEnum.BOOLEAN) {
         <input [id]="opt.key" type="checkbox" [formControlName]="opt.key" />
@@ -35,6 +35,6 @@
   }
 
   <button type="submit" [disabled]="form.invalid || loading()">
-    {{ loading() ? 'Starting…' : 'Start game' }}
+    {{ loading() ? ('starting' | translate) : ('startGame' | translate) }}
   </button>
 </form>

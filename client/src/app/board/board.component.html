@@ -23,7 +23,7 @@
       @if (state.turnState; as turn) {
         <div class="turn-bar" [class.my-turn]="isMyTurn() || isInPassiveQueue()">
           <span class="turn-label">
-            {{ isMyTurn() ? 'Your turn' : playerName(turn.activePlayerId) + '\'s turn' }}
+            {{ isMyTurn() ? ('yourTurn' | translate) : playerName(turn.activePlayerId) + '\'s turn' }}
             — {{ turn.phase }}
           </span>
 
@@ -39,14 +39,14 @@
 
           <div class="action-bar">
             @if (canRoll()) {
-              <button class="btn-roll" (click)="sendRoll()" [disabled]="rollingDice()">Roll</button>
+              <button class="btn-roll" (click)="sendRoll()" [disabled]="rollingDice()">{{ 'roll' | translate }}</button>
             }
             @if (canPassActive()) {
-              <button class="btn-pass" (click)="passActive()">End Turn</button>
+              <button class="btn-pass" (click)="passActive()">{{ 'endTurn' | translate }}</button>
             }
             @if (canPassPassive()) {
               <button class="btn-pass" (click)="passPassive()">
-                {{ hasPendingPassiveCross() ? 'Confirm' : 'Pass' }}
+                {{ hasPendingPassiveCross() ? 'Confirm' : ('pass' | translate) }}
               </button>
             }
           </div>
@@ -70,8 +70,8 @@
             }
             <div class="score-strip">
               <div class="score-labels">
-                <span>Kruisjes</span>
-                <span>Punten</span>
+                <span>{{ 'crosses' | translate }}</span>
+                <span>{{ 'points' | translate }}</span>
               </div>
               @for (col of scoreRows(); track col.crosses) {
                 <div class="score-box">
@@ -92,7 +92,7 @@
                 </div>
               }
               <div class="punishment-track">
-                <span class="punishment-label">Punishments</span>
+                <span class="punishment-label">{{ 'punishment' | translate }}</span>
                 @for (i of [0, 1, 2, 3]; track i) {
                   <div class="punishment-box"
                        [class.taken]="(state.sheetProgress[playerId()]?.punishments ?? 0) > i"

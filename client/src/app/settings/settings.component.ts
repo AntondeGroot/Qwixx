@@ -2,23 +2,27 @@ import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { GamesService } from '../../generated/api/games.service';
 import { PlayersService } from '../../generated/api/players.service';
 import { GameOption } from '../../generated/model/gameOption';
 import { SheetLayout } from '../../generated/model/sheetLayout';
 import { RowComponent } from '../row/row.component';
+import { TranslationService as AppTranslationService } from '../services/translation.service';
 
 @Component({
   selector: 'app-settings',
-  imports: [ReactiveFormsModule, RowComponent],
+  imports: [ReactiveFormsModule, RowComponent, TranslateModule],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.css'
 })
 export class SettingsComponent implements OnInit, OnDestroy {
-  private gamesService   = inject(GamesService);
-  private playersService = inject(PlayersService);
-  private router         = inject(Router);
-  private fb             = inject(FormBuilder);
+  private gamesService      = inject(GamesService);
+  private playersService    = inject(PlayersService);
+  private router            = inject(Router);
+  private fb                = inject(FormBuilder);
+  private appTranslationService = inject(AppTranslationService);
+  private translateService = inject(TranslateService);
   private previewSub?: Subscription;
 
   gameOptions   = signal<GameOption[]>([]);
@@ -104,5 +108,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
     this.loading.set(false);
     this.error.set('Could not start game. Is the server running?');
     console.error(err);
+  }
+
+  getGameOptionLabel(key: string): string {
+    return this.translateService.instant(`gameOption.${key}`);
   }
 }

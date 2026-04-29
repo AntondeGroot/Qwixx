@@ -1,0 +1,32 @@
+{
+  "crosses": "Kreuze",
+  "points": "Punkte",
+  "punishment": "Strafpunkte",
+  "yourTurn": "Du bist dran",
+  "roll": "Würfeln",
+  "pass": "Passen",
+  "endTurn": "Zug beenden",
+  "changeLanguage": "Sprache ändern",
+  "startGame": "Spiel starten",
+  "starting": "Wird gestartet…",
+  "gameOption": {
+    "base": "Variante",
+    "baseDescription": "STANDARD verwendet Zellen 2–12 pro Reihe. LONGO verwendet Zellen 2–16 mit Bonusnummern.",
+    "gameMode": "Spielmodus",
+    "gameModeDescription": "ONLINE erzwingt Reihenfolge und Würfelregeln auf dem Server. OFFLINE lässt Spieler echte Würfel verwenden.",
+    "cardMode": "Kartenmodus",
+    "cardModeDescription": "DETERMINISTISCH gibt allen Spielern identische Layouts. PROBABILISTISCH gibt jedem Spieler ein eigenes.",
+    "randomOrder": "Zufällige Reihenfolge",
+    "randomOrderDescription": "Mischen Sie die Anzeigewerte in jeder Reihe.",
+    "extraRow": "Zusätzliche Reihe",
+    "extraRowDescription": "Fügen Sie eine Bonusreihe von Zellen hinzu, die eine Welle über vier Reihen bildet.",
+    "choice": {
+      "STANDARD": "Standard",
+      "LONGO": "Longo",
+      "ONLINE": "Online",
+      "OFFLINE": "Offline",
+      "DETERMINISTIC": "Deterministisch",
+      "PROBABILISTIC": "Probabilistisch"
+    }
+  }
+}

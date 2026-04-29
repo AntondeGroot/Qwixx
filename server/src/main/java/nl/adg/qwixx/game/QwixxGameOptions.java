@@ -14,21 +14,14 @@ public class QwixxGameOptions {
 
     public static List<GameOption> all() {
         return List.of(
-            GameOption.enumOption("base", "Variant",
-                "STANDARD uses cells 2–12 per row. LONGO uses cells 2–16 with personal bonus numbers.",
+            GameOption.enumOption("base", "gameOption.base", "gameOption.baseDescription",
                 "STANDARD", List.of("STANDARD", "LONGO")),
-            GameOption.enumOption("gameMode", "Game mode",
-                "ONLINE enforces turn order and dice rules on the server. " +
-                "OFFLINE lets players use real dice — the server only tracks crossings and game-end conditions.",
+            GameOption.enumOption("gameMode", "gameOption.gameMode", "gameOption.gameModeDescription",
                 "ONLINE", List.of("ONLINE", "OFFLINE")),
-            GameOption.enumOption("cardMode", "Card mode",
-                "DETERMINISTIC gives all players identical row layouts. " +
-                "PROBABILISTIC gives each player their own random layout.",
+            GameOption.enumOption("cardMode", "gameOption.cardMode", "gameOption.cardModeDescription",
                 "DETERMINISTIC", List.of("DETERMINISTIC", "PROBABILISTIC")),
-            GameOption.boolOption("randomOrder", "Random order",
-                "Shuffle the display values within each row."),
-            GameOption.boolOption("extraRow", "Extra row",
-                "Add ExtraBucket-tagged cells forming a sinus wave across the four rows.")
+            GameOption.boolOption("randomOrder", "gameOption.randomOrder", "gameOption.randomOrderDescription"),
+            GameOption.boolOption("extraRow", "gameOption.extraRow", "gameOption.extraRowDescription")
         );
     }
 

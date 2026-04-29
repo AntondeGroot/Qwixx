@@ -1,0 +1,32 @@
+{
+  "crosses": "Kruisjes",
+  "points": "Punten",
+  "punishment": "Strafpunten",
+  "yourTurn": "Jouw Beurt",
+  "roll": "Rol",
+  "pass": "Pas",
+  "endTurn": "Einde Beurt",
+  "changeLanguage": "Taal wijzigen",
+  "startGame": "Spel starten",
+  "starting": "Aan het starten…",
+  "gameOption": {
+    "base": "Variant",
+    "baseDescription": "STANDARD gebruikt cellen 2–12 per rij. LONGO gebruikt cellen 2–16 met bonusnummers.",
+    "gameMode": "Spelmodus",
+    "gameModeDescription": "ONLINE dwingt speelvolgorde en dobbelstenen regels op de server af. OFFLINE laat spelers echte dobbelstenen gebruiken.",
+    "cardMode": "Kaartmodus",
+    "cardModeDescription": "DETERMINISTISCH geeft alle spelers identieke indelingen. PROBABILISTISCH geeft elke speler zijn eigen.",
+    "randomOrder": "Willekeurige volgorde",
+    "randomOrderDescription": "Schud de weergavewaarden in elke rij.",
+    "extraRow": "Extra rij",
+    "extraRowDescription": "Voeg een bonusrij cellen toe die een golf over vier rijen vormt.",
+    "choice": {
+      "STANDARD": "Standaard",
+      "LONGO": "Longo",
+      "ONLINE": "Online",
+      "OFFLINE": "Offline",
+      "DETERMINISTIC": "Deterministisch",
+      "PROBABILISTIC": "Probabilistisch"
+    }
+  }
+}

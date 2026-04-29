@@ -1,6 +1,7 @@
 import { AfterViewInit, Component, computed, ElementRef, HostListener, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { interval, Subscription, switchMap } from 'rxjs';
+import { TranslateModule } from '@ngx-translate/core';
 import { GamestatesService } from '../../generated/api/gamestates.service';
 import { MovesService } from '../../generated/api/moves.service';
 import { Color } from '../../generated/model/color';
@@ -17,7 +18,7 @@ import { RowComponent } from '../row/row.component';
 
 @Component({
   selector: 'app-board',
-  imports: [RouterLink, RowComponent, DiceComponent, PlayerListComponent],
+  imports: [RouterLink, RowComponent, DiceComponent, PlayerListComponent, TranslateModule],
   templateUrl: './board.component.html',
   styleUrl: './board.component.css'
 })

@@ -1,0 +1,32 @@
+{
+  "crosses": "Crosses",
+  "points": "Points",
+  "punishment": "Penalty Points",
+  "yourTurn": "Your turn",
+  "roll": "Roll",
+  "pass": "Pass",
+  "endTurn": "End Turn",
+  "changeLanguage": "Change language",
+  "startGame": "Start game",
+  "starting": "Starting…",
+  "gameOption": {
+    "base": "Variant",
+    "baseDescription": "STANDARD uses cells 2–12 per row. LONGO uses cells 2–16 with bonus numbers.",
+    "gameMode": "Game mode",
+    "gameModeDescription": "ONLINE enforces turn order and dice rules on the server. OFFLINE lets players use real dice.",
+    "cardMode": "Card mode",
+    "cardModeDescription": "DETERMINISTIC gives all players identical layouts. PROBABILISTIC gives each player their own.",
+    "randomOrder": "Random order",
+    "randomOrderDescription": "Shuffle the display values within each row.",
+    "extraRow": "Extra row",
+    "extraRowDescription": "Add a bonus row of cells forming a wave across the four rows.",
+    "choice": {
+      "STANDARD": "Standard",
+      "LONGO": "Longo",
+      "ONLINE": "Online",
+      "OFFLINE": "Offline",
+      "DETERMINISTIC": "Deterministic",
+      "PROBABILISTIC": "Probabilistic"
+    }
+  }
+}

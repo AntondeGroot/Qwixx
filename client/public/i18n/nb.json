@@ -1,0 +1,32 @@
+{
+  "crosses": "Kryss",
+  "points": "Poeng",
+  "punishment": "Straffpoeng",
+  "yourTurn": "Din Tur",
+  "roll": "Kast",
+  "pass": "Pass",
+  "endTurn": "Avslutt Tur",
+  "changeLanguage": "Endre språk",
+  "startGame": "Start spillet",
+  "starting": "Starter…",
+  "gameOption": {
+    "base": "Variant",
+    "baseDescription": "STANDARD bruker celler 2–12 per rad. LONGO bruker celler 2–16 med bonusnumre.",
+    "gameMode": "Spillmodus",
+    "gameModeDescription": "ONLINE håndhever tursyklus og terningregler på serveren. OFFLINE lar spillere bruke ekte terninger.",
+    "cardMode": "Kortmodus",
+    "cardModeDescription": "DETERMINISTISK gir alle spillere identiske oppsett. PROBABILISTISK gir hver spiller sitt eget.",
+    "randomOrder": "Tilfeldig rekkefølge",
+    "randomOrderDescription": "Bland visningsverdiene i hver rad.",
+    "extraRow": "Ekstra rad",
+    "extraRowDescription": "Legg til en bonusrad med celler som danner en bølge over fire rader.",
+    "choice": {
+      "STANDARD": "Standard",
+      "LONGO": "Longo",
+      "ONLINE": "Nett",
+      "OFFLINE": "Frakoblet",
+      "DETERMINISTIC": "Deterministisk",
+      "PROBABILISTIC": "Probabilistisk"
+    }
+  }
+}

@@ -4,18 +4,18 @@ import java.util.List;
 
 public record GameOption(
         String key,
-        String label,
-        String description,
+        String labelKey,
+        String descriptionKey,
         OptionType type,
         String defaultValue,
         List<String> choices) {
 
-    public static GameOption boolOption(String key, String label, String description) {
-        return new GameOption(key, label, description, OptionType.BOOLEAN, "false", List.of());
+    public static GameOption boolOption(String key, String labelKey, String descriptionKey) {
+        return new GameOption(key, labelKey, descriptionKey, OptionType.BOOLEAN, "false", List.of());
     }
 
-    public static GameOption enumOption(String key, String label, String description,
+    public static GameOption enumOption(String key, String labelKey, String descriptionKey,
                                         String defaultValue, List<String> choices) {
-        return new GameOption(key, label, description, OptionType.ENUM, defaultValue, choices);
+        return new GameOption(key, labelKey, descriptionKey, OptionType.ENUM, defaultValue, choices);
     }
 }

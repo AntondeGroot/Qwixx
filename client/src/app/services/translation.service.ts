@@ -59,7 +59,8 @@ export class TranslationService {
   private updateUrl(language: string) {
     const params = new URLSearchParams(window.location.search);
     params.set('locale', language);
-    const newUrl = `${window.location.pathname}?${params}`;
+    const queryString = params.toString();
+    const newUrl = queryString ? `${window.location.pathname}?${queryString}` : window.location.pathname;
     window.history.replaceState({}, '', newUrl);
   }
 

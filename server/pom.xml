@@ -60,6 +60,18 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.seleniumhq.selenium</groupId>
+      <artifactId>selenium-java</artifactId>
+      <version>4.43.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.github.bonigarcia</groupId>
+      <artifactId>webdrivermanager</artifactId>
+      <version>6.3.4</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -240,26 +252,6 @@
       </build>
     </profile>
 
-    <profile>
-      <id>e2e</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <dependencies>
-        <dependency>
-          <groupId>org.seleniumhq.selenium</groupId>
-          <artifactId>selenium-java</artifactId>
-          <version>4.43.0</version>
-          <scope>test</scope>
-        </dependency>
-        <dependency>
-          <groupId>io.github.bonigarcia</groupId>
-          <artifactId>webdrivermanager</artifactId>
-          <version>6.3.4</version>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
-    </profile>
   </profiles>
 
 </project>

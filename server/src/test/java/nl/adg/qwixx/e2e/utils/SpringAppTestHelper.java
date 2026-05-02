@@ -1,46 +1,69 @@
 package nl.adg.qwixx.e2e.utils;
 
 import nl.adg.qwixx.QwixxApplication;
-import nl.adg.qwixx.game.GameRegistry;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.io.File;
+import java.nio.file.Path;
+
 public class SpringAppTestHelper {
 
-  private static ConfigurableApplicationContext context;
-  private static String sessionId;
+    private static ConfigurableApplicationContext context;
 
-  public static synchronized void startTestApp() {
-    if (context != null) {
-      return;
+    public static synchronized void startApp() {
+        if (context != null) return;
+
+        Path clientRoot = Path.of(System.getProperty("user.dir")).resolve("../client").normalize().toAbsolutePath();
+        buildAngularDevBundle(clientRoot.toFile());
+
+        String clientDist = clientRoot.resolve("dist/client/browser").toString();
+        SpringApplication app = new SpringApplication(QwixxApplication.class);
+        // "e2e" profile: enables TestController, disables demo-game auto-setup
+        app.setAdditionalProfiles("e2e");
+        // Command-line args override application.properties (which defaults to port 4300)
+        context = app.run(
+                "--server.port=4200",
+                "--spring.web.resources.static-locations=file:" + clientDist + "/"
+        );
     }
 
-    System.setProperty("server.port", "4200");
-    SpringApplication app = new SpringApplication(QwixxApplication.class);
-    context = app.run();
-
-    // Get the test session ID created by QwixxTestApplication
-    var games = GameRegistry.getAllGames();
-    if (!games.isEmpty()) {
-      sessionId = games.get(0).sessionId();
+    public static synchronized void stopApp() {
+        if (context != null) {
+            context.close();
+            context = null;
+        }
     }
-  }
 
-  public static synchronized void stopApp() {
-    if (context != null) {
-      context.close();
-      context = null;
-      sessionId = null;
-    }
-  }
+    /**
+     * Builds the Angular app with the development configuration (apiBaseUrl='').
+     * This ensures API calls go to /gamestates/... instead of /qwixx/gamestates/...
+     * so no path-prefix filter is needed on the Spring side.
+     */
+    private static void buildAngularDevBundle(File clientDir) {
+        try {
+            System.out.println("[E2E] Building Angular dev bundle…");
+            String[] cmd = isWindows()
+                    ? new String[]{"cmd", "/c", "npm", "run", "build", "--", "--configuration=development"}
+                    : new String[]{"npm", "run", "build", "--", "--configuration=development"};
 
-  public static String getSessionId() {
-    if (sessionId == null) {
-      var games = GameRegistry.getAllGames();
-      if (!games.isEmpty()) {
-        sessionId = games.get(0).sessionId();
-      }
+            int exit = new ProcessBuilder(cmd)
+                    .directory(clientDir)
+                    .inheritIO()
+                    .start()
+                    .waitFor();
+
+            if (exit != 0) throw new IllegalStateException("Angular dev build failed (exit " + exit + ")");
+            System.out.println("[E2E] Angular dev bundle ready.");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Angular build interrupted", e);
+        } catch (Exception e) {
+            throw new IllegalStateException("Angular build failed: " + e.getMessage(), e);
+        }
     }
-    return sessionId;
-  }
+
+    private static boolean isWindows() {
+        return System.getProperty("os.name", "").toLowerCase().contains("win");
+    }
 }

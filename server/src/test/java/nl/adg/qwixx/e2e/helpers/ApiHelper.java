@@ -85,6 +85,16 @@ public class ApiHelper {
         return http.getForObject(BASE_URL + "/gamestates/" + sessionId, Map.class);
     }
 
+    /** Returns the server-assigned UUID for the row at {@code rowIndex} in the given player's sheet layout. */
+    @SuppressWarnings("unchecked")
+    public String getRowId(String sessionId, String playerId, int rowIndex) {
+        Map<String, Object> state = getGameState(sessionId);
+        Map<String, Object> layouts = (Map<String, Object>) state.get("sheetLayouts");
+        Map<String, Object> layout  = (Map<String, Object>) layouts.get(playerId);
+        List<Map<String, Object>> rows = (List<Map<String, Object>>) layout.get("rows");
+        return (String) rows.get(rowIndex).get("id");
+    }
+
     // ---------- TEST-ONLY ENDPOINTS (active under the "e2e" Spring profile) ----------
 
     public void reset() {
@@ -98,6 +108,11 @@ public class ApiHelper {
 
     public void setDice(String sessionId, int white1, int white2) {
         post("/test/set-dice/" + sessionId + "/" + white1 + "/" + white2, null, Void.class);
+    }
+
+    public void addClosureRequest(String sessionId, String playerName, String rowColor) {
+        post("/test/add-closure-request/" + sessionId + "/" + playerName + "/" + rowColor,
+                null, Void.class);
     }
 
     // ---------- PRIVATE ----------

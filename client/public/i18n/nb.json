@@ -28,5 +28,12 @@
       "DETERMINISTIC": "Deterministisk",
       "PROBABILISTIC": "Probabilistisk"
     }
+  },
+  "rowClosure": {
+    "wantsToCloseThe": "vil lukke",
+    "row": "raden",
+    "confirmQuestion": "Vil du endre ditt siste valg?",
+    "confirmButton": "Bekreft siste valg",
+    "changeButton": "Endre siste valg"
   }
 }

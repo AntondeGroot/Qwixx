@@ -2,6 +2,11 @@
   <p class="error">{{ error() }}</p>
 } @else if (gameState(); as state) {
 
+  <app-row-closure-modal
+    [requests]="rowClosureRequests()"
+    (confirmSelection)="onConfirmRowClosure()"
+    (changeSelection)="onChangeRowClosure()"></app-row-closure-modal>
+
   <div class="board-layout" [class.offline-layout]="isOffline()">
 
     <!-- Left column: other players (online only) -->
@@ -64,9 +69,9 @@
                 [clickableCellIds]="isOffline() ? offlineClickableCellIds(playerId()) : visibleClickableCellIds()"
                 [showClickableCellIds]="isOffline() ? emptySet : null"
                 [pendingCellIds]="pendingCellIds()"
-                [lockClickable]="isOffline() && isLockEligible(playerId(), row.id)"
+                [lockClickable]="isLockEligible(playerId(), row.id)"
                 (cellClicked)="onCellClicked(row.id, $event, playerId())"
-                (lockClicked)="offlineLock(playerId(), row.id)" />
+                (lockClicked)="onLockClicked(row.id, playerId())" />
             }
             <div class="score-strip">
               <div class="score-labels">

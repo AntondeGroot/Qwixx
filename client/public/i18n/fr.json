@@ -28,5 +28,12 @@
       "DETERMINISTIC": "Déterministe",
       "PROBABILISTIC": "Probabiliste"
     }
+  },
+  "rowClosure": {
+    "wantsToCloseThe": "veut fermer la",
+    "row": "ligne",
+    "confirmQuestion": "Voulez-vous modifier votre dernière sélection ?",
+    "confirmButton": "Confirmer la dernière sélection",
+    "changeButton": "Modifier la dernière sélection"
   }
 }

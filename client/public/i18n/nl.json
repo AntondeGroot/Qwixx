@@ -28,5 +28,12 @@
       "DETERMINISTIC": "Deterministisch",
       "PROBABILISTIC": "Probabilistisch"
     }
+  },
+  "rowClosure": {
+    "wantsToCloseThe": "wil de",
+    "row": "rij sluiten",
+    "confirmQuestion": "Wil je je laatste selectie wijzigen?",
+    "confirmButton": "Laatste selectie bevestigen",
+    "changeButton": "Laatste selectie wijzigen"
   }
 }

@@ -14,8 +14,10 @@ import nl.adg.qwixx.action.UndoLastCrossAction;
 import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSession;
+import nl.adg.qwixx.game.Player;
 import nl.adg.qwixx.state.SheetLayout;
 import nl.adg.qwixx.game.SessionNotFoundException;
+import nl.adg.qwixx.state.RowClosureRequest;
 import nl.adg.qwixx.generated.api.MovesApiDelegate;
 import nl.adg.qwixx.generated.model.MoveRequest;
 import nl.adg.qwixx.generated.model.MoveResponse;
@@ -44,6 +46,17 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
                 session.currentState().boardState().closedRows());
 
         GameState newState = session.applyAction(action);
+
+        // Populate row closure requests if a lock intent was declared
+        if (action instanceof DeclareLockIntentAction declareLock) {
+            populateRowClosureRequests(newState, session, pid, declareLock.rowIndex());
+        }
+
+        // Clear row closure requests when a lock is closed or reset
+        if (action instanceof CrossLockAction || action instanceof ResetTurnAction ||
+            action instanceof UndoLastCrossAction || action instanceof EndTurnAction) {
+            newState.rowClosureRequests().clear();
+        }
 
         MoveResult result = newState.gameOver() ? MoveResult.GAME_OVER : MoveResult.ACCEPTED;
 
@@ -102,5 +115,20 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
         GameSession session = GameRegistry.getGame(sessionId);
         if (session == null) throw new SessionNotFoundException(sessionId);
         return session;
+    }
+
+    private void populateRowClosureRequests(GameState state, GameSession session, UUID activePlayerId, int rowIndex) {
+        SheetLayout layout = state.sheetLayouts().values().iterator().next();
+        nl.adg.qwixx.data.Color rowColor = layout.rows().get(rowIndex).lock().color();
+
+        // Create row closure requests for all non-active players
+        state.rowClosureRequests().clear();
+        for (Player player : session.players()) {
+            if (!player.id().equals(activePlayerId)) {
+                state.rowClosureRequests().add(
+                    new RowClosureRequest(player.name(), rowColor)
+                );
+            }
+        }
     }
 }

@@ -21,6 +21,16 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
+  <repositories>
+    <repository>
+      <id>central</id>
+      <url>https://repo.maven.apache.org/maven2</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
   <dependencies>
     <!-- Spring Boot -->
     <dependency>
@@ -59,6 +69,49 @@
         <artifactId>spring-boot-maven-plugin</artifactId>
       </plugin>
 
+
+      <!-- Run E2E tests with failsafe (integration test phase) -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>3.5.5</version>
+        <configuration>
+          <includes>
+            <include>**/*IT.java</include>
+            <include>**/e2e/**/*Test.java</include>
+          </includes>
+          <groups>browser</groups>
+          <forkCount>1</forkCount>
+          <reuseForks>true</reuseForks>
+          <systemPropertyVariables>
+            <junit.jupiter.execution.parallel.enabled>true</junit.jupiter.execution.parallel.enabled>
+            <junit.jupiter.execution.parallel.mode.default>same_thread</junit.jupiter.execution.parallel.mode.default>
+            <junit.jupiter.execution.parallel.mode.classes.default>concurrent</junit.jupiter.execution.parallel.mode.classes.default>
+            <junit.jupiter.execution.parallel.config.strategy>fixed</junit.jupiter.execution.parallel.config.strategy>
+            <junit.jupiter.execution.parallel.config.fixed.parallelism>3</junit.jupiter.execution.parallel.config.fixed.parallelism>
+            <junit.jupiter.execution.parallel.config.fixed.max-pool-size>3</junit.jupiter.execution.parallel.config.fixed.max-pool-size>
+          </systemPropertyVariables>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Exclude E2E tests from unit tests, run them in integration-test phase instead -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>**/e2e/**</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
 
       <!-- Generate Spring controllers and model from the OpenAPI spec -->
       <plugin>
@@ -185,6 +238,27 @@
           </plugin>
         </plugins>
       </build>
+    </profile>
+
+    <profile>
+      <id>e2e</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.seleniumhq.selenium</groupId>
+          <artifactId>selenium-java</artifactId>
+          <version>4.43.0</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>io.github.bonigarcia</groupId>
+          <artifactId>webdrivermanager</artifactId>
+          <version>6.3.4</version>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
     </profile>
   </profiles>
 

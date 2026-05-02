@@ -156,6 +156,66 @@ class GameStateMapperTest {
         // If no matching cell found for this roll, test is vacuously skipped
     }
 
+    @Test
+    void toDtoRowClosureRequestsIsEmptyAtStart() {
+        var dto = toDto();
+        assertNotNull(dto.getRowClosureRequests());
+        assertTrue(dto.getRowClosureRequests().isEmpty());
+    }
+
+    @Test
+    void toDtoRowClosureRequestsMappedCorrectly() {
+        // Manually add row closure requests to the internal state
+        var state = GameRegistry.getGame(sessionId).currentState();
+        state.rowClosureRequests().add(
+            new nl.adg.qwixx.state.RowClosureRequest("Alice", nl.adg.qwixx.data.Color.RED)
+        );
+        state.rowClosureRequests().add(
+            new nl.adg.qwixx.state.RowClosureRequest("Bob", nl.adg.qwixx.data.Color.YELLOW)
+        );
+
+        var dto = GameStateMapper.toDto(state, GameRegistry.getGame(sessionId));
+
+        assertNotNull(dto.getRowClosureRequests());
+        assertEquals(2, dto.getRowClosureRequests().size());
+
+        // Check first request
+        assertEquals("Alice", dto.getRowClosureRequests().get(0).getPlayerName());
+        assertEquals(nl.adg.qwixx.generated.model.Color.RED, dto.getRowClosureRequests().get(0).getRowColor());
+
+        // Check second request
+        assertEquals("Bob", dto.getRowClosureRequests().get(1).getPlayerName());
+        assertEquals(nl.adg.qwixx.generated.model.Color.YELLOW, dto.getRowClosureRequests().get(1).getRowColor());
+    }
+
+    @Test
+    void toDtoRowClosureRequestsAllColorsSupported() {
+        var state = GameRegistry.getGame(sessionId).currentState();
+        state.rowClosureRequests().add(
+            new nl.adg.qwixx.state.RowClosureRequest("P1", nl.adg.qwixx.data.Color.RED)
+        );
+        state.rowClosureRequests().add(
+            new nl.adg.qwixx.state.RowClosureRequest("P2", nl.adg.qwixx.data.Color.YELLOW)
+        );
+        state.rowClosureRequests().add(
+            new nl.adg.qwixx.state.RowClosureRequest("P3", nl.adg.qwixx.data.Color.GREEN)
+        );
+        state.rowClosureRequests().add(
+            new nl.adg.qwixx.state.RowClosureRequest("P4", nl.adg.qwixx.data.Color.BLUE)
+        );
+
+        var dto = GameStateMapper.toDto(state, GameRegistry.getGame(sessionId));
+
+        assertEquals(4, dto.getRowClosureRequests().size());
+        var colors = dto.getRowClosureRequests().stream()
+            .map(nl.adg.qwixx.generated.model.RowClosureRequest::getRowColor)
+            .toList();
+        assertTrue(colors.contains(nl.adg.qwixx.generated.model.Color.RED));
+        assertTrue(colors.contains(nl.adg.qwixx.generated.model.Color.YELLOW));
+        assertTrue(colors.contains(nl.adg.qwixx.generated.model.Color.GREEN));
+        assertTrue(colors.contains(nl.adg.qwixx.generated.model.Color.BLUE));
+    }
+
     private nl.adg.qwixx.generated.model.GameState toDto() {
         return GameStateMapper.toDto(
                 GameRegistry.getGame(sessionId).currentState(),

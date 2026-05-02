@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -442,6 +443,16 @@ class MovesApiDelegateImplTest {
         return sid;
     }
 
+    private String multiPlayerSession() {
+        String sid = GameRegistry.createGame("room", 4, GameSettings.builder().build());
+        Player alice = Player.of("Alice");
+        Player bob = Player.of("Bob");
+        GameRegistry.getGame(sid).addPlayer(alice);
+        GameRegistry.getGame(sid).addPlayer(bob);
+        GameRegistry.getGame(sid).start();
+        return sid;
+    }
+
     private String offlineSession() {
         return GameRegistry.createGame("offline", 4,
                 GameSettings.builder().gameMode(GameMode.OFFLINE).build());
@@ -452,5 +463,171 @@ class MovesApiDelegateImplTest {
         GameRegistry.getGame(sid).addPlayer(p);
         GameRegistry.getGame(sid).start();
         return p;
+    }
+
+    // ── Row Closure Request Tests ─────────────────────────────────────────────
+
+    @Test
+    void rowClosureRequestsInitiallyEmpty() throws Exception {
+        var gameState = GameRegistry.getGame(sessionId).currentState();
+        assertNotNull(gameState.rowClosureRequests());
+        assertEquals(0, gameState.rowClosureRequests().size());
+    }
+
+    @Test
+    void rowClosureRequestsClearedOnResetTurn() throws Exception {
+        // Add row closure requests manually (simulating DECLARE_LOCK_INTENT)
+        var state = GameRegistry.getGame(sessionId).currentState();
+        state.rowClosureRequests().add(
+            new nl.adg.qwixx.state.RowClosureRequest("Bob", nl.adg.qwixx.data.Color.RED)
+        );
+
+        // Verify requests populated
+        assertEquals(1, state.rowClosureRequests().size());
+
+        // Reset turn should clear requests
+        mvc.perform(post("/moves/{sid}/{pid}", sessionId, alice.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"moveType":"RESET_TURN"}
+                        """))
+                .andExpect(status().isOk());
+
+        // Verify cleared
+        var afterReset = GameRegistry.getGame(sessionId).currentState();
+        assertEquals(0, afterReset.rowClosureRequests().size());
+    }
+
+    @Test
+    void twoPlayerGameBothWith5CrossesInBlueRow() throws Exception {
+        // Create a game with 2 players
+        GameRegistry.clear();
+        String testSessionId = GameRegistry.createGame("room", 2, GameSettings.builder().build());
+
+        Player player0 = Player.of("player0");
+        Player player1 = Player.of("player1");
+        GameRegistry.getGame(testSessionId).addPlayer(player0);
+        GameRegistry.getGame(testSessionId).addPlayer(player1);
+        GameRegistry.getGame(testSessionId).start();
+
+        // Set up: both players have 5 crosses in BLUE row (rowIndex 3)
+        var game = GameRegistry.getGame(testSessionId);
+        var state = game.currentState();
+
+        for (Player p : new Player[]{player0, player1}) {
+            var layout = state.sheetLayouts().get(p.id());
+            var progress = state.boardState().sheetProgress().get(p.id());
+            var blueRow = layout.rows().get(3);  // BLUE is rowIndex 3
+
+            // Add 5 crosses in BLUE row (cells 2, 3, 4, 5, 6)
+            Set<String> blueCrosses = new HashSet<>();
+            for (int i = 0; i < 5; i++) {
+                blueCrosses.add(blueRow.cells().get(i).id());
+            }
+            progress.updateRowState(3, new RowState(blueCrosses, false));
+        }
+
+        // Roll the dice: white1=1, white2=1 (total=2)
+        mvc.perform(post("/moves/{sid}/{pid}", testSessionId, player0.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"moveType":"ROLL"}
+                        """))
+                .andExpect(status().isOk());
+
+        // Verify the state
+        var afterRoll = GameRegistry.getGame(testSessionId).currentState();
+        assertNotNull(afterRoll.turnState().currentRoll(), "Dice should be rolled");
+
+        // Verify player0 is active
+        assertEquals(player0.id().toString(), afterRoll.turnState().activePlayerId().toString());
+
+        // Verify both players have 5 crosses in BLUE
+        for (Player p : new Player[]{player0, player1}) {
+            var blueState = afterRoll.boardState().sheetProgress().get(p.id()).rowStates().get(3);
+            assertEquals(5, blueState.crossedCells().size(), p.name() + " should have 5 crosses in BLUE");
+        }
+
+        // Print info for manual use
+        var roll = afterRoll.turnState().currentRoll();
+        System.out.println("\n✓✓✓ TEST GAME SETUP COMPLETE ✓✓✓");
+        System.out.println("sessionId: " + testSessionId);
+        System.out.println("player0: " + player0.id());
+        System.out.println("player1: " + player1.id());
+        System.out.println("White dice rolled: " + roll.white1() + " + " + roll.white2() + " = " + (roll.white1() + roll.white2()));
+        System.out.println("Both players: 5 crosses in BLUE row");
+        System.out.println("Active player: player0");
+        System.out.println("✓✓✓\n");
+    }
+
+    @Test
+    void onlineGameCanLockAfterCrossingEligibleCell() throws Exception {
+        // Create a game with just 1 player (no other players needed for this test)
+        GameRegistry.clear();
+        sessionId = GameRegistry.createGame("room", 1, GameSettings.builder().build());
+        alice = Player.of("Alice");
+        GameRegistry.getGame(sessionId).addPlayer(alice);
+        GameRegistry.getGame(sessionId).start();
+
+        // Manually set up state: roll the dice and set up 5 crosses in GREEN row
+        var game = GameRegistry.getGame(sessionId);
+        var state = game.currentState();
+        var layout = state.sheetLayouts().get(alice.id());
+        var progress = state.boardState().sheetProgress().get(alice.id());
+        var greenRow = layout.rows().get(2);  // GREEN is rowIndex 2
+
+        // Add 5 crosses in GREEN row (cells 12, 11, 10, 9, 8)
+        Set<String> greenCrosses = new HashSet<>();
+        for (int i = 0; i < 5; i++) {
+            greenCrosses.add(greenRow.cells().get(i).id());
+        }
+        progress.updateRowState(2, new RowState(greenCrosses, false));
+
+        // Now roll the dice so the player can make a move
+        mvc.perform(post("/moves/{sid}/{pid}", sessionId, alice.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"moveType":"ROLL"}
+                        """))
+                .andExpect(status().isOk());
+
+        // Get the lock-eligible cell for GREEN (displayValue "2", which is at the end of the row)
+        Cell lockEligibleCell = greenRow.cells().get(greenRow.cells().size() - 1);
+        assertEquals("2", lockEligibleCell.displayValue(), "Lock-eligible cell should have displayValue 2");
+
+        // Cross the lock-eligible cell (this makes lock intent available)
+        mvc.perform(post("/moves/{sid}/{pid}", sessionId, alice.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                        {"moveType":"CROSS_WHITE_WHITE","rowId":"%s","cellId":"%s"}
+                        """, greenRow.id(), lockEligibleCell.id())))
+                .andExpect(status().isOk());
+
+        // Now declare lock intent on GREEN row
+        mvc.perform(post("/moves/{sid}/{pid}", sessionId, alice.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                        {"moveType":"DECLARE_LOCK_INTENT","rowId":"%s"}
+                        """, greenRow.id())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result").value("ACCEPTED"));
+
+        // Verify lock intent was accepted, game moved to LOCK_PENDING phase
+        var afterIntent = GameRegistry.getGame(sessionId).currentState();
+        assertEquals("LOCK_PENDING", afterIntent.turnState().phase().toString(),
+                "Game should move to LOCK_PENDING phase after declaring lock intent");
+
+        // Now confirm the lock by crossing the lock cell (only possible in LOCK_PENDING phase)
+        mvc.perform(post("/moves/{sid}/{pid}", sessionId, alice.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                        {"moveType":"CROSS_LOCK","rowId":"%s"}
+                        """, greenRow.id())))
+                .andExpect(status().isOk());
+
+        // Verify the lock cell is now marked as locked
+        var afterLock = GameRegistry.getGame(sessionId).currentState();
+        var greenStateLocked = afterLock.boardState().sheetProgress().get(alice.id()).rowStates().get(2);
+        assertTrue(greenStateLocked.lockCrossed(), "Lock should be marked as crossed after lock confirmed");
     }
 }

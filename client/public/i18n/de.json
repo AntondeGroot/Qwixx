@@ -28,5 +28,12 @@
       "DETERMINISTIC": "Deterministisch",
       "PROBABILISTIC": "Probabilistisch"
     }
+  },
+  "rowClosure": {
+    "wantsToCloseThe": "möchte die",
+    "row": "Reihe schließen",
+    "confirmQuestion": "Möchtest du deine letzte Auswahl ändern?",
+    "confirmButton": "Letzte Auswahl bestätigen",
+    "changeButton": "Letzte Auswahl ändern"
   }
 }

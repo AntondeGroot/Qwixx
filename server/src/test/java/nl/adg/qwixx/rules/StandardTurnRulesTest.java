@@ -549,6 +549,122 @@ class StandardTurnRulesTest {
         assertThrows(IllegalMoveException.class, () -> rules.apply(state, new RollAction(p1)));
     }
 
+    // ── Lock Eligibility with Pending Crosses Tests ───────────────────────────
+
+    @Test
+    void canLockWithOnlyPermanentCrosses() {
+        GameState state = stateReadyToLock(p1, p1, p2, 0);
+        assertTrue(rules.getValidActions(state, p1).stream()
+                .anyMatch(a -> a instanceof DeclareLockIntentAction));
+    }
+
+    @Test
+    void canLockWithPendingCrossesIncluded() {
+        // Setup: state in ACTIVE_MOVE with some permanent crosses
+        GameState state = stateAfterRoll(p1, p1, p2);
+        SheetLayout layout = state.sheetLayouts().get(p1);
+        Row row = layout.rows().get(0);
+        LockCell lock = row.lock();
+        SheetProgress progress = state.boardState().sheetProgress().get(p1);
+
+        // Add some permanent crosses (less than minCrosses)
+        int permanentCount = lock.minCrosses() - 1;
+        Set<String> crossed = new HashSet<>();
+        for (int i = 0; i < permanentCount && i < row.cells().size(); i++) {
+            crossed.add(row.cells().get(i).id());
+        }
+        progress.updateRowState(0, new RowState(crossed, false));
+
+        // Add pending cross for the required cell (lock cell)
+        String requiredCell = lock.requiredCells().get(0);
+        Map<Integer, Set<String>> pendingCrosses = new HashMap<>();
+        pendingCrosses.put(0, Set.of(requiredCell));
+        TurnState turn = state.turnState();
+        turn.setUndoBuffer(Map.of(p1, pendingCrosses));
+
+        // Now should be able to declare lock intent (permanent + pending >= minCrosses + has required)
+        assertTrue(rules.getValidActions(state, p1).stream()
+                .anyMatch(a -> a instanceof DeclareLockIntentAction));
+    }
+
+    @Test
+    void cannotLockWithoutPendingCrosses() {
+        // Setup: state in ACTIVE_MOVE with insufficient permanent crosses
+        GameState state = stateAfterRoll(p1, p1, p2);
+        SheetLayout layout = state.sheetLayouts().get(p1);
+        Row row = layout.rows().get(0);
+        LockCell lock = row.lock();
+        SheetProgress progress = state.boardState().sheetProgress().get(p1);
+
+        // Add only 1 permanent cross (less than minCrosses which is 5)
+        Set<String> crossed = Set.of(row.cells().get(0).id());
+        progress.updateRowState(0, new RowState(crossed, false));
+
+        // No pending crosses
+        state.turnState().setUndoBuffer(new HashMap<>());
+
+        // Should NOT be able to declare lock intent
+        assertFalse(rules.getValidActions(state, p1).stream()
+                .anyMatch(a -> a instanceof DeclareLockIntentAction));
+    }
+
+    @Test
+    void lockRequiresAllRequiredCellsPermanentOrPending() {
+        GameState state = stateAfterRoll(p1, p1, p2);
+        SheetLayout layout = state.sheetLayouts().get(p1);
+        Row row = layout.rows().get(0);
+        LockCell lock = row.lock();
+        SheetProgress progress = state.boardState().sheetProgress().get(p1);
+
+        // Add minCrosses permanent crosses but NOT the required cell
+        Set<String> crossed = new HashSet<>();
+        String requiredCell = lock.requiredCells().get(0);
+        for (int i = 0; i < lock.minCrosses() && i < row.cells().size(); i++) {
+            String cellId = row.cells().get(i).id();
+            // Skip the required cell
+            if (!cellId.equals(requiredCell)) {
+                crossed.add(cellId);
+            }
+        }
+        progress.updateRowState(0, new RowState(crossed, false));
+        state.turnState().setUndoBuffer(new HashMap<>());
+
+        // Should NOT be able to lock (missing required cell)
+        assertFalse(rules.getValidActions(state, p1).stream()
+                .anyMatch(a -> a instanceof DeclareLockIntentAction));
+    }
+
+    @Test
+    void lockSucceedsWhenRequiredCellIsPending() {
+        GameState state = stateAfterRoll(p1, p1, p2);
+        SheetLayout layout = state.sheetLayouts().get(p1);
+        Row row = layout.rows().get(0);
+        LockCell lock = row.lock();
+        SheetProgress progress = state.boardState().sheetProgress().get(p1);
+
+        // Add minCrosses-1 permanent crosses
+        Set<String> crossed = new HashSet<>();
+        String requiredCell = lock.requiredCells().get(0);
+        int count = 0;
+        for (Cell c : row.cells()) {
+            if (count >= lock.minCrosses() - 1) break;
+            if (!c.id().equals(requiredCell)) {
+                crossed.add(c.id());
+                count++;
+            }
+        }
+        progress.updateRowState(0, new RowState(crossed, false));
+
+        // Add the required cell as a pending cross
+        Map<Integer, Set<String>> pendingCrosses = new HashMap<>();
+        pendingCrosses.put(0, Set.of(requiredCell));
+        state.turnState().setUndoBuffer(Map.of(p1, pendingCrosses));
+
+        // Should be able to lock (pending required cell counts)
+        assertTrue(rules.getValidActions(state, p1).stream()
+                .anyMatch(a -> a instanceof DeclareLockIntentAction));
+    }
+
     // -------------------------------------------------------------------------
     // Test state builders
     // -------------------------------------------------------------------------

@@ -2,6 +2,7 @@ package nl.adg.qwixx.state;
 
 import nl.adg.qwixx.game.VariantData;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -14,6 +15,7 @@ public class GameState {
     Map<UUID, SheetLayout> sheetLayouts;   // static layout per player
     BoardState             boardState;
     TurnState              turnState;
+    List<RowClosureRequest> rowClosureRequests; // pending row closure notifications
     boolean                gameOver;
     long                   version;        // increments on every applyAction
 
@@ -26,6 +28,7 @@ public class GameState {
         this.sheetLayouts = sheetLayouts;
         this.boardState   = boardState;
         this.turnState    = turnState;
+        this.rowClosureRequests = new ArrayList<>();
         this.gameOver     = false;
         this.version      = 0;
     }
@@ -36,6 +39,7 @@ public class GameState {
     public Map<UUID, SheetLayout> sheetLayouts() { return sheetLayouts; }
     public BoardState boardState()               { return boardState; }
     public TurnState turnState()                 { return turnState; }
+    public List<RowClosureRequest> rowClosureRequests() { return rowClosureRequests; }
     public boolean gameOver()                    { return gameOver; }
     public long version()                        { return version; }
 

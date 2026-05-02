@@ -52,7 +52,8 @@ class GameStateMapper {
                 .turnState(mapTurnState(turn))
                 .closedRows(mapClosedRows(state))
                 .activeDiceColors(mapActiveDiceColors(board))
-                .bonusNumbers(mapBonusNumbers(state));
+                .bonusNumbers(mapBonusNumbers(state))
+                .rowClosureRequests(mapRowClosureRequests(state));
     }
 
     private static Map<String, nl.adg.qwixx.generated.model.SheetProgress> mapSheetProgress(GameState state) {
@@ -212,5 +213,13 @@ class GameStateMapper {
                             nl.adg.qwixx.generated.model.CellTag.TypeEnum.BONUS_POINTS)
                             .amount(b.amount());
         };
+    }
+
+    private static List<nl.adg.qwixx.generated.model.RowClosureRequest> mapRowClosureRequests(GameState state) {
+        return state.rowClosureRequests().stream()
+                .map(req -> new nl.adg.qwixx.generated.model.RowClosureRequest(
+                        req.playerName(),
+                        nl.adg.qwixx.generated.model.Color.fromValue(req.rowColor().name())))
+                .toList();
     }
 }

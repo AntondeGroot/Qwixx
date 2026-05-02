@@ -9,6 +9,7 @@ import nl.adg.qwixx.game.GameSettings;
 import nl.adg.qwixx.game.Player;
 import nl.adg.qwixx.state.RowState;
 import org.springframework.boot.SpringApplication;
+import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -32,6 +33,7 @@ import java.util.Set;
  * The sessionId and player IDs will be printed on startup.
  */
 @Component
+@Profile("!e2e")
 public class QwixxTestApplication {
 
 	public static void main(String[] args) {

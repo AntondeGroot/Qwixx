@@ -21,7 +21,7 @@ public class SpringAppSuiteExtension implements BeforeAllCallback {
 
     private SpringAppResource() {
       WebDriverManager.chromedriver().setup();
-      SpringAppTestHelper.startTestApp();
+      SpringAppTestHelper.startApp();
       started = true;
     }
 

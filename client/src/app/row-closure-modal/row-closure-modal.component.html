@@ -1,0 +1,27 @@
+@if (requests.length > 0) {
+  <div class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-body">
+        <div class="closure-requests">
+          @for (request of requests; track request.rowColor + request.playerName) {
+            <div class="request-item">
+              <span class="request-text">{{ request.playerName }} {{ 'rowClosure.wantsToCloseThe' | translate }}</span>
+              <div [ngClass]="getRowColorClass(request.rowColor)" class="color-cell"></div>
+              <span class="request-text">{{ 'rowClosure.row' | translate }}</span>
+            </div>
+          }
+        </div>
+        <div class="separator"></div>
+        <p class="confirm-question">{{ 'rowClosure.confirmQuestion' | translate }}</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="onChangeSelection()">
+          {{ 'rowClosure.changeButton' | translate }}
+        </button>
+        <button class="btn btn-primary" (click)="onConfirm()">
+          {{ 'rowClosure.confirmButton' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

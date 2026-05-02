@@ -15,10 +15,11 @@ import { TurnPhase } from '../../generated/model/turnPhase';
 import { DiceComponent } from '../dice/dice.component';
 import { PlayerListComponent } from '../player-list/player-list.component';
 import { RowComponent } from '../row/row.component';
+import { RowClosureModalComponent, RowClosureRequest } from '../row-closure-modal/row-closure-modal.component';
 
 @Component({
   selector: 'app-board',
-  imports: [RouterLink, RowComponent, DiceComponent, PlayerListComponent, TranslateModule],
+  imports: [RouterLink, RowComponent, DiceComponent, PlayerListComponent, TranslateModule, RowClosureModalComponent],
   templateUrl: './board.component.html',
   styleUrl: './board.component.css'
 })
@@ -33,6 +34,8 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   gameState   = signal<GameState | null>(null);
   error       = signal<string | null>(null);
   rollingDice = signal(false);
+
+  rowClosureRequests = computed(() => this.gameState()?.rowClosureRequests ?? []);
 
   private pollSub?: Subscription;
   private moveSub?: Subscription;
@@ -307,6 +310,14 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.sendMoveAs(pid, { moveType: MoveType.CROSS_LOCK, rowId });
   }
 
+  onLockClicked(rowId: string, pid: string) {
+    if (this.isOffline()) {
+      this.offlineLock(pid, rowId);
+    } else {
+      this.sendMove({ moveType: MoveType.DECLARE_LOCK_INTENT, rowId });
+    }
+  }
+
   offlineClickableCellIds(pid: string): Set<string> {
     const state = this.gameState();
     if (!state) return this.emptySet;
@@ -398,6 +409,14 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   playerName(pid: string): string {
     return this.gameState()?.players.find(p => p.id === pid)?.name ?? pid;
+  }
+
+  onConfirmRowClosure() {
+    // Modal will close once server clears rowClosureRequests from gameState
+  }
+
+  onChangeRowClosure() {
+    this.sendMove({ moveType: MoveType.RESET_TURN });
   }
 
   protected readonly DiceComponent = DiceComponent;

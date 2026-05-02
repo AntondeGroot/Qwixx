@@ -323,6 +323,18 @@ components:
         - GREEN
         - BLUE
 
+    RowClosureRequest:
+      type: object
+      required:
+        - playerName
+        - rowColor
+      properties:
+        playerName:
+          type: string
+          description: Name of the player who wants to close the row.
+        rowColor:
+          $ref: '#/components/schemas/Color'
+
     TurnPhase:
       type: string
       enum:
@@ -581,6 +593,11 @@ components:
             type: array
             items:
               type: integer
+        rowClosureRequests:
+          type: array
+          items:
+            $ref: '#/components/schemas/RowClosureRequest'
+          description: Pending row closure requests from players.
         gameOver:
           type: boolean
         version:

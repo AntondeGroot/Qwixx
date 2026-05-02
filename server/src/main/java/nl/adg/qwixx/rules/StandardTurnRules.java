@@ -461,8 +461,17 @@ public class StandardTurnRules implements TurnRules {
         RowState rowState   = rowStateOf(prog, rowIndex);
         if (rowState.lockCrossed()) return false;
         if (state.boardState().closedRows().containsKey(rowIndex)) return false;
-        if (rowState.crossedCells().size() < lock.minCrosses()) return false;
-        return lock.requiredCells().stream().anyMatch(id -> rowState.crossedCells().contains(id));
+
+        // Count both permanent and pending crosses
+        Set<String> allCrosses = new HashSet<>(rowState.crossedCells());
+        TurnState turn = state.turnState();
+        if (turn != null && turn.undoBuffer().containsKey(playerId)) {
+            Set<String> pendingInRow = turn.undoBuffer().get(playerId).getOrDefault(rowIndex, new HashSet<>());
+            allCrosses.addAll(pendingInRow);
+        }
+
+        if (allCrosses.size() < lock.minCrosses()) return false;
+        return lock.requiredCells().stream().allMatch(allCrosses::contains);
     }
 
     protected void markLockCrossed(GameState state, UUID playerId, int rowIndex) {

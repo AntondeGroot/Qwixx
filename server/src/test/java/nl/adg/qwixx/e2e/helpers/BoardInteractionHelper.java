@@ -1,6 +1,8 @@
 package nl.adg.qwixx.e2e.helpers;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -30,14 +32,27 @@ public class BoardInteractionHelper {
 
     /** Clicks the cell whose displayed value equals {@code displayValue} in the given row color. */
     public static void clickCellByValue(WebDriver driver, String rowColor, String displayValue) {
-        // Match on the individual cell div's data-color so this works even when a single row
-        // contains cells of different colors (future multi-color row variants).
-        // Clicking the span propagates up to the cell div's click handler via normal DOM bubbling.
-        WebElement span = driver.findElement(By.xpath(
-                SHEET + "//div[@data-color='" + rowColor + "' and contains(@class,'cell')" +
-                " and not(contains(@class,'lock'))]" +
-                "/span[contains(@class,'cell-value') and normalize-space(.)='" + displayValue + "']"));
-        span.click();
+        // The lock-cell is always findable. Use the browser's native closest() to climb
+        // to the enclosing .row div — this works regardless of how XPath handles the
+        // Angular component host elements in the ancestor chain.
+        WebElement lockCell = driver.findElement(lockCellLocator(rowColor));
+        WebElement row = (WebElement) ((JavascriptExecutor) driver)
+                .executeScript("return arguments[0].closest('.row');", lockCell);
+        if (row == null) throw new NoSuchElementException(
+                "Could not find .row ancestor for " + rowColor + " lock-cell");
+        row.findElements(By.className("cell")).stream()
+                .filter(cell -> {
+                    try {
+                        return displayValue.equals(
+                                cell.findElement(By.className("cell-value")).getText().trim());
+                    } catch (Exception e) {
+                        return false;
+                    }
+                })
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException(
+                        "No " + rowColor + " cell with value '" + displayValue + "' found"))
+                .click();
     }
 
     // ── Cell state queries ─────────────────────────────────────────────────────

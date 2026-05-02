@@ -1,8 +1,10 @@
 package nl.adg.qwixx.testapp;
 
+import nl.adg.qwixx.data.Color;
 import nl.adg.qwixx.data.RollResult;
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSession;
+import nl.adg.qwixx.state.RowClosureRequest;
 import nl.adg.qwixx.state.RowState;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +50,20 @@ public class TestController {
         }
         progress.updateRowState(rowIndex, new RowState(crossed, false));
 
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/add-closure-request/{sessionId}/{playerName}/{rowColor}")
+    public ResponseEntity<Void> addClosureRequest(
+            @PathVariable String sessionId,
+            @PathVariable String playerName,
+            @PathVariable String rowColor) {
+
+        GameSession session = GameRegistry.getGame(sessionId);
+        if (session == null) return ResponseEntity.notFound().build();
+
+        Color color = Color.valueOf(rowColor.toUpperCase());
+        session.currentState().rowClosureRequests().add(new RowClosureRequest(playerName, color));
         return ResponseEntity.ok().build();
     }
 

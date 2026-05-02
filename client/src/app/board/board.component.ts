@@ -35,7 +35,12 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   error       = signal<string | null>(null);
   rollingDice = signal(false);
 
-  rowClosureRequests = computed(() => this.gameState()?.rowClosureRequests ?? []);
+  // Only show the lock-intent modal to players who are in the passive queue
+  // (i.e. players who must decide, not the active player who declared intent)
+  rowClosureRequests = computed(() => {
+    if (!this.isInPassiveQueue()) return [];
+    return this.gameState()?.rowClosureRequests ?? [];
+  });
 
   private pollSub?: Subscription;
   private moveSub?: Subscription;

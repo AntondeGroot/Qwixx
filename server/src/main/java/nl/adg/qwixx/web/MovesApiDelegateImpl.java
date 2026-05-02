@@ -52,9 +52,8 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
             populateRowClosureRequests(newState, session, pid, declareLock.rowIndex());
         }
 
-        // Clear row closure requests when a lock is closed or reset
-        if (action instanceof CrossLockAction || action instanceof ResetTurnAction ||
-            action instanceof UndoLastCrossAction || action instanceof EndTurnAction) {
+        // Clear row closure requests only when a row actually closes or the player explicitly resets
+        if (action instanceof CrossLockAction || action instanceof ResetTurnAction) {
             newState.rowClosureRequests().clear();
         }
 
@@ -121,14 +120,14 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
         SheetLayout layout = state.sheetLayouts().values().iterator().next();
         nl.adg.qwixx.data.Color rowColor = layout.rows().get(rowIndex).lock().color();
 
-        // Create row closure requests for all non-active players
-        state.rowClosureRequests().clear();
-        for (Player player : session.players()) {
-            if (!player.id().equals(activePlayerId)) {
-                state.rowClosureRequests().add(
-                    new RowClosureRequest(player.name(), rowColor)
-                );
-            }
-        }
+        // The modal must show the DECLARING player's name, so look up the active player
+        String declarerName = session.players().stream()
+                .filter(p -> p.id().equals(activePlayerId))
+                .findFirst()
+                .map(Player::name)
+                .orElse(activePlayerId.toString());
+
+        // Accumulate one request per declaring player (not one per passive player)
+        state.rowClosureRequests().add(new RowClosureRequest(declarerName, rowColor));
     }
 }

@@ -24,6 +24,7 @@ import nl.adg.qwixx.generated.model.MoveResponse;
 import nl.adg.qwixx.generated.model.MoveResult;
 import nl.adg.qwixx.rules.IllegalMoveException;
 import nl.adg.qwixx.state.GameState;
+import nl.adg.qwixx.state.TurnPhase;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -47,8 +48,12 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
 
         GameState newState = session.applyAction(action);
 
-        // Populate row closure requests if a lock intent was declared
-        if (action instanceof DeclareLockIntentAction declareLock) {
+        // Populate row closure requests only when the game is actually waiting in LOCK_PENDING.
+        // In a single-player game the lock auto-resolves inside applyDeclareLockIntent, so the
+        // phase has already advanced — no notifications are needed in that case.
+        if (action instanceof DeclareLockIntentAction declareLock
+                && newState.turnState() != null
+                && newState.turnState().phase() == TurnPhase.LOCK_PENDING) {
             populateRowClosureRequests(newState, session, pid, declareLock.rowIndex());
         }
 

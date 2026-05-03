@@ -229,6 +229,13 @@ public class StandardTurnRules implements TurnRules {
         turn.setPendingLockRowIndex(action.rowIndex());
         turn.setLockAcknowledged(new HashSet<>());
         turn.setPhase(TurnPhase.LOCK_PENDING);
+
+        // In a single-player game there are no other players to acknowledge,
+        // so allNonActiveAcknowledged is immediately true.  Close the row
+        // right away instead of hanging in LOCK_PENDING with nobody to act.
+        if (allNonActiveAcknowledged(state)) {
+            applyCrossLock(state, new CrossLockAction(action.playerId(), action.rowIndex()));
+        }
     }
 
     private void applyCrossLock(GameState state, CrossLockAction action) {
@@ -298,8 +305,10 @@ public class StandardTurnRules implements TurnRules {
 
         turn.undoBuffer().remove(playerId);
 
-        if (isActive && turn.activeTurnState() != null) {
-            turn.activeTurnState().reset();
+        if (isActive) {
+            if (turn.activeTurnState() != null) turn.activeTurnState().reset();
+            // Resetting from LOCK_PENDING cancels the lock intent and returns to ACTIVE_MOVE
+            if (turn.phase() == TurnPhase.LOCK_PENDING) turn.setPhase(TurnPhase.ACTIVE_MOVE);
         }
     }
 

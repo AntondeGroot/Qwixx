@@ -612,22 +612,17 @@ class MovesApiDelegateImplTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.result").value("ACCEPTED"));
 
-        // Verify lock intent was accepted, game moved to LOCK_PENDING phase
+        // In a single-player game the lock auto-resolves: no CROSS_LOCK step needed.
+        // The phase skips past LOCK_PENDING straight to ROLL (next turn for alice).
         var afterIntent = GameRegistry.getGame(sessionId).currentState();
-        assertEquals("LOCK_PENDING", afterIntent.turnState().phase().toString(),
-                "Game should move to LOCK_PENDING phase after declaring lock intent");
+        assertEquals("ROLL", afterIntent.turnState().phase().toString(),
+                "Single-player lock intent must auto-resolve — phase should be ROLL, not LOCK_PENDING");
 
-        // Now confirm the lock by crossing the lock cell (only possible in LOCK_PENDING phase)
-        mvc.perform(post("/moves/{sid}/{pid}", sessionId, alice.id())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(String.format("""
-                        {"moveType":"CROSS_LOCK","rowId":"%s"}
-                        """, greenRow.id())))
-                .andExpect(status().isOk());
-
-        // Verify the lock cell is now marked as locked
-        var afterLock = GameRegistry.getGame(sessionId).currentState();
-        var greenStateLocked = afterLock.boardState().sheetProgress().get(alice.id()).rowStates().get(2);
-        assertTrue(greenStateLocked.lockCrossed(), "Lock should be marked as crossed after lock confirmed");
+        // Verify the lock cell is marked crossed and the row is globally closed
+        var greenStateLocked = afterIntent.boardState().sheetProgress().get(alice.id()).rowStates().get(2);
+        assertTrue(greenStateLocked.lockCrossed(),
+                "Lock should be auto-crossed immediately after declaring intent in a single-player game");
+        assertTrue(afterIntent.boardState().closedRows().containsKey(2),
+                "GREEN row (index 2) should be in closedRows after the auto-resolved lock");
     }
 }

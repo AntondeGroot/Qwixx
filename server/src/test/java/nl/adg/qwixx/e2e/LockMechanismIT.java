@@ -300,4 +300,117 @@ public class LockMechanismIT extends BaseIntegrationTest {
         assertTrue(modalText.contains("player1"),
                 "Modal text should mention player1. Actual: " + modalText);
     }
+
+    // ── Single-player lock: Bug regression tests ──────────────────────────────
+    //
+    // Bug: in a 1-player game declaring lock intent entered LOCK_PENDING with
+    // nobody in the passive queue, leaving the game permanently frozen.
+    // Fix: when allNonActiveAcknowledged() is immediately true (no other players),
+    //      applyDeclareLockIntent auto-applies CrossLockAction and closes the row.
+
+    @Test
+    void singlePlayerLockIntentImmediatelyClosesRowViaApi() {
+        String sid = api.createGame(1);
+        String pid = api.getPlayerIds(sid).get(0);
+
+        api.setCrosses(sid, pid, BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.roll(sid, pid);
+        api.setDice(sid, 1, 1);
+
+        String blueRowId = api.getRowId(sid, pid, BLUE_ROW_INDEX);
+        api.declareLockIntent(sid, pid, blueRowId); // must NOT freeze the game
+
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Object> closedRows =
+                (java.util.Map<String, Object>) api.getGameState(sid).get("closedRows");
+        assertFalse(closedRows == null || closedRows.isEmpty(),
+                "BLUE row must be closed immediately after lock intent in a single-player game");
+    }
+
+    @Test
+    void singlePlayerClickingLockClosesRowInBrowser() {
+        String sid = api.createGame(1);
+        String pid = api.getPlayerIds(sid).get(0);
+
+        api.setCrosses(sid, pid, BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.roll(sid, pid);
+        api.setDice(sid, 1, 1);
+
+        driver0 = TestUtils.getDriver(sid, pid);
+        TestUtils.waitUntilBoardLoaded(driver0);
+
+        assertTrue(BoardInteractionHelper.isLockButtonClickable(driver0, "BLUE"),
+                "Lock button should be clickable before clicking (all 11 cells + closing cell crossed)");
+
+        BoardInteractionHelper.clickLockButton(driver0, "BLUE");
+
+        // Row must close without the game getting stuck — wait up to 8 s for the poll
+        new WebDriverWait(driver0, Duration.ofSeconds(8))
+                .until(d -> BoardInteractionHelper.isRowClosed(d, "BLUE"));
+
+        assertTrue(BoardInteractionHelper.isRowClosed(driver0, "BLUE"),
+                "BLUE row should be closed in the browser after clicking lock in a single-player game");
+        assertFalse(BoardInteractionHelper.isModalVisible(driver0),
+                "No lock-intent modal should appear in a single-player game");
+    }
+
+    // ── Active player reset from LOCK_PENDING ─────────────────────────────────
+    //
+    // Bug: applyResetTurn restored the snapshot but did not transition the phase
+    // back from LOCK_PENDING to ACTIVE_MOVE, so the declaring player had no valid
+    // moves after resetting and the game was frozen for them too.
+
+    @Test
+    void activePlayerResetFromLockPendingGoesBackToActiveMove() {
+        // Use the 2-player game from @BeforeEach so LOCK_PENDING is NOT auto-resolved
+        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.roll(sessionId, playerIds.get(0));
+        api.setDice(sessionId, 1, 1);
+
+        String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
+        api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
+
+        String phaseBefore = turnPhase(api.getGameState(sessionId));
+        assertEquals("LOCK_PENDING", phaseBefore,
+                "Phase should be LOCK_PENDING after declaring intent (player1 still must acknowledge)");
+
+        api.resetTurn(sessionId, playerIds.get(0));
+
+        String phaseAfter = turnPhase(api.getGameState(sessionId));
+        assertEquals("ACTIVE_MOVE", phaseAfter,
+                "Active player's ResetTurn from LOCK_PENDING must return phase to ACTIVE_MOVE");
+    }
+
+    @Test
+    void activePlayerCanInteractWithBoardAfterResetFromLockPending() {
+        // Verify the browser is not frozen after the reset — player can click the lock again
+        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.roll(sessionId, playerIds.get(0));
+        api.setDice(sessionId, 1, 1);
+
+        driver0 = TestUtils.getDriver(sessionId, playerIds.get(0));
+        TestUtils.waitUntilBoardLoaded(driver0);
+
+        // Click lock → enters LOCK_PENDING (2-player, not auto-resolved)
+        BoardInteractionHelper.clickLockButton(driver0, "BLUE");
+
+        // Simulate the player changing their mind: send RESET_TURN via API
+        api.resetTurn(sessionId, playerIds.get(0));
+
+        // Board polls every 2 s — wait for it to pick up the new ACTIVE_MOVE phase
+        new WebDriverWait(driver0, Duration.ofSeconds(8))
+                .until(d -> BoardInteractionHelper.isLockButtonClickable(d, "BLUE"));
+
+        assertTrue(BoardInteractionHelper.isLockButtonClickable(driver0, "BLUE"),
+                "Lock button should be clickable again after resetting from LOCK_PENDING "
+                + "(player is back in ACTIVE_MOVE with all crosses intact)");
+        assertFalse(BoardInteractionHelper.isRowClosed(driver0, "BLUE"),
+                "BLUE row must NOT be closed — the reset cancelled the lock intent");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static String turnPhase(java.util.Map<String, Object> state) {
+        java.util.Map<String, Object> turn = (java.util.Map<String, Object>) state.get("turnState");
+        return turn == null ? null : (String) turn.get("phase");
+    }
 }

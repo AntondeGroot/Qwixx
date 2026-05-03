@@ -29,6 +29,14 @@
       "PROBABILISTIC": "Probabiliste"
     }
   },
+  "score": {
+    "finalScores": "Score final",
+    "total": "Total",
+    "winner": "gagne !",
+    "newGame": "Nouvelle partie",
+    "leaveGame": "Quitter le jeu",
+    "viewScores": "Voir le score final"
+  },
   "rowClosure": {
     "wantsToCloseThe": "veut fermer la",
     "row": "ligne",

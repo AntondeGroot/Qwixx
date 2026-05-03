@@ -26,6 +26,22 @@ public class TestUtils {
         return driver;
     }
 
+    public static WebDriver getScoreDriver(String sessionId) {
+        WebDriver driver = new ChromeDriver(buildOptions());
+        driver.get(BASE_URL + "/score/" + sessionId);
+        return driver;
+    }
+
+    public static void waitUntilScoreLoaded(WebDriver driver) {
+        new WebDriverWait(driver, Duration.ofSeconds(25)).until(d -> {
+            try {
+                return !d.findElements(By.className("score-table")).isEmpty();
+            } catch (StaleElementReferenceException e) {
+                return false;
+            }
+        });
+    }
+
     private static ChromeOptions buildOptions() {
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--headless=new");

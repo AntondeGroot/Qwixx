@@ -111,7 +111,7 @@
       </section>
 
       @if (state.gameOver) {
-        <a routerLink="/settings">Back to settings</a>
+        <a class="score-link" [routerLink]="['/score', sessionId()]">{{ 'score.viewScores' | translate }}</a>
       }
 
     </div><!-- /right-column -->

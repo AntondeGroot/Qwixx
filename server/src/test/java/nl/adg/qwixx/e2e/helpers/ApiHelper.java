@@ -110,6 +110,10 @@ public class ApiHelper {
         post("/test/set-dice/" + sessionId + "/" + white1 + "/" + white2, null, Void.class);
     }
 
+    public void forceFinish(String sessionId) {
+        post("/test/force-finish/" + sessionId, null, Void.class);
+    }
+
     public void addClosureRequest(String sessionId, String playerName, String rowColor) {
         post("/test/add-closure-request/" + sessionId + "/" + playerName + "/" + rowColor,
                 null, Void.class);

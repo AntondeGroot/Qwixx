@@ -53,6 +53,14 @@ public class TestController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/force-finish/{sessionId}")
+    public ResponseEntity<Void> forceFinish(@PathVariable String sessionId) {
+        GameSession session = GameRegistry.getGame(sessionId);
+        if (session == null) return ResponseEntity.notFound().build();
+        session.forceFinish();
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/add-closure-request/{sessionId}/{playerName}/{rowColor}")
     public ResponseEntity<Void> addClosureRequest(
             @PathVariable String sessionId,

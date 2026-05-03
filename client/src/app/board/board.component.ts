@@ -1,5 +1,5 @@
-import { AfterViewInit, Component, computed, ElementRef, HostListener, inject, OnDestroy, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { AfterViewInit, Component, computed, effect, ElementRef, HostListener, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { interval, Subscription, switchMap } from 'rxjs';
 import { TranslateModule } from '@ngx-translate/core';
 import { GamestatesService } from '../../generated/api/gamestates.service';
@@ -25,6 +25,7 @@ import { RowClosureModalComponent, RowClosureRequest } from '../row-closure-moda
 })
 export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   private route             = inject(ActivatedRoute);
+  private router            = inject(Router);
   private gameStatesService = inject(GamestatesService);
   private movesService      = inject(MovesService);
   private host              = inject(ElementRef<HTMLElement>);
@@ -54,6 +55,14 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   readonly emptySet  = new Set<string>();
   readonly TurnPhase = TurnPhase;
+
+  private gameOverNavigated = false;
+  private _gameOverEffect = effect(() => {
+    if (this.gameState()?.gameOver && !this.gameOverNavigated) {
+      this.gameOverNavigated = true;
+      setTimeout(() => this.router.navigate(['/score', this.sessionId()]), 1500);
+    }
+  });
 
   isOffline = computed(() => this.gameState() !== null && this.gameState()!.turnState == null);
 

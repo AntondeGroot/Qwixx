@@ -10,6 +10,10 @@ export const routes: Routes = [
     loadComponent: () => import('./settings/settings.component').then(m => m.SettingsComponent)
   },
   {
+    path: 'score/:sessionId',
+    loadComponent: () => import('./score/score.component').then(m => m.ScoreComponent)
+  },
+  {
     path: '',
     pathMatch: 'full',
     redirectTo: ({ queryParams }) => {

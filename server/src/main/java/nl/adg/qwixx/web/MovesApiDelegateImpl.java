@@ -84,22 +84,23 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
         return switch (req.getMoveType()) {
             case ROLL              -> new RollAction(pid);
             case CROSS_WHITE_WHITE -> new CrossCellAction(
-                    pid, parseRowIndex(req.getRowId(), session), req.getCellId(), DiceCombination.WHITE_WHITE);
+                    pid, parseRowIndex(req.getRowId(), session, pid), req.getCellId(), DiceCombination.WHITE_WHITE);
             case CROSS_COLOR_DIE   -> new CrossCellAction(
-                    pid, parseRowIndex(req.getRowId(), session), req.getCellId(), DiceCombination.WHITE_COLOR);
-            case CROSS_LOCK          -> new CrossLockAction(pid, parseRowIndex(req.getRowId(), session));
+                    pid, parseRowIndex(req.getRowId(), session, pid), req.getCellId(), DiceCombination.WHITE_COLOR);
+            case CROSS_LOCK          -> new CrossLockAction(pid, parseRowIndex(req.getRowId(), session, pid));
             case TAKE_PUNISHMENT     -> new TakePunishmentAction(pid);
             case PASS                -> new EndTurnAction(pid);
-            case DECLARE_LOCK_INTENT -> new DeclareLockIntentAction(pid, parseRowIndex(req.getRowId(), session));
+            case DECLARE_LOCK_INTENT -> new DeclareLockIntentAction(pid, parseRowIndex(req.getRowId(), session, pid));
             case RESET_TURN          -> new ResetTurnAction(pid);
             case GIVE_UP             -> new GiveUpAction(pid);
             case UNDO_LAST_CROSS     -> new UndoLastCrossAction(pid);
         };
     }
 
-    private static int parseRowIndex(String rowId, GameSession session) {
+    private static int parseRowIndex(String rowId, GameSession session, UUID playerId) {
         if (rowId == null) throw new IllegalMoveException("rowId is required for cross moves");
-        SheetLayout layout = session.currentState().sheetLayouts().values().iterator().next();
+        SheetLayout layout = session.currentState().sheetLayouts().get(playerId);
+        if (layout == null) throw new IllegalMoveException("no layout found for player: " + playerId);
         List<Row> rows = layout.rows();
         for (int i = 0; i < rows.size(); i++) {
             if (rows.get(i).id().equals(rowId)) return i;

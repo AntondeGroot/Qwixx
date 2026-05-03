@@ -100,6 +100,98 @@ public class ScoreInteractionHelper {
                 .orElse(false);
     }
 
+    // ── Modal buttons ──────────────────────────────────────────────────────────
+
+    /** Returns how many buttons the winner modal contains. */
+    public static int getModalButtonCount(WebDriver driver) {
+        try {
+            return driver.findElements(By.cssSelector(".winner-modal .btn")).size();
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Clicks the "View Scores" button (btn-ghost) and waits until Angular has
+     * processed the click — modal gone AND action bar present — before returning.
+     * Both signals are set synchronously in the same change-detection cycle, so
+     * waiting for both together is the reliable way to avoid race conditions.
+     */
+    public static void clickViewScoresButton(WebDriver driver) {
+        driver.findElement(By.cssSelector(".winner-modal .btn-ghost")).click();
+        new WebDriverWait(driver, Duration.ofSeconds(3))
+                .until(d -> !isWinnerModalVisible(d) && isActionBarVisible(d));
+    }
+
+    /** Clicks the "New Game" button (btn-secondary) inside the winner modal. */
+    public static void clickNewGameButton(WebDriver driver) {
+        driver.findElement(By.cssSelector(".winner-modal .btn-secondary")).click();
+    }
+
+    /** Clicks the "Leave Game" button (btn-primary) inside the winner modal. */
+    public static void clickLeaveGameButton(WebDriver driver) {
+        driver.findElement(By.cssSelector(".winner-modal .btn-primary")).click();
+    }
+
+    // ── Action bar ─────────────────────────────────────────────────────────────
+
+    /** Returns true when the sticky action bar (shown after "View Scores") is present. */
+    public static boolean isActionBarVisible(WebDriver driver) {
+        try {
+            return !driver.findElements(By.className("action-bar")).isEmpty();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** Returns how many buttons the action bar contains. */
+    public static int getActionBarButtonCount(WebDriver driver) {
+        try {
+            return driver.findElements(By.cssSelector(".action-bar .btn")).size();
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    // ── Mobile rotation ────────────────────────────────────────────────────────
+
+    /**
+     * Returns true if the score screen host element has the {@code --mobile-scale}
+     * CSS custom property set as an inline style, which only happens when the
+     * Angular component detects portrait orientation (height > width).
+     */
+    public static boolean isMobileScaleApplied(WebDriver driver) {
+        try {
+            WebElement host = driver.findElement(By.tagName("app-score"));
+            String style = host.getAttribute("style");
+            return style != null && style.contains("--mobile-scale:");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Returns true when the host element's CSS {@code transform} reports a
+     * 90-degree rotation — specifically a matrix with a near-zero main diagonal.
+     * This is the signature of {@code rotate(90deg)}.
+     */
+    public static boolean isRotated90Degrees(WebDriver driver) {
+        try {
+            WebElement host = driver.findElement(By.tagName("app-score"));
+            // rotate(90deg) → matrix(0, 1, -1, 0, tx, ty)
+            // getCssValue returns the computed matrix; check that the a component ≈ 0
+            String transform = host.getCssValue("transform");
+            if (transform == null || transform.equals("none")) return false;
+            // matrix(a, b, c, d, tx, ty) — for 90deg: a≈0, b≈1, c≈-1, d≈0
+            String[] parts = transform.replace("matrix(", "").replace(")", "").split(",");
+            double a = Double.parseDouble(parts[0].trim());
+            double b = Double.parseDouble(parts[1].trim());
+            return Math.abs(a) < 0.1 && Math.abs(b - 1) < 0.1;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     // ── Score table ────────────────────────────────────────────────────────────
 
     /** Returns all visible player names from .player-name elements. */

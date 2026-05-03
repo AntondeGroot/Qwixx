@@ -30,29 +30,35 @@ public class BoardInteractionHelper {
         }
     }
 
-    /** Clicks the cell whose displayed value equals {@code displayValue} in the given row color. */
+    /**
+     * Clicks the cell whose displayed value equals {@code displayValue} in the given row color.
+     *
+     * Strategy: use pure-JS DOM traversal to locate the element (avoiding stale-element
+     * exceptions from Angular component host boundaries), then hand the found element back
+     * to Selenium for a proper WebElement.click().  JavaScript's own element.click() is
+     * less reliable for Angular event bindings in headless Chrome — Selenium's click
+     * physically dispatches the event through the browser's input pipeline.
+     */
     public static void clickCellByValue(WebDriver driver, String rowColor, String displayValue) {
-        // The lock-cell is always findable. Use the browser's native closest() to climb
-        // to the enclosing .row div — this works regardless of how XPath handles the
-        // Angular component host elements in the ancestor chain.
-        WebElement lockCell = driver.findElement(lockCellLocator(rowColor));
-        WebElement row = (WebElement) ((JavascriptExecutor) driver)
-                .executeScript("return arguments[0].closest('.row');", lockCell);
-        if (row == null) throw new NoSuchElementException(
-                "Could not find .row ancestor for " + rowColor + " lock-cell");
-        row.findElements(By.className("cell")).stream()
-                .filter(cell -> {
-                    try {
-                        return displayValue.equals(
-                                cell.findElement(By.className("cell-value")).getText().trim());
-                    } catch (Exception e) {
-                        return false;
-                    }
-                })
-                .findFirst()
-                .orElseThrow(() -> new NoSuchElementException(
-                        "No " + rowColor + " cell with value '" + displayValue + "' found"))
-                .click();
+        WebElement cell = (WebElement) ((JavascriptExecutor) driver).executeScript(
+                "const section = document.querySelector('section.current-player');" +
+                "if (!section) return null;" +
+                "for (const span of section.querySelectorAll('.cell-value')) {" +
+                "  if (span.textContent.trim() !== arguments[1]) continue;" +
+                "  let cell = span.parentElement;" +
+                "  while (cell && !(cell.classList && cell.classList.contains('cell'))) cell = cell.parentElement;" +
+                "  if (!cell) continue;" +
+                "  let row = cell.parentElement;" +
+                "  while (row && !(row.classList && row.classList.contains('row'))) row = row.parentElement;" +
+                "  if (!row || row.getAttribute('data-color') !== arguments[0]) continue;" +
+                "  return cell;" +
+                "}" +
+                "return null;",
+                rowColor, displayValue);
+        if (cell == null)
+            throw new NoSuchElementException(
+                    "No " + rowColor + " cell with value '" + displayValue + "' found");
+        cell.click();
     }
 
     // ── Cell state queries ─────────────────────────────────────────────────────

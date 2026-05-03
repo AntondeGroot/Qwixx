@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
+import { AfterViewInit, Component, computed, ElementRef, HostListener, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { TranslateModule } from '@ngx-translate/core';
@@ -27,16 +27,23 @@ interface Col {
   selector: 'app-score',
   standalone: true,
   imports: [TranslateModule],
-  templateUrl: './score.component.html',
+  templateUrl:  './score.component.html',
   styleUrl: './score.component.css'
 })
-export class ScoreComponent implements OnInit {
+export class ScoreComponent implements OnInit, AfterViewInit {
   private route             = inject(ActivatedRoute);
   private router            = inject(Router);
+  private host              = inject(ElementRef<HTMLElement>);
   private gamesService      = inject(GamesService);
   private gameStatesService = inject(GamestatesService);
 
-  private readonly ROW_H = 80; // px — keep in sync with CSS
+  private readonly ROW_H           = 80;  // px — keep in sync with CSS
+  private readonly MOBILE_DESIGN_H = 541; // same reference height as the board
+
+  // When ?fast=1 is in the URL every delay collapses to ~1 ms so E2E tests
+  // finish in under 2 s instead of ~18 s without touching production logic.
+  private readonly fast = new URLSearchParams(window.location.search).has('fast');
+  private ms(normal: number): number { return this.fast ? 1 : normal; }
 
   sessionId = '';
 
@@ -63,6 +70,7 @@ export class ScoreComponent implements OnInit {
   punishDone   = signal(false);
   allDone      = signal(false);
   showModal    = signal(false);
+  showActionBar = signal(false); // true after the winner modal is dismissed via "View Scores"
 
   winner = computed(() => this.playerRows().find(r => r.rank === 0));
 
@@ -75,6 +83,18 @@ export class ScoreComponent implements OnInit {
   ngOnInit() {
     this.sessionId = this.route.snapshot.paramMap.get('sessionId') ?? '';
     this.runAnimation();
+  }
+
+  ngAfterViewInit() { this.applyMobileScale(); }
+
+  @HostListener('window:resize')
+  applyMobileScale() {
+    const el = this.host.nativeElement as HTMLElement;
+    if (window.innerHeight > window.innerWidth) {
+      el.style.setProperty('--mobile-scale', (window.innerWidth / this.MOBILE_DESIGN_H).toFixed(4));
+    } else {
+      el.style.removeProperty('--mobile-scale');
+    }
   }
 
   private async runAnimation(): Promise<void> {
@@ -116,14 +136,14 @@ export class ScoreComponent implements OnInit {
       }));
       this.playerRows.set(rows);
 
-      await delay(700);
+      await delay(this.ms(700));
 
       // ── Animate each column one by one ──────────────────────────────────
       for (const col of cols) {
         this.activeKey.set(col.key);
 
         const targets = new Map(rows.map(r => [r.id, col.getValue(r.scoreCard)]));
-        await this.animate(1400, eased =>
+        await this.animate(this.ms(1400), eased =>
           this.playerRows.update(rs => rs.map(r => ({
             ...r,
             displayed: { ...r.displayed, [col.key]: Math.round((targets.get(r.id) ?? 0) * eased) },
@@ -132,15 +152,15 @@ export class ScoreComponent implements OnInit {
 
         this.activeKey.set(null);
         this.doneKeys.update(s => new Set([...s, col.key]));
-        await delay(350);
+        await delay(this.ms(350));
         await this.sort();
-        await delay(450);
+        await delay(this.ms(450));
       }
 
       // ── Punishment column ────────────────────────────────────────────────
       this.punishActive.set(true);
       const punishTargets = new Map(rows.map(r => [r.id, r.scoreCard.punishmentPoints]));
-      await this.animate(900, eased =>
+      await this.animate(this.ms(900), eased =>
         this.playerRows.update(rs => rs.map(r => ({
           ...r,
           displayedPunishment: Math.round((punishTargets.get(r.id) ?? 0) * eased),
@@ -148,12 +168,12 @@ export class ScoreComponent implements OnInit {
       );
       this.punishActive.set(false);
       this.punishDone.set(true);
-      await delay(350);
+      await delay(this.ms(350));
       await this.sort();
-      await delay(900);
+      await delay(this.ms(900));
 
       this.allDone.set(true);
-      await delay(1400);
+      await delay(this.ms(1400));
       this.showModal.set(true);
 
     } catch {
@@ -187,8 +207,14 @@ export class ScoreComponent implements OnInit {
       lifting: newRank.get(r.id) !== r.rank,
     })));
 
-    await delay(900);
+    await delay(this.ms(900));
     this.playerRows.update(rs => rs.map(r => ({ ...r, lifting: false })));
+  }
+
+  /** Dismiss the winner modal and keep the score table in view. */
+  viewScores() {
+    this.showModal.set(false);
+    this.showActionBar.set(true);
   }
 
   goToSettings() { this.router.navigate(['/settings']); }

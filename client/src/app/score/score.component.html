@@ -2,6 +2,19 @@
   <div class="loading">Loading…</div>
 } @else {
   <div class="score-screen">
+
+    <!-- Sticky action bar — visible once the winner modal is dismissed via "View Scores" -->
+    @if (showActionBar()) {
+      <div class="action-bar">
+        <button class="btn btn-secondary" (click)="goToSettings()">
+          {{ 'score.newGame' | translate }}
+        </button>
+        <button class="btn btn-secondary" (click)="goToSettings()">
+          {{ 'score.leaveGame' | translate }}
+        </button>
+      </div>
+    }
+
     <h1 class="title">{{ 'score.finalScores' | translate }}</h1>
 
     <div class="score-table">
@@ -71,6 +84,9 @@
           <h2 class="winner-name">{{ winner()?.name }}</h2>
           <p class="winner-sub">{{ 'score.winner' | translate }}</p>
           <div class="modal-actions">
+            <button class="btn btn-ghost" (click)="viewScores()">
+              {{ 'score.viewScores' | translate }}
+            </button>
             <button class="btn btn-secondary" (click)="goToSettings()">
               {{ 'score.newGame' | translate }}
             </button>

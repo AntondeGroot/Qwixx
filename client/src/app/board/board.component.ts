@@ -223,7 +223,9 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
     } else if ((turn.phase === TurnPhase.PASSIVE_MOVE || turn.phase === TurnPhase.ACTIVE_MOVE)
-               && this.isInPassiveQueue()) {
+               && this.isInPassiveQueue()
+               && this.pendingCellIds().size === 0) {
+      // Only offer cells before the passive player has made their one allowed cross.
       this.collectCells(layout, progress, closedRows, roll.white1 + roll.white2, null, result);
     }
 
@@ -281,10 +283,16 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     const state = this.gameState();
-    const pid   = this.playerId();
     const turn  = this.turnState();
     if (!state || !turn?.currentRoll) return;
 
+    // Passive players may only use white+white — skip move-type computation entirely.
+    if (this.isInPassiveQueue()) {
+      this.sendMove({ moveType: MoveType.CROSS_WHITE_WHITE, rowId, cellId });
+      return;
+    }
+
+    const pid    = this.playerId();
     const layout = state.sheetLayouts[pid];
     const row    = layout?.rows.find(r => r.id === rowId);
     const cell   = row?.cells.find(c => c.id === cellId);
@@ -426,7 +434,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onConfirmRowClosure() {
-    // Modal will close once server clears rowClosureRequests from gameState
+    this.sendMove({ moveType: MoveType.PASS });
   }
 
   onChangeRowClosure() {

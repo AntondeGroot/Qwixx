@@ -311,6 +311,41 @@ class MovesApiDelegateImplTest {
                 .andExpect(status().isBadRequest());
     }
 
+    // ── Passive player one-cross-per-turn enforcement ─────────────────────────
+
+    /**
+     * A passive player may make exactly one white+white cross per turn.
+     * Crossing a second cell (in a different row but with the same value) must
+     * be rejected with 400 Bad Request.
+     */
+    @Test
+    void simultaneousTurn_passivePlayerCannotCrossMoreThanOnce() throws Exception {
+        Player bob = Player.of("Bob");
+        String sid = twoPlayerSession(alice, bob);
+        roll(sid, alice.id());
+
+        // Force dice so white+white = 6; both RED (position 4) and YELLOW (position 4)
+        // have a reachable "6" cell — giving us two distinct targets to attempt.
+        GameState s = GameRegistry.getGame(sid).currentState();
+        var current = s.turnState().currentRoll();
+        s.turnState().setCurrentRoll(new nl.adg.qwixx.data.RollResult(2, 4, current.coloredDice()));
+
+        CellTarget red6    = findWhiteWhiteCell(sid, bob.id());   // first reachable "6"
+        CellTarget yellow6 = findSecondWhiteWhiteCell(sid, bob.id(), red6.rowId()); // "6" in a different row
+
+        // First cross: must be accepted
+        move(sid, bob.id(), """
+                {"moveType":"CROSS_WHITE_WHITE","rowId":"%s","cellId":"%s"}
+                """.formatted(red6.rowId(), red6.cellId()))
+                .andExpect(status().isOk());
+
+        // Second cross in a different row: must be rejected (currently returns 200 — BUG)
+        move(sid, bob.id(), """
+                {"moveType":"CROSS_WHITE_WHITE","rowId":"%s","cellId":"%s"}
+                """.formatted(yellow6.rowId(), yellow6.cellId()))
+                .andExpect(status().isBadRequest());
+    }
+
     // ── Lock flow ─────────────────────────────────────────────────────────────
 
     @Test
@@ -384,6 +419,30 @@ class MovesApiDelegateImplTest {
         int target = state.turnState().currentRoll().white1()
                    + state.turnState().currentRoll().white2();
         return findCell(state, pid, target);
+    }
+
+    /** Returns a white+white cell in a DIFFERENT row than {@code excludeRowId}. */
+    private CellTarget findSecondWhiteWhiteCell(String sid, UUID pid, String excludeRowId) {
+        GameState state  = GameRegistry.getGame(sid).currentState();
+        int target = state.turnState().currentRoll().white1()
+                   + state.turnState().currentRoll().white2();
+        SheetLayout layout = state.sheetLayouts().get(pid);
+        SheetProgress prog = state.boardState().sheetProgress().get(pid);
+        for (Row row : layout.rows()) {
+            if (row.id().equals(excludeRowId)) continue;
+            RowState rs = prog.rowStates().getOrDefault(row.id(), new RowState(Set.of(), false));
+            int rightmost = row.cells().stream()
+                    .filter(c -> rs.crossedCells().contains(c.id()))
+                    .mapToInt(Cell::position).max().orElse(-1);
+            for (Cell cell : row.cells()) {
+                if (cell.position() <= rightmost) continue;
+                if (rs.crossedCells().contains(cell.id())) continue;
+                if (cell.displayValue().equals(String.valueOf(target))) {
+                    return new CellTarget(row.id(), cell.id());
+                }
+            }
+        }
+        throw new AssertionError("no second white+white cell found in a different row");
     }
 
     private CellTarget findColorDieCell(String sid, UUID pid) {

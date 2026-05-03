@@ -404,6 +404,17 @@ public class StandardTurnRules implements TurnRules {
                 if (cell.position() <= rightmost) continue;
                 if (rowState.crossedCells().contains(cell.id())) continue;
 
+                // A closing-eligible cell may only be crossed when doing so (combined with
+                // crossing every other still-uncrossed required cell) would reach minCrosses.
+                if (cell.isClosingEligible() && row.lock() != null) {
+                    LockCell lock = row.lock();
+                    long alreadyCrossedRequired = lock.requiredCells().stream()
+                            .filter(id -> rowState.crossedCells().contains(id))
+                            .count();
+                    long futureRequired = lock.requiredCells().size() - alreadyCrossedRequired;
+                    if (rowState.crossedCells().size() + futureRequired < lock.minCrosses()) continue;
+                }
+
                 DiceCombination combo = isActive
                         ? resolveActiveCombo(roll, cell, ats, state.boardState().activeDice())
                         : (matchesWhiteWhite(roll, cell) ? DiceCombination.WHITE_WHITE : null);

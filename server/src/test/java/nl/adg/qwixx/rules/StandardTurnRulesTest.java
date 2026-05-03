@@ -292,6 +292,76 @@ class StandardTurnRulesTest {
                 "Passive player must not be allowed to make more than one white+white cross per turn");
     }
 
+    // ── Closing-eligible cell reachability ────────────────────────────────────
+    //
+    // A closing-eligible cell (the last cell in standard, the last two in Longo) may
+    // only be crossed when doing so — combined with crossing any remaining required cells
+    // — would eventually bring the row to the minimum-cross threshold for locking.
+    //
+    // Standard (minCrosses=5, 1 required cell = closing cell):
+    //   • allowed when existingCrosses >= 4  (4 existing + closing = 5 = minCrosses)
+    //   • blocked  when existingCrosses <  4  (3 existing + closing = 4 < 5)
+
+    @Test
+    void closingCellNotOfferedWhenMinCrossThresholdCannotBeReached() {
+        // BLUE descending row, closing cell = "2" (position 10, closingEligible).
+        // Dice: white1=1, white2=1 → white+white=2 → cell is reachable by value.
+        // With 3 existing crosses: 3 + 1(closing) = 4 < 5 (minCrosses) → must NOT be offered.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        state.turnState().setCurrentRoll(
+                new RollResult(1, 1, state.turnState().currentRoll().coloredDice()));
+
+        Row blue = state.sheetLayouts().get(p1).rows().get(3);
+        Set<String> crosses = new HashSet<>();
+        for (int i = 0; i < 3; i++) crosses.add(blue.cells().get(i).id());
+        state.boardState().sheetProgress().get(p1).updateRowState(3, new RowState(crosses, false));
+
+        String closingId = blue.cells().get(10).id(); // displayValue "2", closingEligible
+        assertFalse(
+                rules.getValidActions(state, p1).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction c && c.cellId().equals(closingId)),
+                "Closing cell '2' must not be offered: 3 existing + closing = 4 < minCrosses(5)");
+    }
+
+    @Test
+    void closingCellOfferedWhenCrossingItWouldReachMinCrossThreshold() {
+        // With 4 existing crosses: 4 + 1(closing) = 5 = minCrosses → must be offered.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        state.turnState().setCurrentRoll(
+                new RollResult(1, 1, state.turnState().currentRoll().coloredDice()));
+
+        Row blue = state.sheetLayouts().get(p1).rows().get(3);
+        Set<String> crosses = new HashSet<>();
+        for (int i = 0; i < 4; i++) crosses.add(blue.cells().get(i).id());
+        state.boardState().sheetProgress().get(p1).updateRowState(3, new RowState(crosses, false));
+
+        String closingId = blue.cells().get(10).id();
+        assertTrue(
+                rules.getValidActions(state, p1).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction c && c.cellId().equals(closingId)),
+                "Closing cell '2' must be offered: 4 existing + closing = 5 = minCrosses(5)");
+    }
+
+    @Test
+    void passivePlayerClosingCellAlsoBlockedWhenThresholdUnreachable() {
+        // Same constraint applies for passive players — they cannot cross a closing cell
+        // in PASSIVE_MOVE when the threshold would not be reached.
+        GameState state = stateInPassiveMove(p1, p1, p2);
+        state.turnState().setCurrentRoll(
+                new RollResult(1, 1, state.turnState().currentRoll().coloredDice()));
+
+        Row blue = state.sheetLayouts().get(p2).rows().get(3);
+        Set<String> crosses = new HashSet<>();
+        for (int i = 0; i < 3; i++) crosses.add(blue.cells().get(i).id());
+        state.boardState().sheetProgress().get(p2).updateRowState(3, new RowState(crosses, false));
+
+        String closingId = blue.cells().get(10).id();
+        assertFalse(
+                rules.getValidActions(state, p2).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction c && c.cellId().equals(closingId)),
+                "Passive player must also be blocked from crossing closing cell below threshold");
+    }
+
     @Test
     void passivePlayerEndTurnRemovesFromQueue() {
         GameState state = stateInPassiveMove(p1, p1, p2);

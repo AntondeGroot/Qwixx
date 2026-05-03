@@ -249,6 +249,13 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
         if (crossed.has(cell.id)) continue;
         if (cell.position <= lastPos) continue;
         if (parseInt(cell.displayValue) !== targetValue) continue;
+        // A closing-eligible cell is only clickable when crossing it (plus any remaining
+        // required cells) would reach the row's minimum-cross threshold for locking.
+        if (cell.closingEligible && row.lock) {
+          const alreadyCrossedRequired = row.lock.requiredCells.filter(id => crossed.has(id)).length;
+          const futureRequired = row.lock.requiredCells.length - alreadyCrossedRequired;
+          if (crossed.size + futureRequired < row.lock.minCrosses) continue;
+        }
         result.add(cell.id);
       }
     }

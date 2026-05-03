@@ -8,6 +8,7 @@ import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSettings;
 import nl.adg.qwixx.game.Player;
 import nl.adg.qwixx.generated.api.MovesApiController;
+import nl.adg.qwixx.state.CardMode;
 import nl.adg.qwixx.state.GameState;
 import nl.adg.qwixx.state.RowState;
 import nl.adg.qwixx.state.SheetLayout;
@@ -21,6 +22,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -397,6 +399,79 @@ class MovesApiDelegateImplTest {
                 .andExpect(jsonPath("$.result").value("ACCEPTED"));
     }
 
+    // ── Per-player layout mode (extraRow / PROBABILISTIC) ────────────────────
+
+    /**
+     * In extraRow (or PROBABILISTIC) mode each player gets their own Row objects
+     * with distinct UUIDs. This verifies that assumption holds — the remaining
+     * tests in this section are only meaningful because the IDs differ.
+     */
+    @Test
+    void perPlayerMode_extraRow_eachPlayerHasDistinctRowIds() {
+        Player bob = Player.of("Bob");
+        String sid = perPlayerSession(alice, bob, GameSettings.builder().extraRow(true).build());
+        GameState state = GameRegistry.getGame(sid).currentState();
+
+        List<String> aliceIds = state.sheetLayouts().get(alice.id()).rows().stream()
+                .map(Row::id).toList();
+        List<String> bobIds = state.sheetLayouts().get(bob.id()).rows().stream()
+                .map(Row::id).toList();
+
+        assertNotEquals(aliceIds, bobIds,
+                "extraRow mode must give each player their own row IDs");
+    }
+
+    /**
+     * Regression: parseRowIndex used to grab an arbitrary player's layout via
+     * .values().iterator().next(). In per-player mode the passive player's rowId
+     * does not exist in the active player's layout, so the move was rejected.
+     */
+    @Test
+    void perPlayerMode_extraRow_passivePlayerCanCrossWithOwnRowId() throws Exception {
+        Player bob = Player.of("Bob");
+        String sid = perPlayerSession(alice, bob, GameSettings.builder().extraRow(true).build());
+        roll(sid, alice.id());
+
+        CellTarget target = findWhiteWhiteCell(sid, bob.id());
+
+        move(sid, bob.id(), """
+                {"moveType":"CROSS_WHITE_WHITE","rowId":"%s","cellId":"%s"}
+                """.formatted(target.rowId(), target.cellId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result").value("ACCEPTED"));
+    }
+
+    @Test
+    void perPlayerMode_probabilistic_passivePlayerCanCrossWithOwnRowId() throws Exception {
+        Player bob = Player.of("Bob");
+        String sid = perPlayerSession(alice, bob,
+                GameSettings.builder().cardMode(CardMode.PROBABILISTIC).build());
+        roll(sid, alice.id());
+
+        CellTarget target = findWhiteWhiteCell(sid, bob.id());
+
+        move(sid, bob.id(), """
+                {"moveType":"CROSS_WHITE_WHITE","rowId":"%s","cellId":"%s"}
+                """.formatted(target.rowId(), target.cellId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result").value("ACCEPTED"));
+    }
+
+    @Test
+    void perPlayerMode_extraRow_activePlayerCanCrossWithOwnRowId() throws Exception {
+        Player bob = Player.of("Bob");
+        String sid = perPlayerSession(alice, bob, GameSettings.builder().extraRow(true).build());
+        roll(sid, alice.id());
+
+        CellTarget target = findWhiteWhiteCell(sid, alice.id());
+
+        move(sid, alice.id(), """
+                {"moveType":"CROSS_WHITE_WHITE","rowId":"%s","cellId":"%s"}
+                """.formatted(target.rowId(), target.cellId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result").value("ACCEPTED"));
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private record CellTarget(String rowId, String cellId) {}
@@ -498,6 +573,14 @@ class MovesApiDelegateImplTest {
     private String twoPlayerSession(Player... players) {
         String sid = GameRegistry.createGame("room2", 4, GameSettings.builder().build());
         for (Player p : players) GameRegistry.getGame(sid).addPlayer(p);
+        GameRegistry.getGame(sid).start();
+        return sid;
+    }
+
+    private String perPlayerSession(Player p1, Player p2, GameSettings settings) {
+        String sid = GameRegistry.createGame("room-pp", 4, settings);
+        GameRegistry.getGame(sid).addPlayer(p1);
+        GameRegistry.getGame(sid).addPlayer(p2);
         GameRegistry.getGame(sid).start();
         return sid;
     }

@@ -44,6 +44,24 @@ class GameStatesApiDelegateImplTest {
     }
 
     @Test
+    void getGameStateResponseIsNeverCached() throws Exception {
+        // Cache-Control: no-store must be present on every response so that nginx
+        // and browsers cannot serve stale state to passive players (e.g. hiding the
+        // lock-intent modal because rowClosureRequests was cached away).
+        mvc.perform(get("/gamestates/{sid}", sessionId))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "no-store"));
+    }
+
+    @Test
+    void getGameState304IsAlsoNeverCached() throws Exception {
+        mvc.perform(get("/gamestates/{sid}", sessionId)
+                        .param("stateVersion", "0"))
+                .andExpect(status().isNotModified())
+                .andExpect(header().string("Cache-Control", "no-store"));
+    }
+
+    @Test
     void getGameStateReturns304WhenVersionMatches() throws Exception {
         mvc.perform(get("/gamestates/{sid}", sessionId)
                         .param("stateVersion", "0"))

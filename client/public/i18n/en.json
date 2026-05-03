@@ -20,6 +20,8 @@
     "randomOrderDescription": "Shuffle the display values within each row.",
     "extraRow": "Extra row",
     "extraRowDescription": "Add a bonus row of cells forming a wave across the four rows.",
+    "connectedCells": "Connected cells",
+    "connectedCellsDescription": "Link cells between adjacent rows: crossing one auto-crosses the connected cell in the next row.",
     "choice": {
       "STANDARD": "Standard",
       "LONGO": "Longo",

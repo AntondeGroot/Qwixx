@@ -20,6 +20,8 @@
     "randomOrderDescription": "Bland visningsverdiene i hver rad.",
     "extraRow": "Ekstra rad",
     "extraRowDescription": "Legg til en bonusrad med celler som danner en bølge over fire rader.",
+    "connectedCells": "Forbundne celler",
+    "connectedCellsDescription": "Kobler celler mellom tilstøtende rader: å krysse én celle krysser automatisk den forbundne cellen i neste rad.",
     "choice": {
       "STANDARD": "Standard",
       "LONGO": "Longo",

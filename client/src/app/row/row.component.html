@@ -1,4 +1,10 @@
 <div class="row" [class.closed]="closed()" [attr.data-color]="row().cells[0]?.color" translate="no">
+  @for (offset of connectorOffsetsAbove(); track offset) {
+    <div class="auto-cross-line up" [style.left.px]="offset"></div>
+  }
+  @for (offset of connectorOffsetsBelow(); track offset) {
+    <div class="auto-cross-line down" [style.left.px]="offset"></div>
+  }
   @for (cell of regularCells(); track cell.id) {
     <app-cell [cell]="cell" [crossed]="isCrossed(cell.id)"
               [pending]="pendingCellIds().has(cell.id)"

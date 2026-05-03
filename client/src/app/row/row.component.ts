@@ -1,5 +1,4 @@
 import { Component, computed, input, output } from '@angular/core';
-import { SheetCell } from '../../generated/model/sheetCell';
 import { SheetRow } from '../../generated/model/sheetRow';
 import { RowState } from '../../generated/model/rowState';
 import { CellComponent } from '../cell/cell.component';
@@ -22,6 +21,11 @@ export class RowComponent {
 
   cellClicked = output<string>();
   lockClicked  = output<void>();
+
+  // Pixel x-centers of auto-cross connections to the row above / below.
+  // Computed by the board and passed in so the row knows which direction to draw.
+  connectorOffsetsAbove = input<number[]>([]);
+  connectorOffsetsBelow = input<number[]>([]);
 
   regularCells         = computed(() => this.row().cells.filter(c => !c.closingEligible));
   closingEligibleCells = computed(() => this.row().cells.filter(c => c.closingEligible));

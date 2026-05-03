@@ -20,6 +20,8 @@
     "randomOrderDescription": "Mischen Sie die Anzeigewerte in jeder Reihe.",
     "extraRow": "Zusätzliche Reihe",
     "extraRowDescription": "Fügen Sie eine Bonusreihe von Zellen hinzu, die eine Welle über vier Reihen bildet.",
+    "connectedCells": "Verbundene Zellen",
+    "connectedCellsDescription": "Verknüpft Zellen zwischen benachbarten Reihen: das Ankreuzen einer Zelle kreuzt automatisch die verbundene Zelle in der nächsten Reihe.",
     "choice": {
       "STANDARD": "Standard",
       "LONGO": "Longo",

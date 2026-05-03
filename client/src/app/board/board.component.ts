@@ -4,6 +4,7 @@ import { interval, Subscription, switchMap } from 'rxjs';
 import { TranslateModule } from '@ngx-translate/core';
 import { GamestatesService } from '../../generated/api/gamestates.service';
 import { MovesService } from '../../generated/api/moves.service';
+import { CellTag } from '../../generated/model/cellTag';
 import { Color } from '../../generated/model/color';
 import { GameState } from '../../generated/model/gameState';
 import { MoveRequest } from '../../generated/model/moveRequest';
@@ -427,6 +428,32 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   layoutFor(pid: string): SheetLayout | null {
     return this.gameState()?.sheetLayouts?.[pid] ?? null;
   }
+
+  // For each row in the current player's layout: pixel x-offsets of auto-cross
+  // connections going up (to the row above) and down (to the row below).
+  // Formula: 8px left-padding + position * (44px cell + 4px gap) + 22px half-width.
+  myRowConnectors = computed((): Map<string, { above: number[], below: number[] }> => {
+    const layout = this.layoutFor(this.playerId());
+    const result = new Map<string, { above: number[], below: number[] }>();
+    if (!layout) return result;
+    for (let i = 0; i < layout.rows.length; i++) {
+      const row = layout.rows[i];
+      const aboveIds = new Set(layout.rows[i - 1]?.cells.map(c => c.id) ?? []);
+      const belowIds = new Set(layout.rows[i + 1]?.cells.map(c => c.id) ?? []);
+      const above: number[] = [];
+      const below: number[] = [];
+      for (const cell of row.cells) {
+        for (const tag of cell.tags ?? []) {
+          if (tag.type !== CellTag.TypeEnum.AUTO_CROSS || !tag.target) continue;
+          const offset = 8 + cell.position * 48 + 22;
+          if (aboveIds.has(tag.target)) above.push(offset);
+          if (belowIds.has(tag.target)) below.push(offset);
+        }
+      }
+      result.set(row.id, { above, below });
+    }
+    return result;
+  });
 
   rowStateFor(pid: string, rowId: string): RowState | null {
     return this.gameState()?.sheetProgress?.[pid]?.rowStates?.[rowId] ?? null;

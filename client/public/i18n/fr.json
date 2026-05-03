@@ -20,6 +20,8 @@
     "randomOrderDescription": "Mélanger les valeurs d'affichage dans chaque ligne.",
     "extraRow": "Rangée supplémentaire",
     "extraRowDescription": "Ajouter une rangée bonus de cellules formant une vague sur quatre rangées.",
+    "connectedCells": "Cellules connectées",
+    "connectedCellsDescription": "Relie les cellules entre rangées adjacentes : cocher une cellule coche automatiquement la cellule connectée dans la rangée suivante.",
     "choice": {
       "STANDARD": "Standard",
       "LONGO": "Longo",

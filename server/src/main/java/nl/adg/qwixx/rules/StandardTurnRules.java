@@ -198,6 +198,8 @@ public class StandardTurnRules implements TurnRules {
                 throw new IllegalMoveException("expected phase ACTIVE_MOVE or PASSIVE_MOVE but was " + turn.phase());
             if (!turn.passivePlayerQueue().contains(playerId))
                 throw new IllegalMoveException("player not in passive queue");
+            if (turn.undoBuffer().containsKey(playerId))
+                throw new IllegalMoveException("passive player already made a white+white cross this turn");
         }
 
         Map<Integer, Set<String>> crossed = crossCellWithAutoTags(state, playerId, action.rowIndex(), action.cellId());
@@ -349,6 +351,11 @@ public class StandardTurnRules implements TurnRules {
                 if (turn.lockAcknowledged().contains(playerId))
                     throw new IllegalMoveException("already acknowledged");
                 turn.lockAcknowledged().add(playerId);
+                // Mirror the single-player auto-resolve: when the last passive acknowledges,
+                // close the row immediately so the active player doesn't need a second click.
+                if (allNonActiveAcknowledged(state)) {
+                    applyCrossLock(state, new CrossLockAction(turn.activePlayerId(), turn.pendingLockRowIndex()));
+                }
             }
             default -> throw new IllegalMoveException("EndTurnAction not valid in phase " + turn.phase());
         }

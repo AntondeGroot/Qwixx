@@ -258,6 +258,41 @@ class StandardTurnRulesTest {
     }
 
     @Test
+    void passivePlayerCannotCrossMoreThanOncePerTurn_duringActiveMove() {
+        // Fixed dice: white1=3, white2=4 → white+white=7.
+        // RED row (ascending) has "7" at position 5; YELLOW row also has "7" at position 5.
+        // After crossing RED "7", attempting YELLOW "7" must throw — only one white+white
+        // cross is allowed per passive player per turn.
+        GameState state = stateAfterRoll(p1, p1, p2);
+
+        Cell red7    = state.sheetLayouts().get(p2).rows().get(0).cells().get(5);
+        Cell yellow7 = state.sheetLayouts().get(p2).rows().get(1).cells().get(5);
+
+        // First cross is allowed
+        rules.apply(state, new CrossCellAction(p2, 0, red7.id(), DiceCombination.WHITE_WHITE));
+
+        // Second cross in a different row must be rejected
+        assertThrows(IllegalMoveException.class,
+                () -> rules.apply(state, new CrossCellAction(p2, 1, yellow7.id(), DiceCombination.WHITE_WHITE)),
+                "Passive player must not be allowed to make more than one white+white cross per turn");
+    }
+
+    @Test
+    void passivePlayerCannotCrossMoreThanOncePerTurn_duringPassiveMove() {
+        // Same constraint applies in PASSIVE_MOVE phase (after active ends turn).
+        GameState state = stateInPassiveMove(p1, p1, p2);
+
+        Cell red7    = state.sheetLayouts().get(p2).rows().get(0).cells().get(5);
+        Cell yellow7 = state.sheetLayouts().get(p2).rows().get(1).cells().get(5);
+
+        rules.apply(state, new CrossCellAction(p2, 0, red7.id(), DiceCombination.WHITE_WHITE));
+
+        assertThrows(IllegalMoveException.class,
+                () -> rules.apply(state, new CrossCellAction(p2, 1, yellow7.id(), DiceCombination.WHITE_WHITE)),
+                "Passive player must not be allowed to make more than one white+white cross per turn");
+    }
+
+    @Test
     void passivePlayerEndTurnRemovesFromQueue() {
         GameState state = stateInPassiveMove(p1, p1, p2);
         rules.apply(state, new EndTurnAction(p2));
@@ -297,50 +332,64 @@ class StandardTurnRulesTest {
     }
 
     @Test
-    void nonActivePlayerCanAcknowledgeLockWithEndTurn() {
+    void lastPassiveEndTurnAutoClosesRow() {
+        // When the only passive player acknowledges via EndTurn, the row must close
+        // automatically — mirroring the single-player auto-resolve on declareLockIntent.
         GameState state = stateInLockPending(p1, p1, p2, 0);
         rules.apply(state, new EndTurnAction(p2));
-        assertTrue(state.turnState().lockAcknowledged().contains(p2));
-    }
-
-    @Test
-    void activePlayerCanCrossLockOnceAllAcknowledged() {
-        GameState state = stateInLockPending(p1, p1, p2, 0);
-        rules.apply(state, new EndTurnAction(p2));
-        List<GameAction> actions = rules.getValidActions(state, p1);
-        assertTrue(actions.stream().anyMatch(a -> a instanceof CrossLockAction));
+        assertTrue(state.boardState().closedRows().containsKey(0),
+                "Row must close when the last passive player acknowledges");
+        assertEquals(TurnPhase.ROLL, state.turnState().phase(),
+                "Game must advance to ROLL after auto-close");
     }
 
     @Test
     void activePlayerCannotCrossLockBeforeAllAcknowledged() {
+        // With 3 players, one passive acknowledging is not enough to trigger auto-close.
         GameState state = stateInLockPending(p1, p1, p2, p3, 0);
         rules.apply(state, new EndTurnAction(p2));  // only p2 acknowledged, p3 hasn't
         assertThrows(IllegalMoveException.class, () -> rules.apply(state, new CrossLockAction(p1, 0)));
     }
 
     @Test
-    void crossLockClosesRowAndRemovesDie() {
-        GameState state = stateInLockPending(p1, p1, p2, 0);
+    void allThreePassivesEndTurnAutoClosesRow() {
+        // With 3 players, auto-close fires only when ALL passives have acknowledged.
+        GameState state = stateInLockPending(p1, p1, p2, p3, 0);
         rules.apply(state, new EndTurnAction(p2));
-        rules.apply(state, new CrossLockAction(p1, 0));
-        assertTrue(state.boardState().closedRows().containsKey(0));
+        assertFalse(state.boardState().closedRows().containsKey(0),
+                "Row must not close while p3 still hasn't acknowledged");
+        rules.apply(state, new EndTurnAction(p3));
+        assertTrue(state.boardState().closedRows().containsKey(0),
+                "Row must close once all passives have acknowledged");
+    }
+
+    @Test
+    void crossLockClosesRowAndRemovesDie() {
+        // Auto-close fires on the last passive's EndTurn: verify die removal too.
+        GameState state = stateInLockPending(p1, p1, p2, 0);
         Color lockColor = state.sheetLayouts().get(p1).rows().get(0).lock().color();
+        rules.apply(state, new EndTurnAction(p2));
+        assertTrue(state.boardState().closedRows().containsKey(0));
         assertTrue(state.boardState().activeDice().stream().noneMatch(d -> d.color() == lockColor));
     }
 
     @Test
     void crossLockTransitionsToNextRoll() {
+        // Auto-close on passive EndTurn also advances the turn to ROLL.
         GameState state = stateInLockPending(p1, p1, p2, 0);
         rules.apply(state, new EndTurnAction(p2));
-        rules.apply(state, new CrossLockAction(p1, 0));
         assertEquals(TurnPhase.ROLL, state.turnState().phase());
     }
 
     @Test
     void nonActivePlayerCanCrossLockToGetBonusAndAcknowledge() {
+        // Passive player crosses the lock cell themselves — they get the bonus (lockCrossed)
+        // and are acknowledged, but the row stays open until active player also closes it.
         GameState state = stateInLockPending(p1, p1, p2, 0);
         crossEnoughForLock(state, p2, 0);
         rules.apply(state, new CrossLockAction(p2, 0));
+        // Still in LOCK_PENDING — p1 must explicitly close the row
+        assertEquals(TurnPhase.LOCK_PENDING, state.turnState().phase());
         assertTrue(state.turnState().lockAcknowledged().contains(p2));
         RowState rs = state.boardState().sheetProgress().get(p2).rowStates().get(0);
         assertTrue(rs.lockCrossed());

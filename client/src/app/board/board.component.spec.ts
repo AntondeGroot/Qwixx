@@ -313,4 +313,82 @@ describe('BoardComponent — punishment / pass', () => {
       );
     });
   });
+
+  // ── onConfirmRowClosure ────────────────────────────────────────────────────
+
+  describe('onConfirmRowClosure', () => {
+    it('sends PASS so the passive player acknowledges the lock intent', () => {
+      component.gameState.set(makeState({
+        turnState: {
+          activePlayerId: OTHER_ID,
+          phase: TurnPhase.LOCK_PENDING,
+          passivePlayerQueue: [PLAYER_ID],
+        },
+      }));
+      component.sessionId.set('s1');
+
+      component.onConfirmRowClosure();
+
+      expect(movesService.makeMove).toHaveBeenCalledWith(
+        's1', PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.PASS })
+      );
+    });
+  });
+
+  // ── onCellClicked (passive player) ────────────────────────────────────────
+
+  describe('onCellClicked — passive player', () => {
+    const ROW_ID  = 'row-red';
+    const CELL_ID = 'cell-2';
+
+    function makeStateWithCell(overrides: Record<string, unknown> = {}): GameState {
+      return makeState({
+        sheetLayouts: {
+          [PLAYER_ID]: {
+            rows: [{
+              id: ROW_ID,
+              cells: [{ id: CELL_ID, position: 0, displayValue: '2', color: 'RED',
+                         closingEligible: false, tags: [] }],
+              lock: null,
+            }],
+          },
+          [OTHER_ID]: { rows: [] },
+        },
+        turnState: {
+          activePlayerId: OTHER_ID,
+          phase: TurnPhase.ACTIVE_MOVE,
+          passivePlayerQueue: [PLAYER_ID],
+          currentRoll: { white1: 1, white2: 1, coloredDice: { RED: 1 } },
+          ...overrides,
+        },
+      } as unknown as Partial<GameState>);
+    }
+
+    it('always sends CROSS_WHITE_WHITE for a passive player', () => {
+      component.gameState.set(makeStateWithCell());
+      component.sessionId.set('s1');
+
+      component.onCellClicked(ROW_ID, CELL_ID);
+
+      expect(movesService.makeMove).toHaveBeenCalledWith(
+        's1', PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.CROSS_WHITE_WHITE })
+      );
+    });
+
+    it('sends CROSS_WHITE_WHITE even when active already used white+white and dice also match color die', () => {
+      // Dice: white=1+1=2, RED=1 → value 2 matches BOTH white+white AND white+RED.
+      // Without the passive-player guard, onCellClicked would incorrectly send CROSS_COLOR_DIE.
+      component.gameState.set(makeStateWithCell({ whiteWhiteUsed: true }));
+      component.sessionId.set('s1');
+
+      component.onCellClicked(ROW_ID, CELL_ID);
+
+      expect(movesService.makeMove).toHaveBeenCalledWith(
+        's1', PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.CROSS_WHITE_WHITE })
+      );
+    });
+  });
 });

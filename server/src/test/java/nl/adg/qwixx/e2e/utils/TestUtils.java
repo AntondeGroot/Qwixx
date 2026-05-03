@@ -21,14 +21,21 @@ public class TestUtils {
     private static final String BASE_URL = "http://127.0.0.1:4200";
 
     public static WebDriver getDriver(String sessionId, String playerId) {
-        WebDriver driver = new ChromeDriver(buildOptions());
+        WebDriver driver = new ChromeDriver(buildOptions("1920,1080"));
         driver.get(BASE_URL + "/?sessionid=" + sessionId + "&playerid=" + playerId);
         return driver;
     }
 
     public static WebDriver getScoreDriver(String sessionId) {
-        WebDriver driver = new ChromeDriver(buildOptions());
-        driver.get(BASE_URL + "/score/" + sessionId);
+        WebDriver driver = new ChromeDriver(buildOptions("1920,1080"));
+        driver.get(BASE_URL + "/score/" + sessionId + "?fast=1");
+        return driver;
+    }
+
+    /** Opens the score screen with a portrait (phone) viewport so mobile-rotation CSS fires. */
+    public static WebDriver getPortraitScoreDriver(String sessionId) {
+        WebDriver driver = new ChromeDriver(buildOptions("390,844"));
+        driver.get(BASE_URL + "/score/" + sessionId + "?fast=1");
         return driver;
     }
 
@@ -42,12 +49,12 @@ public class TestUtils {
         });
     }
 
-    private static ChromeOptions buildOptions() {
+    private static ChromeOptions buildOptions(String windowSize) {
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--headless=new");
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
-        options.addArguments("--window-size=1920,1080");
+        options.addArguments("--window-size=" + windowSize);
         options.addArguments("--mute-audio");
         // unique profile dir prevents cross-instance conflicts in parallel tests
         options.addArguments("--user-data-dir=/tmp/chrome-user-data-" + System.nanoTime());

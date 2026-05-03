@@ -408,6 +408,51 @@ public class LockMechanismIT extends BaseIntegrationTest {
                 "BLUE row must NOT be closed — the reset cancelled the lock intent");
     }
 
+    // ── Full 2-player lock flow: declare → passive confirms → row closes ─────
+
+    /**
+     * Verifies the end-to-end lock flow in a real browser:
+     *  1. Active player (player0) declares lock intent via the UI lock button.
+     *  2. Passive player (player1) sees the lock-intent modal.
+     *  3. Passive player clicks "Confirm" (which sends PASS / EndTurn).
+     *  4. Server auto-closes the row (last passive acknowledged → auto-resolve).
+     *  5. Both players see the BLUE row as closed.
+     */
+    @Test
+    void fullLockFlow_passiveConfirms_rowClosesInBothBrowsers() {
+        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.roll(sessionId, playerIds.get(0));
+        api.setDice(sessionId, 1, 1);
+
+        // Open both browsers with the state already loaded (no animation triggered)
+        driver0 = TestUtils.getDriver(sessionId, playerIds.get(0));
+        driver1 = TestUtils.getDriver(sessionId, playerIds.get(1));
+        TestUtils.waitUntilBoardLoaded(driver0);
+        TestUtils.waitUntilBoardLoaded(driver1);
+
+        // Player0 declares lock intent via the UI lock button
+        BoardInteractionHelper.clickLockButton(driver0, "BLUE");
+
+        // Player1's board must show the lock-intent modal
+        BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
+
+        // Player1 clicks "Confirm" → sends PASS → last passive acknowledged → row auto-closes
+        BoardInteractionHelper.clickModalConfirmButton(driver1);
+
+        // Both players must see BLUE row closed (server auto-closes on last passive EndTurn)
+        new WebDriverWait(driver0, Duration.ofSeconds(8))
+                .until(d -> BoardInteractionHelper.isRowClosed(d, "BLUE"));
+        new WebDriverWait(driver1, Duration.ofSeconds(8))
+                .until(d -> BoardInteractionHelper.isRowClosed(d, "BLUE"));
+
+        assertTrue(BoardInteractionHelper.isRowClosed(driver0, "BLUE"),
+                "BLUE row must be closed in player0's browser after the full lock flow");
+        assertTrue(BoardInteractionHelper.isRowClosed(driver1, "BLUE"),
+                "BLUE row must be closed in player1's browser after the full lock flow");
+        assertFalse(BoardInteractionHelper.isModalVisible(driver1),
+                "Lock-intent modal must be gone after the row closes");
+    }
+
     @SuppressWarnings("unchecked")
     private static String turnPhase(java.util.Map<String, Object> state) {
         java.util.Map<String, Object> turn = (java.util.Map<String, Object>) state.get("turnState");

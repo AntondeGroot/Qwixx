@@ -29,6 +29,14 @@
       "PROBABILISTIC": "Probabilistic"
     }
   },
+  "score": {
+    "finalScores": "Final Scores",
+    "total": "Total",
+    "winner": "wins!",
+    "newGame": "New game",
+    "leaveGame": "Leave game",
+    "viewScores": "View final scores"
+  },
   "rowClosure": {
     "wantsToCloseThe": "wants to close the",
     "row": "row",

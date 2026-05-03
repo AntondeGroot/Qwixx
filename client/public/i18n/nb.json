@@ -29,6 +29,14 @@
       "PROBABILISTIC": "Probabilistisk"
     }
   },
+  "score": {
+    "finalScores": "Sluttresultat",
+    "total": "Totalt",
+    "winner": "vinner!",
+    "newGame": "Nytt spill",
+    "leaveGame": "Forlat spillet",
+    "viewScores": "Se sluttresultat"
+  },
   "rowClosure": {
     "wantsToCloseThe": "vil lukke",
     "row": "raden",

@@ -116,6 +116,12 @@ public class GameSession {
                            state.boardState().sheetProgress().get(playerId));
     }
 
+    public synchronized void forceFinish() {
+        state.setGameOver(true);
+        state.incrementVersion();
+        status = SessionStatus.FINISHED;
+    }
+
     public String sessionId()        { return sessionId; }
     public String roomName()         { return roomName; }
     public int maxPlayers()          { return maxPlayers; }

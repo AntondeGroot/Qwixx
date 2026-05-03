@@ -29,6 +29,14 @@
       "PROBABILISTIC": "Probabilistisch"
     }
   },
+  "score": {
+    "finalScores": "Eindstand",
+    "total": "Totaal",
+    "winner": "wint!",
+    "newGame": "Nieuw spel",
+    "leaveGame": "Spel verlaten",
+    "viewScores": "Eindstand bekijken"
+  },
   "rowClosure": {
     "wantsToCloseThe": "wil de",
     "row": "rij sluiten",

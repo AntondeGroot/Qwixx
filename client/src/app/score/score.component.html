@@ -1,0 +1,86 @@
+@if (playerRows().length === 0) {
+  <div class="loading">Loading…</div>
+} @else {
+  <div class="score-screen">
+    <h1 class="title">{{ 'score.finalScores' | translate }}</h1>
+
+    <div class="score-table">
+
+      <!-- Column headers -->
+      <div class="header-row">
+        <div class="name-cell"></div>
+
+        @for (col of allCols(); track col) {
+          <div class="bucket-cell header-bucket"
+               [class.active-col]="activeKey() === col"
+               [class.done-col]="doneKeys().has(col)">
+            <div class="color-dot" [attr.data-col]="col.toLowerCase()"></div>
+          </div>
+        }
+
+        <!-- Punishment header -->
+        <div class="bucket-cell header-bucket pun-header"
+             [class.active-col]="punishActive()"
+             [class.done-col]="punishDone()">
+          <span class="pun-symbol">−5</span>
+        </div>
+
+        <div class="total-cell header-total">{{ 'score.total' | translate }}</div>
+      </div>
+
+      <!-- Player rows — absolutely positioned so rank drives top via CSS transition -->
+      <div class="rows-container" [style.height.px]="playerRows().length * 80">
+        @for (player of playerRows(); track player.id) {
+          <div class="player-row"
+               [class.lifting]="player.lifting"
+               [class.winner]="allDone() && player.rank === 0"
+               [style.top.px]="topPx(player)">
+
+            <div class="name-cell player-name">{{ player.name }}</div>
+
+            @for (col of allCols(); track col) {
+              <div class="bucket-cell score-value"
+                   [class.active-val]="activeKey() === col">
+                {{ player.displayed[col] }}
+              </div>
+            }
+
+            <!-- Punishment value counts down from 0 to a negative number -->
+            <div class="bucket-cell score-value pun-value"
+                 [class.active-val]="punishActive()">
+              {{ player.displayedPunishment }}
+            </div>
+
+            <!-- Running total grows with each column -->
+            <div class="total-cell total-value"
+                 [class.winner-total]="allDone() && player.rank === 0">
+              {{ displayedTotal(player) }}
+            </div>
+
+          </div>
+        }
+      </div>
+
+    </div><!-- /.score-table -->
+
+    <!-- Winner modal, slides in after animation completes -->
+    @if (showModal()) {
+      <div class="modal-overlay">
+        <div class="winner-modal">
+          <div class="trophy">🏆</div>
+          <h2 class="winner-name">{{ winner()?.name }}</h2>
+          <p class="winner-sub">{{ 'score.winner' | translate }}</p>
+          <div class="modal-actions">
+            <button class="btn btn-secondary" (click)="goToSettings()">
+              {{ 'score.newGame' | translate }}
+            </button>
+            <button class="btn btn-primary" (click)="goToSettings()">
+              {{ 'score.leaveGame' | translate }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+  </div>
+}

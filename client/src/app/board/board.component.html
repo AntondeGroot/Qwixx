@@ -70,6 +70,8 @@
                 [showClickableCellIds]="isOffline() ? emptySet : null"
                 [pendingCellIds]="pendingCellIds()"
                 [lockClickable]="isLockEligible(playerId(), row.id)"
+                [connectorOffsetsAbove]="myRowConnectors().get(row.id)?.above ?? []"
+                [connectorOffsetsBelow]="myRowConnectors().get(row.id)?.below ?? []"
                 (cellClicked)="onCellClicked(row.id, $event, playerId())"
                 (lockClicked)="onLockClicked(row.id, playerId())" />
             }

@@ -21,7 +21,8 @@ public class QwixxGameOptions {
             GameOption.enumOption("cardMode", "gameOption.cardMode", "gameOption.cardModeDescription",
                 "DETERMINISTIC", List.of("DETERMINISTIC", "PROBABILISTIC")),
             GameOption.boolOption("randomOrder", "gameOption.randomOrder", "gameOption.randomOrderDescription"),
-            GameOption.boolOption("extraRow", "gameOption.extraRow", "gameOption.extraRowDescription")
+            GameOption.boolOption("extraRow", "gameOption.extraRow", "gameOption.extraRowDescription"),
+            GameOption.boolOption("connectedCells", "gameOption.connectedCells", "gameOption.connectedCellsDescription")
         );
     }
 
@@ -32,9 +33,10 @@ public class QwixxGameOptions {
                 case "base"        -> builder.base(BaseVariant.valueOf(str(entry.getValue())));
                 case "gameMode"    -> builder.gameMode(GameMode.valueOf(str(entry.getValue())));
                 case "cardMode"    -> builder.cardMode(CardMode.valueOf(str(entry.getValue())));
-                case "randomOrder" -> builder.randomOrder(bool(entry.getValue()));
-                case "extraRow"    -> builder.extraRow(bool(entry.getValue()));
-                default            -> log.warning("unknown game option '" + entry.getKey() + "', ignoring");
+                case "randomOrder"    -> builder.randomOrder(bool(entry.getValue()));
+                case "extraRow"       -> builder.extraRow(bool(entry.getValue()));
+                case "connectedCells" -> builder.connectedCells(bool(entry.getValue()));
+                default               -> log.warning("unknown game option '" + entry.getKey() + "', ignoring");
             }
         }
     }

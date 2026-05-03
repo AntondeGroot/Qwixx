@@ -20,6 +20,8 @@
     "randomOrderDescription": "Schud de weergavewaarden in elke rij.",
     "extraRow": "Extra rij",
     "extraRowDescription": "Voeg een bonusrij cellen toe die een golf over vier rijen vormt.",
+    "connectedCells": "Verbonden cellen",
+    "connectedCellsDescription": "Verbindt cellen tussen aangrenzende rijen: het aankruisen van één cel kruist automatisch de verbonden cel in de volgende rij.",
     "choice": {
       "STANDARD": "Standaard",
       "LONGO": "Longo",

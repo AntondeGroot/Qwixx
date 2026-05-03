@@ -56,6 +56,15 @@
   border-width: 5px;
 }
 
+.cell.auto-cross::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  border: 2px dashed rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+
 .cell.clickable {
   cursor: pointer;
   outline: 3px solid rgb(186 66 255 / 0.9);

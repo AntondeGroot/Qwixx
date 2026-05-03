@@ -17,9 +17,11 @@ import nl.adg.qwixx.state.CardMode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 
 public class ConfigurableGameStyleFactory implements GameStyleFactory {
@@ -49,12 +51,14 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
         if (!perPlayer) {
             List<Row> shared = buildStandardRows();
             if (settings.randomOrder()) shuffleDisplayValues(shared);
+            if (settings.connectedCells()) applyConnectedCells(shared);
             for (UUID player : players) result.put(player, shared);
         } else {
             for (UUID player : players) {
                 List<Row> playerRows = buildStandardRows();
                 if (settings.randomOrder()) shuffleDisplayValues(playerRows);
                 if (settings.extraRow()) applyExtraRow(playerRows);
+                if (settings.connectedCells()) applyConnectedCells(playerRows);
                 result.put(player, playerRows);
             }
         }
@@ -203,6 +207,72 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
         }
         row.addLock(buildLock(color, cells));
         return row;
+    }
+
+    private void applyConnectedCells(List<Row> rows) {
+        Set<Integer> forbidden = new HashSet<>();
+        forbidden.add(0);
+        for (Row row : rows) {
+            for (Cell cell : row.cells()) {
+                if (cell.isClosingEligible()) forbidden.add(cell.position());
+            }
+        }
+
+        List<Integer> validPositions = new ArrayList<>();
+        for (Cell cell : rows.get(0).cells()) {
+            if (!forbidden.contains(cell.position())) validPositions.add(cell.position());
+        }
+
+        int[] prevPair = null;
+        for (int pair = 0; pair < rows.size() - 1; pair++) {
+            List<Integer> shuffled = new ArrayList<>(validPositions);
+            Collections.shuffle(shuffled, random);
+            int[] chosen = pickPairPositions(shuffled, prevPair);
+
+            Row rowA = rows.get(pair);
+            Row rowB = rows.get(pair + 1);
+            for (int pos : chosen) {
+                Cell cellA = rowA.cells().get(pos);
+                Cell cellB = rowB.cells().get(pos);
+                addAutoTag(cellA, cellB.id());
+                addAutoTag(cellB, cellA.id());
+            }
+            prevPair = chosen;
+        }
+    }
+
+    // Picks 2 positions satisfying: intra-pair diff >= 3 and each >= 2 from every prevPair position.
+    private int[] pickPairPositions(List<Integer> shuffled, int[] prevPair) {
+        for (int i = 0; i < shuffled.size(); i++) {
+            for (int j = i + 1; j < shuffled.size(); j++) {
+                int p1 = shuffled.get(i);
+                int p2 = shuffled.get(j);
+                if (Math.abs(p1 - p2) < 3) continue;
+                if (prevPair != null) {
+                    boolean ok = true;
+                    for (int prev : prevPair) {
+                        if (Math.abs(p1 - prev) < 2 || Math.abs(p2 - prev) < 2) { ok = false; break; }
+                    }
+                    if (!ok) continue;
+                }
+                return new int[]{p1, p2};
+            }
+        }
+        // Fallback: relax inter-pair constraint, keep only intra-pair >= 3
+        for (int i = 0; i < shuffled.size(); i++) {
+            for (int j = i + 1; j < shuffled.size(); j++) {
+                if (Math.abs(shuffled.get(i) - shuffled.get(j)) >= 3) {
+                    return new int[]{shuffled.get(i), shuffled.get(j)};
+                }
+            }
+        }
+        throw new IllegalStateException("Cannot place connected cell pair from positions: " + shuffled);
+    }
+
+    private void addAutoTag(Cell cell, String targetId) {
+        List<CellTag> tags = new ArrayList<>(cell.tags());
+        tags.add(new CellTag.AutoCross(targetId));
+        cell.setTags(tags);
     }
 
     private LockCell buildLock(Color color, List<Cell> cells) {

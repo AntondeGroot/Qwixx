@@ -5,7 +5,8 @@
      [class.extra-bucket]="hasTag()(TagEnum.EXTRA_BUCKET)"
      [class.clickable]="showClickable() ?? clickable()"
      [attr.data-color]="cell().color"
-     (click)="(clickable() || pending()) && clicked.emit()">
+     (click)="(clickable() || pending()) && clicked.emit()"
+      translate="no">
   <span class="cell-value">{{ cell().displayValue }}</span>
   @if (crossed() || pending()) {
     <span class="cell-cross">✕</span>

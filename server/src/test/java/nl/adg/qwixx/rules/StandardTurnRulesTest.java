@@ -517,10 +517,69 @@ class StandardTurnRulesTest {
     }
 
     @Test
-    void giveUpTransitionsToNextRoll() {
-        GameState state = stateAfterRoll(p1, p1, p2);
+    void giveUpWithNoPassivesTransitionsToNextRoll() {
+        // Single-player: no one in the passive queue, so evaluate fires immediately.
+        GameState state = stateAfterRoll(p1, p1);
         rules.apply(state, new GiveUpAction(p1));
         assertEquals(TurnPhase.ROLL, state.turnState().phase());
+    }
+
+    @Test
+    void giveUpDuringActiveMoveTransitionsToPassiveMoveWhenPassivesRemain() {
+        // Bug: GiveUp used to call evaluate() immediately, skipping passive players entirely.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        rules.apply(state, new GiveUpAction(p1));
+        assertEquals(TurnPhase.PASSIVE_MOVE, state.turnState().phase(),
+                "GiveUp must enter PASSIVE_MOVE so passive players can still take their turn");
+    }
+
+    @Test
+    void giveUpDuringActiveMoveKeepsPassiveInQueue() {
+        GameState state = stateAfterRoll(p1, p1, p2);
+        rules.apply(state, new GiveUpAction(p1));
+        assertTrue(state.turnState().passivePlayerQueue().contains(p2),
+                "Passive player must remain in queue after active player gives up");
+    }
+
+    @Test
+    void giveUpDuringActiveMovePassiveCanEndTurnAndAdvancesToRoll() {
+        GameState state = stateAfterRoll(p1, p1, p2);
+        rules.apply(state, new GiveUpAction(p1));
+        rules.apply(state, new EndTurnAction(p2));
+        assertEquals(TurnPhase.ROLL, state.turnState().phase(),
+                "Turn must advance to ROLL only after the passive player finishes");
+        assertEquals(p2, state.turnState().activePlayerId());
+    }
+
+    @Test
+    void giveUpDuringActiveMovePassiveCanCrossThenEnd() {
+        // Passive player can still use the white+white dice after active gives up.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        rules.apply(state, new GiveUpAction(p1));
+        assertEquals(TurnPhase.PASSIVE_MOVE, state.turnState().phase());
+        CrossCellAction cross = firstCrossAction(state, p2);
+        rules.apply(state, cross);   // passive crosses
+        rules.apply(state, new EndTurnAction(p2));
+        assertEquals(TurnPhase.ROLL, state.turnState().phase());
+    }
+
+    @Test
+    void giveUpAfterPassiveAlreadyEndedTurnGoesDirectlyToRoll() {
+        // p2 ends during ACTIVE_MOVE first → queue becomes empty → GiveUp evaluates immediately.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        rules.apply(state, new EndTurnAction(p2));
+        rules.apply(state, new GiveUpAction(p1));
+        assertEquals(TurnPhase.ROLL, state.turnState().phase(),
+                "GiveUp with already-empty passive queue must go directly to ROLL");
+    }
+
+    @Test
+    void giveUpDuringActiveMoveWithThreePlayersKeepsBothPassivesInPassiveMove() {
+        GameState state = stateAfterRoll(p1, p1, p2, p3);
+        rules.apply(state, new GiveUpAction(p1));
+        assertEquals(TurnPhase.PASSIVE_MOVE, state.turnState().phase());
+        assertTrue(state.turnState().passivePlayerQueue().contains(p2));
+        assertTrue(state.turnState().passivePlayerQueue().contains(p3));
     }
 
     @Test
@@ -634,9 +693,24 @@ class StandardTurnRulesTest {
     }
 
     @Test
-    void giveUpThatCausesMaxPunishmentsEndsGame() {
+    void giveUpThatCausesMaxPunishmentsEndsGameAfterPassivesMove() {
         // punishments must be in place before rolling so they are included in the snapshot
         GameState state = stateInRoll(p1, p1, p2);
+        SheetProgress prog = state.boardState().sheetProgress().get(p1);
+        for (int i = 0; i < StandardTurnRules.MAX_PUNISHMENTS - 1; i++) prog.addPunishment();
+        rules.apply(state, new RollAction(p1));
+        rules.apply(state, new GiveUpAction(p1));
+        // p2 still gets their passive turn even though the game conditions for over are met
+        assertFalse(state.gameOver(), "game must not end before passive players have moved");
+        assertEquals(TurnPhase.PASSIVE_MOVE, state.turnState().phase());
+        rules.apply(state, new EndTurnAction(p2));
+        assertTrue(state.gameOver(), "game ends only after all passive players have finished");
+    }
+
+    @Test
+    void giveUpThatCausesMaxPunishmentsInSinglePlayerEndsImmediately() {
+        // No passive players → evaluate fires right away and sets game over.
+        GameState state = stateInRoll(p1, p1);
         SheetProgress prog = state.boardState().sheetProgress().get(p1);
         for (int i = 0; i < StandardTurnRules.MAX_PUNISHMENTS - 1; i++) prog.addPunishment();
         rules.apply(state, new RollAction(p1));

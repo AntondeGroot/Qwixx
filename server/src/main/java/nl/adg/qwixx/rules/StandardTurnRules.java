@@ -294,7 +294,17 @@ public class StandardTurnRules implements TurnRules {
         if (snapshot != null) state.boardState().sheetProgress().put(playerId, deepCopy(snapshot));
         state.boardState().sheetProgress().get(playerId).addPunishment();
 
-        evaluate(state);
+        // Passives who already acknowledged the lock intent have committed to passing;
+        // the rest still need their white+white opportunity.
+        List<UUID> pendingPassives = new ArrayList<>(turn.passivePlayerQueue());
+        pendingPassives.removeAll(turn.lockAcknowledged());
+
+        if (pendingPassives.isEmpty()) {
+            evaluate(state);
+        } else {
+            turn.setPassivePlayerQueue(pendingPassives);
+            turn.setPhase(TurnPhase.PASSIVE_MOVE);
+        }
     }
 
     private void applyResetTurn(GameState state, ResetTurnAction action) {

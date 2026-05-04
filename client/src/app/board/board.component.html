@@ -94,7 +94,7 @@
                 </div>
               }
               <div class="punishment-track">
-                <span class="punishment-label">{{ 'punishment' | translate }}</span>
+                <span class="punishment-label">{{ 'punishment' | translate }} : –5</span>
                 @for (i of [0, 1, 2, 3]; track i) {
                   <div class="punishment-box"
                        [class.taken]="(state.sheetProgress[playerId()]?.punishments ?? 0) > i"

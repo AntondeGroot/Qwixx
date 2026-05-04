@@ -1,13 +1,23 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { of } from 'rxjs';
 import type { Mocked } from 'vitest';
+import { provideTranslateService, TranslateLoader, TranslationObject } from '@ngx-translate/core';
+import { Observable } from 'rxjs';
 import { GamestatesService } from '../../generated/api/gamestates.service';
 import { MovesService } from '../../generated/api/moves.service';
+import { Color } from '../../generated/model/color';
 import { GameState } from '../../generated/model/gameState';
 import { MoveType } from '../../generated/model/moveType';
 import { TurnPhase } from '../../generated/model/turnPhase';
+import { RowClosureModalService } from '../services/row-closure-modal.service';
 import { BoardComponent } from './board.component';
+
+class MockLoader implements TranslateLoader {
+  getTranslation(): Observable<TranslationObject> { return of({}); }
+}
 
 const PLAYER_ID = 'player-1';
 const OTHER_ID  = 'player-2';
@@ -391,4 +401,72 @@ describe('BoardComponent — punishment / pass', () => {
       );
     });
   });
+});
+
+// ── Modal delegation — position:fixed / CSS transform regression ─────────────
+// Kept in a separate top-level describe so its beforeEach can call
+// configureTestingModule independently of the describe block above.
+
+describe('BoardComponent — row-closure modal delegation', () => {
+    let fixture: ReturnType<typeof TestBed.createComponent<BoardComponent>>;
+    let component: BoardComponent;
+    let modalService: RowClosureModalService;
+    let movesService: Mocked<MovesService>;
+
+    beforeEach(async () => {
+      movesService = { makeMove: vi.fn().mockReturnValue(of({ result: 'ACCEPTED' } as any)) } as unknown as Mocked<MovesService>;
+
+      await TestBed.configureTestingModule({
+        imports: [BoardComponent, HttpClientTestingModule],
+        providers: [
+          { provide: ActivatedRoute,    useValue: { snapshot: { paramMap: { get: () => '' } } } },
+          { provide: GamestatesService, useValue: { getGameState: () => of(makeState()) } },
+          { provide: MovesService,      useValue: movesService },
+          provideRouter([]),
+          provideTranslateService({ loader: { provide: TranslateLoader, useClass: MockLoader } }),
+        ],
+      }).compileComponents();
+
+      fixture      = TestBed.createComponent(BoardComponent);
+      component    = fixture.componentInstance;
+      modalService = TestBed.inject(RowClosureModalService);
+      fixture.detectChanges();          // triggers ngOnInit (sets ids from route → '')
+      component.playerId.set(PLAYER_ID); // override after ngOnInit
+    });
+
+    // Structural: the board must not render the modal in its own DOM tree.
+    // If it did, the modal would be inside the CSS-transformed :host and
+    // position:fixed would anchor to the rotated element, not the viewport.
+    it('does not render app-row-closure-modal inside the board DOM', () => {
+      const modal = fixture.nativeElement.querySelector('app-row-closure-modal');
+      expect(modal).toBeNull();
+    });
+
+    // Testing the effect's output via the service is tricky in a zoneless setup.
+    // Instead we verify the behaviour through the component's public methods,
+    // which are exactly what the service callbacks invoke.
+
+    it('onConfirmRowClosure sends a PASS move', () => {
+      component.sessionId.set('sess1');
+      // This is the method wired to modalService.confirmFn inside the effect.
+      (component as any).onConfirmRowClosure();
+      expect(movesService.makeMove).toHaveBeenCalledWith(
+        'sess1', PLAYER_ID, expect.objectContaining({ moveType: MoveType.PASS }));
+    });
+
+    it('onChangeRowClosure sends a RESET_TURN move', () => {
+      component.sessionId.set('sess1');
+      (component as any).onChangeRowClosure();
+      expect(movesService.makeMove).toHaveBeenCalledWith(
+        'sess1', PLAYER_ID, expect.objectContaining({ moveType: MoveType.RESET_TURN }));
+    });
+
+    it('clears the service on destroy', () => {
+      modalService.show([{ playerName: 'P2', rowColor: Color.BLUE }], () => {}, () => {});
+      expect(modalService.requests()).toHaveLength(1);
+
+      fixture.destroy();
+      expect(modalService.requests()).toHaveLength(0);
+      expect(modalService.confirmFn).toBeNull();
+    });
 });

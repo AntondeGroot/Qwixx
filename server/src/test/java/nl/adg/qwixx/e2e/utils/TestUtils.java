@@ -26,6 +26,13 @@ public class TestUtils {
         return driver;
     }
 
+    /** Opens the board with a portrait (phone) viewport so mobile-rotation CSS fires. */
+    public static WebDriver getPortraitDriver(String sessionId, String playerId) {
+        WebDriver driver = new ChromeDriver(buildOptions("390,844")); // iPhone 14 Pro portrait
+        driver.get(BASE_URL + "/?sessionid=" + sessionId + "&playerid=" + playerId);
+        return driver;
+    }
+
     public static WebDriver getScoreDriver(String sessionId) {
         WebDriver driver = new ChromeDriver(buildOptions("1920,1080"));
         driver.get(BASE_URL + "/score/" + sessionId + "?fast=1");

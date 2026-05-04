@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, computed, ElementRef, HostListener, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { TranslateModule } from '@ngx-translate/core';
@@ -30,15 +30,13 @@ interface Col {
   templateUrl:  './score.component.html',
   styleUrl: './score.component.css'
 })
-export class ScoreComponent implements OnInit, AfterViewInit {
+export class ScoreComponent implements OnInit {
   private route             = inject(ActivatedRoute);
   private router            = inject(Router);
-  private host              = inject(ElementRef<HTMLElement>);
   private gamesService      = inject(GamesService);
   private gameStatesService = inject(GamestatesService);
 
-  private readonly ROW_H           = 80;  // px — keep in sync with CSS
-  private readonly MOBILE_DESIGN_H = 541; // same reference height as the board
+  private readonly ROW_H = 80;  // px — keep in sync with CSS
 
   // When ?fast=1 is in the URL every delay collapses to ~1 ms so E2E tests
   // finish in under 2 s instead of ~18 s without touching production logic.
@@ -83,18 +81,6 @@ export class ScoreComponent implements OnInit, AfterViewInit {
   ngOnInit() {
     this.sessionId = this.route.snapshot.paramMap.get('sessionId') ?? '';
     this.runAnimation();
-  }
-
-  ngAfterViewInit() { this.applyMobileScale(); }
-
-  @HostListener('window:resize')
-  applyMobileScale() {
-    const el = this.host.nativeElement as HTMLElement;
-    if (window.innerHeight > window.innerWidth) {
-      el.style.setProperty('--mobile-scale', (window.innerWidth / this.MOBILE_DESIGN_H).toFixed(4));
-    } else {
-      el.style.removeProperty('--mobile-scale');
-    }
   }
 
   private async runAnimation(): Promise<void> {

@@ -6,10 +6,10 @@
 @media (orientation: portrait) {
   :host {
     position: fixed;
-    top:    calc((100vh - 100vw) / 2);
-    left:   calc((100vw - 100vh) / 2);
-    width:  100vh;
-    height: 100vw;
+    top:    calc((100dvh - 100dvw) / 2);
+    left:   calc((100dvw - 100dvh) / 2);
+    width:  100dvh;
+    height: 100dvw;
     overflow: hidden;
     transform: rotate(90deg);
     transform-origin: 50% 50%;

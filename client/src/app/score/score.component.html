@@ -6,10 +6,10 @@
     <!-- Sticky action bar — visible once the winner modal is dismissed via "View Scores" -->
     @if (showActionBar()) {
       <div class="action-bar">
-        <button class="btn btn-secondary" (click)="goToSettings()">
+        <button class="btn btn-secondary" (click)="newGame()">
           {{ 'score.newGame' | translate }}
         </button>
-        <button class="btn btn-secondary" (click)="goToSettings()">
+        <button class="btn btn-secondary" (click)="leaveGame()">
           {{ 'score.leaveGame' | translate }}
         </button>
       </div>
@@ -90,10 +90,10 @@
           <button class="btn btn-ghost" (click)="viewScores()">
             {{ 'score.viewScores' | translate }}
           </button>
-          <button class="btn btn-secondary" (click)="goToSettings()">
+          <button class="btn btn-secondary" (click)="newGame()">
             {{ 'score.newGame' | translate }}
           </button>
-          <button class="btn btn-primary" (click)="goToSettings()">
+          <button class="btn btn-primary" (click)="leaveGame()">
             {{ 'score.leaveGame' | translate }}
           </button>
         </div>

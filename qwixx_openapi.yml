@@ -100,6 +100,35 @@ paths:
         '404':
           description: Game could not be found
 
+  /games/{sessionId}/restart:
+    post:
+      summary: Restart a finished game with the same players but new game options
+      description: |
+        Resets the game state while keeping the same session ID, player IDs, and player names.
+        Only valid when the game is in the FINISHED state.
+      operationId: restartGame
+      tags:
+        - games
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                gameOptions:
+                  type: object
+                  additionalProperties: {}
+      responses:
+        '200':
+          description: Game restarted successfully
+        '404':
+          description: Game not found
+        '409':
+          description: Game is not finished and cannot be restarted
+
   /games/{sessionId}/players:
     get:
       summary: Get all players in a game

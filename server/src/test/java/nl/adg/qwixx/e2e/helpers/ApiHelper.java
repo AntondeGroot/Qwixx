@@ -119,11 +119,52 @@ public class ApiHelper {
                 null, Void.class);
     }
 
+    // ---------- LOBBY ----------
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getLobby(String sessionId) {
+        return http.getForObject(BASE_URL + "/games/" + sessionId + "/lobby", Map.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> getLobbyPlayers(String sessionId) {
+        Map<String, Object> lobby = getLobby(sessionId);
+        return (List<Map<String, Object>>) lobby.get("players");
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getProposedOptions(String sessionId) {
+        Map<String, Object> lobby = getLobby(sessionId);
+        return (Map<String, Object>) lobby.get("proposedOptions");
+    }
+
+    public void updateLobby(String sessionId, Map<String, Object> gameOptions) {
+        put("/games/" + sessionId + "/lobby", Map.of("gameOptions", gameOptions));
+    }
+
+    public void leaveGame(String sessionId, String playerId) {
+        http.delete(BASE_URL + "/games/" + sessionId + "/players/" + playerId);
+    }
+
+    public void restartGame(String sessionId) {
+        post("/games/" + sessionId + "/restart", null, Void.class);
+    }
+
+    public void restartGame(String sessionId, Map<String, Object> gameOptions) {
+        post("/games/" + sessionId + "/restart", Map.of("gameOptions", gameOptions), Void.class);
+    }
+
     // ---------- PRIVATE ----------
 
     private <T> T post(String path, Object body, Class<T> responseType) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         return http.postForObject(BASE_URL + path, new HttpEntity<>(body, headers), responseType);
+    }
+
+    private void put(String path, Object body) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        http.put(BASE_URL + path, new HttpEntity<>(body, headers));
     }
 }

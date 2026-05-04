@@ -192,6 +192,32 @@ public class ScoreInteractionHelper {
         }
     }
 
+    // ── Viewport-bounds check ──────────────────────────────────────────────────
+
+    /**
+     * Returns true if the winner modal overlay is fully inside the browser viewport.
+     *
+     * Regression guard: when position:fixed was inside the score :host's CSS
+     * transform, the overlay anchored to the rotated element rather than the
+     * real viewport and its bounding rect sat outside the 390×844 mobile bounds.
+     * The modal is now a direct child of :host (outside the zoom-scaled
+     * .score-screen) so its bounding rect maps cleanly to the full viewport.
+     */
+    public static boolean isWinnerModalWithinViewport(WebDriver driver) {
+        try {
+            WebElement overlay = driver.findElement(By.className("modal-overlay"));
+            return (boolean) ((JavascriptExecutor) driver).executeScript(
+                    "const rect = arguments[0].getBoundingClientRect();" +
+                    "return rect.width > 0 && rect.height > 0" +
+                    "  && rect.top    >= -1 && rect.left   >= -1" +
+                    "  && rect.bottom <= window.innerHeight + 1" +
+                    "  && rect.right  <= window.innerWidth  + 1;",
+                    overlay);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     // ── Score table ────────────────────────────────────────────────────────────
 
     /** Returns all visible player names from .player-name elements. */

@@ -1,15 +1,24 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { LanguageSelectorComponent } from './language-selector/language-selector.component';
+import { RowClosureModalComponent } from './row-closure-modal/row-closure-modal.component';
+import { RowClosureModalService } from './services/row-closure-modal.service';
 import { TranslationService } from './services/translation.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, LanguageSelectorComponent],
+  imports: [RouterOutlet, LanguageSelectorComponent, RowClosureModalComponent],
   template: `
     <div class="app-container">
       <app-language-selector class="language-selector"></app-language-selector>
       <router-outlet />
+      <!-- Rendered here so position:fixed is relative to the real viewport,
+           not the board's CSS transform (which would break it on mobile). -->
+      <app-row-closure-modal
+        [requests]="modal.requests()"
+        (confirmSelection)="modal.confirmFn?.()"
+        (changeSelection)="modal.changeFn?.()">
+      </app-row-closure-modal>
     </div>
   `,
   styles: [`
@@ -33,6 +42,7 @@ import { TranslationService } from './services/translation.service';
 })
 export class App implements OnInit {
   private translationService = inject(TranslationService);
+  readonly modal = inject(RowClosureModalService);
 
   ngOnInit() {
     this.translationService.initializeLanguage();

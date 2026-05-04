@@ -11,10 +11,11 @@
 @media (orientation: portrait) {
   :host {
     position: fixed;
-    top:    calc((100vh - 100vw) / 2);
-    left:   calc((100vw - 100vh) / 2);
-    width:  100vh;
-    height: 100vw;
+    top:    calc((100dvh - 100dvw) / 2);
+    left:   calc((100dvw - 100dvh) / 2);
+    width:  100dvh;
+    height: 100dvw;
+    min-height: 0;  /* cancel the default min-height:100vh so height:100dvw is respected */
     overflow-y: auto;
     overflow-x: hidden;
     transform: rotate(90deg);
@@ -22,9 +23,6 @@
     padding: 1rem;
   }
 
-  .score-screen {
-    zoom: var(--mobile-scale, 1);
-  }
 }
 
 .loading {
@@ -218,6 +216,16 @@
   justify-content: center;
   z-index: 200;
   animation: fade-in 0.4s ease-out;
+}
+
+/* In portrait mode :host is already position:fixed and covers the full screen
+   via the same rotation trick as the board. Switch the overlay to
+   position:absolute so it fills :host rather than trying to pin to the
+   real viewport (which breaks inside a CSS transform). */
+@media (orientation: portrait) {
+  .modal-overlay {
+    position: absolute;
+  }
 }
 @keyframes fade-in {
   from { opacity: 0; }

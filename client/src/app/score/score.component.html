@@ -76,27 +76,28 @@
 
     </div><!-- /.score-table -->
 
-    <!-- Winner modal, slides in after animation completes -->
-    @if (showModal()) {
-      <div class="modal-overlay">
-        <div class="winner-modal">
-          <div class="trophy">🏆</div>
-          <h2 class="winner-name">{{ winner()?.name }}</h2>
-          <p class="winner-sub">{{ 'score.winner' | translate }}</p>
-          <div class="modal-actions">
-            <button class="btn btn-ghost" (click)="viewScores()">
-              {{ 'score.viewScores' | translate }}
-            </button>
-            <button class="btn btn-secondary" (click)="goToSettings()">
-              {{ 'score.newGame' | translate }}
-            </button>
-            <button class="btn btn-primary" (click)="goToSettings()">
-              {{ 'score.leaveGame' | translate }}
-            </button>
-          </div>
+  </div>
+
+  <!-- Winner modal outside .score-screen so the zoom on that div
+       does not distort the overlay's bounding rect on mobile. -->
+  @if (showModal()) {
+    <div class="modal-overlay">
+      <div class="winner-modal">
+        <div class="trophy">🏆</div>
+        <h2 class="winner-name">{{ winner()?.name }}</h2>
+        <p class="winner-sub">{{ 'score.winner' | translate }}</p>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" (click)="viewScores()">
+            {{ 'score.viewScores' | translate }}
+          </button>
+          <button class="btn btn-secondary" (click)="goToSettings()">
+            {{ 'score.newGame' | translate }}
+          </button>
+          <button class="btn btn-primary" (click)="goToSettings()">
+            {{ 'score.leaveGame' | translate }}
+          </button>
         </div>
       </div>
-    }
-
-  </div>
+    </div>
+  }
 }

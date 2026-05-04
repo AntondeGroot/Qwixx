@@ -236,22 +236,68 @@ public class ScoreScreenIT extends BaseIntegrationTest {
 
     /**
      * Opens the score screen with a portrait viewport (390×844, like an iPhone 14).
-     * Verifies that:
-     *  - the --mobile-scale CSS variable is set on the host element (JS side)
-     *  - the host has a 90-degree CSS transform applied (CSS side)
+     * Verifies that the host has a 90-degree CSS transform applied.
      */
     @Test
     void scoreScreenIsRotated90DegreesInPortraitMode() {
         driver = TestUtils.getPortraitScoreDriver(sessionId);
         TestUtils.waitUntilScoreLoaded(driver);
 
-        assertTrue(ScoreInteractionHelper.isMobileScaleApplied(driver),
-                "--mobile-scale must be set on app-score in portrait mode "
-                + "(window.innerWidth=390 < window.innerHeight=844)");
-
         assertTrue(ScoreInteractionHelper.isRotated90Degrees(driver),
                 "app-score must have rotate(90deg) transform in portrait mode "
                 + "(CSS @media (orientation: portrait) must be active)");
+    }
+
+    /**
+     * Regression: zoom: var(--mobile-scale) was applied to .score-screen in
+     * portrait mode, shrinking the content to ~76 % of the viewport and leaving
+     * the dark-blue :host background visible around it.  All other tests passed
+     * because the content was technically present — just too small to fill the screen.
+     *
+     * This test checks that the computed zoom on .score-screen is exactly 1
+     * (no scaling), which ensures the content fills the full rotated viewport.
+     */
+    @Test
+    void scoreScreenIsNotZoomedInPortraitMode() {
+        driver = TestUtils.getPortraitScoreDriver(sessionId);
+        TestUtils.waitUntilScoreLoaded(driver);
+
+        String zoom = (String) ((org.openqa.selenium.JavascriptExecutor) driver).executeScript(
+                "const el = document.querySelector('.score-screen');" +
+                "if (!el) return 'not-found';" +
+                "return window.getComputedStyle(el).zoom;");
+
+        assertEquals("1", zoom,
+                ".score-screen zoom must be 1 in portrait mode — zoom < 1 shrinks "
+                + "the content and leaves blank background visible around it. "
+                + "Got zoom=" + zoom);
+    }
+
+    /**
+     * Regression: checks that the score content (.score-table) actually fills
+     * most of the available space in the rotated viewport.  getBoundingClientRect()
+     * after all CSS transforms gives the axis-aligned box in viewport coords;
+     * the table should be at least 80 % as tall as the shorter viewport dimension.
+     */
+    @Test
+    void scoreTableCoversEnoughOfPortraitViewport() {
+        driver = TestUtils.getPortraitScoreDriver(sessionId);
+        TestUtils.waitUntilScoreLoaded(driver);
+
+        boolean coversViewport = (boolean) ((org.openqa.selenium.JavascriptExecutor) driver).executeScript(
+                "const table = document.querySelector('.score-table');" +
+                "if (!table) return false;" +
+                "const rect = table.getBoundingClientRect();" +
+                // After 90° rotation the 'width' in landscape space corresponds
+                // to the rect's height in viewport coordinates.
+                // The table should span at least 80% of the shorter viewport side.
+                "const shorter = Math.min(window.innerWidth, window.innerHeight);" +
+                "return rect.width > 0 && rect.height > 0 && " +
+                "       Math.max(rect.width, rect.height) >= shorter * 0.8;");
+
+        assertTrue(coversViewport,
+                "Score table must cover at least 80% of the portrait viewport — "
+                + "zoom < 1 shrinks it to a fraction of the available space");
     }
 
     /**

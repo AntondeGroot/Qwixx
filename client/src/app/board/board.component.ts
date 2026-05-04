@@ -16,20 +16,22 @@ import { TurnPhase } from '../../generated/model/turnPhase';
 import { DiceComponent } from '../dice/dice.component';
 import { PlayerListComponent } from '../player-list/player-list.component';
 import { RowComponent } from '../row/row.component';
-import { RowClosureModalComponent, RowClosureRequest } from '../row-closure-modal/row-closure-modal.component';
+import { RowClosureRequest } from '../row-closure-modal/row-closure-modal.component';
+import { RowClosureModalService } from '../services/row-closure-modal.service';
 
 @Component({
   selector: 'app-board',
-  imports: [RouterLink, RowComponent, DiceComponent, PlayerListComponent, TranslateModule, RowClosureModalComponent],
+  imports: [RouterLink, RowComponent, DiceComponent, PlayerListComponent, TranslateModule],
   templateUrl: './board.component.html',
   styleUrl: './board.component.css'
 })
 export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
-  private route             = inject(ActivatedRoute);
-  private router            = inject(Router);
-  private gameStatesService = inject(GamestatesService);
-  private movesService      = inject(MovesService);
-  private host              = inject(ElementRef<HTMLElement>);
+  private route              = inject(ActivatedRoute);
+  private router             = inject(Router);
+  private gameStatesService  = inject(GamestatesService);
+  private movesService       = inject(MovesService);
+  private host               = inject(ElementRef<HTMLElement>);
+  private rowClosureModal    = inject(RowClosureModalService);
 
   sessionId   = signal('');
   playerId    = signal('');
@@ -37,15 +39,25 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   error       = signal<string | null>(null);
   rollingDice = signal(false);
 
-  // Only show the lock-intent modal to players who are in the passive queue
-  // (i.e. players who must decide, not the active player who declared intent)
-  rowClosureRequests = computed(() => {
-    if (!this.isInPassiveQueue()) return [];
-    return this.gameState()?.rowClosureRequests ?? [];
-  });
-
   private pollSub?: Subscription;
   private moveSub?: Subscription;
+
+  // Sync modal state to the service so the modal renders at the root level,
+  // outside the board's CSS transform (which would break position:fixed on mobile).
+  private _modalSync = effect(() => {
+    const requests = this.isInPassiveQueue()
+      ? (this.gameState()?.rowClosureRequests ?? [])
+      : [];
+    if (requests.length > 0) {
+      this.rowClosureModal.show(
+        requests,
+        () => this.onConfirmRowClosure(),
+        () => this.onChangeRowClosure()
+      );
+    } else {
+      this.rowClosureModal.clear();
+    }
+  });
   private rollStartTime = 0;
 
   // Fixed landscape design height (CSS px, derived from known element sizes).
@@ -121,6 +133,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy() {
     this.pollSub?.unsubscribe();
     this.moveSub?.unsubscribe();
+    this.rowClosureModal.clear();
   }
 
   // ── Computed turn helpers ──────────────────────────────────────────────────

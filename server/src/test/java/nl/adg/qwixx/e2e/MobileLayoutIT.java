@@ -1,0 +1,293 @@
+package nl.adg.qwixx.e2e;
+
+import nl.adg.qwixx.e2e.helpers.BoardInteractionHelper;
+import nl.adg.qwixx.e2e.helpers.ScoreInteractionHelper;
+import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
+import nl.adg.qwixx.e2e.utils.TestUtils;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+import java.time.Duration;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Mobile-layout integration tests.
+ *
+ * Both the lock-intent modal and the score winner modal use {@code position: fixed}
+ * for their overlay.  In portrait orientation the board/score host element has
+ * {@code transform: rotate(90deg)}, which makes any descendant {@code position: fixed}
+ * anchor to the rotated element rather than the real viewport — the overlay ends up
+ * clipped or positioned off-screen and the user cannot interact with it.
+ *
+ * These tests run Chrome at 390×844 (iPhone 14 Pro portrait) to exercise the same
+ * CSS path that fires on real mobile devices, and verify that:
+ *   1. The modal overlay is visible.
+ *   2. The overlay sits fully inside the viewport (bounding-rect check).
+ *   3. The buttons inside the modal are actually clickable.
+ *   4. Clicking a button produces the expected game-state change.
+ *
+ * Window size: 390 × 844  (portrait — triggers @media (orientation: portrait))
+ */
+public class MobileLayoutIT extends BaseIntegrationTest {
+
+    private static final int BLUE_ROW_INDEX    = 3;
+    private static final int BLUE_ROW_ALL_CELLS = 11;
+    private static final int RED_ROW_INDEX     = 0;
+
+    private WebDriver driver0;
+    private WebDriver driver1;
+    private String sessionId;
+    private List<String> playerIds;
+
+    @BeforeEach
+    void createGame() {
+        sessionId = api.createGame(2);
+        playerIds = api.getPlayerIds(sessionId);
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (driver0 != null) { driver0.quit(); driver0 = null; }
+        if (driver1 != null) { driver1.quit(); driver1 = null; }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Lock-intent modal on mobile
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * The score-screen host is rotated 90 ° in portrait mode.
+     * Verifies that the rotation CSS is actually active at 390×844.
+     */
+    @Test
+    void boardHostIsRotated90DegreesInPortraitViewport() {
+        api.roll(sessionId, playerIds.get(0));
+        driver0 = TestUtils.getPortraitDriver(sessionId, playerIds.get(0));
+        TestUtils.waitUntilBoardLoaded(driver0);
+
+        assertTrue(isBoardHostRotated(driver0),
+                "Board :host must have transform: rotate(90deg) in portrait mode");
+    }
+
+    /**
+     * The lock-intent modal must appear in the passive player's browser when
+     * viewed in portrait (mobile) orientation.
+     */
+    @Test
+    void lockIntentModalAppearsInPortraitViewport() {
+        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.roll(sessionId, playerIds.get(0));
+        api.setDice(sessionId, 1, 1);
+
+        driver1 = TestUtils.getPortraitDriver(sessionId, playerIds.get(1));
+        TestUtils.waitUntilBoardLoaded(driver1);
+
+        String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
+        api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
+
+        BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
+
+        assertTrue(BoardInteractionHelper.isModalVisible(driver1),
+                "Lock-intent modal must be visible in a portrait (mobile) viewport");
+    }
+
+    /**
+     * The modal overlay must be fully within the real viewport in portrait mode.
+     *
+     * Regression guard: when position:fixed was inside the board's rotated :host,
+     * getBoundingClientRect() showed the overlay outside the 390×844 viewport bounds.
+     */
+    @Test
+    void lockIntentModalOverlayIsWithinViewportBoundsOnMobile() {
+        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.roll(sessionId, playerIds.get(0));
+        api.setDice(sessionId, 1, 1);
+
+        driver1 = TestUtils.getPortraitDriver(sessionId, playerIds.get(1));
+        TestUtils.waitUntilBoardLoaded(driver1);
+
+        String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
+        api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
+
+        BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
+
+        assertTrue(BoardInteractionHelper.isModalOverlayWithinViewport(driver1),
+                "Modal overlay must be fully within the viewport on mobile — " +
+                "position:fixed inside a CSS transform breaks this");
+    }
+
+    /**
+     * The confirm button inside the lock-intent modal must be interactable
+     * (clickable) in portrait orientation — if the overlay is off-screen or
+     * clipped, Selenium's click() will throw ElementNotInteractableException.
+     */
+    @Test
+    void lockIntentModalConfirmButtonIsClickableOnMobile() {
+        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.roll(sessionId, playerIds.get(0));
+        api.setDice(sessionId, 1, 1);
+
+        driver1 = TestUtils.getPortraitDriver(sessionId, playerIds.get(1));
+        TestUtils.waitUntilBoardLoaded(driver1);
+
+        String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
+        api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
+
+        BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
+
+        // This click must NOT throw — if the button is off-screen it will
+        assertDoesNotThrow(() -> BoardInteractionHelper.clickModalConfirmButton(driver1),
+                "Confirm button must be interactable in a portrait (mobile) viewport");
+    }
+
+    /**
+     * Full lock flow on mobile: player0 declares intent (desktop), player1 sees
+     * modal in portrait, clicks Confirm, row closes for both players.
+     */
+    @Test
+    void fullLockFlow_mobilePassiveConfirms_rowCloses() {
+        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.roll(sessionId, playerIds.get(0));
+        api.setDice(sessionId, 1, 1);
+
+        // Player 0 on desktop, player 1 on mobile portrait
+        driver0 = TestUtils.getDriver(sessionId, playerIds.get(0));
+        driver1 = TestUtils.getPortraitDriver(sessionId, playerIds.get(1));
+        TestUtils.waitUntilBoardLoaded(driver0);
+        TestUtils.waitUntilBoardLoaded(driver1);
+
+        // Active player declares lock via the desktop browser
+        BoardInteractionHelper.clickLockButton(driver0, "BLUE");
+
+        // Passive player on mobile must see the modal and be able to confirm it
+        BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
+        assertTrue(BoardInteractionHelper.isModalOverlayWithinViewport(driver1),
+                "Modal must be within viewport on mobile before confirming");
+
+        BoardInteractionHelper.clickModalConfirmButton(driver1);
+
+        // Both players must see the BLUE row close
+        new WebDriverWait(driver0, Duration.ofSeconds(8))
+                .until(d -> BoardInteractionHelper.isRowClosed(d, "BLUE"));
+        new WebDriverWait(driver1, Duration.ofSeconds(8))
+                .until(d -> BoardInteractionHelper.isRowClosed(d, "BLUE"));
+
+        assertTrue(BoardInteractionHelper.isRowClosed(driver0, "BLUE"),
+                "BLUE row must be closed in player0's desktop browser");
+        assertTrue(BoardInteractionHelper.isRowClosed(driver1, "BLUE"),
+                "BLUE row must be closed in player1's mobile browser");
+        assertFalse(BoardInteractionHelper.isModalVisible(driver1),
+                "Modal must disappear after confirming on mobile");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Score screen winner modal on mobile
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * The score screen :host must have transform:rotate(90deg) at 390×844.
+     */
+    @Test
+    void scoreHostIsRotated90DegreesInPortraitViewport() {
+        api.setCrosses(sessionId, playerIds.get(0), RED_ROW_INDEX, 4);
+        api.forceFinish(sessionId);
+
+        driver0 = TestUtils.getPortraitScoreDriver(sessionId);
+        TestUtils.waitUntilScoreLoaded(driver0);
+
+        assertTrue(ScoreInteractionHelper.isRotated90Degrees(driver0),
+                "Score screen :host must have transform:rotate(90deg) in portrait mode");
+    }
+
+    /**
+     * The winner modal must appear in portrait orientation.
+     */
+    @Test
+    void winnerModalAppearsInPortraitViewport() {
+        api.setCrosses(sessionId, playerIds.get(0), RED_ROW_INDEX, 4);
+        api.forceFinish(sessionId);
+
+        driver0 = TestUtils.getPortraitScoreDriver(sessionId);
+        TestUtils.waitUntilScoreLoaded(driver0);
+
+        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver0, 25);
+
+        assertTrue(ScoreInteractionHelper.isWinnerModalVisible(driver0),
+                "Winner modal must appear on the score screen in portrait (mobile) viewport");
+    }
+
+    /**
+     * The winner modal overlay must be fully within the viewport on mobile.
+     *
+     * Regression guard: the score screen's .modal-overlay used position:fixed
+     * inside the rotated :host — the same bug that affected the lock-intent modal.
+     */
+    @Test
+    void winnerModalOverlayIsWithinViewportBoundsOnMobile() {
+        api.setCrosses(sessionId, playerIds.get(0), RED_ROW_INDEX, 4);
+        api.forceFinish(sessionId);
+
+        driver0 = TestUtils.getPortraitScoreDriver(sessionId);
+        TestUtils.waitUntilScoreLoaded(driver0);
+
+        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver0, 25);
+
+        assertTrue(ScoreInteractionHelper.isWinnerModalWithinViewport(driver0),
+                "Winner modal overlay must be fully within the viewport on mobile");
+    }
+
+    /**
+     * The "View Scores" button inside the winner modal must be interactable in
+     * portrait orientation. If position:fixed was broken, the button would be
+     * off-screen and Selenium's click() would throw.
+     */
+    @Test
+    void winnerModalViewScoresButtonIsClickableOnMobile() {
+        api.setCrosses(sessionId, playerIds.get(0), RED_ROW_INDEX, 4);
+        api.forceFinish(sessionId);
+
+        driver0 = TestUtils.getPortraitScoreDriver(sessionId);
+        TestUtils.waitUntilScoreLoaded(driver0);
+
+        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver0, 25);
+
+        // This must NOT throw — if the button is off-screen Selenium throws
+        assertDoesNotThrow(() -> ScoreInteractionHelper.clickViewScoresButton(driver0),
+                "View Scores button must be clickable in portrait (mobile) viewport");
+
+        // After clicking, modal must dismiss and action bar must appear
+        assertFalse(ScoreInteractionHelper.isWinnerModalVisible(driver0),
+                "Winner modal must close after clicking View Scores on mobile");
+        assertTrue(ScoreInteractionHelper.isActionBarVisible(driver0),
+                "Action bar must appear after dismissing the winner modal on mobile");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Helper
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Returns true when the board component's host element has a 90-degree CSS
+     * transform applied — the signature that portrait-mode rotation is active.
+     * rotate(90deg) produces matrix(0, 1, -1, 0, tx, ty): a≈0, b≈1.
+     */
+    private boolean isBoardHostRotated(WebDriver driver) {
+        try {
+            org.openqa.selenium.WebElement host =
+                    driver.findElement(org.openqa.selenium.By.tagName("app-board"));
+            String transform = host.getCssValue("transform");
+            if (transform == null || transform.equals("none")) return false;
+            String[] parts = transform.replace("matrix(", "").replace(")", "").split(",");
+            double a = Double.parseDouble(parts[0].trim());
+            double b = Double.parseDouble(parts[1].trim());
+            return Math.abs(a) < 0.1 && Math.abs(b - 1.0) < 0.1;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+}

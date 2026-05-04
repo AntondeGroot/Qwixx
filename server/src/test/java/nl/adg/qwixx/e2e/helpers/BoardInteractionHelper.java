@@ -153,4 +153,35 @@ public class BoardInteractionHelper {
     public static void clickModalChangeButton(WebDriver driver) {
         driver.findElement(By.xpath("//button[contains(@class,'btn-secondary')]")).click();
     }
+
+    // ── Viewport-bounds check ──────────────────────────────────────────────────
+
+    /**
+     * Returns true if the given element's bounding rect is fully inside the browser
+     * viewport (allowing 1 px rounding tolerance on each edge).
+     *
+     * This is the key assertion for the position:fixed / CSS-transform regression:
+     * when a fixed element is inside a transformed ancestor its containing block
+     * becomes the ancestor rather than the viewport, and the element can end up
+     * partially or fully outside the visible area.
+     */
+    public static boolean isElementWithinViewport(WebDriver driver, WebElement element) {
+        return (boolean) ((JavascriptExecutor) driver).executeScript(
+                "const rect = arguments[0].getBoundingClientRect();" +
+                "return rect.width > 0 && rect.height > 0" +
+                "  && rect.top    >= -1 && rect.left   >= -1" +
+                "  && rect.bottom <= window.innerHeight + 1" +
+                "  && rect.right  <= window.innerWidth  + 1;",
+                element);
+    }
+
+    /** Convenience: checks the `.modal-overlay` element is within the viewport. */
+    public static boolean isModalOverlayWithinViewport(WebDriver driver) {
+        try {
+            WebElement overlay = driver.findElement(By.className("modal-overlay"));
+            return isElementWithinViewport(driver, overlay);
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

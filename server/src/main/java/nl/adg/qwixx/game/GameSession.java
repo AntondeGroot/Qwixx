@@ -26,8 +26,9 @@ public class GameSession {
     private final String      sessionId;
     private final String      roomName;
     private final int         maxPlayers;
-    private final GameSettings settings;
+    private       GameSettings settings;
     private       TurnRules   rules;
+    private volatile Map<String, Object> proposedOptions = new HashMap<>();
     private final List<Player> players = new ArrayList<>();
     private       GameState   state;
     private       SessionStatus status = SessionStatus.WAITING;
@@ -48,8 +49,8 @@ public class GameSession {
     }
 
     public void removePlayer(UUID playerId) {
-        if (status != SessionStatus.WAITING)
-            throw new IllegalStateException("cannot remove players after game has started");
+        if (status == SessionStatus.IN_PROGRESS)
+            throw new IllegalStateException("cannot remove players while game is in progress");
         boolean removed = players.removeIf(p -> p.id().equals(playerId));
         if (!removed) throw new IllegalArgumentException("player not found: " + playerId);
     }
@@ -116,6 +117,46 @@ public class GameSession {
                            state.boardState().sheetProgress().get(playerId));
     }
 
+    public synchronized void restart(GameSettings newSettings) {
+        if (status != SessionStatus.FINISHED)
+            throw new IllegalStateException("can only restart a finished game");
+
+        this.settings = newSettings;
+        GameStyleFactory factory = new ConfigurableGameStyleFactory(newSettings);
+        List<UUID> playerIds = players.stream().map(Player::id).toList();
+
+        Map<UUID, List<Row>> rowsByPlayer = factory.buildRows(playerIds);
+
+        Map<List<Row>, SheetLayout> layoutCache = new HashMap<>();
+        Map<UUID, SheetLayout> layouts = new HashMap<>();
+        for (UUID id : playerIds) {
+            List<Row> rows = rowsByPlayer.get(id);
+            layouts.put(id, layoutCache.computeIfAbsent(rows, SheetLayout::new));
+        }
+
+        Map<UUID, SheetProgress> progress = new HashMap<>();
+        for (UUID id : playerIds) {
+            Map<Integer, RowState> rowStates = new HashMap<>();
+            List<Row> rows = rowsByPlayer.get(id);
+            for (int i = 0; i < rows.size(); i++) rowStates.put(i, new RowState(new HashSet<>(), false));
+            progress.put(id, new SheetProgress(rowStates, 0));
+        }
+
+        List<Die> dice = new ArrayList<>(factory.buildDice());
+        BoardState board = new BoardState(progress, dice, new HashMap<>());
+
+        TurnState turn = null;
+        if (newSettings.gameMode() != GameMode.OFFLINE) {
+            turn = new TurnState();
+            turn.setActivePlayerId(playerIds.get(0));
+            turn.setPhase(TurnPhase.ROLL);
+        }
+
+        state = new GameState(newSettings.cardMode(), playerIds, factory.buildVariantData(playerIds), layouts, board, turn);
+        rules = factory.buildTurnRules();
+        status = SessionStatus.IN_PROGRESS;
+    }
+
     public synchronized void forceFinish() {
         state.setGameOver(true);
         state.incrementVersion();
@@ -128,4 +169,7 @@ public class GameSession {
     public GameSettings settings()   { return settings; }
     public List<Player> players()    { return List.copyOf(players); }
     public SessionStatus status()    { return status; }
+
+    public Map<String, Object> proposedOptions()                    { return Map.copyOf(proposedOptions); }
+    public void setProposedOptions(Map<String, Object> opts)        { proposedOptions = new HashMap<>(opts); }
 }

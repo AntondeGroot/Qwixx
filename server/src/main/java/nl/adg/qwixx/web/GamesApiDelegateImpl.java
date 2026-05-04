@@ -15,6 +15,7 @@ import nl.adg.qwixx.generated.model.GameInfo;
 import nl.adg.qwixx.generated.model.GameStatus;
 import nl.adg.qwixx.generated.model.NewGameRequest;
 import nl.adg.qwixx.generated.model.NewPlayerRequest;
+import nl.adg.qwixx.generated.model.RestartGameRequest;
 import nl.adg.qwixx.generated.model.ScoreCard;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.UUID;
 
 @Service
@@ -57,6 +59,22 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
             session.start();
         } catch (IllegalStateException ex) {
             throw new GameAlreadyStartedException(sessionId);
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    @Override
+    public ResponseEntity<Void> restartGame(String sessionId, RestartGameRequest req) {
+        GameSession session = require(sessionId);
+        Map<String, Object> gameOptions = (req != null && req.getGameOptions() != null)
+                ? new HashMap<>(req.getGameOptions())
+                : session.proposedOptions();
+        GameSettings.Builder builder = GameSettings.builder();
+        QwixxGameOptions.apply(builder, gameOptions);
+        try {
+            session.restart(builder.build());
+        } catch (IllegalStateException ex) {
+            throw new GameNotFinishedException(sessionId);
         }
         return ResponseEntity.ok().build();
     }
@@ -111,10 +129,12 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
         if (session.status() != nl.adg.qwixx.game.SessionStatus.FINISHED)
             throw new GameNotFinishedException(sessionId);
 
+        // Iterate the game-state player list (all who participated) rather than
+        // session.players() which may be smaller if players left after the game ended.
         Map<String, ScoreCard> result = new HashMap<>();
-        for (Player p : session.players()) {
-            nl.adg.qwixx.rules.ScoreCard sc = session.getScore(p.id());
-            result.put(p.id().toString(), toDto(sc));
+        for (UUID playerId : session.currentState().players()) {
+            nl.adg.qwixx.rules.ScoreCard sc = session.getScore(playerId);
+            result.put(playerId.toString(), toDto(sc));
         }
         return ResponseEntity.ok(result);
     }

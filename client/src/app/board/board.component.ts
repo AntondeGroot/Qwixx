@@ -73,7 +73,9 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   private _gameOverEffect = effect(() => {
     if (this.gameState()?.gameOver && !this.gameOverNavigated) {
       this.gameOverNavigated = true;
-      setTimeout(() => this.router.navigate(['/score', this.sessionId()]), 1500);
+      setTimeout(() => {
+        this.router.navigate(['/score', this.sessionId()], { queryParams: { pid: this.playerId() } });
+      }, 1500);
     }
   });
 

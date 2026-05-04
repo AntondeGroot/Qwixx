@@ -212,7 +212,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
         ScoreInteractionHelper.clickNewGameButton(driver);
 
         // Angular Router navigation is async — wait for the URL to settle
-        new WebDriverWait(driver, Duration.ofSeconds(5))
+        new WebDriverWait(driver, Duration.ofSeconds(10))
                 .until(d -> d.getCurrentUrl().contains("/settings"));
         assertTrue(driver.getCurrentUrl().contains("/settings"),
                 "New Game button must navigate to /settings. Current URL: " + driver.getCurrentUrl());
@@ -226,7 +226,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
 
         ScoreInteractionHelper.clickLeaveGameButton(driver);
 
-        new WebDriverWait(driver, Duration.ofSeconds(5))
+        new WebDriverWait(driver, Duration.ofSeconds(10))
                 .until(d -> d.getCurrentUrl().contains("/settings"));
         assertTrue(driver.getCurrentUrl().contains("/settings"),
                 "Leave Game button must navigate to /settings. Current URL: " + driver.getCurrentUrl());

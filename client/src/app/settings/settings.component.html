@@ -1,8 +1,12 @@
-<form [formGroup]="form" (ngSubmit)="startGame()" translate="no">
-  <div>
-    <label for="playerName">Your name</label>
-    <input id="playerName" type="text" formControlName="playerName" autocomplete="off" />
+@if (isRestartMode && lobbyPlayers().length > 0) {
+  <div class="lobby-players">
+    @for (p of lobbyPlayers(); track p.id) {
+      <span class="lobby-player">{{ p.name }}</span>
+    }
   </div>
+}
+
+<form [formGroup]="form" (ngSubmit)="startGame()" translate="no">
 
   @for (opt of gameOptions(); track opt.key) {
     <div>

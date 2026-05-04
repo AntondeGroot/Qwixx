@@ -1,9 +1,12 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, interval, EMPTY, of } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslateModule } from '@ngx-translate/core';
 import { GamesService } from '../../generated/api/games.service';
 import { GamestatesService } from '../../generated/api/gamestates.service';
+import { PlayersService } from '../../generated/api/players.service';
 import { ScoreCard } from '../../generated/model/scoreCard';
 
 const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
@@ -35,6 +38,8 @@ export class ScoreComponent implements OnInit {
   private router            = inject(Router);
   private gamesService      = inject(GamesService);
   private gameStatesService = inject(GamestatesService);
+  private playersService    = inject(PlayersService);
+  private destroyRef        = inject(DestroyRef);
 
   private readonly ROW_H = 80;  // px — keep in sync with CSS
 
@@ -44,6 +49,7 @@ export class ScoreComponent implements OnInit {
   private ms(normal: number): number { return this.fast ? 1 : normal; }
 
   sessionId = '';
+  playerId  = '';
 
   // Column descriptors (colour order from server layout)
   colorCols  = signal<string[]>([]); // e.g. ['RED','YELLOW','GREEN','BLUE']
@@ -80,6 +86,8 @@ export class ScoreComponent implements OnInit {
 
   ngOnInit() {
     this.sessionId = this.route.snapshot.paramMap.get('sessionId') ?? '';
+    this.playerId  = this.route.snapshot.queryParamMap.get('pid') ??
+                     sessionStorage.getItem(`qwixx_pid_${this.sessionId}`) ?? '';
     this.runAnimation();
   }
 
@@ -162,9 +170,29 @@ export class ScoreComponent implements OnInit {
       await delay(this.ms(1400));
       this.showModal.set(true);
 
+      // After the winner modal appears, poll for a game restart so all players
+      // are redirected automatically when any player starts a new game.
+      this.startRestartPoll();
+
     } catch {
-      this.router.navigate(['/settings']);
+      this.router.navigate(['/']);
     }
+  }
+
+  // Polls the game state every 2 s. When another player triggers a restart
+  // the game transitions from FINISHED back to IN_PROGRESS (gameOver: false),
+  // and we navigate every watcher back to their game board automatically.
+  private startRestartPoll(): void {
+    interval(2000).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      switchMap(() =>
+        this.gameStatesService.getGameState(this.sessionId).pipe(catchError(() => EMPTY))
+      ),
+    ).subscribe(state => {
+      if (!state.gameOver) {
+        this.router.navigate(['/game', this.sessionId, this.playerId]);
+      }
+    });
   }
 
   private animate(duration: number, onTick: (eased: number) => void): Promise<void> {
@@ -203,5 +231,23 @@ export class ScoreComponent implements OnInit {
     this.showActionBar.set(true);
   }
 
-  goToSettings() { this.router.navigate(['/settings']); }
+  /** Navigate to settings in restart mode (preserving the current session). */
+  newGame() {
+    // Store restart context so the settings component can pick it up.
+    if (this.sessionId && this.playerId) {
+      sessionStorage.setItem('qwixx_lobby_sid', this.sessionId);
+      sessionStorage.setItem('qwixx_lobby_pid', this.playerId);
+    }
+    this.router.navigate(['/settings']);
+  }
+
+  /** Remove this player from the session, then hand control back to the game room. */
+  leaveGame() {
+    if (this.playerId) {
+      this.playersService.leaveGame(this.sessionId, this.playerId)
+        .pipe(catchError(() => of(null)))
+        .subscribe();
+    }
+    this.router.navigate(['/settings']);
+  }
 }

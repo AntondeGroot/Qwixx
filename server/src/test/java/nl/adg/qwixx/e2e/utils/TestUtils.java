@@ -33,6 +33,11 @@ public class TestUtils {
         return driver;
     }
 
+    /** Creates a desktop driver without navigating anywhere (useful for sessionStorage setup). */
+    public static WebDriver createDriver() {
+        return new ChromeDriver(buildOptions("1920,1080"));
+    }
+
     public static WebDriver getScoreDriver(String sessionId) {
         WebDriver driver = new ChromeDriver(buildOptions("1920,1080"));
         driver.get(BASE_URL + "/score/" + sessionId + "?fast=1");
@@ -47,13 +52,23 @@ public class TestUtils {
     }
 
     public static void waitUntilScoreLoaded(WebDriver driver) {
-        new WebDriverWait(driver, Duration.ofSeconds(25)).until(d -> {
-            try {
-                return !d.findElements(By.className("score-table")).isEmpty();
-            } catch (StaleElementReferenceException e) {
-                return false;
-            }
-        });
+        try {
+            new WebDriverWait(driver, Duration.ofSeconds(25)).until(d -> {
+                try {
+                    return !d.findElements(By.className("score-table")).isEmpty();
+                } catch (StaleElementReferenceException e) {
+                    return false;
+                }
+            });
+        } catch (org.openqa.selenium.TimeoutException e) {
+            String url    = driver.getCurrentUrl();
+            String source = driver.getPageSource();
+            String snippet = source.length() > 800 ? source.substring(0, 800) : source;
+            throw new AssertionError(
+                ".score-table not found after 25 s.\n" +
+                "Current URL: " + url + "\n" +
+                "Page source: " + snippet, e);
+        }
     }
 
     private static ChromeOptions buildOptions(String windowSize) {

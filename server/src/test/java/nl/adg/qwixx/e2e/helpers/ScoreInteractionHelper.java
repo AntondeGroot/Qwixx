@@ -123,14 +123,14 @@ public class ScoreInteractionHelper {
                 .until(d -> !isWinnerModalVisible(d) && isActionBarVisible(d));
     }
 
-    /** Clicks the "New Game" button (btn-secondary) inside the winner modal. */
+    /** Clicks the "New Game" button (btn-primary) inside the winner modal. */
     public static void clickNewGameButton(WebDriver driver) {
-        driver.findElement(By.cssSelector(".winner-modal .btn-secondary")).click();
+        driver.findElement(By.cssSelector(".winner-modal .btn-primary")).click();
     }
 
-    /** Clicks the "Leave Game" button (btn-primary) inside the winner modal. */
+    /** Clicks the "Leave Game" button (btn-secondary) inside the winner modal. */
     public static void clickLeaveGameButton(WebDriver driver) {
-        driver.findElement(By.cssSelector(".winner-modal .btn-primary")).click();
+        driver.findElement(By.cssSelector(".winner-modal .btn-secondary")).click();
     }
 
     // ── Action bar ─────────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { of } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import type { Mocked } from 'vitest';
 import { provideTranslateService, TranslateLoader, TranslationObject } from '@ngx-translate/core';
 import { Observable } from 'rxjs';
@@ -400,6 +400,122 @@ describe('BoardComponent — punishment / pass', () => {
         expect.objectContaining({ moveType: MoveType.CROSS_WHITE_WHITE })
       );
     });
+  });
+});
+
+// ── State-sync race-condition guards ──────────────────────────────────────────
+//
+// Covers three behaviours added to prevent the "game froze" scenario where a
+// rapid double-click left the UI in a stale state:
+//
+//   1. applyState version guard  — never overwrite a newer state with an older one.
+//   2. fetchState on rejection   — a rejected move still triggers a state refresh,
+//                                  because a prior cancelled request may have already
+//                                  changed the server state.
+//   3. fetchState on cancellation — replacing an in-flight move also triggers a
+//                                   refresh for the same reason.
+
+describe('BoardComponent — state-sync race guards', () => {
+  let component:    BoardComponent;
+  let movesService: Mocked<MovesService>;
+  let getGameState: ReturnType<typeof vi.fn>;
+
+  const ROW_ID   = 'row-red';
+  const CELL_A   = 'cell-a';
+  const CELL_B   = 'cell-b';
+
+  function makeCell(id: string) {
+    return { id, position: 0, displayValue: '2', color: 'RED', closingEligible: false, tags: [] };
+  }
+
+  function stateWithPassiveQueue(): GameState {
+    return makeState({
+      sheetLayouts: {
+        [PLAYER_ID]: { rows: [{ id: ROW_ID, cells: [makeCell(CELL_A), makeCell(CELL_B)], lock: null }] },
+        [OTHER_ID]:  { rows: [] },
+      },
+      turnState: {
+        activePlayerId: OTHER_ID,
+        phase: TurnPhase.PASSIVE_MOVE,
+        passivePlayerQueue: [PLAYER_ID],
+        currentRoll: { white1: 1, white2: 1, coloredDice: { RED: 1 } },
+      },
+    } as unknown as Partial<GameState>);
+  }
+
+  beforeEach(async () => {
+    getGameState = vi.fn().mockReturnValue(of(makeState()));
+    movesService = {
+      makeMove: vi.fn().mockReturnValue(of({ result: 'ACCEPTED' } as any)),
+    } as unknown as Mocked<MovesService>;
+
+    await TestBed.configureTestingModule({
+      imports: [BoardComponent],
+      providers: [
+        { provide: ActivatedRoute,    useValue: { snapshot: { paramMap: { get: () => '' } } } },
+        { provide: GamestatesService, useValue: { getGameState } },
+        { provide: MovesService,      useValue: movesService },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(BoardComponent);
+    component = fixture.componentInstance;
+    component.playerId.set(PLAYER_ID);
+    component.sessionId.set('s1');
+  });
+
+  // 1. Version guard ────────────────────────────────────────────────────────
+
+  it('applyState: does not downgrade to a state with a lower version', () => {
+    (component as any).applyState(makeState({ version: 5 }));
+    (component as any).applyState(makeState({ version: 3 }));
+
+    expect(component.gameState()?.version).toBe(5);
+  });
+
+  it('applyState: does apply a newer state over an older one', () => {
+    (component as any).applyState(makeState({ version: 1 }));
+    (component as any).applyState(makeState({ version: 4 }));
+
+    expect(component.gameState()?.version).toBe(4);
+  });
+
+  it('applyState: applies a state with the same version (idempotent)', () => {
+    (component as any).applyState(makeState({ version: 3, gameOver: false }));
+    (component as any).applyState(makeState({ version: 3, gameOver: true }));
+
+    expect(component.gameState()?.gameOver).toBe(true);
+  });
+
+  // 2. fetchState on rejection ──────────────────────────────────────────────
+
+  it('refreshes state after a move is rejected by the server', () => {
+    component.gameState.set(stateWithPassiveQueue());
+    movesService.makeMove = vi.fn().mockReturnValue(throwError(() => ({ status: 409 })));
+
+    getGameState.mockClear();
+    component.onCellClicked(ROW_ID, CELL_A);
+
+    expect(getGameState).toHaveBeenCalled();
+  });
+
+  // 3. fetchState on cancellation ───────────────────────────────────────────
+
+  it('refreshes state immediately when a second click replaces an in-flight request', () => {
+    component.gameState.set(stateWithPassiveQueue());
+
+    // Use a Subject so the first request stays pending (never completes).
+    const pendingMove = new Subject<unknown>();
+    movesService.makeMove = vi.fn().mockReturnValue(pendingMove);
+
+    // First click — request starts but never returns.
+    component.onCellClicked(ROW_ID, CELL_A);
+    getGameState.mockClear();
+
+    // Second click — should cancel the first and immediately call fetchState.
+    component.onCellClicked(ROW_ID, CELL_B);
+
+    expect(getGameState).toHaveBeenCalledTimes(1);
   });
 });
 

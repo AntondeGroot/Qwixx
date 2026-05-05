@@ -122,10 +122,10 @@ class ConfigurableGameStyleFactoryTest {
     }
 
     @Test
-    void lockRequiresFiveCrossesAndLastCell() {
+    void lockRequiresSixCrossesAndLastCell() {
         List<Row> rows = rows(factory(CardMode.DETERMINISTIC));
         for (Row row : rows) {
-            assertEquals(5, row.lock().minCrosses());
+            assertEquals(6, row.lock().minCrosses());
             Cell lastCell = row.cells().get(row.cells().size() - 1);
             assertEquals(List.of(lastCell.id()), row.lock().requiredCells());
         }

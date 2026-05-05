@@ -76,15 +76,6 @@ class LongoTurnRulesTest {
         assertDoesNotThrow(() -> rules.apply(state, new DeclareLockIntentAction(p1, rowIndex)));
     }
 
-    @Test
-    void cannotLockWithOnlyFiveCrossesEvenIfBothLastCellsCrossed() {
-        GameState state = stateAfterRoll(p1, p1, p2);
-        int rowIndex = 0;
-        crossBothRequiredCellsWithExactly(state, p1, rowIndex, 5);
-        assertThrows(IllegalMoveException.class,
-                () -> rules.apply(state, new DeclareLockIntentAction(p1, rowIndex)));
-    }
-
     // --- bonus action ---
 
     @Test
@@ -143,11 +134,11 @@ class LongoTurnRulesTest {
     // --- lock config from factory ---
 
     @Test
-    void longoRowsHaveMinCrossesSix() {
+    void longoRowsHaveMinCrossesSeven() {
         GameState state = stateInRoll(p1, p1, p2);
         SheetLayout layout = state.sheetLayouts().get(p1);
         for (int i = 0; i < layout.rows().size(); i++) {
-            assertEquals(6, layout.rows().get(i).lock().minCrosses());
+            assertEquals(7, layout.rows().get(i).lock().minCrosses());
         }
     }
 
@@ -227,7 +218,8 @@ class LongoTurnRulesTest {
     }
 
     private void crossBothRequiredCellsWithEnough(GameState state, UUID playerId, int rowIndex) {
-        crossBothRequiredCellsWithExactly(state, p1, rowIndex, 6);
+        // 6 normal + 2 closing = 8 total — a typical valid lock state
+        crossBothRequiredCellsWithExactly(state, p1, rowIndex, 8);
     }
 
     private void crossBothRequiredCellsWithExactly(GameState state, UUID playerId, int rowIndex, int total) {
@@ -289,7 +281,7 @@ class LongoTurnRulesTest {
         Cell last   = cells.get(14);
         second.setClosingEligible(true);
         last.setClosingEligible(true);
-        row.addLock(new LockCell(UUID.randomUUID().toString(), color, 6,
+        row.addLock(new LockCell(UUID.randomUUID().toString(), color, 7,
                 List.of(second.id(), last.id())));
         return row;
     }
@@ -309,7 +301,7 @@ class LongoTurnRulesTest {
         Cell last   = cells.get(14);
         second.setClosingEligible(true);
         last.setClosingEligible(true);
-        row.addLock(new LockCell(UUID.randomUUID().toString(), color, 6,
+        row.addLock(new LockCell(UUID.randomUUID().toString(), color, 7,
                 List.of(second.id(), last.id())));
         return row;
     }
@@ -321,8 +313,8 @@ class LongoTurnRulesTest {
     // ── Closing-eligible cell reachability ────────────────────────────────────
     //
     // Longo has TWO closing cells per row (second-to-last and last; both required).
-    // minCrosses=6. Condition for offering a closing cell:
-    //   existingCrosses.size + (requiredCells not yet crossed, counting this cell) >= 6
+    // minCrosses=7. Need 6 normal (non-closing-eligible) crosses before any closing cell.
+    // Condition: normalCrossed + 1 >= 7, where normalCrossed = crossed - already-crossed required.
     //
     // Ascending RED row: closing cells "15" (pos 13) and "16" (pos 14).
     // Descending BLUE row: closing cells "3"  (pos 13) and "2"  (pos 14).
@@ -330,14 +322,14 @@ class LongoTurnRulesTest {
     @Test
     void longoFirstClosingCellNotOfferedWhenTooFewCrosses() {
         // BLUE descending: "3" (pos 13) + "2" (pos 14) are both required.
-        // With 3 existing: 3 + 2(both closing) = 5 < 6 → "3" must NOT be offered.
+        // With 5 normal crosses: normalCrossed=5, 5+1=6 < 7 → "3" must NOT be offered.
         GameState state = stateAfterRoll(p1, p1, p2);
         state.turnState().setCurrentRoll(
                 new RollResult(1, 2, state.turnState().currentRoll().coloredDice())); // ww=3
 
         Row blue = state.sheetLayouts().get(p1).rows().get(3);
         Set<String> crosses = new HashSet<>();
-        for (int i = 0; i < 3; i++) crosses.add(blue.cells().get(i).id());
+        for (int i = 0; i < 5; i++) crosses.add(blue.cells().get(i).id());
         state.boardState().sheetProgress().get(p1).updateRowState(3, new RowState(crosses, false));
 
         Cell cell3 = blue.cells().get(13); // "3", closingEligible
@@ -345,39 +337,39 @@ class LongoTurnRulesTest {
         assertFalse(
                 rules.getValidActions(state, p1).stream()
                         .anyMatch(a -> a instanceof CrossCellAction c && c.cellId().equals(cell3.id())),
-                "Longo '3': 3 existing + 2 future closing = 5 < 6 → must not be offered");
+                "Longo '3': 5 normal, 5+1=6 < 7 → must not be offered");
     }
 
     @Test
     void longoFirstClosingCellOfferedWhenEventualTotalReachesMinCrosses() {
-        // With 4 existing: 4 + 2(both closing) = 6 = minCrosses → "3" must be offered.
+        // With 6 normal crosses: normalCrossed=6, 6+1=7 = minCrosses → "3" must be offered.
         GameState state = stateAfterRoll(p1, p1, p2);
         state.turnState().setCurrentRoll(
                 new RollResult(1, 2, state.turnState().currentRoll().coloredDice()));
 
         Row blue = state.sheetLayouts().get(p1).rows().get(3);
         Set<String> crosses = new HashSet<>();
-        for (int i = 0; i < 4; i++) crosses.add(blue.cells().get(i).id());
+        for (int i = 0; i < 6; i++) crosses.add(blue.cells().get(i).id());
         state.boardState().sheetProgress().get(p1).updateRowState(3, new RowState(crosses, false));
 
         Cell cell3 = blue.cells().get(13);
         assertTrue(
                 rules.getValidActions(state, p1).stream()
                         .anyMatch(a -> a instanceof CrossCellAction c && c.cellId().equals(cell3.id())),
-                "Longo '3': 4 existing + 2 future closing = 6 = minCrosses → must be offered");
+                "Longo '3': 6 normal, 6+1=7 = minCrosses → must be offered");
     }
 
     @Test
     void longoLastClosingCellNotOfferedWhenTotalStillBelowThreshold() {
-        // "2" (pos 14) with "3" already crossed and 3 other crosses:
-        // existing=4, futureRequired=1("2") → 4+1=5 < 6 → "2" must NOT be offered.
+        // "2" (pos 14) with "3" already crossed and 5 normal crosses:
+        // normalCrossed=5, 5+1=6 < 7 → "2" must NOT be offered.
         GameState state = stateAfterRoll(p1, p1, p2);
         state.turnState().setCurrentRoll(
                 new RollResult(1, 1, state.turnState().currentRoll().coloredDice())); // ww=2
 
         Row blue = state.sheetLayouts().get(p1).rows().get(3);
         Set<String> crosses = new HashSet<>();
-        for (int i = 0; i < 3; i++) crosses.add(blue.cells().get(i).id());
+        for (int i = 0; i < 5; i++) crosses.add(blue.cells().get(i).id());
         crosses.add(blue.cells().get(13).id()); // "3" already crossed
         state.boardState().sheetProgress().get(p1).updateRowState(3, new RowState(crosses, false));
 
@@ -386,19 +378,19 @@ class LongoTurnRulesTest {
         assertFalse(
                 rules.getValidActions(state, p1).stream()
                         .anyMatch(a -> a instanceof CrossCellAction c && c.cellId().equals(cell2.id())),
-                "Longo '2': 4 existing (incl '3') + 1 future = 5 < 6 → must not be offered");
+                "Longo '2': 5 normal + '3' already crossed, normalCrossed=5, 5+1=6 < 7 → must not be offered");
     }
 
     @Test
     void longoLastClosingCellOfferedWhenCrossingItMeetsMinCrosses() {
-        // "2" with "3" crossed and 4 other crosses: existing=5, futureRequired=1 → 5+1=6 → offered.
+        // "2" with "3" crossed and 6 normal crosses: normalCrossed=6, 6+1=7 = minCrosses → offered.
         GameState state = stateAfterRoll(p1, p1, p2);
         state.turnState().setCurrentRoll(
                 new RollResult(1, 1, state.turnState().currentRoll().coloredDice()));
 
         Row blue = state.sheetLayouts().get(p1).rows().get(3);
         Set<String> crosses = new HashSet<>();
-        for (int i = 0; i < 4; i++) crosses.add(blue.cells().get(i).id());
+        for (int i = 0; i < 6; i++) crosses.add(blue.cells().get(i).id());
         crosses.add(blue.cells().get(13).id()); // "3" already crossed
         state.boardState().sheetProgress().get(p1).updateRowState(3, new RowState(crosses, false));
 
@@ -406,20 +398,20 @@ class LongoTurnRulesTest {
         assertTrue(
                 rules.getValidActions(state, p1).stream()
                         .anyMatch(a -> a instanceof CrossCellAction c && c.cellId().equals(cell2.id())),
-                "Longo '2': 5 existing (incl '3') + 1 future = 6 = minCrosses → must be offered");
+                "Longo '2': 6 normal + '3' already crossed, normalCrossed=6, 6+1=7 = minCrosses → must be offered");
     }
 
     @Test
     void longoAscendingFirstClosingCellNotOfferedWhenTooFewCrosses() {
         // RED ascending: closing cells "15" (pos 13) and "16" (pos 14).
-        // With 3 existing: 3 + 2 = 5 < 6 → "15" must NOT be offered.
+        // With 5 normal crosses: normalCrossed=5, 5+1=6 < 7 → "15" must NOT be offered.
         GameState state = stateAfterRoll(p1, p1, p2);
         state.turnState().setCurrentRoll(
                 new RollResult(8, 7, state.turnState().currentRoll().coloredDice())); // ww=15
 
         Row red = state.sheetLayouts().get(p1).rows().get(0);
         Set<String> crosses = new HashSet<>();
-        for (int i = 0; i < 3; i++) crosses.add(red.cells().get(i).id());
+        for (int i = 0; i < 5; i++) crosses.add(red.cells().get(i).id());
         state.boardState().sheetProgress().get(p1).updateRowState(0, new RowState(crosses, false));
 
         Cell cell15 = red.cells().get(13);
@@ -427,26 +419,26 @@ class LongoTurnRulesTest {
         assertFalse(
                 rules.getValidActions(state, p1).stream()
                         .anyMatch(a -> a instanceof CrossCellAction c && c.cellId().equals(cell15.id())),
-                "Longo '15': 3 existing + 2 future = 5 < 6 → must not be offered");
+                "Longo '15': 5 normal, 5+1=6 < 7 → must not be offered");
     }
 
     @Test
     void longoAscendingFirstClosingCellOfferedWithEnoughCrosses() {
-        // With 4 existing: 4 + 2 = 6 = minCrosses → "15" offered.
+        // With 6 normal crosses: normalCrossed=6, 6+1=7 = minCrosses → "15" offered.
         GameState state = stateAfterRoll(p1, p1, p2);
         state.turnState().setCurrentRoll(
                 new RollResult(8, 7, state.turnState().currentRoll().coloredDice()));
 
         Row red = state.sheetLayouts().get(p1).rows().get(0);
         Set<String> crosses = new HashSet<>();
-        for (int i = 0; i < 4; i++) crosses.add(red.cells().get(i).id());
+        for (int i = 0; i < 6; i++) crosses.add(red.cells().get(i).id());
         state.boardState().sheetProgress().get(p1).updateRowState(0, new RowState(crosses, false));
 
         Cell cell15 = red.cells().get(13);
         assertTrue(
                 rules.getValidActions(state, p1).stream()
                         .anyMatch(a -> a instanceof CrossCellAction c && c.cellId().equals(cell15.id())),
-                "Longo '15': 4 existing + 2 future = 6 = minCrosses → must be offered");
+                "Longo '15': 6 normal, 6+1=7 = minCrosses → must be offered");
     }
 
     private Random fixedRandom() {

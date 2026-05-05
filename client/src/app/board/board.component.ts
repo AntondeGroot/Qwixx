@@ -178,7 +178,9 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   canPassPassive = computed(() => {
     const phase = this.turnState()?.phase;
     return this.isInPassiveQueue()
-      && (phase === TurnPhase.PASSIVE_MOVE || phase === TurnPhase.ACTIVE_MOVE);
+      && (phase === TurnPhase.PASSIVE_MOVE
+          || phase === TurnPhase.ACTIVE_MOVE
+          || phase === TurnPhase.LOCK_PENDING);
   });
 
   gameFaces = computed((): 6 | 8 => {
@@ -271,12 +273,10 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
         if (crossed.has(cell.id)) continue;
         if (cell.position <= lastPos) continue;
         if (parseInt(cell.displayValue) !== targetValue) continue;
-        // A closing-eligible cell is only clickable when crossing it (plus any remaining
-        // required cells) would reach the row's minimum-cross threshold for locking.
         if (cell.closingEligible && row.lock) {
           const alreadyCrossedRequired = row.lock.requiredCells.filter(id => crossed.has(id)).length;
-          const futureRequired = row.lock.requiredCells.length - alreadyCrossedRequired;
-          if (crossed.size + futureRequired < row.lock.minCrosses) continue;
+          const normalCrossed = crossed.size - alreadyCrossedRequired;
+          if (normalCrossed + 1 < row.lock.minCrosses) continue;
         }
         result.add(cell.id);
       }
@@ -407,8 +407,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const rowState = progress?.rowStates[rowId];
     if (rowState?.lockCrossed) return false;
     const crossed = new Set(rowState?.crossedCells ?? []);
-    return crossed.size >= row.lock.minCrosses &&
-           row.lock.requiredCells.every(id => crossed.has(id));
+    return row.lock.requiredCells.every(id => crossed.has(id));
   }
 
   private sendMoveAs(pid: string, req: MoveRequest) {

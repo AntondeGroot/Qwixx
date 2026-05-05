@@ -456,6 +456,19 @@ describe('BoardComponent — punishment / pass', () => {
       );
     });
 
+    it('sends CROSS_WHITE_WHITE in LOCK_PENDING when passive has no pending cross', () => {
+      // Declaring lock re-invites passive players; they must be able to cross a cell.
+      component.gameState.set(makeStateWithCell({ phase: TurnPhase.LOCK_PENDING }));
+      component.sessionId.set('s1');
+
+      component.onCellClicked(ROW_ID, CELL_ID);
+
+      expect(movesService.makeMove).toHaveBeenCalledWith(
+        's1', PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.CROSS_WHITE_WHITE })
+      );
+    });
+
     it('sends CROSS_WHITE_WHITE even when active already used white+white and dice also match color die', () => {
       // Dice: white=1+1=2, RED=1 → value 2 matches BOTH white+white AND white+RED.
       // Without the passive-player guard, onCellClicked would incorrectly send CROSS_COLOR_DIE.

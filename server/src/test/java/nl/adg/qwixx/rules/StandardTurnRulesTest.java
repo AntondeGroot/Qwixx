@@ -387,6 +387,204 @@ class StandardTurnRulesTest {
     // LOCK_PENDING phase
     // -------------------------------------------------------------------------
 
+    // ── Lock intent re-invites all passive players ────────────────────────────
+    //
+    // Declaring lock intent changes the strategic picture for every player.  Even
+    // a passive who already chose to pass during ACTIVE_MOVE may now want to cross
+    // a cell before the row closes.  The passive queue is therefore rebuilt to
+    // include ALL non-active players when lock intent is declared.
+
+    @Test
+    void declareLockIntent_rebuildsPassiveQueueToIncludeAllNonActivePlayers() {
+        // p2 leaves the passive queue by EndTurning during ACTIVE_MOVE.
+        // Declaring lock intent must bring p2 back so they get a chance to act.
+        GameState state = stateAfterRoll(p1, p1, p2, p3);
+        crossEnoughForLock(state, p1, 0);
+        rules.apply(state, new EndTurnAction(p2));              // p2 leaves queue
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+
+        assertTrue(state.turnState().passivePlayerQueue().contains(p2),
+                "p2 must be re-added to the passive queue when lock intent is declared");
+        assertTrue(state.turnState().passivePlayerQueue().contains(p3),
+                "p3 (already in queue) must still be in the queue");
+    }
+
+    @Test
+    void passiveWhoLeftActiveMoveCanAcknowledgeInLockPending() {
+        // After being re-added, p2 must be able to call EndTurn (acknowledge).
+        GameState state = stateAfterRoll(p1, p1, p2, p3);
+        crossEnoughForLock(state, p1, 0);
+        rules.apply(state, new EndTurnAction(p2));
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+
+        // p2 is back in the queue — EndTurn must not throw
+        assertDoesNotThrow(() -> rules.apply(state, new EndTurnAction(p2)));
+        assertTrue(state.turnState().lockAcknowledged().contains(p2));
+    }
+
+    @Test
+    void passiveWhoLeftActiveMoveCanCrossWhiteWhiteInLockPending() {
+        // After being re-added, p2 must have white+white cell actions available.
+        GameState state = stateAfterRoll(p1, p1, p2, p3);
+        crossEnoughForLock(state, p1, 0);
+        rules.apply(state, new EndTurnAction(p2));
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+
+        List<GameAction> actions = rules.getValidActions(state, p2);
+        assertTrue(actions.stream().anyMatch(a -> a instanceof CrossCellAction cc
+                        && cc.combination() == DiceCombination.WHITE_WHITE),
+                "p2 (re-added to queue) must be offered white+white cross actions in LOCK_PENDING");
+    }
+
+    @Test
+    void lockAutoClosesOnlyAfterAllReaddedPassivesAcknowledge() {
+        // p2 EndTurns during ACTIVE_MOVE then is re-added when lock is declared.
+        // The lock must NOT close until BOTH p2 and p3 have acknowledged.
+        GameState state = stateAfterRoll(p1, p1, p2, p3);
+        crossEnoughForLock(state, p1, 0);
+        rules.apply(state, new EndTurnAction(p2));
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+
+        // Only p3 acknowledges first
+        rules.apply(state, new EndTurnAction(p3));
+        assertFalse(state.boardState().closedRows().containsKey(0),
+                "Row must not close while p2 (re-added) has not yet acknowledged");
+
+        // Now p2 acknowledges
+        rules.apply(state, new EndTurnAction(p2));
+        assertTrue(state.boardState().closedRows().containsKey(0),
+                "Row must close once all passives (including re-added p2) have acknowledged");
+    }
+
+    // ── GiveUp from LOCK_PENDING: only unacknowledged passives get PASSIVE_MOVE ─
+    //
+    // A passive who EndTurned in LOCK_PENDING has already had their chance to cross.
+    // They must NOT receive a second opportunity via PASSIVE_MOVE after a GiveUp.
+    // Only passives who have not yet acted in LOCK_PENDING get PASSIVE_MOVE.
+
+    @Test
+    void giveUpFromLockPending_acknowledgedPassiveDoesNotGetPassiveMove() {
+        // p2 acknowledges the lock (EndTurn in LOCK_PENDING) — their turn is done.
+        // p1 then GivesUp. p2 should NOT appear in the PASSIVE_MOVE queue.
+        GameState state = stateAfterRoll(p1, p1, p2, p3);
+        crossEnoughForLock(state, p1, 0);
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+        rules.apply(state, new EndTurnAction(p2));  // p2 acknowledges lock
+        rules.apply(state, new GiveUpAction(p1));
+
+        assertEquals(TurnPhase.PASSIVE_MOVE, state.turnState().phase());
+        assertFalse(state.turnState().passivePlayerQueue().contains(p2),
+                "p2 already acted in LOCK_PENDING (acknowledged) — must not get a second turn");
+        assertTrue(state.turnState().passivePlayerQueue().contains(p3),
+                "p3 has not yet acted — must still get their passive move");
+    }
+
+    @Test
+    void giveUpFromLockPending_unacknowledgedPassiveGetsPassiveMove() {
+        // p2 has not yet acted in LOCK_PENDING when p1 GivesUp.
+        // p2 must receive a PASSIVE_MOVE opportunity.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        crossEnoughForLock(state, p1, 0);
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+        rules.apply(state, new GiveUpAction(p1));
+
+        assertEquals(TurnPhase.PASSIVE_MOVE, state.turnState().phase());
+        assertTrue(state.turnState().passivePlayerQueue().contains(p2));
+    }
+
+    // ── Passive crossing a cell during LOCK_PENDING ───────────────────────────
+
+    @Test
+    void passiveCrossInLockPendingAppliesSuccessfully() {
+        GameState state = stateInLockPending(p1, p1, p2, 0);
+        CrossCellAction cross = firstCrossAction(state, p2);
+        // Must not throw — LOCK_PENDING is now a valid phase for passive crosses.
+        assertDoesNotThrow(() -> rules.apply(state, cross));
+        // The cell must be in the undoBuffer (pending, not yet committed).
+        assertTrue(state.turnState().undoBuffer().containsKey(p2),
+                "crossed cell must be recorded in undoBuffer for potential undo");
+    }
+
+    @Test
+    void passiveCrossInLockPendingLandsInSheetProgress() {
+        GameState state = stateInLockPending(p1, p1, p2, 0);
+        CrossCellAction cross = firstCrossAction(state, p2);
+        rules.apply(state, cross);
+
+        // The cell must already be present in the sheet progress (committed to the board).
+        RowState rs = rowStateOf(state, p2, cross.rowIndex());
+        assertTrue(rs.crossedCells().contains(cross.cellId()),
+                "cell must appear in sheetProgress immediately after crossing");
+    }
+
+    @Test
+    void passiveCrossInLockPendingFollowedByEndTurnPreservesTheCross() {
+        // p2 is the only passive; EndTurn triggers auto-close, advancing the turn.
+        // The cross p2 made must survive in sheetProgress regardless.
+        GameState state = stateInLockPending(p1, p1, p2, 0);
+        CrossCellAction cross = firstCrossAction(state, p2);
+        rules.apply(state, cross);
+        rules.apply(state, new EndTurnAction(p2));   // acknowledge → auto-close → ROLL
+
+        RowState rs = rowStateOf(state, p2, cross.rowIndex());
+        assertTrue(rs.crossedCells().contains(cross.cellId()),
+                "cross must survive after EndTurn (acknowledge) in LOCK_PENDING");
+        // EndTurn as the sole passive triggers auto-close and turn advance.
+        assertEquals(TurnPhase.ROLL, state.turnState().phase());
+        assertTrue(state.boardState().closedRows().containsKey(0));
+    }
+
+    @Test
+    void passiveCannotCrossMoreThanOnceInLockPending() {
+        GameState state = stateInLockPending(p1, p1, p2, 0);
+
+        Cell red7    = state.sheetLayouts().get(p2).rows().get(0).cells().get(5);
+        Cell yellow7 = state.sheetLayouts().get(p2).rows().get(1).cells().get(5);
+
+        rules.apply(state, new CrossCellAction(p2, 0, red7.id(), DiceCombination.WHITE_WHITE));
+        assertThrows(IllegalMoveException.class,
+                () -> rules.apply(state, new CrossCellAction(p2, 1, yellow7.id(), DiceCombination.WHITE_WHITE)),
+                "Passive must not be allowed more than one white+white cross per turn in LOCK_PENDING");
+    }
+
+    @Test
+    void passiveWithNoCrossInLockPendingIsOfferedCells() {
+        // Verifies that getValidActions includes CrossCellAction for a passive without
+        // a pending cross — the behaviour enabled by the new code path.
+        GameState state = stateInLockPending(p1, p1, p2, 0);
+        List<GameAction> actions = rules.getValidActions(state, p2);
+        assertTrue(actions.stream().anyMatch(a -> a instanceof CrossCellAction cc
+                        && cc.combination() == DiceCombination.WHITE_WHITE),
+                "passive player without a pending cross must be offered cells in LOCK_PENDING");
+    }
+
+    @Test
+    void passiveWithPendingCrossInLockPendingIsNotOfferedMoreCells() {
+        // Once a passive has crossed, only UndoLastCross and EndTurn are offered.
+        GameState state = stateInLockPending(p1, p1, p2, 0);
+        rules.apply(state, firstCrossAction(state, p2));
+        List<GameAction> actions = rules.getValidActions(state, p2);
+        assertTrue(actions.stream().noneMatch(a -> a instanceof CrossCellAction cc
+                        && cc.combination() == DiceCombination.WHITE_WHITE),
+                "passive must not be offered more cells after already crossing in LOCK_PENDING");
+        assertTrue(actions.stream().anyMatch(a -> a instanceof UndoLastCrossAction));
+        assertTrue(actions.stream().anyMatch(a -> a instanceof EndTurnAction));
+    }
+
+    // ── Single-player lock auto-close ─────────────────────────────────────────
+
+    @Test
+    void singlePlayerLockAutoClosesImmediatelyOnDeclaration() {
+        // No other players to acknowledge — lock must close as soon as it is declared.
+        GameState state = stateAfterRoll(p1, p1);
+        crossEnoughForLock(state, p1, 0);
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+
+        assertTrue(state.boardState().closedRows().containsKey(0),
+                "Row must close immediately in a single-player game");
+        assertEquals(TurnPhase.ROLL, state.turnState().phase());
+    }
+
     @Test
     void declareLockIntentTransitionsToLockPending() {
         GameState state = stateReadyToLock(p1, p1, p2, 0);

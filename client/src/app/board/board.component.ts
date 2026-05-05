@@ -240,10 +240,14 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
           }
         }
       }
-    } else if ((turn.phase === TurnPhase.PASSIVE_MOVE || turn.phase === TurnPhase.ACTIVE_MOVE)
+    } else if ((turn.phase === TurnPhase.PASSIVE_MOVE
+                || turn.phase === TurnPhase.ACTIVE_MOVE
+                || turn.phase === TurnPhase.LOCK_PENDING)
                && this.isInPassiveQueue()
                && this.pendingCellIds().size === 0) {
       // Only offer cells before the passive player has made their one allowed cross.
+      // LOCK_PENDING is included because declaring lock re-invites all passives to
+      // reconsider crossing before the row closes.
       this.collectCells(layout, progress, closedRows, roll.white1 + roll.white2, null, result);
     }
 

@@ -483,6 +483,57 @@ describe('BoardComponent — punishment / pass', () => {
       );
     });
   });
+
+  // ── Closing-eligible cell threshold ───────────────────────────────────────
+
+  describe('closing-eligible cell visibility', () => {
+    const CLOSING_ID = 'cell-closing';
+    const REGULAR_IDS = ['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9'];
+
+    function makeClosingCellState(existingCrossCount: number): GameState {
+      return makeState({
+        sheetLayouts: {
+          [PLAYER_ID]: {
+            rows: [{
+              id: 'row-red',
+              cells: [
+                ...REGULAR_IDS.map((id, i) => ({
+                  id, position: i, displayValue: String(i + 2),
+                  color: 'RED', closingEligible: false, tags: [],
+                })),
+                { id: CLOSING_ID, position: 10, displayValue: '12',
+                  color: 'RED', closingEligible: true, tags: [] },
+              ],
+              lock: { id: 'lock-1', color: 'RED', minCrosses: 6, requiredCells: [CLOSING_ID] },
+            }],
+          },
+          [OTHER_ID]: { rows: [] },
+        },
+        sheetProgress: {
+          [PLAYER_ID]: {
+            punishments: 0,
+            rowStates: { 'row-red': { crossedCells: REGULAR_IDS.slice(0, existingCrossCount), lockCrossed: false } },
+          },
+          [OTHER_ID]: { punishments: 0, rowStates: {} },
+        },
+        turnState: {
+          activePlayerId: PLAYER_ID,
+          phase: TurnPhase.ACTIVE_MOVE,
+          currentRoll: { white1: 6, white2: 6, coloredDice: { RED: 6 } }, // white sum = 12
+        },
+      } as unknown as Partial<GameState>);
+    }
+
+    it('closing cell is NOT in clickableCellIds with fewer than minCrosses present (4+1=5 < 6)', () => {
+      component.gameState.set(makeClosingCellState(4));
+      expect(component.visibleClickableCellIds().has(CLOSING_ID)).toBe(false);
+    });
+
+    it('closing cell IS in clickableCellIds when exactly 5 existing crosses are present (5+1=6=minCrosses)', () => {
+      component.gameState.set(makeClosingCellState(5));
+      expect(component.visibleClickableCellIds().has(CLOSING_ID)).toBe(true);
+    });
+  });
 });
 
 // ── State-sync race-condition guards ──────────────────────────────────────────

@@ -170,8 +170,8 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
 
     private int lockMinCrosses() {
         return switch (settings.base()) {
-            case STANDARD -> 5;
-            case LONGO    -> 6;
+            case STANDARD -> 6;
+            case LONGO    -> 7;
         };
     }
 

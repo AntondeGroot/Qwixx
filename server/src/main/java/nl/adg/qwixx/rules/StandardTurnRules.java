@@ -374,6 +374,7 @@ public class StandardTurnRules implements TurnRules {
                     throw new IllegalMoveException("active player cannot EndTurn during LOCK_PENDING");
                 if (turn.lockAcknowledged().contains(playerId))
                     throw new IllegalMoveException("already acknowledged");
+                turn.undoBuffer().remove(playerId);
                 turn.lockAcknowledged().add(playerId);
                 // Mirror the single-player auto-resolve: when the last passive acknowledges,
                 // close the row immediately so the active player doesn't need a second click.
@@ -428,15 +429,13 @@ public class StandardTurnRules implements TurnRules {
                 if (cell.position() <= rightmost) continue;
                 if (rowState.crossedCells().contains(cell.id())) continue;
 
-                // A closing-eligible cell may only be crossed when doing so (combined with
-                // crossing every other still-uncrossed required cell) would reach minCrosses.
                 if (cell.isClosingEligible() && row.lock() != null) {
                     LockCell lock = row.lock();
                     long alreadyCrossedRequired = lock.requiredCells().stream()
                             .filter(id -> rowState.crossedCells().contains(id))
                             .count();
-                    long futureRequired = lock.requiredCells().size() - alreadyCrossedRequired;
-                    if (rowState.crossedCells().size() + futureRequired < lock.minCrosses()) continue;
+                    long normalCrossed = rowState.crossedCells().size() - alreadyCrossedRequired;
+                    if (normalCrossed + 1 < lock.minCrosses()) continue;
                 }
 
                 DiceCombination combo = isActive
@@ -521,7 +520,6 @@ public class StandardTurnRules implements TurnRules {
             allCrosses.addAll(pendingInRow);
         }
 
-        if (allCrosses.size() < lock.minCrosses()) return false;
         return lock.requiredCells().stream().allMatch(allCrosses::contains);
     }
 

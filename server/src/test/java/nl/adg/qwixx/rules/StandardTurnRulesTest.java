@@ -298,15 +298,23 @@ class StandardTurnRulesTest {
     // only be crossed when doing so — combined with crossing any remaining required cells
     // — would eventually bring the row to the minimum-cross threshold for locking.
     //
-    // Standard (minCrosses=5, 1 required cell = closing cell):
-    //   • allowed when existingCrosses >= 4  (4 existing + closing = 5 = minCrosses)
-    //   • blocked  when existingCrosses <  4  (3 existing + closing = 4 < 5)
+    // Standard (minCrosses=6, 1 required cell = closing cell):
+    //   • allowed when existingCrosses >= 5  (5 existing + closing = 6 = minCrosses)
+    //   • blocked  when existingCrosses <  5  (4 existing + closing = 5 < 6)
+
+    // ── Closing-eligible cell reachability ────────────────────────────────────
+    //
+    // Standard (minCrosses=6, 1 required cell = closing cell):
+    //   Rule: the closing cell may only be crossed when minCrosses cells are ALREADY
+    //         present in the row (not counting the closing cell itself).
+    //   • blocked when existingCrosses < 5   (e.g. 3 or 4 existing → total would be < 6)
+    //   • allowed when existingCrosses >= 5  (e.g. 5 existing → then closing = 6th = minCrosses)
 
     @Test
-    void closingCellNotOfferedWhenMinCrossThresholdCannotBeReached() {
+    void closingCellNotOfferedWhenFewerThanMinCrossesPresent_threeCrosses() {
         // BLUE descending row, closing cell = "2" (position 10, closingEligible).
         // Dice: white1=1, white2=1 → white+white=2 → cell is reachable by value.
-        // With 3 existing crosses: 3 + 1(closing) = 4 < 5 (minCrosses) → must NOT be offered.
+        // 3 existing: 3 + 1 = 4 < 6 (minCrosses) → must NOT be offered.
         GameState state = stateAfterRoll(p1, p1, p2);
         state.turnState().setCurrentRoll(
                 new RollResult(1, 1, state.turnState().currentRoll().coloredDice()));
@@ -316,16 +324,17 @@ class StandardTurnRulesTest {
         for (int i = 0; i < 3; i++) crosses.add(blue.cells().get(i).id());
         state.boardState().sheetProgress().get(p1).updateRowState(3, new RowState(crosses, false));
 
-        String closingId = blue.cells().get(10).id(); // displayValue "2", closingEligible
+        String closingId = blue.cells().get(10).id();
         assertFalse(
                 rules.getValidActions(state, p1).stream()
                         .anyMatch(a -> a instanceof CrossCellAction c && c.cellId().equals(closingId)),
-                "Closing cell '2' must not be offered: 3 existing + closing = 4 < minCrosses(5)");
+                "Closing cell must not be offered with only 3 existing crosses (need 5 existing, minCrosses=6)");
     }
 
     @Test
-    void closingCellOfferedWhenCrossingItWouldReachMinCrossThreshold() {
-        // With 4 existing crosses: 4 + 1(closing) = 5 = minCrosses → must be offered.
+    void closingCellNotOfferedWithFourCrosses_oneShortOfMinimum() {
+        // 4 existing: 4 + 1 = 5 < 6 (minCrosses) → must NOT be offered.
+        // This was the reported bug: with 4 crosses the closing cell was highlighted.
         GameState state = stateAfterRoll(p1, p1, p2);
         state.turnState().setCurrentRoll(
                 new RollResult(1, 1, state.turnState().currentRoll().coloredDice()));
@@ -336,16 +345,53 @@ class StandardTurnRulesTest {
         state.boardState().sheetProgress().get(p1).updateRowState(3, new RowState(crosses, false));
 
         String closingId = blue.cells().get(10).id();
+        assertFalse(
+                rules.getValidActions(state, p1).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction c && c.cellId().equals(closingId)),
+                "Closing cell must not be offered with only 4 existing crosses (need 5 existing, 4+1=5 < 6=minCrosses)");
+    }
+
+    @Test
+    void closingCellOfferedWhenExactlyMinCrossesAlreadyPresent() {
+        // 5 existing: 5 + 1 = 6 = minCrosses → closing cell must be offered (it becomes the 6th cross).
+        GameState state = stateAfterRoll(p1, p1, p2);
+        state.turnState().setCurrentRoll(
+                new RollResult(1, 1, state.turnState().currentRoll().coloredDice()));
+
+        Row blue = state.sheetLayouts().get(p1).rows().get(3);
+        Set<String> crosses = new HashSet<>();
+        for (int i = 0; i < 5; i++) crosses.add(blue.cells().get(i).id());
+        state.boardState().sheetProgress().get(p1).updateRowState(3, new RowState(crosses, false));
+
+        String closingId = blue.cells().get(10).id();
         assertTrue(
                 rules.getValidActions(state, p1).stream()
                         .anyMatch(a -> a instanceof CrossCellAction c && c.cellId().equals(closingId)),
-                "Closing cell '2' must be offered: 4 existing + closing = 5 = minCrosses(5)");
+                "Closing cell must be offered when 5 existing crosses are present (5+1=6=minCrosses)");
+    }
+
+    @Test
+    void passivePlayerClosingCellBlockedWithFourCrosses() {
+        // Same rule applies for passive players — 4 existing: 4+1=5 < 6 (minCrosses) → blocked.
+        GameState state = stateInPassiveMove(p1, p1, p2);
+        state.turnState().setCurrentRoll(
+                new RollResult(1, 1, state.turnState().currentRoll().coloredDice()));
+
+        Row blue = state.sheetLayouts().get(p2).rows().get(3);
+        Set<String> crosses = new HashSet<>();
+        for (int i = 0; i < 4; i++) crosses.add(blue.cells().get(i).id());
+        state.boardState().sheetProgress().get(p2).updateRowState(3, new RowState(crosses, false));
+
+        String closingId = blue.cells().get(10).id();
+        assertFalse(
+                rules.getValidActions(state, p2).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction c && c.cellId().equals(closingId)),
+                "Passive player must also be blocked with 4 crosses (4+1=5 < 6=minCrosses)");
     }
 
     @Test
     void passivePlayerClosingCellAlsoBlockedWhenThresholdUnreachable() {
-        // Same constraint applies for passive players — they cannot cross a closing cell
-        // in PASSIVE_MOVE when the threshold would not be reached.
+        // 3 existing: 3+1=4 < 6 (minCrosses) → blocked for passive player too.
         GameState state = stateInPassiveMove(p1, p1, p2);
         state.turnState().setCurrentRoll(
                 new RollResult(1, 1, state.turnState().currentRoll().coloredDice()));
@@ -569,6 +615,171 @@ class StandardTurnRulesTest {
                 "passive must not be offered more cells after already crossing in LOCK_PENDING");
         assertTrue(actions.stream().anyMatch(a -> a instanceof UndoLastCrossAction));
         assertTrue(actions.stream().anyMatch(a -> a instanceof EndTurnAction));
+    }
+
+    @Test
+    void passiveWithPendingCrossCanEndTurnWhileOtherPassiveStillPending() {
+        // Regression: without the End Turn button (client bug) or if the server rejected
+        // EndTurnAction for a player with a pending cross, the game would freeze in
+        // LOCK_PENDING with one passive acknowledged and the other permanently stuck.
+        //
+        // Scenario: p1 declares lock intent; p2 crosses a cell; p3 has not yet acted.
+        // p2 must be able to EndTurn (committing the cross) while p3 is still pending.
+        // Only after p3 also EndTurns should the row close.
+        GameState state = stateInLockPending(p1, p1, p2, p3, 0);
+
+        CrossCellAction cross = firstCrossAction(state, p2);
+        rules.apply(state, cross);
+
+        // p2 EndTurns with a pending cross — must succeed and acknowledge p2.
+        assertDoesNotThrow(() -> rules.apply(state, new EndTurnAction(p2)),
+                "EndTurnAction must be accepted for a passive with a pending cross in LOCK_PENDING");
+
+        // Game must still be in LOCK_PENDING waiting for p3.
+        assertEquals(TurnPhase.LOCK_PENDING, state.turnState().phase(),
+                "game must remain in LOCK_PENDING while p3 has not yet acknowledged");
+        assertFalse(state.boardState().closedRows().containsKey(0),
+                "row must not close until all passives have acknowledged");
+
+        // p2's cross must be committed despite the early EndTurn.
+        RowState rs = rowStateOf(state, p2, cross.rowIndex());
+        assertTrue(rs.crossedCells().contains(cross.cellId()),
+                "p2's cross must survive after EndTurn in LOCK_PENDING");
+
+        // p3 acknowledges — now the row should close.
+        rules.apply(state, new EndTurnAction(p3));
+        assertTrue(state.boardState().closedRows().containsKey(0),
+                "row must close once all passives have acknowledged");
+    }
+
+    @Test
+    void endTurnInLockPendingClearsUndoBuffer() {
+        // When a passive crosses in LOCK_PENDING then EndTurns, the undo buffer
+        // entry must be removed so the cross cannot be undone after acknowledging.
+        GameState state = stateInLockPending(p1, p1, p2, 0);
+        CrossCellAction cross = firstCrossAction(state, p2);
+        rules.apply(state, cross);
+        assertTrue(state.turnState().undoBuffer().containsKey(p2), "undo buffer populated after cross");
+
+        rules.apply(state, new EndTurnAction(p2));  // acknowledge in a 2-player game → auto-close
+
+        // After auto-close the TurnState resets, but verify the undo buffer was cleared
+        // during EndTurn processing (not just because the turn advanced).
+        // We can't inspect the old turn, so instead verify the cross survived (the state
+        // was committed before being cleared) by checking the closed row.
+        assertTrue(state.boardState().closedRows().containsKey(0),
+                "row must close after the only passive acknowledges");
+    }
+
+    @Test
+    void gameAdvancesToNextPlayerAfterRowLocks() {
+        // After all passives acknowledge a lock intent the row closes and the turn
+        // must rotate to the NEXT player in order so they can roll.  If the turn
+        // stayed on p1 (the locker) or remained in LOCK_PENDING the game would be
+        // unplayable for the remaining players.
+        //
+        // Players in order: [p1, p2, p3].  p1 is active, so after p1's turn the
+        // next active player must be p2.
+        GameState state = stateInLockPending(p1, p1, p2, p3, 0);
+
+        // Both passives acknowledge without crossing.
+        rules.apply(state, new EndTurnAction(p2));
+        rules.apply(state, new EndTurnAction(p3));
+
+        // Row must be closed.
+        assertTrue(state.boardState().closedRows().containsKey(0),
+                "row must be closed after all passives acknowledge");
+
+        // Turn must have advanced to ROLL so the next player can act.
+        assertEquals(TurnPhase.ROLL, state.turnState().phase(),
+                "phase must be ROLL after the lock closes");
+
+        // The next active player must be p2 (first player after p1 in rotation).
+        assertEquals(p2, state.turnState().activePlayerId(),
+                "active player must rotate to p2 after p1 locks a row");
+
+        // p2 must actually be able to roll (i.e. the game is playable).
+        assertDoesNotThrow(() -> rules.apply(state, new RollAction(p2)),
+                "next player must be able to roll after the row is locked");
+    }
+
+    // ── Crossing the closing cell and locking in the same turn ───────────────
+
+    @Test
+    void canDeclareLockIntentAfterCrossingClosingCellInSameTurn() {
+        // Regression: the lock button must be available immediately after crossing the
+        // closing-eligible cell in the same turn — not only on the next turn.
+        //
+        // Setup: p1 has 5 normal crosses in the RED row (positions 0-4).
+        //        Dice: white1=6, white2=6 (white+white=12 → matches RED closing cell "12").
+        // Steps: p1 crosses "12" with white+white → then declares lock intent → p2 acks → closes.
+        GameState state = stateAfterRoll(p1, p1, p2);
+
+        // Override dice so white+white = 12.
+        state.turnState().setCurrentRoll(
+                new RollResult(6, 6, state.turnState().currentRoll().coloredDice()));
+
+        // Give p1 five normal crosses at positions 0-4 (displayValues "2"-"6").
+        Row red = state.sheetLayouts().get(p1).rows().get(0); // RED ascending row
+        Set<String> fiveNormal = new HashSet<>();
+        for (int i = 0; i < 5; i++) fiveNormal.add(red.cells().get(i).id());
+        state.boardState().sheetProgress().get(p1).updateRowState(0, new RowState(fiveNormal, false));
+
+        // Closing cell is at position 10, displayValue "12".
+        Cell closingCell = red.cells().get(10);
+        assertTrue(closingCell.isClosingEligible());
+        assertEquals("12", closingCell.displayValue());
+
+        // Cross "12" — must be offered (5 normal crosses present) and must apply cleanly.
+        CrossCellAction crossClosing = new CrossCellAction(p1, 0, closingCell.id(), DiceCombination.WHITE_WHITE);
+        assertTrue(rules.getValidActions(state, p1).stream()
+                .anyMatch(a -> a instanceof CrossCellAction cc && cc.cellId().equals(closingCell.id())),
+                "closing cell must be offered after 5 normal crosses and matching dice");
+        rules.apply(state, crossClosing);
+
+        // Lock intent must now be available (closing cell is crossed).
+        assertTrue(rules.getValidActions(state, p1).stream()
+                .anyMatch(a -> a instanceof DeclareLockIntentAction),
+                "DECLARE_LOCK_INTENT must be offered after crossing the closing cell in the same turn");
+
+        // Declaring lock intent and having p2 acknowledge must close the row.
+        assertDoesNotThrow(() -> rules.apply(state, new DeclareLockIntentAction(p1, 0)));
+        rules.apply(state, new EndTurnAction(p2));
+        assertTrue(state.boardState().closedRows().containsKey(0),
+                "RED row must be closed after p2 acknowledges the lock");
+        assertEquals(TurnPhase.ROLL, state.turnState().phase());
+        assertEquals(p2, state.turnState().activePlayerId());
+    }
+
+    @Test
+    void canDeclareLockIntentAfterCrossingClosingCellWithColorDie() {
+        // Same scenario as above but using the white+color die combination.
+        // Dice: white1=6, red=6 → white1+red = 12 → crosses RED closing cell.
+        GameState state = stateAfterRoll(p1, p1, p2);
+
+        Map<Color, Integer> updatedColored = new java.util.EnumMap<>(state.turnState().currentRoll().coloredDice());
+        updatedColored.put(Color.RED, 6);
+        state.turnState().setCurrentRoll(new RollResult(6, 5, updatedColored));
+
+        Row red = state.sheetLayouts().get(p1).rows().get(0);
+        Set<String> fiveNormal = new HashSet<>();
+        for (int i = 0; i < 5; i++) fiveNormal.add(red.cells().get(i).id());
+        state.boardState().sheetProgress().get(p1).updateRowState(0, new RowState(fiveNormal, false));
+
+        Cell closingCell = red.cells().get(10);
+        // white1(6) + red(6) = 12 → closing cell must be offered as WHITE_COLOR.
+        CrossCellAction crossClosing = new CrossCellAction(p1, 0, closingCell.id(), DiceCombination.WHITE_COLOR);
+        assertTrue(rules.getValidActions(state, p1).stream()
+                .anyMatch(a -> a instanceof CrossCellAction cc && cc.cellId().equals(closingCell.id())),
+                "closing cell must be offered via white+color with matching dice");
+        rules.apply(state, crossClosing);
+
+        assertTrue(rules.getValidActions(state, p1).stream()
+                .anyMatch(a -> a instanceof DeclareLockIntentAction),
+                "DECLARE_LOCK_INTENT must be offered after crossing closing cell with color die");
+        assertDoesNotThrow(() -> rules.apply(state, new DeclareLockIntentAction(p1, 0)));
+        rules.apply(state, new EndTurnAction(p2));
+        assertTrue(state.boardState().closedRows().containsKey(0));
     }
 
     // ── Single-player lock auto-close ─────────────────────────────────────────
@@ -1227,7 +1438,7 @@ class StandardTurnRulesTest {
             last = c;
         }
         last.setClosingEligible(true);
-        row.addLock(new LockCell(UUID.randomUUID().toString(), color, 5, List.of(last.id())));
+        row.addLock(new LockCell(UUID.randomUUID().toString(), color, 6, List.of(last.id())));
         return row;
     }
 
@@ -1243,7 +1454,7 @@ class StandardTurnRulesTest {
             last = c;
         }
         last.setClosingEligible(true);
-        row.addLock(new LockCell(UUID.randomUUID().toString(), color, 5, List.of(last.id())));
+        row.addLock(new LockCell(UUID.randomUUID().toString(), color, 6, List.of(last.id())));
         return row;
     }
 

@@ -117,7 +117,11 @@ public class StandardTurnRules implements TurnRules {
                     actions.add(new ResetTurnAction(playerId));
                 } else if (!turn.lockAcknowledged().contains(playerId)) {
                     if (turn.undoBuffer().containsKey(playerId)) {
+                        // Passive already crossed this turn — offer undo (acknowledges too) or keep it.
                         actions.add(new UndoLastCrossAction(playerId));
+                    } else {
+                        // No cross yet — offer white+white cells so the player can reconsider.
+                        addReachableCells(state, playerId, actions, false);
                     }
                     actions.add(new EndTurnAction(playerId));
                     if (canCrossLock(state, playerId, turn.pendingLockRowIndex())) {
@@ -194,8 +198,9 @@ public class StandardTurnRules implements TurnRules {
         if (isActive) {
             requirePhase(turn, TurnPhase.ACTIVE_MOVE);
         } else {
-            if (turn.phase() != TurnPhase.ACTIVE_MOVE && turn.phase() != TurnPhase.PASSIVE_MOVE)
-                throw new IllegalMoveException("expected phase ACTIVE_MOVE or PASSIVE_MOVE but was " + turn.phase());
+            if (turn.phase() != TurnPhase.ACTIVE_MOVE && turn.phase() != TurnPhase.PASSIVE_MOVE
+                    && turn.phase() != TurnPhase.LOCK_PENDING)
+                throw new IllegalMoveException("expected phase ACTIVE_MOVE, PASSIVE_MOVE, or LOCK_PENDING but was " + turn.phase());
             if (!turn.passivePlayerQueue().contains(playerId))
                 throw new IllegalMoveException("player not in passive queue");
             if (turn.undoBuffer().containsKey(playerId))
@@ -230,6 +235,14 @@ public class StandardTurnRules implements TurnRules {
 
         turn.setPendingLockRowIndex(action.rowIndex());
         turn.setLockAcknowledged(new HashSet<>());
+
+        // Re-invite every non-active player into the LOCK_PENDING queue, even those who
+        // already passed during ACTIVE_MOVE.  Declaring lock intent changes the strategic
+        // picture — they may now want to cross a cell before the row closes forever.
+        List<UUID> allPassives = new ArrayList<>(state.players());
+        allPassives.remove(action.playerId());
+        turn.setPassivePlayerQueue(allPassives);
+
         turn.setPhase(TurnPhase.LOCK_PENDING);
 
         // In a single-player game there are no other players to acknowledge,
@@ -294,8 +307,9 @@ public class StandardTurnRules implements TurnRules {
         if (snapshot != null) state.boardState().sheetProgress().put(playerId, deepCopy(snapshot));
         state.boardState().sheetProgress().get(playerId).addPunishment();
 
-        // Passives who already acknowledged the lock intent have committed to passing;
-        // the rest still need their white+white opportunity.
+        // Only passives who have NOT yet acted in LOCK_PENDING (not in lockAcknowledged)
+        // get PASSIVE_MOVE.  A passive who acknowledged already had their chance to cross
+        // during LOCK_PENDING; they should not receive a second opportunity.
         List<UUID> pendingPassives = new ArrayList<>(turn.passivePlayerQueue());
         pendingPassives.removeAll(turn.lockAcknowledged());
 
@@ -528,9 +542,11 @@ public class StandardTurnRules implements TurnRules {
 
     private boolean allNonActiveAcknowledged(GameState state) {
         TurnState turn = state.turnState();
-        Set<UUID> nonActive = new HashSet<>(state.players());
-        nonActive.remove(turn.activePlayerId());
-        return turn.lockAcknowledged().containsAll(nonActive);
+        // Only wait for players who were still in the passive queue when lock intent
+        // was declared.  Players who EndTurned during ACTIVE_MOVE already left the
+        // queue and can never appear in lockAcknowledged — requiring them would
+        // permanently freeze the game in LOCK_PENDING.
+        return turn.lockAcknowledged().containsAll(turn.passivePlayerQueue());
     }
 
     // -------------------------------------------------------------------------

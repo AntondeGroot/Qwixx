@@ -123,7 +123,7 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
     }
 
     private void populateRowClosureRequests(GameState state, GameSession session, UUID activePlayerId, int rowIndex) {
-        SheetLayout layout = state.sheetLayouts().values().iterator().next();
+        SheetLayout layout = state.sheetLayouts().get(activePlayerId);
         nl.adg.qwixx.data.Color rowColor = layout.rows().get(rowIndex).lock().color();
 
         // The modal must show the DECLARING player's name, so look up the active player

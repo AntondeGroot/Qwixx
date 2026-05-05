@@ -240,10 +240,14 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
           }
         }
       }
-    } else if ((turn.phase === TurnPhase.PASSIVE_MOVE || turn.phase === TurnPhase.ACTIVE_MOVE)
+    } else if ((turn.phase === TurnPhase.PASSIVE_MOVE
+                || turn.phase === TurnPhase.ACTIVE_MOVE
+                || turn.phase === TurnPhase.LOCK_PENDING)
                && this.isInPassiveQueue()
                && this.pendingCellIds().size === 0) {
       // Only offer cells before the passive player has made their one allowed cross.
+      // LOCK_PENDING is included because declaring lock re-invites all passives to
+      // reconsider crossing before the row closes.
       this.collectCells(layout, progress, closedRows, roll.white1 + roll.white2, null, result);
     }
 
@@ -303,7 +307,14 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     if (this.pendingCellIds().has(cellId)) {
-      this.sendMove({ moveType: MoveType.RESET_TURN });
+      // In LOCK_PENDING the correct server action is UNDO_LAST_CROSS: it undoes
+      // the cross and simultaneously adds the player to lockAcknowledged.
+      // RESET_TURN would clear rowClosureRequests (modal vanishes) without
+      // acknowledging, leaving the passive player permanently stuck.
+      const moveType = this.turnState()?.phase === TurnPhase.LOCK_PENDING
+        ? MoveType.UNDO_LAST_CROSS
+        : MoveType.RESET_TURN;
+      this.sendMove({ moveType });
       return;
     }
 
@@ -512,7 +523,14 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onChangeRowClosure() {
-    this.sendMove({ moveType: MoveType.RESET_TURN });
+    // Passive player with a pending cross clicks "Change" during LOCK_PENDING.
+    // UNDO_LAST_CROSS undoes their cross and acknowledges the lock in one step.
+    // Without this, RESET_TURN would clear rowClosureRequests (modal gone) without
+    // acknowledging, leaving the game frozen in LOCK_PENDING.
+    const moveType = this.hasPendingPassiveCross()
+      ? MoveType.UNDO_LAST_CROSS
+      : MoveType.RESET_TURN;
+    this.sendMove({ moveType });
   }
 
   protected readonly DiceComponent = DiceComponent;

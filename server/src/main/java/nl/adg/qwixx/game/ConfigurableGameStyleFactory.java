@@ -223,22 +223,40 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
             if (!forbidden.contains(cell.position())) validPositions.add(cell.position());
         }
 
-        int[] prevPair = null;
-        for (int pair = 0; pair < rows.size() - 1; pair++) {
-            List<Integer> shuffled = new ArrayList<>(validPositions);
-            Collections.shuffle(shuffled, random);
-            int[] chosen = pickPairPositions(shuffled, prevPair);
+        List<int[]> allPairs;
+        do {
+            allPairs = new ArrayList<>();
+            int[] prevPair = null;
+            for (int pair = 0; pair < rows.size() - 1; pair++) {
+                List<Integer> shuffled = new ArrayList<>(validPositions);
+                Collections.shuffle(shuffled, random);
+                int[] chosen = pickPairPositions(shuffled, prevPair);
+                allPairs.add(chosen);
+                prevPair = chosen;
+            }
+        } while (!hasNoChainedConnections(allPairs));
 
+        for (int pair = 0; pair < rows.size() - 1; pair++) {
             Row rowA = rows.get(pair);
             Row rowB = rows.get(pair + 1);
-            for (int pos : chosen) {
+            for (int pos : allPairs.get(pair)) {
                 Cell cellA = rowA.cells().get(pos);
                 Cell cellB = rowB.cells().get(pos);
                 addAutoTag(cellA, cellB.id());
                 addAutoTag(cellB, cellA.id());
             }
-            prevPair = chosen;
         }
+    }
+
+    private boolean hasNoChainedConnections(List<int[]> allPairs) {
+        for (int i = 0; i < allPairs.size() - 1; i++) {
+            Set<Integer> current = new HashSet<>();
+            for (int p : allPairs.get(i)) current.add(p);
+            for (int p : allPairs.get(i + 1)) {
+                if (current.contains(p)) return false;
+            }
+        }
+        return true;
     }
 
     // Picks 2 positions satisfying: intra-pair diff >= 3 and each >= 2 from every prevPair position.

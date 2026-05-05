@@ -1,5 +1,6 @@
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { environment } from '../../environments/environment';
 import { firstValueFrom, interval, EMPTY, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -241,13 +242,13 @@ export class ScoreComponent implements OnInit {
     this.router.navigate(['/settings']);
   }
 
-  /** Remove this player from the session, then hand control back to the game room. */
+  /** Remove this player from the session, then navigate back to the game lobby. */
   leaveGame() {
     if (this.playerId) {
       this.playersService.leaveGame(this.sessionId, this.playerId)
         .pipe(catchError(() => of(null)))
         .subscribe();
     }
-    this.router.navigate(['/settings']);
+    window.location.href = environment.lobbyUrl;
   }
 }

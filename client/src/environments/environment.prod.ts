@@ -1,4 +1,5 @@
 export const environment = {
   production: true,
-  apiBaseUrl: '/qwixx'
+  apiBaseUrl: '/qwixx',
+  lobbyUrl: '/'
 };

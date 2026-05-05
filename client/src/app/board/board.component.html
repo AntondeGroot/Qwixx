@@ -24,7 +24,6 @@
         <div class="turn-bar" [class.my-turn]="isMyTurn() || isInPassiveQueue()">
           <span class="turn-label">
             {{ isMyTurn() ? ('yourTurn' | translate) : playerName(turn.activePlayerId) + '\'s turn' }}
-            — {{ turn.phase }}
           </span>
 
           @if (turn.currentRoll || canRoll() || isInPassiveQueue()) {

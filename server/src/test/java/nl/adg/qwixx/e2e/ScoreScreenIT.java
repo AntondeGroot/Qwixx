@@ -219,7 +219,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
     }
 
     @Test
-    void leaveGameButtonNavigatesToSettings() {
+    void leaveGameButtonNavigatesToLobby() {
         driver = TestUtils.getScoreDriver(sessionId);
         TestUtils.waitUntilScoreLoaded(driver);
         ScoreInteractionHelper.waitUntilWinnerModalVisible(driver, 10);
@@ -227,9 +227,9 @@ public class ScoreScreenIT extends BaseIntegrationTest {
         ScoreInteractionHelper.clickLeaveGameButton(driver);
 
         new WebDriverWait(driver, Duration.ofSeconds(10))
-                .until(d -> d.getCurrentUrl().contains("/settings"));
-        assertTrue(driver.getCurrentUrl().contains("/settings"),
-                "Leave Game button must navigate to /settings. Current URL: " + driver.getCurrentUrl());
+                .until(d -> d.getCurrentUrl().startsWith("http://localhost:4100"));
+        assertTrue(driver.getCurrentUrl().startsWith("http://localhost:4100"),
+                "Leave Game button must redirect to the lobby. Current URL: " + driver.getCurrentUrl());
     }
 
     // ── Mobile portrait rotation ──────────────────────────────────────────────

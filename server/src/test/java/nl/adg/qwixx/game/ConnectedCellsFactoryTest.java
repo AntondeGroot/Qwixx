@@ -92,6 +92,22 @@ class ConnectedCellsFactoryTest {
     }
 
     @Test
+    void noCellHasMoreThanOneAutoCrossTag() {
+        for (int seed = 0; seed < 200; seed++) {
+            List<Row> rows = buildRows(BaseVariant.STANDARD, new Random(seed));
+            for (Row row : rows) {
+                for (Cell cell : row.cells()) {
+                    long autoCrossCount = cell.tags().stream()
+                            .filter(t -> t instanceof CellTag.AutoCross)
+                            .count();
+                    assertTrue(autoCrossCount <= 1,
+                            "cell must not be in more than one connection (seed=" + seed + ", cell=" + cell.id() + ")");
+                }
+            }
+        }
+    }
+
+    @Test
     void longoModeRespectsClosingEligible() {
         for (int seed = 0; seed < 20; seed++) {
             List<Row> rows = buildRows(BaseVariant.LONGO, new Random(seed));

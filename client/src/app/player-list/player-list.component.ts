@@ -1,4 +1,5 @@
 import { Component, computed, input } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { Player } from '../../generated/model/player';
 import { SheetLayout } from '../../generated/model/sheetLayout';
 import { SheetProgress } from '../../generated/model/sheetProgress';
@@ -36,6 +37,10 @@ export class PlayerListComponent {
 
   isRowClosed(rowId: string): boolean {
     return rowId in this.closedRows();
+  }
+
+  profilePicUrl(index: string): string {
+    return `${environment.lobbyUrl.replace(/\/$/, '')}/profile-pic/${index}`;
   }
 
   initials(name: string): string {

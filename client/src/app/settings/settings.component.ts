@@ -185,7 +185,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
         .subscribe({
           next: res => {
             const sessionId = res.sessionId!;
-            this.playersService.addPlayerToGame(sessionId, { name: 'Offline' })
+            this.playersService.addPlayerToGame(sessionId, { id: this.playerId()!, name: 'Offline' })
               .subscribe({
                 next: joined => {
                   this.gamesService.startGame(sessionId).subscribe({

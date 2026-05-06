@@ -26,7 +26,8 @@ public class ApiHelper {
         String sessionId = (String) created.get("sessionId");
 
         for (int i = 0; i < nrPlayers; i++) {
-            post("/games/" + sessionId + "/players", Map.of("name", "player" + i), Map.class);
+            post("/games/" + sessionId + "/players",
+                    Map.of("id", java.util.UUID.randomUUID().toString(), "name", "player" + i), Map.class);
         }
 
         post("/games/" + sessionId, null, Void.class);

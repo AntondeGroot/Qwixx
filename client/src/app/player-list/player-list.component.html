@@ -5,7 +5,7 @@
       <div class="player-header">
         <div class="avatar">
           @if (player.profilePic) {
-            <img [src]="player.profilePic" [alt]="player.name" />
+            <img [src]="profilePicUrl(player.profilePic)" [alt]="player.name" />
           } @else {
             <span class="initials">{{ initials(player.name) }}</span>
           }

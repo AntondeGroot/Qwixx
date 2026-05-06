@@ -14,7 +14,6 @@ import nl.adg.qwixx.generated.model.CreateNewGame201Response;
 import nl.adg.qwixx.generated.model.GameInfo;
 import nl.adg.qwixx.generated.model.GameStatus;
 import nl.adg.qwixx.generated.model.NewGameRequest;
-import nl.adg.qwixx.generated.model.NewPlayerRequest;
 import nl.adg.qwixx.generated.model.RestartGameRequest;
 import nl.adg.qwixx.generated.model.ScoreCard;
 import org.springframework.http.HttpStatus;
@@ -24,7 +23,6 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.UUID;
 
 @Service
@@ -88,11 +86,11 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
 
     @Override
     public ResponseEntity<AddPlayerToGame201Response> addPlayerToGame(String sessionId,
-            NewPlayerRequest req) {
+            nl.adg.qwixx.generated.model.Player req) {
         GameSession session = require(sessionId);
         Player player = req.getId() != null && !req.getId().isBlank()
-                ? new Player(UUID.fromString(req.getId()), req.getName())
-                : Player.of(req.getName());
+                ? new Player(UUID.fromString(req.getId()), req.getName(), req.getProfilePic())
+                : new Player(UUID.randomUUID(), req.getName(), req.getProfilePic());
         try {
             session.addPlayer(player);
         } catch (IllegalStateException ex) {
@@ -107,7 +105,8 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
             String sessionId) {
         GameSession session = require(sessionId);
         List<nl.adg.qwixx.generated.model.Player> players = session.players().stream()
-                .map(p -> new nl.adg.qwixx.generated.model.Player(p.id().toString(), p.name()))
+                .map(p -> new nl.adg.qwixx.generated.model.Player(p.id().toString(), p.name())
+                        .profilePic(p.profilePic()))
                 .toList();
         return ResponseEntity.ok(players);
     }

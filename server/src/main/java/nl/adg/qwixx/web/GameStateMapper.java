@@ -42,7 +42,8 @@ class GameStateMapper {
                             Player p = playerIndex.get(id);
                             return new nl.adg.qwixx.generated.model.Player(
                                     id.toString(),
-                                    p != null ? p.name() : id.toString());
+                                    p != null ? p.name() : id.toString())
+                                    .profilePic(p != null ? p.profilePic() : null);
                         })
                         .toList(),
                 mapSheetProgress(state),

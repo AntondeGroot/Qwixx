@@ -145,7 +145,7 @@ class GamesApiDelegateImplTest {
         mvc.perform(post("/games/{id}/players", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Bob"}
+                                {"id":"00000000-0000-0000-0000-000000000001","name":"Bob"}
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.playerId").isNotEmpty());
@@ -156,7 +156,7 @@ class GamesApiDelegateImplTest {
         mvc.perform(post("/games/ghost/players")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Bob"}
+                                {"id":"00000000-0000-0000-0000-000000000001","name":"Bob"}
                                 """))
                 .andExpect(status().isNotFound());
     }
@@ -170,7 +170,7 @@ class GamesApiDelegateImplTest {
         mvc.perform(post("/games/{id}/players", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Bob"}
+                                {"id":"00000000-0000-0000-0000-000000000001","name":"Bob"}
                                 """))
                 .andExpect(status().isConflict());
     }

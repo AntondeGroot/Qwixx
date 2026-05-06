@@ -57,11 +57,6 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
             populateRowClosureRequests(newState, session, pid, declareLock.rowIndex());
         }
 
-        // Clear row closure requests only when a row actually closes or the player explicitly resets
-        if (action instanceof CrossLockAction || action instanceof ResetTurnAction) {
-            newState.rowClosureRequests().clear();
-        }
-
         MoveResult result = newState.gameOver() ? MoveResult.GAME_OVER : MoveResult.ACCEPTED;
 
         MoveResponse response = new MoveResponse().result(result);

@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, computed, effect, ElementRef, HostListener, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { AfterViewInit, Component, computed, effect, ElementRef, HostListener, inject, OnDestroy, OnInit, signal, untracked } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { interval, Subscription, switchMap } from 'rxjs';
 import { TranslateModule } from '@ngx-translate/core';
@@ -38,6 +38,9 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   gameState   = signal<GameState | null>(null);
   error       = signal<string | null>(null);
   rollingDice = signal(false);
+  // True while the player dismissed the lock-intent modal to pick a new cell.
+  // Suppresses the modal until they cross something (pendingCellIds becomes non-empty).
+  private suppressModal = signal(false);
 
   private pollSub?: Subscription;
   private moveSub?: Subscription;
@@ -49,14 +52,25 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const requests = this.isInPassiveQueue()
       ? (this.gameState()?.rowClosureRequests ?? [])
       : [];
-    if (requests.length > 0) {
+
+    if (requests.length === 0) {
+      // No lock pending — reset suppression so the next lock intent shows fresh.
+      untracked(() => this.suppressModal.set(false));
+      this.rowClosureModal.clear();
+      return;
+    }
+
+    // Suppress the modal while the player is choosing a new cell (no pending cross yet).
+    // Auto-unsuppress once they cross something.
+    const suppress = this.suppressModal() && this.pendingCellIds().size === 0;
+    if (suppress) {
+      this.rowClosureModal.clear();
+    } else {
       this.rowClosureModal.show(
         requests,
         () => this.onConfirmRowClosure(),
         () => this.onChangeRowClosure()
       );
-    } else {
-      this.rowClosureModal.clear();
     }
   });
   private rollStartTime = 0;
@@ -522,14 +536,17 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onChangeRowClosure() {
-    // Passive player with a pending cross clicks "Change" during LOCK_PENDING.
-    // UNDO_LAST_CROSS undoes their cross and acknowledges the lock in one step.
-    // Without this, RESET_TURN would clear rowClosureRequests (modal gone) without
-    // acknowledging, leaving the game frozen in LOCK_PENDING.
-    const moveType = this.hasPendingPassiveCross()
-      ? MoveType.UNDO_LAST_CROSS
-      : MoveType.RESET_TURN;
-    this.sendMove({ moveType });
+    if (this.hasPendingPassiveCross()) {
+      // Player has a pending cross — undo it so they can reconsider.
+      // Reset suppressModal so the modal re-shows after the undo.
+      this.suppressModal.set(false);
+      this.sendMove({ moveType: MoveType.UNDO_LAST_CROSS });
+    } else {
+      // No pending cross — dismiss the modal so the player can click a cell on the board.
+      // The modal re-appears automatically once they make a cross (pendingCellIds > 0).
+      this.suppressModal.set(true);
+      this.rowClosureModal.clear();
+    }
   }
 
   protected readonly DiceComponent = DiceComponent;

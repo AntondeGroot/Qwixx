@@ -403,15 +403,15 @@ describe('BoardComponent — punishment / pass', () => {
       );
     });
 
-    it('onChangeRowClosure without a pending cross still sends RESET_TURN', () => {
+    it('onChangeRowClosure without a pending cross dismisses the modal locally without a server call', () => {
+      // No pending cross — "Change" means "let me pick a cell", not "reset state".
+      // The modal is dismissed client-side so the player can click the board.
       component.gameState.set(stateInLockPending(false));
       component.sessionId.set('s1');
 
       (component as any).onChangeRowClosure();
 
-      expect(movesService.makeMove).toHaveBeenCalledWith(
-        's1', PLAYER_ID, expect.objectContaining({ moveType: MoveType.RESET_TURN })
-      );
+      expect(movesService.makeMove).not.toHaveBeenCalled();
     });
   });
 
@@ -703,11 +703,12 @@ describe('BoardComponent — row-closure modal delegation', () => {
         'sess1', PLAYER_ID, expect.objectContaining({ moveType: MoveType.PASS }));
     });
 
-    it('onChangeRowClosure sends a RESET_TURN move', () => {
+    it('onChangeRowClosure with no pending cross dismisses the modal without a server call', () => {
+      // No pending cross (default state) — modal is dismissed locally so the player
+      // can interact with the board. No RESET_TURN should be sent.
       component.sessionId.set('sess1');
       (component as any).onChangeRowClosure();
-      expect(movesService.makeMove).toHaveBeenCalledWith(
-        'sess1', PLAYER_ID, expect.objectContaining({ moveType: MoveType.RESET_TURN }));
+      expect(movesService.makeMove).not.toHaveBeenCalled();
     });
 
     it('clears the service on destroy', () => {

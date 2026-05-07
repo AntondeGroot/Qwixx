@@ -14,8 +14,8 @@
     "baseDescription": "STANDARD uses cells 2–12 per row. LONGO uses cells 2–16 with bonus numbers.",
     "gameMode": "Game mode",
     "gameModeDescription": "ONLINE enforces turn order and dice rules on the server. OFFLINE lets players use real dice.",
-    "cardMode": "Card mode",
-    "cardModeDescription": "DETERMINISTIC gives all players identical layouts. PROBABILISTIC gives each player their own.",
+    "cardMode": "All players get",
+    "cardModeDescription": "Some options (like Extra row) always generate a unique layout per player, overriding this setting.",
     "randomOrder": "Random order",
     "randomOrderDescription": "Shuffle the display values within each row.",
     "extraRow": "Extra row",
@@ -27,8 +27,8 @@
       "LONGO": "Longo",
       "ONLINE": "Online",
       "OFFLINE": "Offline",
-      "DETERMINISTIC": "Deterministic",
-      "PROBABILISTIC": "Probabilistic"
+      "DETERMINISTIC": "the same card",
+      "PROBABILISTIC": "a unique card"
     }
   },
   "score": {

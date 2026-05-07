@@ -14,8 +14,8 @@
     "baseDescription": "STANDARD gebruikt cellen 2–12 per rij. LONGO gebruikt cellen 2–16 met bonusnummers.",
     "gameMode": "Spelmodus",
     "gameModeDescription": "ONLINE dwingt speelvolgorde en dobbelstenen regels op de server af. OFFLINE laat spelers echte dobbelstenen gebruiken.",
-    "cardMode": "Kaartmodus",
-    "cardModeDescription": "DETERMINISTISCH geeft alle spelers identieke indelingen. PROBABILISTISCH geeft elke speler zijn eigen.",
+    "cardMode": "Alle spelers krijgen",
+    "cardModeDescription": "Sommige opties (zoals Extra rij) genereren altijd een unieke indeling per speler en overschrijven deze instelling.",
     "randomOrder": "Willekeurige volgorde",
     "randomOrderDescription": "Schud de weergavewaarden in elke rij.",
     "extraRow": "Extra rij",
@@ -27,8 +27,8 @@
       "LONGO": "Longo",
       "ONLINE": "Online",
       "OFFLINE": "Offline",
-      "DETERMINISTIC": "Deterministisch",
-      "PROBABILISTIC": "Probabilistisch"
+      "DETERMINISTIC": "dezelfde kaart",
+      "PROBABILISTIC": "een unieke kaart"
     }
   },
   "score": {

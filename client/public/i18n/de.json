@@ -14,8 +14,8 @@
     "baseDescription": "STANDARD verwendet Zellen 2–12 pro Reihe. LONGO verwendet Zellen 2–16 mit Bonusnummern.",
     "gameMode": "Spielmodus",
     "gameModeDescription": "ONLINE erzwingt Reihenfolge und Würfelregeln auf dem Server. OFFLINE lässt Spieler echte Würfel verwenden.",
-    "cardMode": "Kartenmodus",
-    "cardModeDescription": "DETERMINISTISCH gibt allen Spielern identische Layouts. PROBABILISTISCH gibt jedem Spieler ein eigenes.",
+    "cardMode": "Alle Spieler erhalten",
+    "cardModeDescription": "Einige Optionen (z. B. Zusätzliche Reihe) erzeugen immer ein einzigartiges Layout pro Spieler und überschreiben diese Einstellung.",
     "randomOrder": "Zufällige Reihenfolge",
     "randomOrderDescription": "Mischen Sie die Anzeigewerte in jeder Reihe.",
     "extraRow": "Zusätzliche Reihe",
@@ -27,8 +27,8 @@
       "LONGO": "Longo",
       "ONLINE": "Online",
       "OFFLINE": "Offline",
-      "DETERMINISTIC": "Deterministisch",
-      "PROBABILISTIC": "Probabilistisch"
+      "DETERMINISTIC": "dieselbe Karte",
+      "PROBABILISTIC": "eine eigene Karte"
     }
   },
   "score": {

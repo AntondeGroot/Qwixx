@@ -14,8 +14,8 @@
     "baseDescription": "STANDARD bruker celler 2–12 per rad. LONGO bruker celler 2–16 med bonusnumre.",
     "gameMode": "Spillmodus",
     "gameModeDescription": "ONLINE håndhever tursyklus og terningregler på serveren. OFFLINE lar spillere bruke ekte terninger.",
-    "cardMode": "Kortmodus",
-    "cardModeDescription": "DETERMINISTISK gir alle spillere identiske oppsett. PROBABILISTISK gir hver spiller sitt eget.",
+    "cardMode": "Alle spillere får",
+    "cardModeDescription": "Noen alternativer (som Ekstra rad) genererer alltid unike oppsett per spiller og overstyrer denne innstillingen.",
     "randomOrder": "Tilfeldig rekkefølge",
     "randomOrderDescription": "Bland visningsverdiene i hver rad.",
     "extraRow": "Ekstra rad",
@@ -27,8 +27,8 @@
       "LONGO": "Longo",
       "ONLINE": "Nett",
       "OFFLINE": "Frakoblet",
-      "DETERMINISTIC": "Deterministisk",
-      "PROBABILISTIC": "Probabilistisk"
+      "DETERMINISTIC": "samme kort",
+      "PROBABILISTIC": "unikt kort"
     }
   },
   "score": {

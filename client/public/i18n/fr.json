@@ -14,8 +14,8 @@
     "baseDescription": "STANDARD utilise les cellules 2–12 par ligne. LONGO utilise les cellules 2–16 avec des numéros bonus.",
     "gameMode": "Mode de jeu",
     "gameModeDescription": "ONLINE applique l'ordre des tours et les règles de dés sur le serveur. OFFLINE permet aux joueurs d'utiliser de vrais dés.",
-    "cardMode": "Mode de carte",
-    "cardModeDescription": "DÉTERMINISTE donne à tous les joueurs des dispositions identiques. PROBABILISTE donne à chaque joueur la sienne.",
+    "cardMode": "Tous les joueurs reçoivent",
+    "cardModeDescription": "Certaines options (comme Rangée supplémentaire) génèrent toujours une disposition unique par joueur et ignorent ce réglage.",
     "randomOrder": "Ordre aléatoire",
     "randomOrderDescription": "Mélanger les valeurs d'affichage dans chaque ligne.",
     "extraRow": "Rangée supplémentaire",
@@ -27,8 +27,8 @@
       "LONGO": "Longo",
       "ONLINE": "En ligne",
       "OFFLINE": "Hors ligne",
-      "DETERMINISTIC": "Déterministe",
-      "PROBABILISTIC": "Probabiliste"
+      "DETERMINISTIC": "la même carte",
+      "PROBABILISTIC": "une carte unique"
     }
   },
   "score": {

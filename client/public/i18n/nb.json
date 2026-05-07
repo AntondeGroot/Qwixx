@@ -25,10 +25,10 @@
     "choice": {
       "STANDARD": "Standard",
       "LONGO": "Longo",
-      "ONLINE": "Nett",
-      "OFFLINE": "Frakoblet",
+      "ONLINE": "Online",
+      "OFFLINE": "Offline",
       "DETERMINISTIC": "samme kort",
-      "PROBABILISTIC": "unikt kort"
+      "PROBABILISTIC": "unike kort"
     }
   },
   "score": {

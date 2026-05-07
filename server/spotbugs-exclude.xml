@@ -1,0 +1,46 @@
+<FindBugsFilter>
+  <!-- Skip all OpenAPI-generated code -->
+  <Match>
+    <Package name="~nl\.adg\.qwixx\.generated.*"/>
+  </Match>
+
+  <!-- Mutable domain objects: callers read and write through the returned references in place -->
+  <Match>
+    <Class name="nl.adg.qwixx.state.GameState"/>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+  </Match>
+  <Match>
+    <Class name="nl.adg.qwixx.state.TurnState"/>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+  </Match>
+  <Match>
+    <Class name="nl.adg.qwixx.state.BoardState"/>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+  </Match>
+  <Match>
+    <Class name="nl.adg.qwixx.state.SheetProgress"/>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+  </Match>
+
+  <!-- Cell and Row are builder-style objects mutated during sheet construction -->
+  <Match>
+    <Class name="nl.adg.qwixx.data.Cell"/>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+  </Match>
+  <Match>
+    <Class name="nl.adg.qwixx.data.Row"/>
+    <Bug pattern="EI_EXPOSE_REP"/>
+  </Match>
+
+  <!-- StandardTurnRules stores a Random instance by design; no defensive copy is meaningful -->
+  <Match>
+    <Class name="nl.adg.qwixx.rules.StandardTurnRules"/>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+  </Match>
+
+  <!-- GameSession returns live state and settings references that callers legitimately mutate -->
+  <Match>
+    <Class name="nl.adg.qwixx.game.GameSession"/>
+    <Bug pattern="EI_EXPOSE_REP"/>
+  </Match>
+</FindBugsFilter>

@@ -628,7 +628,6 @@ public class StandardTurnRules implements TurnRules {
     // -------------------------------------------------------------------------
 
     private void addLockIntents(GameState state, UUID playerId, List<GameAction> actions) {
-        TurnState turn            = state.turnState();
         SheetLayout layout        = state.sheetLayouts().get(playerId);
         Map<Integer, UUID> closed = state.boardState().closedRows();
 

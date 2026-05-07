@@ -40,7 +40,7 @@ public class GameSession {
         this.settings   = settings;
     }
 
-    public void addPlayer(Player player) {
+    public synchronized void addPlayer(Player player) {
         if (status != SessionStatus.WAITING)
             throw new IllegalStateException("cannot add players after game has started");
         if (players.size() >= maxPlayers)
@@ -48,7 +48,7 @@ public class GameSession {
         players.add(player);
     }
 
-    public void removePlayer(UUID playerId) {
+    public synchronized void removePlayer(UUID playerId) {
         if (status == SessionStatus.IN_PROGRESS)
             throw new IllegalStateException("cannot remove players while game is in progress");
         boolean removed = players.removeIf(p -> p.id().equals(playerId));
@@ -109,7 +109,7 @@ public class GameSession {
         return state;
     }
 
-    public ScoreCard getScore(UUID playerId) {
+    public synchronized ScoreCard getScore(UUID playerId) {
         if (state == null) throw new IllegalStateException("game not started");
         return new ConfigurableGameStyleFactory(settings)
                 .buildScoringEngine()
@@ -163,12 +163,12 @@ public class GameSession {
         status = SessionStatus.FINISHED;
     }
 
-    public String sessionId()        { return sessionId; }
-    public String roomName()         { return roomName; }
-    public int maxPlayers()          { return maxPlayers; }
-    public GameSettings settings()   { return settings; }
-    public List<Player> players()    { return List.copyOf(players); }
-    public SessionStatus status()    { return status; }
+    public String sessionId()                      { return sessionId; }
+    public String roomName()                       { return roomName; }
+    public int maxPlayers()                        { return maxPlayers; }
+    public synchronized GameSettings settings()    { return settings; }
+    public synchronized List<Player> players()     { return List.copyOf(players); }
+    public synchronized SessionStatus status()     { return status; }
 
     public Map<String, Object> proposedOptions()                    { return Map.copyOf(proposedOptions); }
     public void setProposedOptions(Map<String, Object> opts)        { proposedOptions = new HashMap<>(opts); }

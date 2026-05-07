@@ -90,9 +90,6 @@ public class QwixxTestApplication {
 		var rollAction = new RollAction(state.turnState().activePlayerId());
 		game.applyAction(rollAction);
 
-		// Refresh to get the latest state
-		state = game.currentState();
-
 		// Override dice roll to be predetermined 1+1
 		var afterRoll = game.currentState();
 		var originalRoll = afterRoll.turnState().currentRoll();

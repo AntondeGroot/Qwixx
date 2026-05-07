@@ -10,6 +10,10 @@ public record GameOption(
         String defaultValue,
         List<String> choices) {
 
+    public GameOption {
+        choices = List.copyOf(choices);
+    }
+
     public static GameOption boolOption(String key, String labelKey, String descriptionKey) {
         return new GameOption(key, labelKey, descriptionKey, OptionType.BOOLEAN, "false", List.of());
     }

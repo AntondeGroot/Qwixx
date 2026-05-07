@@ -12,7 +12,7 @@ public class LockCell {
     this.id = id;
     this.color = color;
     this.minCrosses = minCrosses;
-    this.requiredCells = requiredCells;
+    this.requiredCells = List.copyOf(requiredCells);
   }
 
   public String id()                  { return id; }

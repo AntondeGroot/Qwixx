@@ -12,6 +12,10 @@ public record ScoreCard(
         int bonusPoints,                      // flat points from BonusPoints tags
         int punishmentPoints                  // -5 per punishment
 ) {
+    public ScoreCard {
+        crossesPerColor = Map.copyOf(crossesPerColor);
+        pointsPerColor  = Map.copyOf(pointsPerColor);
+    }
     public int total() {
         int colorTotal = pointsPerColor.values().stream().mapToInt(Integer::intValue).sum();
         return colorTotal + extraPoints + bonusPoints + punishmentPoints;

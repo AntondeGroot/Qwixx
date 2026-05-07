@@ -10,7 +10,7 @@ public class RollResult {
   public RollResult(int white1, int white2, Map<Color, Integer> coloredDice){
     this.white1 = white1;
     this.white2 = white2;
-    this.coloredDice = coloredDice;
+    this.coloredDice = Map.copyOf(coloredDice);
   }
 
   public int white1()                        { return white1; }

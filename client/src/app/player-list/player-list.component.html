@@ -35,6 +35,12 @@
         }
       </div>
 
+      <div class="mini-punishments">
+        @for (i of [0, 1, 2, 3]; track i) {
+          <div class="mini-punishment-box" [class.taken]="punishmentsFor(player.id) > i"></div>
+        }
+      </div>
+
     </div>
   }
 

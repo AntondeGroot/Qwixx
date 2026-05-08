@@ -406,10 +406,10 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     if (this.pendingCellIds().has(cellId)) {
-      // In LOCK_PENDING the correct server action is UNDO_LAST_CROSS: it undoes
-      // the cross and simultaneously adds the player to lockAcknowledged.
-      // RESET_TURN would clear rowClosureRequests (modal vanishes) without
-      // acknowledging, leaving the passive player permanently stuck.
+      // In LOCK_PENDING, UNDO_LAST_CROSS is the right action for everyone:
+      // - passive non-declarant: undoes the cross and counts as acknowledgement
+      // - declarant: server treats it as RESET_TURN (cancels the whole lock declaration)
+      // Outside LOCK_PENDING, RESET_TURN clears the move.
       const moveType = this.turnState()?.phase === TurnPhase.LOCK_PENDING
         ? MoveType.UNDO_LAST_CROSS
         : MoveType.RESET_TURN;

@@ -605,6 +605,127 @@ class StandardTurnRulesTest {
         assertEquals(TurnPhase.ROLL, state.turnState().phase());
     }
 
+    // ── Declarant undo-freeze regression ──────────────────────────────────────
+    //
+    // Root cause: the client previously sent UNDO_LAST_CROSS when the declarant
+    // clicked their pending closing cell in LOCK_PENDING, which uncrossed the cell
+    // but left the game in LOCK_PENDING with canCrossLock=false.  The passive could
+    // then no longer acknowledge (server rejected it), permanently freezing the game.
+    // Fix: declarant must use RESET_TURN; server now rejects UNDO_LAST_CROSS from them.
+
+    @Test
+    void declarant_undoLastCrossActsAsResetTurn() {
+        // Clicking the pending cell while being the declarant in LOCK_PENDING sends
+        // UNDO_LAST_CROSS.  The server must treat it identically to RESET_TURN:
+        // cancel the lock declaration and return to ACTIVE_MOVE.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        crossEnoughForLock(state, p1, 0);
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+        assertEquals(TurnPhase.LOCK_PENDING, state.turnState().phase());
+
+        assertDoesNotThrow(() -> rules.apply(state, new UndoLastCrossAction(p1)),
+                "UNDO_LAST_CROSS from the declarant must succeed (treated as RESET_TURN)");
+        assertEquals(TurnPhase.ACTIVE_MOVE, state.turnState().phase());
+        assertNull(state.turnState().pendingLockDeclarerId());
+        assertNull(state.turnState().pendingLockRowIndex());
+    }
+
+    @Test
+    void declarant_resetTurnCancelsLockAndRestorestActiveMovePhase() {
+        GameState state = stateAfterRoll(p1, p1, p2);
+        crossEnoughForLock(state, p1, 0);
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+        assertEquals(TurnPhase.LOCK_PENDING, state.turnState().phase());
+
+        rules.apply(state, new ResetTurnAction(p1));
+
+        assertEquals(TurnPhase.ACTIVE_MOVE, state.turnState().phase(),
+                "RESET_TURN from the declarant must return to ACTIVE_MOVE");
+        assertNull(state.turnState().pendingLockDeclarerId(),
+                "pending lock declarant must be cleared after declarant resets");
+        assertNull(state.turnState().pendingLockRowIndex(),
+                "pending lock row must be cleared after declarant resets");
+    }
+
+    @Test
+    void passive_canActNormallyAfterDeclarantResets() {
+        // After the declarant resets in LOCK_PENDING, the game returns to ACTIVE_MOVE
+        // and the passive must be able to make their normal passive cross and EndTurn.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        crossEnoughForLock(state, p1, 0);
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+        assertEquals(TurnPhase.LOCK_PENDING, state.turnState().phase());
+
+        rules.apply(state, new ResetTurnAction(p1));
+        assertEquals(TurnPhase.ACTIVE_MOVE, state.turnState().phase());
+
+        // Passive must be offered their standard white+white options in ACTIVE_MOVE.
+        List<GameAction> passiveActions = rules.getValidActions(state, p2);
+        assertTrue(passiveActions.stream().anyMatch(a -> a instanceof EndTurnAction),
+                "passive must be able to EndTurn after declarant resets");
+
+        // Passive passes — active then makes a move and ends turn normally.
+        assertDoesNotThrow(() -> rules.apply(state, new EndTurnAction(p2)),
+                "passive EndTurn must be accepted after declarant resets");
+        assertEquals(TurnPhase.ACTIVE_MOVE, state.turnState().phase(),
+                "phase must stay in ACTIVE_MOVE until the active also ends turn");
+    }
+
+    @Test
+    void passive_undoLastCrossIsStillAllowedForNonDeclarant() {
+        // Regression guard: the new restriction must not break the legitimate case
+        // where the PASSIVE (non-declarant) undoes their own cross before acknowledging.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        crossEnoughForLock(state, p1, 0);
+        rules.apply(state, firstCrossAction(state, p2));  // p2 crosses a cell
+        rules.apply(state, new EndTurnAction(p2));         // p2 passes before lock
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));  // p1 declares
+
+        // p2 has a pending cross and must still be able to undo it.
+        assertTrue(rules.getValidActions(state, p2).stream()
+                        .anyMatch(a -> a instanceof UndoLastCrossAction),
+                "non-declarant passive must still be offered UNDO_LAST_CROSS");
+        assertDoesNotThrow(() -> rules.apply(state, new UndoLastCrossAction(p2)),
+                "UNDO_LAST_CROSS must be accepted from a non-declarant passive");
+        assertEquals(TurnPhase.LOCK_PENDING, state.turnState().phase(),
+                "phase must remain LOCK_PENDING after passive undo");
+    }
+
+    @Test
+    void passive_isNotFrozenWhenDeclarantClosingCellNoLongerQualifies() {
+        // If the declarant's closing cell cross is somehow gone (edge case), the passive
+        // must be able to escape via the declarant resetting — not be permanently stuck.
+        // This verifies that EndTurnAction from passive is blocked (expected) and that
+        // the declarant can then use RESET_TURN to unblock the game.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        crossEnoughForLock(state, p1, 0);
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+
+        // Simulate the declarant's closing cell being retroactively removed from progress
+        // (represents the state that the old bug created via UNDO_LAST_CROSS).
+        Row row = state.sheetLayouts().get(p1).rows().get(0);
+        String closingCellId = row.lock().requiredCells().get(row.lock().requiredCells().size() - 1);
+        SheetProgress prog = state.boardState().sheetProgress().get(p1);
+        RowState rs = prog.rowStates().getOrDefault(0, new RowState(new java.util.HashSet<>(), false));
+        java.util.Set<String> reduced = new java.util.HashSet<>(rs.crossedCells());
+        reduced.remove(closingCellId);
+        prog.updateRowState(0, new RowState(reduced, false));
+
+        // Passive tries to acknowledge — must be rejected cleanly (not silently corrupt state).
+        assertThrows(IllegalMoveException.class,
+                () -> rules.apply(state, new EndTurnAction(p2)),
+                "passive acknowledgement must be rejected when declarant no longer qualifies");
+
+        // Declarant can reset to unblock.
+        assertDoesNotThrow(() -> rules.apply(state, new ResetTurnAction(p1)),
+                "declarant must be able to RESET_TURN to unblock the game");
+        assertEquals(TurnPhase.ACTIVE_MOVE, state.turnState().phase());
+
+        // Passive must now be able to act normally.
+        assertDoesNotThrow(() -> rules.apply(state, new EndTurnAction(p2)),
+                "passive must be able to EndTurn once game returns to ACTIVE_MOVE");
+    }
+
     @Test
     void passiveIsOfferedFreshCrossAfterUndoInLockPending() {
         // After undoing, the player has no pending cross, so they must be offered

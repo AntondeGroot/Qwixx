@@ -338,6 +338,13 @@ public class StandardTurnRules implements TurnRules {
         requirePhase(turn, TurnPhase.LOCK_PENDING);
 
         UUID playerId = action.playerId();
+        // For the declarant, "undo the cross" naturally means "cancel the whole lock declaration".
+        // Treat it identically to RESET_TURN so both the pending-cell click and the explicit
+        // reset button produce the same result regardless of which action the client sends.
+        if (playerId.equals(turn.pendingLockDeclarerId())) {
+            applyResetTurn(state, new ResetTurnAction(playerId));
+            return;
+        }
         Map<Integer, Set<String>> lastCross = turn.undoBuffer().get(playerId);
         if (lastCross == null) throw new IllegalMoveException("no cross to undo");
 

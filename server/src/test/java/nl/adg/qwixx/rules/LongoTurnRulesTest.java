@@ -2,6 +2,7 @@ package nl.adg.qwixx.rules;
 
 import nl.adg.qwixx.action.CrossCellAction;
 import nl.adg.qwixx.action.DeclareLockIntentAction;
+import nl.adg.qwixx.action.DiceCombination;
 import nl.adg.qwixx.action.RollAction;
 import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.Color;
@@ -129,6 +130,202 @@ class LongoTurnRulesTest {
         assertTrue(rules.getValidActions(state, p1).stream()
                 .anyMatch(a -> a instanceof CrossCellAction cc
                         && cc.rowIndex() == 1 && cc.cellId().equals(row1FirstCell)));
+    }
+
+    @Test
+    void afterCrossingBonusCell_otherTiedBonusCellAndRegularWhiteWhiteDisappear() {
+        // RED and YELLOW both have 1 cross (tied fewest) so both offer a bonus cell.
+        // After crossing RED's bonus cell the whiteWhiteUsed flag is set, which must:
+        //   (a) remove YELLOW's bonus cell from valid actions, and
+        //   (b) remove all regular white+white actions from valid actions.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        state.setVariantData(new LongoVariantData(Map.of(p1, List.of(FIXED_WHITE_SUM))));
+
+        SheetLayout layout = state.sheetLayouts().get(p1);
+        SheetProgress prog  = state.boardState().sheetProgress().get(p1);
+
+        prog.updateRowState(0, new RowState(new HashSet<>(Set.of(
+                layout.rows().get(0).cells().get(0).id())), false));          // RED:    1 cross at pos 0
+        prog.updateRowState(1, new RowState(new HashSet<>(Set.of(
+                layout.rows().get(1).cells().get(2).id())), false));          // YELLOW: 1 cross at pos 2
+        // GREEN and BLUE must have MORE than 1 cross so RED and YELLOW are actually the fewest.
+        Set<String> twoGreen = new HashSet<>(Set.of(
+                layout.rows().get(2).cells().get(0).id(),
+                layout.rows().get(2).cells().get(1).id()));
+        prog.updateRowState(2, new RowState(twoGreen, false));                // GREEN:  2 crosses
+        Set<String> twoBlue = new HashSet<>(Set.of(
+                layout.rows().get(3).cells().get(0).id(),
+                layout.rows().get(3).cells().get(1).id()));
+        prog.updateRowState(3, new RowState(twoBlue, false));                 // BLUE:   2 crosses
+
+        String redBonus    = layout.rows().get(0).cells().get(1).id();        // RED leftmost avail = pos 1
+        String yellowBonus = layout.rows().get(1).cells().get(3).id();        // YELLOW leftmost avail = pos 3
+
+        // Both bonus cells must be available before the cross.
+        List<?> before = rules.getValidActions(state, p1);
+        assertTrue(before.stream().anyMatch(a -> a instanceof CrossCellAction cc && cc.cellId().equals(redBonus)),
+                "RED bonus must be available before crossing");
+        assertTrue(before.stream().anyMatch(a -> a instanceof CrossCellAction cc && cc.cellId().equals(yellowBonus)),
+                "YELLOW bonus must be available before crossing");
+
+        // Cross RED's bonus cell.
+        rules.apply(state, new CrossCellAction(p1, 0, redBonus, DiceCombination.WHITE_WHITE));
+
+        List<CrossCellAction> after = rules.getValidActions(state, p1).stream()
+                .filter(a -> a instanceof CrossCellAction)
+                .map(a -> (CrossCellAction) a)
+                .toList();
+
+        assertFalse(after.stream().anyMatch(cc -> cc.cellId().equals(yellowBonus)),
+                "YELLOW bonus must disappear after crossing RED's bonus cell");
+        assertFalse(after.stream().anyMatch(cc -> cc.combination() == DiceCombination.WHITE_WHITE),
+                "All white+white actions (bonus and regular) must disappear once whiteWhiteUsed is set");
+    }
+
+    @Test
+    void afterCrossingRegularWhiteWhiteCell_bonusCellDisappears() {
+        // When the active player uses their white+white move on a regular cell (value
+        // matching the dice), the bonus cell must no longer be offered.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        state.setVariantData(new LongoVariantData(Map.of(p1, List.of(FIXED_WHITE_SUM))));
+
+        SheetLayout layout = state.sheetLayouts().get(p1);
+        SheetProgress prog  = state.boardState().sheetProgress().get(p1);
+
+        // RED: 1 cross (fewest) → bonus targets RED, leftmost available = pos 1.
+        prog.updateRowState(0, new RowState(new HashSet<>(Set.of(
+                layout.rows().get(0).cells().get(0).id())), false));
+        // YELLOW, GREEN, BLUE: 2 crosses each so they are not the fewest.
+        for (int r = 1; r <= 3; r++) {
+            Set<String> two = new HashSet<>();
+            two.add(layout.rows().get(r).cells().get(0).id());
+            two.add(layout.rows().get(r).cells().get(1).id());
+            prog.updateRowState(r, new RowState(two, false));
+        }
+
+        String redBonusCell = layout.rows().get(0).cells().get(1).id(); // RED pos 1 (value "3")
+
+        assertTrue(rules.getValidActions(state, p1).stream()
+                .anyMatch(a -> a instanceof CrossCellAction cc && cc.cellId().equals(redBonusCell)),
+                "RED bonus must be available before the regular white+white cross");
+
+        // Pick any regular white+white action that is NOT the bonus cell.
+        CrossCellAction regularWW = rules.getValidActions(state, p1).stream()
+                .filter(a -> a instanceof CrossCellAction cc
+                        && cc.combination() == DiceCombination.WHITE_WHITE
+                        && !cc.cellId().equals(redBonusCell))
+                .map(a -> (CrossCellAction) a)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Expected a regular white+white action"));
+
+        rules.apply(state, regularWW);
+
+        assertFalse(rules.getValidActions(state, p1).stream()
+                .anyMatch(a -> a instanceof CrossCellAction cc && cc.cellId().equals(redBonusCell)),
+                "Bonus cell must disappear after the regular white+white slot is consumed");
+    }
+
+    @Test
+    void bonusActionOfferedForFewestCrossesRowEvenWhenDiceValueDiffers() {
+        // Reproduces the reported scenario:
+        //   RED (index 0): 4 crosses (positions 0–3, values "2"–"5")
+        //   YELLOW (index 1): 1 cross at position 2 (value "4") → leftmost available = position 3 ("5")
+        //   GREEN  (index 2): 2 crosses (positions 0–1)
+        //   BLUE   (index 3): 3 crosses (positions 0–2)
+        //   white sum = 11 (e.g. white1=5, white2=6), bonus number includes 11.
+        //
+        // Yellow has the fewest crosses (1).  The bonus action must be the cell at
+        // position 3 (value "5") — a completely different value from the white sum.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        state.setVariantData(new LongoVariantData(Map.of(p1, List.of(11))));
+        state.turnState().setCurrentRoll(
+                new RollResult(5, 6, state.turnState().currentRoll().coloredDice())); // ww=11
+
+        SheetLayout layout = state.sheetLayouts().get(p1);
+        SheetProgress prog  = state.boardState().sheetProgress().get(p1);
+
+        // RED: 4 crosses at positions 0–3
+        Set<String> redCrossed = new HashSet<>();
+        for (int i = 0; i < 4; i++) redCrossed.add(layout.rows().get(0).cells().get(i).id());
+        prog.updateRowState(0, new RowState(redCrossed, false));
+
+        // YELLOW: 1 cross at position 2 (value "4")
+        Set<String> yellowCrossed = new HashSet<>();
+        yellowCrossed.add(layout.rows().get(1).cells().get(2).id());
+        prog.updateRowState(1, new RowState(yellowCrossed, false));
+
+        // GREEN: 2 crosses at positions 0–1
+        Set<String> greenCrossed = new HashSet<>();
+        for (int i = 0; i < 2; i++) greenCrossed.add(layout.rows().get(2).cells().get(i).id());
+        prog.updateRowState(2, new RowState(greenCrossed, false));
+
+        // BLUE: 3 crosses at positions 0–2
+        Set<String> blueCrossed = new HashSet<>();
+        for (int i = 0; i < 3; i++) blueCrossed.add(layout.rows().get(3).cells().get(i).id());
+        prog.updateRowState(3, new RowState(blueCrossed, false));
+
+        // Bonus must target YELLOW (fewest = 1 cross), leftmost available = position 3 (value "5").
+        String expectedBonusCell = layout.rows().get(1).cells().get(3).id();
+        assertTrue(
+                rules.getValidActions(state, p1).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction cc
+                                && cc.rowIndex() == 1
+                                && cc.cellId().equals(expectedBonusCell)),
+                "Bonus must offer YELLOW position 3 (value '5') — the leftmost available in the " +
+                "fewest-crosses row — even though it doesn't match the white sum of 11");
+
+        // The standard white+white action for value "11" must ALSO be available.
+        assertTrue(
+                rules.getValidActions(state, p1).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction cc && cc.rowIndex() != 1),
+                "Standard white+white cells (value '11') must also be in valid actions alongside the bonus");
+    }
+
+    @Test
+    void bonusActionOfferedForAllRowsTiedAtFewestCrosses() {
+        // Two rows share the fewest cross count but have different rightmost positions,
+        // so their leftmost-available cells differ.  Both must appear in valid actions.
+        //
+        //   RED   (index 0): 1 cross at position 0 (value "2") → leftmost available = position 1 ("3")
+        //   YELLOW (index 1): 1 cross at position 2 (value "4") → leftmost available = position 3 ("5")
+        //   GREEN  (index 2): 3 crosses
+        //   BLUE   (index 3): 3 crosses
+        GameState state = stateAfterRoll(p1, p1, p2);
+        state.setVariantData(new LongoVariantData(Map.of(p1, List.of(7))));
+        // Keep the default white sum (3+4=7) so we don't need to override the roll.
+
+        SheetLayout layout = state.sheetLayouts().get(p1);
+        SheetProgress prog  = state.boardState().sheetProgress().get(p1);
+
+        // RED: 1 cross at position 0
+        Set<String> redCrossed = new HashSet<>(Set.of(layout.rows().get(0).cells().get(0).id()));
+        prog.updateRowState(0, new RowState(redCrossed, false));
+
+        // YELLOW: 1 cross at position 2
+        Set<String> yellowCrossed = new HashSet<>(Set.of(layout.rows().get(1).cells().get(2).id()));
+        prog.updateRowState(1, new RowState(yellowCrossed, false));
+
+        // GREEN and BLUE: 3 crosses each (no longer tied for fewest)
+        for (int rowIdx : new int[]{2, 3}) {
+            Set<String> crossed = new HashSet<>();
+            for (int i = 0; i < 3; i++) crossed.add(layout.rows().get(rowIdx).cells().get(i).id());
+            prog.updateRowState(rowIdx, new RowState(crossed, false));
+        }
+
+        String redBonus    = layout.rows().get(0).cells().get(1).id(); // position 1 ("3")
+        String yellowBonus = layout.rows().get(1).cells().get(3).id(); // position 3 ("5")
+
+        List<CrossCellAction> bonusCrosses = rules.getValidActions(state, p1).stream()
+                .filter(a -> a instanceof CrossCellAction)
+                .map(a -> (CrossCellAction) a)
+                .toList();
+
+        assertTrue(
+                bonusCrosses.stream().anyMatch(cc -> cc.rowIndex() == 0 && cc.cellId().equals(redBonus)),
+                "Bonus must offer RED position 1 ('3') — leftmost available in RED (tied for fewest)");
+        assertTrue(
+                bonusCrosses.stream().anyMatch(cc -> cc.rowIndex() == 1 && cc.cellId().equals(yellowBonus)),
+                "Bonus must offer YELLOW position 3 ('5') — leftmost available in YELLOW (tied for fewest)");
     }
 
     // --- lock config from factory ---

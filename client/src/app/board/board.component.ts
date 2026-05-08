@@ -267,6 +267,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     if (turn.phase === TurnPhase.ACTIVE_MOVE && this.isMyTurn()) {
       if (!turn.whiteWhiteUsed && !turn.colorDieUsed) {
         this.collectCells(layout, progress, closedRows, roll.white1 + roll.white2, null, result);
+        this.collectBonusCells(state, layout, progress, closedRows, roll.white1 + roll.white2, result);
       }
       if (!turn.colorDieUsed) {
         for (const row of layout.rows) {
@@ -318,6 +319,42 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
         }
         result.add(cell.id);
       }
+    }
+  }
+
+  // When the white sum matches one of the active player's Longo bonus numbers,
+  // the leftmost available cell in each row with the fewest crosses is also a valid
+  // cross target — mirroring the server's addBonusCellAction logic.
+  private collectBonusCells(
+    state:      import('../../generated/model/gameState').GameState,
+    layout:     SheetLayout,
+    progress:   SheetProgress | undefined,
+    closedRows: Record<string, string>,
+    whiteSum:   number,
+    result:     Set<string>
+  ) {
+    const bonusNums: number[] = state.bonusNumbers?.[this.playerId()] ?? [];
+    if (!bonusNums.includes(whiteSum)) return;
+
+    let fewest = Infinity;
+    for (const row of layout.rows) {
+      if (closedRows[row.id]) continue;
+      const count = progress?.rowStates[row.id]?.crossedCells?.length ?? 0;
+      if (count < fewest) fewest = count;
+    }
+    if (!isFinite(fewest)) return;
+
+    for (const row of layout.rows) {
+      if (closedRows[row.id]) continue;
+      const crossed  = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
+      if (crossed.size !== fewest) continue;
+      const lastPos  = crossed.size > 0
+        ? Math.max(...row.cells.filter(c => crossed.has(c.id)).map(c => c.position))
+        : -1;
+      const leftmost = row.cells
+        .filter(c => !crossed.has(c.id) && c.position > lastPos)
+        .sort((a, b) => a.position - b.position)[0];
+      if (leftmost) result.add(leftmost.id);
     }
   }
 

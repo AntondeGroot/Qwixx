@@ -72,28 +72,33 @@ public class LongoTurnRules extends StandardTurnRules {
         SheetProgress progress        = state.boardState().sheetProgress().get(playerId);
         Map<Integer, UUID> closedRows = state.boardState().closedRows();
 
-        int fewest    = Integer.MAX_VALUE;
-        int bestRow   = -1;
+        // Find the minimum cross count across all non-closed rows.
+        int fewest = Integer.MAX_VALUE;
         for (int i = 0; i < layout.rows().size(); i++) {
             if (closedRows.containsKey(i)) continue;
             int crosses = rowStateOf(progress, i).crossedCells().size();
-            if (crosses < fewest) {
-                fewest  = crosses;
-                bestRow = i;
-            }
+            if (crosses < fewest) fewest = crosses;
         }
-        if (bestRow < 0) return;
-        final int targetRow = bestRow;
+        if (fewest == Integer.MAX_VALUE) return;
 
-        Row row           = layout.rows().get(targetRow);
-        RowState rowState = rowStateOf(progress, targetRow);
-        int rightmost     = rightmostCrossedPosition(row, rowState);
+        // Offer the leftmost available cell for EVERY row that ties at the minimum count.
+        // When two rows share the same fewest-crosses count the player may choose either one.
+        final int minCrosses = fewest;
+        for (int i = 0; i < layout.rows().size(); i++) {
+            if (closedRows.containsKey(i)) continue;
+            if (rowStateOf(progress, i).crossedCells().size() != minCrosses) continue;
 
-        row.cells().stream()
-                .filter(c -> c.position() > rightmost && !rowState.crossedCells().contains(c.id()))
-                .min(Comparator.comparingInt(Cell::position))
-                .map(cell -> new CrossCellAction(playerId, targetRow, cell.id(), DiceCombination.WHITE_WHITE))
-                .filter(bonus -> !actions.contains(bonus))
-                .ifPresent(actions::add);
+            final int targetRow = i;
+            Row      row        = layout.rows().get(targetRow);
+            RowState rowState   = rowStateOf(progress, targetRow);
+            int      rightmost  = rightmostCrossedPosition(row, rowState);
+
+            row.cells().stream()
+                    .filter(c -> c.position() > rightmost && !rowState.crossedCells().contains(c.id()))
+                    .min(Comparator.comparingInt(Cell::position))
+                    .map(cell -> new CrossCellAction(playerId, targetRow, cell.id(), DiceCombination.WHITE_WHITE))
+                    .filter(bonus -> !actions.contains(bonus))
+                    .ifPresent(actions::add);
+        }
     }
 }

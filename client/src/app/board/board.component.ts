@@ -481,8 +481,27 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!row?.lock) return false;
     const rowState = progress?.rowStates[rowId];
     if (rowState?.lockCrossed) return false;
-    const crossed = new Set(rowState?.crossedCells ?? []);
-    return row.lock.requiredCells.every(id => crossed.has(id));
+
+    const permanent = new Set(rowState?.crossedCells ?? []);
+    if (permanent.size < row.lock.minCrosses) return false;
+
+    // Mirror LongoTurnRules.canCrossLock:
+    // The current-turn pending crosses act as the undo buffer.
+    const pending = this.pendingCellIds();
+
+    const required = row.lock.requiredCells;
+    const lastRequired = required[required.length - 1];
+
+    // Last required cell in any crosses (permanent or pending) → eligible.
+    if (permanent.has(lastRequired) || pending.has(lastRequired)) return true;
+
+    // Second-to-last required cell enables locking only while it is still a
+    // pending cross (crossed this turn).  Once permanent it no longer suffices.
+    if (required.length > 1) {
+      const secondLast = required[required.length - 2];
+      return pending.has(secondLast);
+    }
+    return false;
   }
 
   private sendMoveAs(pid: string, req: MoveRequest) {

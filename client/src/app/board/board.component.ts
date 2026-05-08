@@ -268,7 +268,6 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     if (turn.phase === TurnPhase.ACTIVE_MOVE && this.isMyTurn()) {
       if (!turn.whiteWhiteUsed && !turn.colorDieUsed) {
         this.collectCells(layout, progress, closedRows, roll.white1 + roll.white2, null, result);
-        this.collectBonusCells(state, layout, progress, closedRows, roll.white1 + roll.white2, result);
       }
       if (!turn.colorDieUsed) {
         for (const row of layout.rows) {
@@ -317,7 +316,6 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     if (turn.phase === TurnPhase.ACTIVE_MOVE && this.isMyTurn()) {
       if (!turn.whiteWhiteUsed && !turn.colorDieUsed) {
         this.collectCells(layout, progress, closedRows, roll.white1 + roll.white2, null, result);
-        this.collectBonusCells(state, layout, progress, closedRows, roll.white1 + roll.white2, result);
       }
     } else if ((turn.phase === TurnPhase.PASSIVE_MOVE
                 || turn.phase === TurnPhase.ACTIVE_MOVE
@@ -331,18 +329,19 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   });
 
   private collectCells(
-    layout:       SheetLayout,
-    progress:     SheetProgress | undefined,
-    closedRows:   Record<string, string>,
-    targetValue:  number,
-    restrictRow:  string | null,
-    result:       Set<string>
+    layout:      SheetLayout,
+    progress:    SheetProgress | undefined,
+    closedRows:  Record<string, string>,
+    targetValue: number,
+    restrictRow: string | null,
+    result:      Set<string>
   ) {
+    const bonusNums: number[] = this.gameState()?.bonusNumbers?.[this.playerId()] ?? [];
     for (const row of layout.rows) {
       if (restrictRow && row.id !== restrictRow) continue;
       if (closedRows[row.id]) continue;
-      const crossed  = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
-      const lastPos  = Math.max(-1, ...row.cells.filter(c => crossed.has(c.id)).map(c => c.position));
+      const crossed = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
+      const lastPos = Math.max(-1, ...row.cells.filter(c => crossed.has(c.id)).map(c => c.position));
       for (const cell of row.cells) {
         if (crossed.has(cell.id)) continue;
         if (cell.position <= lastPos) continue;
@@ -355,41 +354,31 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
         result.add(cell.id);
       }
     }
-  }
 
-  // When the white sum matches one of the active player's Longo bonus numbers,
-  // the leftmost available cell in each row with the fewest crosses is also a valid
-  // cross target — mirroring the server's addBonusCellAction logic.
-  private collectBonusCells(
-    state:      import('../../generated/model/gameState').GameState,
-    layout:     SheetLayout,
-    progress:   SheetProgress | undefined,
-    closedRows: Record<string, string>,
-    whiteSum:   number,
-    result:     Set<string>
-  ) {
-    const bonusNums: number[] = state.bonusNumbers?.[this.playerId()] ?? [];
-    if (!bonusNums.includes(whiteSum)) return;
-
-    let fewest = Infinity;
-    for (const row of layout.rows) {
-      if (closedRows[row.id]) continue;
-      const count = progress?.rowStates[row.id]?.crossedCells?.length ?? 0;
-      if (count < fewest) fewest = count;
-    }
-    if (!isFinite(fewest)) return;
-
-    for (const row of layout.rows) {
-      if (closedRows[row.id]) continue;
-      const crossed  = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
-      if (crossed.size !== fewest) continue;
-      const lastPos  = crossed.size > 0
-        ? Math.max(...row.cells.filter(c => crossed.has(c.id)).map(c => c.position))
-        : -1;
-      const leftmost = row.cells
-        .filter(c => !crossed.has(c.id) && c.position > lastPos)
-        .sort((a, b) => a.position - b.position)[0];
-      if (leftmost) result.add(leftmost.id);
+    // Longo bonus: when the white sum triggers a bonus number, also offer the leftmost
+    // uncrossed cell in each row tied at fewest crosses. Only applies to unrestricted
+    // (white+white) calls — color die calls always supply a restrictRow.
+    if (!restrictRow && bonusNums.includes(targetValue)) {
+      let fewest = Infinity;
+      for (const row of layout.rows) {
+        if (closedRows[row.id]) continue;
+        const count = progress?.rowStates[row.id]?.crossedCells?.length ?? 0;
+        if (count < fewest) fewest = count;
+      }
+      if (isFinite(fewest)) {
+        for (const row of layout.rows) {
+          if (closedRows[row.id]) continue;
+          const crossed = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
+          if (crossed.size !== fewest) continue;
+          const lastPos = crossed.size > 0
+            ? Math.max(...row.cells.filter(c => crossed.has(c.id)).map(c => c.position))
+            : -1;
+          const leftmost = row.cells
+            .filter(c => !crossed.has(c.id) && c.position > lastPos)
+            .sort((a, b) => a.position - b.position)[0];
+          if (leftmost) result.add(leftmost.id);
+        }
+      }
     }
   }
 

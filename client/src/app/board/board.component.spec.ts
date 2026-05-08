@@ -652,6 +652,123 @@ describe('BoardComponent — state-sync race guards', () => {
   });
 });
 
+// ── Longo bonus cells — passive player ───────────────────────────────────────
+//
+// When the white+white sum matches one of the player's Longo bonus numbers, the
+// passive player should see the leftmost uncrossed cell(s) in the row(s) with
+// the fewest crosses highlighted — not just cells whose displayValue == whiteSum.
+
+describe('BoardComponent — Longo bonus cells for passive player', () => {
+  let component: BoardComponent;
+
+  const RED_CELLS    = ['r0', 'r1', 'r2'].map((id, i) => ({
+    id, position: i, displayValue: String(i + 2), color: 'RED', closingEligible: false, tags: [],
+  }));
+  const YELLOW_CELLS = ['y0', 'y1', 'y2'].map((id, i) => ({
+    id, position: i, displayValue: String(i + 2), color: 'YELLOW', closingEligible: false, tags: [],
+  }));
+
+  function makeBonusState(opts: {
+    phase?:         TurnPhase;
+    bonusNums?:     number[];
+    white1?:        number;
+    white2?:        number;
+    redCrosses?:    string[];
+    yellowCrosses?: string[];
+  } = {}): GameState {
+    const {
+      phase         = TurnPhase.PASSIVE_MOVE,
+      bonusNums     = [5],
+      white1        = 2,
+      white2        = 3,
+      redCrosses    = [],
+      yellowCrosses = [],
+    } = opts;
+
+    return makeState({
+      bonusNumbers: { [PLAYER_ID]: bonusNums },
+      sheetLayouts: {
+        [PLAYER_ID]: {
+          rows: [
+            { id: 'row-red',    cells: RED_CELLS,    lock: null },
+            { id: 'row-yellow', cells: YELLOW_CELLS, lock: null },
+          ],
+        },
+        [OTHER_ID]: { rows: [] },
+      },
+      sheetProgress: {
+        [PLAYER_ID]: {
+          punishments: 0,
+          rowStates: {
+            'row-red':    { crossedCells: redCrosses,    lockCrossed: false },
+            'row-yellow': { crossedCells: yellowCrosses, lockCrossed: false },
+          },
+        },
+        [OTHER_ID]: { punishments: 0, rowStates: {} },
+      },
+      turnState: {
+        activePlayerId: OTHER_ID,
+        phase,
+        passivePlayerQueue: [PLAYER_ID],
+        currentRoll: { white1, white2, coloredDice: {} },
+      },
+    } as unknown as Partial<GameState>);
+  }
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [BoardComponent],
+      providers: [
+        { provide: ActivatedRoute,    useValue: { snapshot: { paramMap: { get: () => '' } } } },
+        { provide: GamestatesService, useValue: { getGameState: () => of(makeState()) } },
+        { provide: MovesService,      useValue: { makeMove: vi.fn().mockReturnValue(of({})) } },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(BoardComponent);
+    component = fixture.componentInstance;
+    component.playerId.set(PLAYER_ID);
+  });
+
+  it('passive player sees leftmost bonus cell when white sum matches bonus number', () => {
+    // RED has 0 crosses (fewest), YELLOW has 1 cross → bonus targets RED only.
+    component.gameState.set(makeBonusState({ yellowCrosses: ['y0'] }));
+    const ids = component.clickableCellIds();
+    expect(ids.has('r0')).toBe(true);   // leftmost uncrossed in RED (fewest)
+    expect(ids.has('y1')).toBe(false);  // YELLOW is not at fewest
+  });
+
+  it('passive player sees bonus cells for ALL rows tied at fewest crosses', () => {
+    // RED and YELLOW both have 1 cross → both offer their leftmost uncrossed cell.
+    component.gameState.set(makeBonusState({ redCrosses: ['r0'], yellowCrosses: ['y0'] }));
+    const ids = component.clickableCellIds();
+    expect(ids.has('r1')).toBe(true);
+    expect(ids.has('y1')).toBe(true);
+  });
+
+  it('passive player does not see bonus cells when white sum does not match bonus number', () => {
+    // Bonus num is 5 but roll is 3+3=6.
+    component.gameState.set(makeBonusState({ white1: 3, white2: 3 }));
+    const ids = component.clickableCellIds();
+    // r1 has displayValue '3' which equals white sum 6? No — none match, nothing offered.
+    expect(ids.has('r0')).toBe(false);
+    expect(ids.has('y0')).toBe(false);
+  });
+
+  it('bonus cells also appear in whiteWhiteClickableCellIds', () => {
+    component.gameState.set(makeBonusState({ yellowCrosses: ['y0'] }));
+    const wwIds = component.whiteWhiteClickableCellIds();
+    expect(wwIds.has('r0')).toBe(true);
+  });
+
+  it('passive player in ACTIVE_MOVE phase also sees bonus cells', () => {
+    // Simultaneous play: passive queue is active while active player is still moving.
+    component.gameState.set(makeBonusState({ phase: TurnPhase.ACTIVE_MOVE, yellowCrosses: ['y0'] }));
+    const ids = component.clickableCellIds();
+    expect(ids.has('r0')).toBe(true);
+  });
+});
+
 // ── Modal delegation — position:fixed / CSS transform regression ─────────────
 // Kept in a separate top-level describe so its beforeEach can call
 // configureTestingModule independently of the describe block above.

@@ -49,28 +49,76 @@ class LongoTurnRulesTest {
         p2 = UUID.randomUUID();
     }
 
-    // --- lock: allMatch semantics ---
+    // --- lock eligibility ---
+    //
+    // Longo rows have two closing-eligible cells: "15" (second-to-last) and "16" (last)
+    // for ascending rows, and "3" (second-to-last) and "2" (last) for descending rows.
+    //
+    // New rules (fix for reported bug where lock never activated after crossing "15"):
+    //   • Crossing the LAST cell ("16"/"2") always enables locking, whether it is a
+    //     permanent cross from a prior turn or just crossed this turn.
+    //   • Crossing the SECOND-TO-LAST cell ("15"/"3") enables locking ONLY in the SAME
+    //     turn it is crossed (while it is still in the undo buffer).  Once that turn ends
+    //     without a lock declaration, the cell is a permanent cross and no longer triggers
+    //     locking; only the last cell can then close the row.
 
     @Test
-    void cannotLockWhenOnlyLastCellCrossed() {
+    void canLockByOnlyLastCellCrossedWithMinCrossesMet() {
+        // "16" (ascending) or "2" (descending) alone must enable locking.
+        // Uses the ascending RED row (index 0): crosses 6 regular cells + "16" = 7 total.
         GameState state = stateAfterRoll(p1, p1, p2);
         int rowIndex = 0;
-        crossOnlyLastCell(state, p1, rowIndex);
-        assertThrows(IllegalMoveException.class,
-                () -> rules.apply(state, new DeclareLockIntentAction(p1, rowIndex)));
+        crossOnlyLastCell(state, p1, rowIndex);   // crosses "16" + 6 others, NOT "15"
+        assertDoesNotThrow(() -> rules.apply(state, new DeclareLockIntentAction(p1, rowIndex)),
+                "Crossing only the last required cell ('16') must be sufficient to lock");
     }
 
     @Test
-    void cannotLockWhenOnlySecondToLastCellCrossed() {
+    void canLockWhenSecondToLastCellIsCrossedInCurrentTurn() {
+        // Crossing "15"/"3" THIS turn (pending in undo buffer) must enable locking.
+        // Simulate: 6 regular permanent crosses, then cross "15" in the current turn.
         GameState state = stateAfterRoll(p1, p1, p2);
         int rowIndex = 0;
+        SheetLayout layout = state.sheetLayouts().get(p1);
+        Row row = layout.rows().get(rowIndex);
+        LockCell lock = row.lock();
+
+        // 6 permanent regular crosses (not closing-eligible)
+        Set<String> perm = new HashSet<>();
+        String secondLast = lock.requiredCells().get(0); // "15"
+        String last       = lock.requiredCells().get(1); // "16"
+        for (Cell c : row.cells()) {
+            if (perm.size() >= 6) break;
+            if (!c.id().equals(secondLast) && !c.id().equals(last)) perm.add(c.id());
+        }
+        state.boardState().sheetProgress().get(p1).updateRowState(rowIndex, new RowState(perm, false));
+
+        // Cross "15" in the current turn (goes to both sheetProgress and undoBuffer).
+        rules.apply(state, new CrossCellAction(p1, rowIndex, secondLast, DiceCombination.WHITE_WHITE));
+
+        // Lock intent must now be valid (7 crosses total, "15" is in pending).
+        assertDoesNotThrow(() -> rules.apply(state, new DeclareLockIntentAction(p1, rowIndex)),
+                "Crossing the second-to-last cell ('15') in the current turn must enable locking");
+    }
+
+    @Test
+    void cannotLockWhenSecondToLastCellIsPermanentAndLastNotCrossed() {
+        // If "15"/"3" was crossed in a PREVIOUS turn without locking, it is now a
+        // permanent cross.  Without "16"/"2", the lock must NOT be eligible.
+        // This is the reported bug scenario: clicking "15" then the lock did nothing.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        int rowIndex = 0;
+        // Permanently cross "15" + 6 others (no "16" crossed).
         crossOnlySecondToLastCell(state, p1, rowIndex);
+        // The undo buffer is empty at this point (crosses applied directly to sheetProgress).
         assertThrows(IllegalMoveException.class,
-                () -> rules.apply(state, new DeclareLockIntentAction(p1, rowIndex)));
+                () -> rules.apply(state, new DeclareLockIntentAction(p1, rowIndex)),
+                "Permanent '15' without '16' must NOT enable locking — only the current-turn pending cross does");
     }
 
     @Test
     void canLockWhenBothLastCellsCrossedAndMinCrossesMet() {
+        // Classic scenario: both "15" and "16" permanently crossed with 7+ total.
         GameState state = stateAfterRoll(p1, p1, p2);
         int rowIndex = 0;
         crossBothRequiredCellsWithEnough(state, p1, rowIndex);

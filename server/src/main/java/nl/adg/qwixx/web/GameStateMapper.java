@@ -84,12 +84,13 @@ class GameStateMapper {
     private static Map<String, String> mapClosedRows(GameState state) {
         Map<String, String> result = new HashMap<>();
         BoardState board = state.boardState();
-        if (board.closedRows().isEmpty()) return result;
-        SheetLayout anyLayout = state.sheetLayouts().values().iterator().next();
-        board.closedRows().forEach((rowIndex, playerId) -> {
-            String rowId = anyLayout.rows().get(rowIndex).id();
-            result.put(rowId, playerId.toString());
-        });
+        // Use every player's layout so that each client finds its own row ID in the map.
+        // In DETERMINISTIC mode all layouts share the same Row objects (same IDs), so
+        // duplicate puts are harmless. In PROBABILISTIC mode each player has unique row
+        // IDs and only the matching entry makes isRowClosed() return true for that player.
+        board.closedRows().forEach((rowIndex, closingPlayerId) ->
+                state.sheetLayouts().forEach((layoutPlayerId, layout) ->
+                        result.put(layout.rows().get(rowIndex).id(), closingPlayerId.toString())));
         return result;
     }
 

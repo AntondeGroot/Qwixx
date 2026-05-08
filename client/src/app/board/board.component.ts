@@ -295,6 +295,40 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     return result;
   });
 
+  // Subset of clickableCellIds: cells reachable specifically by the white+white combination.
+  // Used to show 🎲 on those cells so the player knows to use both white dice.
+  // All other clickable cells (color die) show the row's colored circle emoji instead.
+  whiteWhiteClickableCellIds = computed((): Set<string> => {
+    if (this.rollingDice()) return this.emptySet;
+    const state = this.gameState();
+    const pid   = this.playerId();
+    const turn  = this.turnState();
+    if (!state || !turn?.currentRoll) return this.emptySet;
+
+    const roll     = turn.currentRoll;
+    const layout   = state.sheetLayouts[pid];
+    const progress = state.sheetProgress[pid];
+    if (!layout) return this.emptySet;
+
+    const closedRows = state.closedRows ?? {};
+    const result     = new Set<string>();
+
+    if (turn.phase === TurnPhase.ACTIVE_MOVE && this.isMyTurn()) {
+      if (!turn.whiteWhiteUsed && !turn.colorDieUsed) {
+        this.collectCells(layout, progress, closedRows, roll.white1 + roll.white2, null, result);
+        this.collectBonusCells(state, layout, progress, closedRows, roll.white1 + roll.white2, result);
+      }
+    } else if ((turn.phase === TurnPhase.PASSIVE_MOVE
+                || turn.phase === TurnPhase.ACTIVE_MOVE
+                || turn.phase === TurnPhase.LOCK_PENDING)
+               && this.isInPassiveQueue()
+               && this.pendingCellIds().size === 0) {
+      this.collectCells(layout, progress, closedRows, roll.white1 + roll.white2, null, result);
+    }
+
+    return result;
+  });
+
   private collectCells(
     layout:       SheetLayout,
     progress:     SheetProgress | undefined,

@@ -12,4 +12,7 @@
   @if (crossed() || pending()) {
     <span class="cell-cross">✕</span>
   }
+  @if (showDieHint()) {
+    <span class="die-hint">🎲</span>
+  }
 </div>

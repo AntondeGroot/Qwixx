@@ -8,7 +8,7 @@
   border-radius: 8px;
   border: 2px solid rgba(0, 0, 0, 0.15);
   user-select: none;
-  overflow: hidden;
+  overflow: visible;
   flex-shrink: 0;
 }
 
@@ -74,4 +74,15 @@
 .cell.clickable:hover {
   brightness: 1.15;
   filter: brightness(1.2);
+}
+
+.die-hint {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  font-size: 15px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  z-index: 400;
 }

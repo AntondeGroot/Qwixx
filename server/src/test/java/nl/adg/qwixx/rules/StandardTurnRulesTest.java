@@ -1051,6 +1051,59 @@ class StandardTurnRulesTest {
     }
 
     @Test
+    void passiveCrossedClosingCellButConcurrentActiveLockBlockedDeclaration_getsReinvitedAfterLockResolves() {
+        // Race-condition regression: passive (p2) crosses the closing cell of row 1 during
+        // simultaneous ACTIVE_MOVE play.  Before p2 can declare their lock intent the active
+        // (p1) races ahead and declares a lock for row 0, putting the server into LOCK_PENDING.
+        // p2 can no longer declare their own intent (wrong phase), so they just acknowledge p1's
+        // lock.  After p1's lock closes, p2 must be re-invited so they can finally declare their
+        // own lock for row 1 — closing a third row in total.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        crossEnoughForLock(state, p1, 0);
+        crossEnoughForLock(state, p2, 1);
+
+        // p2 crosses the closing cell of row 1 (their passive move) — row 1 is now lock-eligible.
+        // They are added to passivesActed and undoBuffer.
+        Row row1 = state.sheetLayouts().get(p2).rows().get(1);
+        Cell closing1 = row1.cells().stream().filter(Cell::isClosingEligible).findFirst().orElseThrow();
+        String ww = String.valueOf(state.turnState().currentRoll().white1()
+                + state.turnState().currentRoll().white2());
+        // Give p2 enough permanent crosses so the closing cell matches white+white.
+        // crossEnoughForLock already set required crosses; the closing cell may or may not match
+        // white+white.  We verify p2 can declare a lock (has required cells crossed permanently).
+        assertTrue(rules.getValidActions(state, p2).stream()
+                        .anyMatch(a -> a instanceof DeclareLockIntentAction dl && dl.rowIndex() == 1),
+                "p2 must already be lock-eligible for row 1 (closing cell permanently crossed)");
+
+        // p1 races: declares lock for row 0 first → LOCK_PENDING.
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+        assertEquals(TurnPhase.LOCK_PENDING, state.turnState().phase());
+
+        // p2 is now stuck in LOCK_PENDING — they can only acknowledge p1's lock.
+        // They cannot declare their own lock for row 1 in this phase.
+        rules.apply(state, new EndTurnAction(p2));   // p2 acknowledges p1's lock → auto-close
+        assertTrue(state.boardState().closedRows().containsKey(0), "row 0 must close");
+
+        // After p1's lock resolves, p2 must be re-invited (they never got to declare row 1).
+        // p2 is in passivesActed (crossed the closing cell) AND has a qualifying undoBuffer entry.
+        assertNotEquals(TurnPhase.ROLL, state.turnState().phase(),
+                "turn must not end yet — p2 still needs to declare their lock for row 1");
+        assertTrue(state.turnState().passivePlayerQueue().contains(p2),
+                "p2 must be re-invited after p1's lock resolves");
+
+        // p2 must be offered DeclareLockIntentAction for row 1.
+        assertTrue(rules.getValidActions(state, p2).stream()
+                        .anyMatch(a -> a instanceof DeclareLockIntentAction dl && dl.rowIndex() == 1),
+                "p2 must be offered lock intent for row 1 after being re-invited");
+
+        // p2 declares lock for row 1; p1 acknowledges → row 1 closes → 2 rows closed → game over.
+        rules.apply(state, new DeclareLockIntentAction(p2, 1));
+        rules.apply(state, new EndTurnAction(p1));
+        assertTrue(state.boardState().closedRows().containsKey(1), "row 1 must close");
+        assertTrue(state.gameOver(), "game must be over after 2 rows close");
+    }
+
+    @Test
     void passiveDeclaringLockIntentCostsTheirWhiteWhiteSlot() {
         GameState state = stateAfterRoll(p1, p1, p2);
         crossEnoughForLock(state, p2, 0);

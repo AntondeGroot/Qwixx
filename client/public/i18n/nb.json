@@ -3,6 +3,8 @@
   "points": "Poeng",
   "punishment": "Straffpoeng",
   "yourTurn": "Din Tur",
+  "playerTurn": "{{ name }}s tur",
+  "confirm": "Bekreft",
   "roll": "Kast",
   "pass": "Pass",
   "endTurn": "Avslutt Tur",

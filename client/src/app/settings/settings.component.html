@@ -17,7 +17,7 @@
       } @else if (opt.type === TypeEnum.ENUM) {
         <select [id]="opt.key" [formControlName]="opt.key">
           @for (val of opt.choices ?? []; track val) {
-            <option [value]="val">{{ val }}</option>
+            <option [value]="val">{{ 'gameOption.choice.' + val | translate }}</option>
           }
         </select>
       } @else if (opt.type === TypeEnum.INTEGER) {

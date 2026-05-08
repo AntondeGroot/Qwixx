@@ -3,6 +3,8 @@
   "points": "Punten",
   "punishment": "Strafpunten",
   "yourTurn": "Jouw Beurt",
+  "playerTurn": "{{ name }} is aan de beurt",
+  "confirm": "Bevestigen",
   "roll": "Rol",
   "pass": "Pas",
   "endTurn": "Einde Beurt",

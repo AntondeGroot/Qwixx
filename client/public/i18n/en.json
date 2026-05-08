@@ -3,6 +3,8 @@
   "points": "Points",
   "punishment": "Penalty Points",
   "yourTurn": "Your turn",
+  "playerTurn": "{{ name }}'s turn",
+  "confirm": "Confirm",
   "roll": "Roll",
   "pass": "Pass",
   "endTurn": "End Turn",

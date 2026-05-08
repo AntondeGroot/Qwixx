@@ -202,6 +202,9 @@ public class StandardTurnRules implements TurnRules {
         UUID playerId  = action.playerId();
         boolean isActive = playerId.equals(turn.activePlayerId());
 
+        if (state.boardState().closedRows().containsKey(action.rowIndex()))
+            throw new IllegalMoveException("row is closed");
+
         if (isActive) {
             requirePhase(turn, TurnPhase.ACTIVE_MOVE);
         } else {
@@ -219,6 +222,20 @@ public class StandardTurnRules implements TurnRules {
 
         if (!isActive) {
             turn.passivesActed().add(playerId);
+
+            // In LOCK_PENDING a passive crossing any cell implicitly acknowledges the lock —
+            // there is no reason for them to undo afterward.  Promote the cross to permanent
+            // and acknowledge, mirroring what EndTurnAction does.
+            if (turn.phase() == TurnPhase.LOCK_PENDING
+                    && !playerId.equals(turn.pendingLockDeclarerId())
+                    && !turn.lockAcknowledged().contains(playerId)) {
+                turn.undoBuffer().remove(playerId);
+                turn.lockAcknowledged().add(playerId);
+                if (allNonActiveAcknowledged(state)) {
+                    applyCrossLock(state,
+                            new CrossLockAction(turn.pendingLockDeclarerId(), turn.pendingLockRowIndex()));
+                }
+            }
         }
 
         if (isActive) {

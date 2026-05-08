@@ -1,6 +1,7 @@
 import { AfterViewInit, Component, computed, effect, ElementRef, HostListener, inject, OnDestroy, OnInit, signal, untracked } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { interval, Subscription, switchMap } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { TranslateModule } from '@ngx-translate/core';
 import { GamestatesService } from '../../generated/api/gamestates.service';
 import { MovesService } from '../../generated/api/moves.service';
@@ -597,7 +598,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.stateSub?.unsubscribe();
     this.stateSub = this.gameStatesService.getGameState(this.sessionId()).subscribe({
       next: (s: GameState) => this.applyState(s),
-      error: () => this.error.set('Could not load game state.')
+      error: () => { window.location.href = environment.lobbyUrl; }
     });
   }
 

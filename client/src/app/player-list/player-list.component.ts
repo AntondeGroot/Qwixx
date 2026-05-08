@@ -39,6 +39,10 @@ export class PlayerListComponent {
     return rowId in this.closedRows();
   }
 
+  punishmentsFor(pid: string): number {
+    return this.sheetProgress()[pid]?.punishments ?? 0;
+  }
+
   profilePicUrl(index: string): string {
     return `${environment.lobbyUrl.replace(/\/$/, '')}/profile-pic/${index}`;
   }

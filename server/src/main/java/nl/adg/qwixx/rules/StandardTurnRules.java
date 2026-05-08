@@ -86,6 +86,9 @@ public class StandardTurnRules implements TurnRules {
                         addPassiveLockIntents(state, playerId, actions);
                     } else if (hasCrossed) {
                         actions.add(new ResetTurnAction(playerId));
+                        // Pending cross may qualify for a lock that was blocked by a concurrent
+                        // lock declaration; offer it so the player can still close their row.
+                        addLockIntents(state, playerId, actions);
                     }
                     actions.add(new EndTurnAction(playerId));
                     yield actions;
@@ -103,6 +106,9 @@ public class StandardTurnRules implements TurnRules {
                 if (!hasActed) {
                     addReachableCells(state, playerId, actions, false);
                     addPassiveLockIntents(state, playerId, actions);
+                } else if (hasCrossed) {
+                    // Pending cross may qualify for a lock blocked by a concurrent lock declaration.
+                    addLockIntents(state, playerId, actions);
                 }
                 if (hasCrossed) {
                     actions.add(new ResetTurnAction(playerId));
@@ -268,7 +274,13 @@ public class StandardTurnRules implements TurnRules {
                 throw new IllegalMoveException("passive can only declare lock intent in ACTIVE_MOVE or PASSIVE_MOVE");
             if (!turn.passivePlayerQueue().contains(declarerId))
                 throw new IllegalMoveException("player not in passive queue");
-            if (turn.undoBuffer().containsKey(declarerId) || turn.passivesActed().contains(declarerId))
+            // Allow if the player's pending cross (undoBuffer) is itself the qualifying cell for
+            // this lock — i.e. they crossed the closing cell but a concurrent lock blocked their
+            // own lock declaration. Otherwise block double-acting.
+            boolean qualifiesFromPendingCross = turn.undoBuffer().containsKey(declarerId)
+                    && canCrossLock(state, declarerId, action.rowIndex());
+            if (!qualifiesFromPendingCross
+                    && (turn.undoBuffer().containsKey(declarerId) || turn.passivesActed().contains(declarerId)))
                 throw new IllegalMoveException("passive player already acted this turn");
             if (!canPassiveDeclareIntent(state, declarerId, action.rowIndex()))
                 throw new IllegalMoveException("passive lock pre-conditions not met");
@@ -614,9 +626,6 @@ public class StandardTurnRules implements TurnRules {
 
         UUID active = turn.activePlayerId();
 
-        // Only continue the turn if another row can actually be closed this turn.
-        // Regular cell-crosses do not justify a continuation — the standard turn flow
-        // (active cross → EndTurn → PASSIVE_MOVE → evaluate) already handles those.
         List<GameAction> activeLocks = new ArrayList<>();
         addLockIntents(state, active, activeLocks);
         boolean activeCanClose = !activeLocks.isEmpty();
@@ -625,10 +634,23 @@ public class StandardTurnRules implements TurnRules {
         remainingPassives.remove(active);
         remainingPassives.removeIf(pid -> turn.passivesActed().contains(pid));
 
+        // Re-invite passives who already acted (crossed a cell) but whose pending cross
+        // now qualifies them for a lock they couldn't declare earlier — because a concurrent
+        // lock by another player put the server into LOCK_PENDING before they could.
+        for (UUID pid : state.players()) {
+            if (pid.equals(active)) continue;
+            if (remainingPassives.contains(pid)) continue;
+            if (!turn.undoBuffer().containsKey(pid)) continue;
+            List<GameAction> pendingLocks = new ArrayList<>();
+            addLockIntents(state, pid, pendingLocks);
+            if (!pendingLocks.isEmpty()) remainingPassives.add(pid);
+        }
+
         boolean passiveCanClose = false;
         for (UUID pid : remainingPassives) {
             List<GameAction> passiveLocks = new ArrayList<>();
             addPassiveLockIntents(state, pid, passiveLocks);
+            addLockIntents(state, pid, passiveLocks);
             if (!passiveLocks.isEmpty()) { passiveCanClose = true; break; }
         }
 

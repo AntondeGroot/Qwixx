@@ -16,13 +16,29 @@ public class ApiHelper {
     // ---------- GAME LIFECYCLE ----------
 
     public String createGame(int nrPlayers) {
-        return createGame(nrPlayers, "test-room-" + System.nanoTime());
+        return createGame(nrPlayers, "test-room-" + System.nanoTime(), null);
     }
 
     public String createGame(int nrPlayers, String roomName) {
+        return createGame(nrPlayers, roomName, null);
+    }
+
+    /** Creates a game with the given game options (e.g. {@code Map.of("base", "LONGO")}). */
+    public String createGame(int nrPlayers, Map<String, Object> gameOptions) {
+        return createGame(nrPlayers, "test-room-" + System.nanoTime(), gameOptions);
+    }
+
+    public String createGame(int nrPlayers, String roomName, Map<String, Object> gameOptions) {
+        // Pass gameOptions in the creation body so createNewGame applies them immediately.
+        // (updateLobby only sets proposed UI options; startGame ignores them.)
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("roomName", roomName);
+        body.put("maxPlayers", nrPlayers);
+        if (gameOptions != null && !gameOptions.isEmpty()) {
+            body.put("gameOptions", gameOptions);
+        }
         @SuppressWarnings("unchecked")
-        Map<String, Object> created = post("/games",
-                Map.of("roomName", roomName, "maxPlayers", nrPlayers), Map.class);
+        Map<String, Object> created = post("/games", body, Map.class);
         String sessionId = (String) created.get("sessionId");
 
         for (int i = 0; i < nrPlayers; i++) {

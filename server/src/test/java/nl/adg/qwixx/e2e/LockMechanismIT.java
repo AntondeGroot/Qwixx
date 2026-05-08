@@ -542,14 +542,13 @@ public class LockMechanismIT extends BaseIntegrationTest {
                 "Modal must NOT re-appear after player1 crosses the locking row — "
                 + "crossing the closing cell should acknowledge the lock, not re-trigger the modal");
 
+        // The waits below both guarantee the row was closed — no separate assertTrue
+        // is needed.  Checking isRowClosed() again after the driver0 wait would race
+        // against the 1500 ms game-over navigation that starts as soon as BLUE closes.
         new WebDriverWait(driver1, Duration.ofSeconds(8))
                 .until(d -> BoardInteractionHelper.isRowClosed(d, "BLUE"));
         new WebDriverWait(driver0, Duration.ofSeconds(8))
                 .until(d -> BoardInteractionHelper.isRowClosed(d, "BLUE"));
-        assertTrue(BoardInteractionHelper.isRowClosed(driver1, "BLUE"),
-                "BLUE row must be closed after player1 crosses its closing cell in LOCK_PENDING");
-        assertTrue(BoardInteractionHelper.isRowClosed(driver0, "BLUE"),
-                "BLUE row must also be closed in player0's browser");
 
         // === Part 7: game ends (RED + BLUE = 2 locked rows); score screen after 1500 ms ===
         // The board component navigates to /score after a 1500 ms delay.

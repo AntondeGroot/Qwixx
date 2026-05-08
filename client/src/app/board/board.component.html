@@ -23,7 +23,7 @@
       @if (state.turnState; as turn) {
         <div class="turn-bar" [class.my-turn]="isMyTurn() || isInPassiveQueue()">
           <span class="turn-label">
-            {{ isMyTurn() ? ('yourTurn' | translate) : playerName(turn.activePlayerId) + '\'s turn' }}
+            {{ isMyTurn() ? ('yourTurn' | translate) : ('playerTurn' | translate : { name: playerName(turn.activePlayerId) }) }}
           </span>
 
           @if (turn.currentRoll || canRoll() || isInPassiveQueue()) {
@@ -45,7 +45,7 @@
             }
             @if (canPassPassive()) {
               <button class="btn-pass" (click)="passPassive()">
-                {{ hasPendingPassiveCross() ? 'Confirm' : ('pass' | translate) }}
+                {{ hasPendingPassiveCross() ? ('confirm' | translate) : ('pass' | translate) }}
               </button>
             }
           </div>

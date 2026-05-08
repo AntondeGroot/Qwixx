@@ -3,6 +3,8 @@
   "points": "Punkte",
   "punishment": "Strafpunkte",
   "yourTurn": "Du bist dran",
+  "playerTurn": "{{ name }} ist dran",
+  "confirm": "Bestätigen",
   "roll": "Würfeln",
   "pass": "Passen",
   "endTurn": "Zug beenden",

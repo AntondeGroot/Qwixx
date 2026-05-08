@@ -3,6 +3,8 @@
   "points": "Points",
   "punishment": "Points de pénalité",
   "yourTurn": "À toi de jouer",
+  "playerTurn": "C'est au tour de {{ name }}",
+  "confirm": "Confirmer",
   "roll": "Lancer",
   "pass": "Passer",
   "endTurn": "Fin du tour",

@@ -38,6 +38,15 @@ import { TranslationService } from './services/translation.service';
       right: 16px;
       z-index: 999;
     }
+
+    /* In portrait the board HTML is rotated 90° CW inside the real viewport.
+       Physical bottom-right = logical top-right of the rotated game. */
+    @media (orientation: portrait) {
+      .language-selector {
+        top: auto;
+        bottom: 16px;
+      }
+    }
   `]
 })
 export class App implements OnInit {

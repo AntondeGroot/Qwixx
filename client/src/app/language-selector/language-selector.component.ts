@@ -68,6 +68,25 @@ import { TranslationService } from '../services/translation.service';
       margin-top: 4px;
     }
 
+    @media (orientation: portrait) {
+      .language-icon {
+        transform: rotate(90deg);
+      }
+      /* Button is at physical bottom-right (= game top-right).
+         Rotate the dropdown 90° CW so items are readable from the game's perspective,
+         and anchor its top-right corner to the button's top-left edge. */
+      .dropdown {
+        top: 0;
+        right: 100%;
+        bottom: auto;
+        left: auto;
+        margin-top: 0;
+        margin-right: 4px;
+        transform: rotate(90deg);
+        transform-origin: top right;
+      }
+    }
+
     .dropdown-item {
       display: block;
       width: 100%;

@@ -7,11 +7,14 @@ import nl.adg.qwixx.e2e.utils.TestUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -265,6 +268,71 @@ public class MobileLayoutIT extends BaseIntegrationTest {
                 "Winner modal must close after clicking View Scores on mobile");
         assertTrue(ScoreInteractionHelper.isActionBarVisible(driver0),
                 "Action bar must appear after dismissing the winner modal on mobile");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Longo sheet elements on mobile
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Verifies that the Longo-specific sheet elements are all rendered and visible
+     * in a portrait (mobile) viewport:
+     *
+     *  - Right column as a whole (layout container for the sheet and HUD)
+     *  - Bonus track with bonus chips (the "extra numbers" unique to Longo)
+     *  - Lock icon for every color row
+     *  - Punishment boxes (all four)
+     *
+     * Uses a single-player Longo game so no dice roll is needed — the bonus numbers
+     * are assigned at game creation and are present in the very first game state.
+     */
+    @Test
+    void longoSheetElementsAreRenderedOnMobile() {
+        String sid = api.createGame(1, Map.of("base", "LONGO"));
+        String pid = api.getPlayerIds(sid).get(0);
+
+        driver0 = TestUtils.getPortraitDriver(sid, pid);
+        TestUtils.waitUntilBoardLoaded(driver0);
+
+        // Force --mobile-scale so all elements fit within the host's 844px clip boundary.
+        // The component's _scaleEffect computes this asynchronously after each render;
+        // we apply it directly here to make the visibility assertions deterministic.
+        ((org.openqa.selenium.JavascriptExecutor) driver0).executeScript(
+                "document.querySelector('app-board').style.setProperty('--mobile-scale','0.6')");
+        TestUtils.wait(150); // let the browser apply the zoom recalculation
+
+        // Right column must be present and have a non-zero height.
+        WebElement rightCol = driver0.findElement(By.className("right-column"));
+        assertTrue(rightCol.isDisplayed(),
+                "Right column must be displayed on mobile");
+        assertTrue(rightCol.getSize().height > 0,
+                "Right column must have positive height on mobile");
+
+        // Longo-specific: bonus track with at least one visible bonus chip.
+        WebElement bonusTrack = driver0.findElement(By.className("bonus-track"));
+        assertTrue(bonusTrack.isDisplayed(),
+                "Bonus track must be displayed on mobile for a Longo game");
+        List<WebElement> bonusChips = driver0.findElements(By.className("bonus-chip"));
+        assertFalse(bonusChips.isEmpty(),
+                "Bonus chips must be present in the bonus track for a Longo game");
+        assertTrue(bonusChips.stream().allMatch(WebElement::isDisplayed),
+                "Every bonus chip must be displayed on mobile");
+
+        // Lock icon: every color row must have a rendered, visible lock cell.
+        for (String color : List.of("RED", "YELLOW", "GREEN", "BLUE")) {
+            WebElement lockCell = driver0.findElement(By.xpath(
+                    "//section[contains(@class,'current-player')]" +
+                    "//div[@data-color='" + color + "' and contains(@class,'lock-cell')]"));
+            assertTrue(lockCell.isDisplayed(),
+                    color + " lock cell must be displayed on mobile");
+        }
+
+        // Punishment track: all four boxes must be rendered.
+        List<WebElement> punishBoxes = driver0.findElements(By.className("punishment-box"));
+        assertEquals(4, punishBoxes.size(),
+                "Must have exactly 4 punishment boxes");
+        assertTrue(punishBoxes.stream().allMatch(WebElement::isDisplayed),
+                "Every punishment box must be displayed on mobile");
     }
 
     // ─────────────────────────────────────────────────────────────────────────

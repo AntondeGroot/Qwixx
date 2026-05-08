@@ -75,11 +75,9 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   });
   private rollStartTime = 0;
 
-  // Fixed landscape design height (CSS px, derived from known element sizes).
-  // Scale = phone-portrait-width / MOBILE_DESIGN_H.  Computed once on init and
-  // on resize — never per game-state change, so the board never jumps mid-game.
-  private readonly MOBILE_DESIGN_H = 541;
-  private readonly ROLL_ANIM_MIN_MS = 2800;
+  // Fallback design height used before the game state has rendered.
+  private readonly MOBILE_DESIGN_H   = 541;
+  private readonly ROLL_ANIM_MIN_MS  = 2800;
 
   readonly emptySet  = new Set<string>();
   readonly TurnPhase = TurnPhase;
@@ -133,6 +131,13 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  // Re-measure after every game-state render so Longo's bonus chips (80px each)
+  // are accounted for — the static MOBILE_DESIGN_H only fits the standard sheet.
+  private _scaleEffect = effect(() => {
+    this.gameState(); // depend so we re-run when state arrives
+    untracked(() => setTimeout(() => this.applyMobileScale(), 0));
+  });
+
   ngAfterViewInit() {
     this.applyMobileScale();
   }
@@ -140,11 +145,30 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   @HostListener('window:resize')
   applyMobileScale() {
     const el = this.host.nativeElement as HTMLElement;
-    if (window.innerHeight > window.innerWidth) {
-      el.style.setProperty('--mobile-scale', (window.innerWidth / this.MOBILE_DESIGN_H).toFixed(4));
-    } else {
+    if (window.innerHeight <= window.innerWidth) {
       el.style.removeProperty('--mobile-scale');
+      return;
     }
+    const layout = el.querySelector('.board-layout') as HTMLElement | null;
+    if (!layout) {
+      // Game state not yet rendered — use the fallback constant.
+      el.style.setProperty('--mobile-scale',
+        Math.min((window.innerWidth - 16) / this.MOBILE_DESIGN_H, 1).toFixed(4));
+      return;
+    }
+    // Set zoom=1 so offsetHeight gives the natural, unscaled board height.
+    // Accessing offsetHeight after the style write forces a synchronous reflow,
+    // so the browser computes the layout at zoom=1 before we read the value.
+    // We then immediately apply the correct scale in the same JS task — the
+    // browser renders only once, so there is no visible flash.
+    el.style.setProperty('--mobile-scale', '1');
+    const h = layout.offsetHeight;
+    // Subtract the host's top padding (16px) from the available height so the
+    // board never scrolls past the bottom clip boundary.
+    const scale = h > 0
+      ? (window.innerWidth - 16) / h
+      : (window.innerWidth - 16) / this.MOBILE_DESIGN_H;
+    el.style.setProperty('--mobile-scale', Math.min(scale, 1).toFixed(4));
   }
 
   ngOnDestroy() {

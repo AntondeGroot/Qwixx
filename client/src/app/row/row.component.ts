@@ -13,9 +13,10 @@ export class RowComponent {
   row              = input.required<SheetRow>();
   rowState         = input<RowState | null>(null);
   closed           = input(false);
-  clickableCellIds  = input<Set<string>>(new Set());
-  showClickableCellIds = input<Set<string> | null>(null); // null = same as clickableCellIds
-  pendingCellIds    = input<Set<string>>(new Set());
+  clickableCellIds           = input<Set<string>>(new Set());
+  showClickableCellIds       = input<Set<string> | null>(null);
+  whiteWhiteClickableCellIds = input<Set<string>>(new Set());
+  pendingCellIds             = input<Set<string>>(new Set());
 
   lockClickable = input(false);
 

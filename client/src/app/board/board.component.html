@@ -62,6 +62,7 @@
                 [closed]="isRowClosed(row.id)"
                 [clickableCellIds]="isOffline() ? offlineClickableCellIds(playerId()) : visibleClickableCellIds()"
                 [showClickableCellIds]="isOffline() ? emptySet : null"
+                [whiteWhiteClickableCellIds]="isOffline() ? emptySet : whiteWhiteClickableCellIds()"
                 [pendingCellIds]="pendingCellIds()"
                 [lockClickable]="isLockEligible(playerId(), row.id)"
                 [connectorOffsetsAbove]="myRowConnectors().get(row.id)?.above ?? []"

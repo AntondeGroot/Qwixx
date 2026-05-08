@@ -11,8 +11,9 @@ export class CellComponent {
   cell        = input.required<SheetCell>();
   crossed     = input(false);
   pending     = input(false);
-  clickable   = input(false);
-  showClickable = input<boolean | undefined>(undefined); // undefined = follow clickable
+  clickable    = input(false);
+  showClickable = input<boolean | undefined>(undefined);
+  showDieHint  = input(false);
 
   clicked = output<void>();
 

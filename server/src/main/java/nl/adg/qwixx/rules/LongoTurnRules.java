@@ -58,40 +58,34 @@ public class LongoTurnRules extends StandardTurnRules {
     //    loses its locking power; from that point only the last cell can trigger a lock.
     @Override
     protected boolean canCrossLock(GameState state, UUID playerId, int rowIndex) {
-        SheetLayout   layout   = state.sheetLayouts().get(playerId);
-        SheetProgress prog     = state.boardState().sheetProgress().get(playerId);
-        Row           row      = layout.rows().get(rowIndex);
+        if (rowIsNotLockable(state, playerId, rowIndex)) return false;
 
-        if (row.lock() == null) return false;
-        LockCell  lock     = row.lock();
-        RowState  rowState = rowStateOf(prog, rowIndex);
-        if (rowState.lockCrossed()) return false;
-        if (state.boardState().closedRows().containsKey(rowIndex)) return false;
+        LockCell lock     = state.sheetLayouts().get(playerId).rows().get(rowIndex).lock();
+        RowState rowState = rowStateOf(state.boardState().sheetProgress().get(playerId), rowIndex);
         if (rowState.crossedCells().size() < lock.minCrosses()) return false;
 
-        Set<String> pendingInRow = new HashSet<>();
-        TurnState turn = state.turnState();
-        if (turn != null && turn.undoBuffer().containsKey(playerId)) {
-            pendingInRow = turn.undoBuffer().get(playerId)
-                    .getOrDefault(rowIndex, new HashSet<>());
-        }
-        Set<String> allCrosses = new HashSet<>(rowState.crossedCells());
-        allCrosses.addAll(pendingInRow);
+        Set<String> allCrosses  = allCrossesForPlayer(state, playerId, rowIndex);
+        Set<String> pendingInRow = pendingCrossesInRow(state, playerId, rowIndex);
 
-        List<String> required = lock.requiredCells();
-        String lastRequired = required.get(required.size() - 1);
+        List<String> required   = lock.requiredCells();
+        String lastRequired     = required.get(required.size() - 1);
 
         // Last required cell always enables locking (permanent or pending).
         if (allCrosses.contains(lastRequired)) return true;
 
         // Second-to-last required cell enables locking only while it is still a pending
-        // cross (crossed this turn).  Once the turn ends the undo buffer is cleared, the
-        // cell is only permanent, and this window closes — only the last cell can then lock.
+        // cross (crossed this turn).  Once the turn ends the window closes.
         if (required.size() > 1) {
             String secondLast = required.get(required.size() - 2);
             return pendingInRow.contains(secondLast);
         }
         return false;
+    }
+
+    private Set<String> pendingCrossesInRow(GameState state, UUID playerId, int rowIndex) {
+        TurnState turn = state.turnState();
+        if (turn == null || !turn.undoBuffer().containsKey(playerId)) return new HashSet<>();
+        return turn.undoBuffer().get(playerId).getOrDefault(rowIndex, new HashSet<>());
     }
 
     private void addBonusCellAction(GameState state, UUID playerId, List<GameAction> actions) {

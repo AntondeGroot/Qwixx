@@ -46,6 +46,10 @@
     "row": "row",
     "confirmQuestion": "Do you want to change your last selection?",
     "confirmButton": "Confirm last selection",
-    "changeButton": "Change last selection"
+    "changeButton": "Change last selection",
+    "okButton": "OK",
+    "selfClose": "Do you want to close this row?",
+    "yes": "Yes",
+    "no": "No"
   }
 }

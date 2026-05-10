@@ -1,3 +1,21 @@
+@if (lockConfirmRequest) {
+  <div class="modal-overlay" translate="no">
+    <div class="modal-content">
+      <div class="modal-body">
+        <div class="request-item">
+          <div [ngClass]="getRowColorClass(lockConfirmRequest.rowColor)" class="color-cell"></div>
+        </div>
+        <div class="separator"></div>
+        <p class="confirm-question">{{ 'rowClosure.selfClose' | translate }}</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="onLockNo()">{{ 'rowClosure.no' | translate }}</button>
+        <button class="btn btn-primary"   (click)="onLockYes()">{{ 'rowClosure.yes' | translate }}</button>
+      </div>
+    </div>
+  </div>
+}
+
 @if (requests.length > 0) {
   <div class="modal-overlay" translate="no">
     <div class="modal-content">
@@ -11,16 +29,24 @@
             </div>
           }
         </div>
-        <div class="separator"></div>
-        <p class="confirm-question">{{ 'rowClosure.confirmQuestion' | translate }}</p>
+        @if (hasPendingCross) {
+          <div class="separator"></div>
+          <p class="confirm-question">{{ 'rowClosure.confirmQuestion' | translate }}</p>
+        }
       </div>
       <div class="modal-actions">
-        <button class="btn btn-secondary" (click)="onChangeSelection()">
-          {{ 'rowClosure.changeButton' | translate }}
-        </button>
-        <button class="btn btn-primary" (click)="onConfirm()">
-          {{ 'rowClosure.confirmButton' | translate }}
-        </button>
+        @if (hasPendingCross) {
+          <button class="btn btn-secondary" (click)="onChangeSelection()">
+            {{ 'rowClosure.changeButton' | translate }}
+          </button>
+          <button class="btn btn-primary" (click)="onConfirm()">
+            {{ 'rowClosure.confirmButton' | translate }}
+          </button>
+        } @else {
+          <button class="btn btn-primary" (click)="onConfirm()">
+            {{ 'rowClosure.okButton' | translate }}
+          </button>
+        }
       </div>
     </div>
   </div>

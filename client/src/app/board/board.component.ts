@@ -11,8 +11,10 @@ import { GameState } from '../../generated/model/gameState';
 import { MoveRequest } from '../../generated/model/moveRequest';
 import { MoveType } from '../../generated/model/moveType';
 import { RowState } from '../../generated/model/rowState';
+import { SheetCell } from '../../generated/model/sheetCell';
 import { SheetLayout } from '../../generated/model/sheetLayout';
 import { SheetProgress } from '../../generated/model/sheetProgress';
+import { SheetRow } from '../../generated/model/sheetRow';
 import { TurnPhase } from '../../generated/model/turnPhase';
 import { DiceComponent } from '../dice/dice.component';
 import { PlayerListComponent } from '../player-list/player-list.component';
@@ -70,11 +72,13 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       this.rowClosureModal.show(
         requests,
         () => this.onConfirmRowClosure(),
-        () => this.onChangeRowClosure()
+        () => this.onChangeRowClosure(),
+        this.hasPendingPassiveCross()
       );
     }
   });
   private rollStartTime = 0;
+  private pendingAutoLock: { rowId: string; autoLock: boolean } | null = null;
 
   // Fallback design height used before the game state has rendered.
   private readonly MOBILE_DESIGN_H   = 541;
@@ -421,30 +425,67 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const turn  = this.turnState();
     if (!state || !turn?.currentRoll) return;
 
+    const pid    = this.playerId();
+    const layout = state.sheetLayouts[pid];
+    const row    = layout?.rows.find(r => r.id === rowId);
+    const cell   = row?.cells.find(c => c.id === cellId);
+
+    // LONGO: second-to-last required cell → ask before crossing (may become part of a lock).
+    if (row && cell?.closingEligible && (row.lock?.requiredCells?.length ?? 0) > 1) {
+      const secondToLastId = row.lock!.requiredCells[row.lock!.requiredCells.length - 2];
+      if (cell.id === secondToLastId) {
+        const req = this.buildCrossMoveRequest(row, cell, rowId, cellId);
+        if (req) {
+          const rowColor = (row.lock!.color ?? row.cells[0]?.color) as Color;
+          this.rowClosureModal.showLockConfirm(
+            rowColor,
+            () => { this.rowClosureModal.clearLockConfirm(); this.sendMove(req); },
+            () => this.rowClosureModal.clearLockConfirm()
+          );
+        }
+        return;
+      }
+    }
+
+    // Last (or only) eligible cell: set up auto-lock after the cross is applied.
+    if (row && cell?.closingEligible && row.lock) {
+      this.pendingAutoLock = this.computePendingAutoLock(row, cell);
+    }
+
     // Passive players may only use white+white — skip move-type computation entirely.
     if (this.isInPassiveQueue()) {
       this.sendMove({ moveType: MoveType.CROSS_WHITE_WHITE, rowId, cellId });
       return;
     }
 
-    const pid    = this.playerId();
-    const layout = state.sheetLayouts[pid];
-    const row    = layout?.rows.find(r => r.id === rowId);
-    const cell   = row?.cells.find(c => c.id === cellId);
     if (!cell || !row) return;
 
+    const req = this.buildCrossMoveRequest(row, cell, rowId, cellId);
+    if (req) {
+      this.sendMove(req);
+    } else if (this.clickableCellIds().has(cellId)) {
+      // Cell is valid (e.g. Longo bonus cross) but its display value doesn't match
+      // any dice combination directly — treat it as a white+white cross.
+      this.sendMove({ moveType: MoveType.CROSS_WHITE_WHITE, rowId, cellId });
+    }
+  }
+
+  private buildCrossMoveRequest(row: SheetRow, cell: SheetCell, rowId: string, cellId: string): MoveRequest | null {
+    if (this.isInPassiveQueue()) {
+      return { moveType: MoveType.CROSS_WHITE_WHITE, rowId, cellId };
+    }
+    const turn = this.turnState();
+    if (!turn?.currentRoll) return null;
     const roll      = turn.currentRoll;
     const cellValue = parseInt(cell.displayValue);
     const rowColor  = row.cells[0]?.color as Color;
     const colorVal  = roll.coloredDice[rowColor] ?? null;
-
     const isWW    = cellValue === roll.white1 + roll.white2 && !turn.whiteWhiteUsed;
     const isColor = colorVal != null &&
       (cellValue === roll.white1 + colorVal || cellValue === roll.white2 + colorVal) &&
       !turn.colorDieUsed;
-
-    const moveType = (isColor && !isWW) ? MoveType.CROSS_COLOR_DIE : MoveType.CROSS_WHITE_WHITE;
-    this.sendMove({ moveType, rowId, cellId });
+    if (!isWW && !isColor) return null;
+    return { moveType: (isColor && !isWW) ? MoveType.CROSS_COLOR_DIE : MoveType.CROSS_WHITE_WHITE, rowId, cellId };
   }
 
   canTakePunishment(pid: string): boolean {
@@ -528,6 +569,67 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     return false;
   }
 
+  private computePendingAutoLock(row: SheetRow, cell: SheetCell): { rowId: string; autoLock: boolean } | null {
+    if (!this.wouldEnableLockDeclaration(row, cell.id)) return null;
+    // The backend always places required cells as [second, last] in order.
+    // Auto-close only for the last required cell; the second-to-last shows a confirmation modal.
+    // Using requiredCells ordering (not cell.position) makes this robust to randomOrder mode.
+    const requiredCells = row.lock!.requiredCells;
+    const lastRequiredId = requiredCells[requiredCells.length - 1];
+    const autoLock = cell.id === lastRequiredId;
+    return { rowId: row.id, autoLock };
+  }
+
+  private wouldEnableLockDeclaration(row: SheetRow, newCellId: string): boolean {
+    const state = this.gameState();
+    if (!state || !row.lock) return false;
+    const pid       = this.playerId();
+    const permanent = new Set(state.sheetProgress[pid]?.rowStates[row.id]?.crossedCells ?? []);
+    const pending   = new Set([...this.pendingCellIds(), newCellId]);
+    const all       = new Set([...permanent, ...pending]);
+    return row.lock.requiredCells.every(id => all.has(id));
+  }
+
+  private canDeclareLockForRow(s: GameState, rowId: string): boolean {
+    const pid      = this.playerId();
+    const row      = s.sheetLayouts?.[pid]?.rows.find(r => r.id === rowId);
+    if (!row?.lock) return false;
+    if ((s.closedRows ?? {})[rowId]) return false;
+    const rowState = s.sheetProgress?.[pid]?.rowStates?.[rowId];
+    if (rowState?.lockCrossed) return false;
+    const permanent = new Set(rowState?.crossedCells ?? []);
+    const pending   = new Set(s.turnState?.pendingCrosses?.[pid] ?? []);
+    const all       = new Set([...permanent, ...pending]);
+    return row.lock.requiredCells.every(id => all.has(id));
+  }
+
+  private checkPendingAutoLock(s: GameState) {
+    if (!this.pendingAutoLock) return;
+    // A new turn or game-over means the cross was never persisted; discard.
+    if (s.gameOver || s.turnState?.phase === TurnPhase.ROLL) {
+      this.pendingAutoLock = null;
+      return;
+    }
+    const { rowId, autoLock } = this.pendingAutoLock;
+    if (!this.canDeclareLockForRow(s, rowId)) return; // cross not yet reflected; wait
+    this.pendingAutoLock = null;
+
+    if (autoLock) {
+      this.sendMove({ moveType: MoveType.DECLARE_LOCK_INTENT, rowId });
+    } else {
+      const row      = s.sheetLayouts?.[this.playerId()]?.rows.find(r => r.id === rowId);
+      const rowColor = (row?.lock?.color ?? row?.cells[0]?.color) as Color;
+      this.rowClosureModal.showLockConfirm(
+        rowColor,
+        () => {
+          this.rowClosureModal.clearLockConfirm();
+          this.sendMove({ moveType: MoveType.DECLARE_LOCK_INTENT, rowId });
+        },
+        () => this.rowClosureModal.clearLockConfirm()
+      );
+    }
+  }
+
   private sendMoveAs(pid: string, req: MoveRequest) {
     if (this.moveSub && !this.moveSub.closed) {
       // A previous request is still in flight — cancel it but refresh state immediately
@@ -579,6 +681,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       }, remaining);
     } else {
       this.gameState.set(s);
+      this.checkPendingAutoLock(s);
     }
   }
 

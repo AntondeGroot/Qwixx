@@ -525,22 +525,14 @@ public class LockMechanismIT extends BaseIntegrationTest {
         assertTrue(BoardInteractionHelper.isModalVisible(driver1),
                 "Player1 should see the row-closure modal after player0 declares BLUE lock intent");
 
-        // === Part 5: player1 dismisses the modal and crosses the BLUE closing cell ===
-        // Player1 has no pending cross yet — clicking "Change" dismisses the modal
-        // so they can pick a cell on the board.
-        BoardInteractionHelper.clickModalChangeButton(driver1);
-        TestUtils.wait(500);
-        assertFalse(BoardInteractionHelper.isModalVisible(driver1),
-                "Modal should be dismissed after clicking 'Change' (no pending cross)");
+        // === Part 5: player1 acknowledges via the OK button ===
+        // Player1 has no pending cross — the modal now shows a single "OK" button that
+        // sends EndTurnAction (acknowledgement) directly, closing the BLUE row.
+        BoardInteractionHelper.clickModalConfirmButton(driver1);
 
-        // Player1 crosses the BLUE closing cell ("2", reachable via white+white = 1+1).
-        BoardInteractionHelper.clickCellByValue(driver1, "BLUE", "2");
-
-        // === Part 6: BLUE row must close — the modal must NOT re-appear ===
-        // Bug: suppressModal=true but pendingCellIds>0 → suppress=false → modal shows again.
+        // === Part 6: BLUE row must close after acknowledgement ===
         assertFalse(BoardInteractionHelper.isModalVisible(driver1),
-                "Modal must NOT re-appear after player1 crosses the locking row — "
-                + "crossing the closing cell should acknowledge the lock, not re-trigger the modal");
+                "Modal must be gone after player1 acknowledges via OK");
 
         // The waits below both guarantee the row was closed — no separate assertTrue
         // is needed.  Checking isRowClosed() again after the driver0 wait would race

@@ -68,6 +68,7 @@ describe('RowClosureModalComponent', () => {
       emitted = true;
     });
     component.requests = [{ playerName: 'Player A', rowColor: Color.RED }];
+    component.hasPendingCross = true;  // Change button only shown when there is a pending cross
     fixture.detectChanges();
     const changeBtn = fixture.nativeElement.querySelector('.btn-secondary');
     changeBtn.click();
@@ -136,14 +137,19 @@ describe('RowClosureModalComponent', () => {
     expect(items.length).toBe(4);
   });
 
-  it('should have disabled buttons initially', () => {
-    const requests: RowClosureRequest[] = [
-      { playerName: 'Player A', rowColor: Color.RED }
-    ];
-    component.requests = requests;
+  it('should show one button when there is no pending cross', () => {
+    component.requests = [{ playerName: 'Player A', rowColor: Color.RED }];
+    component.hasPendingCross = false;
     fixture.detectChanges();
     const buttons = fixture.nativeElement.querySelectorAll('.btn');
-    // Buttons should exist and be clickable
+    expect(buttons.length).toBe(1);
+  });
+
+  it('should show two buttons when there is a pending cross', () => {
+    component.requests = [{ playerName: 'Player A', rowColor: Color.RED }];
+    component.hasPendingCross = true;
+    fixture.detectChanges();
+    const buttons = fixture.nativeElement.querySelectorAll('.btn');
     expect(buttons.length).toBe(2);
   });
 

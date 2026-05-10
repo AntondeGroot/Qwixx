@@ -25,10 +25,11 @@
     <div class="lock-cell"
          [attr.data-color]="row().cells[0]?.color"
          [class.lock-crossed]="rowState()?.lockCrossed"
-         [class.lock-closed]="closed()"
-         [class.lock-clickable]="lockClickable() && !rowState()?.lockCrossed && !closed()"
-         (click)="lockClickable() && !rowState()?.lockCrossed && !closed() && lockClicked.emit()">
+         [class.lock-closed]="closed()">
       <img src="lock_icon.svg" alt="lock" class="lock-icon" />
+      @if (rowState()?.lockCrossed || (row().lock && pendingCellIds().has(row().lock.requiredCells[row().lock.requiredCells.length - 1]))) {
+        <span class="cell-cross">✕</span>
+      }
     </div>
   </div>
 </div>

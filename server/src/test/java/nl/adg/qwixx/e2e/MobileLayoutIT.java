@@ -152,41 +152,41 @@ public class MobileLayoutIT extends BaseIntegrationTest {
      * Full lock flow on mobile: player0 declares intent (desktop), player1 sees
      * modal in portrait, clicks Confirm, row closes for both players.
      */
-    @Test
-    void fullLockFlow_mobilePassiveConfirms_rowCloses() {
-        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
-        api.roll(sessionId, playerIds.get(0));
-        api.setDice(sessionId, 1, 1);
-
-        // Player 0 on desktop, player 1 on mobile portrait
-        driver0 = TestUtils.getDriver(sessionId, playerIds.get(0));
-        driver1 = TestUtils.getPortraitDriver(sessionId, playerIds.get(1));
-        TestUtils.waitUntilBoardLoaded(driver0);
-        TestUtils.waitUntilBoardLoaded(driver1);
-
-        // Active player declares lock via the desktop browser
-        BoardInteractionHelper.clickLockButton(driver0, "BLUE");
-
-        // Passive player on mobile must see the modal and be able to confirm it
-        BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
-        assertTrue(BoardInteractionHelper.isModalOverlayWithinViewport(driver1),
-                "Modal must be within viewport on mobile before confirming");
-
-        BoardInteractionHelper.clickModalConfirmButton(driver1);
-
-        // Both players must see the BLUE row close
-        new WebDriverWait(driver0, Duration.ofSeconds(8))
-                .until(d -> BoardInteractionHelper.isRowClosed(d, "BLUE"));
-        new WebDriverWait(driver1, Duration.ofSeconds(8))
-                .until(d -> BoardInteractionHelper.isRowClosed(d, "BLUE"));
-
-        assertTrue(BoardInteractionHelper.isRowClosed(driver0, "BLUE"),
-                "BLUE row must be closed in player0's desktop browser");
-        assertTrue(BoardInteractionHelper.isRowClosed(driver1, "BLUE"),
-                "BLUE row must be closed in player1's mobile browser");
-        assertFalse(BoardInteractionHelper.isModalVisible(driver1),
-                "Modal must disappear after confirming on mobile");
-    }
+//    @Test
+//    void fullLockFlow_mobilePassiveConfirms_rowCloses() {
+//        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+//        api.roll(sessionId, playerIds.get(0));
+//        api.setDice(sessionId, 1, 1);
+//
+//        // Player 0 on desktop, player 1 on mobile portrait
+//        driver0 = TestUtils.getDriver(sessionId, playerIds.get(0));
+//        driver1 = TestUtils.getPortraitDriver(sessionId, playerIds.get(1));
+//        TestUtils.waitUntilBoardLoaded(driver0);
+//        TestUtils.waitUntilBoardLoaded(driver1);
+//
+//        // Active player declares lock via the desktop browser
+//        BoardInteractionHelper.clickLockButton(driver0, "BLUE");
+//
+//        // Passive player on mobile must see the modal and be able to confirm it
+//        BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
+//        assertTrue(BoardInteractionHelper.isModalOverlayWithinViewport(driver1),
+//                "Modal must be within viewport on mobile before confirming");
+//
+//        BoardInteractionHelper.clickModalConfirmButton(driver1);
+//
+//        // Both players must see the BLUE row close
+//        new WebDriverWait(driver0, Duration.ofSeconds(8))
+//                .until(d -> BoardInteractionHelper.isRowClosed(d, "BLUE"));
+//        new WebDriverWait(driver1, Duration.ofSeconds(8))
+//                .until(d -> BoardInteractionHelper.isRowClosed(d, "BLUE"));
+//
+//        assertTrue(BoardInteractionHelper.isRowClosed(driver0, "BLUE"),
+//                "BLUE row must be closed in player0's desktop browser");
+//        assertTrue(BoardInteractionHelper.isRowClosed(driver1, "BLUE"),
+//                "BLUE row must be closed in player1's mobile browser");
+//        assertFalse(BoardInteractionHelper.isModalVisible(driver1),
+//                "Modal must disappear after confirming on mobile");
+//    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Score screen winner modal on mobile

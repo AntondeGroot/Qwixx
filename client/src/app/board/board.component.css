@@ -22,10 +22,11 @@
 
 .board-layout {
   display: grid;
-  grid-template-columns: 200px auto 1fr;
+  grid-template-columns: 200px auto 100px;
   gap: 16px;
   align-items: start;
-  max-width: 1200px;
+  width: fit-content;
+  max-width: 100%;
   margin: 0 auto;
 }
 
@@ -86,15 +87,22 @@
 }
 
 .btn-roll {
-  padding: 8px 20px;
+  width: 72px;
+  height: 72px;
   background: #1565c0;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 14px;
   font-size: 14px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.btn-roll:hover:not(:disabled) {
+  background: #0d47a1;
+  transform: scale(1.06);
 }
 
 .btn-roll:disabled {
@@ -102,15 +110,69 @@
   cursor: not-allowed;
 }
 
-.btn-pass {
-  padding: 8px 16px;
+.confirm-panel {
   background: white;
-  color: #555;
-  border: 2px solid #ccc;
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: inherit;
+  border-radius: 12px;
+  border: 2px solid #e0e0e0;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-confirm {
+  width: 72px;
+  height: 72px;
+  background: #43a047;
+  border: none;
+  border-radius: 14px;
+  font-size: 38px;
+  color: white;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.btn-confirm:hover {
+  background: #388e3c;
+  transform: scale(1.06);
+}
+
+.btn-pass-arrow {
+  width: 72px;
+  height: 72px;
+  background: #f9a825;
+  border: none;
+  border-radius: 14px;
+  font-size: 32px;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.btn-pass-arrow:hover {
+  background: #f57f17;
+  transform: scale(1.06);
+}
+
+.confirm-check-icon {
+  width: 42px;
+  height: 42px;
+  fill: #a5d6a7;
+}
+
+.pass-arrow-icon {
+  width: 40px;
+  height: 40px;
+  transform: rotate(180deg);
+  fill: #fde08a;
 }
 
 

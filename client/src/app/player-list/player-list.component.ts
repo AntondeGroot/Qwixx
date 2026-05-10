@@ -4,6 +4,8 @@ import { Player } from '../../generated/model/player';
 import { SheetLayout } from '../../generated/model/sheetLayout';
 import { SheetProgress } from '../../generated/model/sheetProgress';
 import { SheetRow } from '../../generated/model/sheetRow';
+import { TurnPhase } from '../../generated/model/turnPhase';
+import { TurnState } from '../../generated/model/turnState';
 
 @Component({
   selector: 'app-player-list',
@@ -15,6 +17,7 @@ export class PlayerListComponent {
   players        = input.required<Player[]>();
   myPlayerId     = input.required<string>();
   activePlayerId = input<string | null>(null);
+  turnState      = input<TurnState | null>(null);
   sheetLayouts   = input<Record<string, SheetLayout>>({});
   sheetProgress  = input<Record<string, SheetProgress>>({});
   closedRows     = input<Record<string, string>>({});
@@ -25,6 +28,25 @@ export class PlayerListComponent {
 
   isActive(pid: string): boolean {
     return pid === this.activePlayerId();
+  }
+
+  shouldShowPip(pid: string): boolean {
+    const turn = this.turnState();
+    if (!turn) return false;
+    if (pid === turn.activePlayerId) return true;
+    const phase = turn.phase;
+    return phase === TurnPhase.ACTIVE_MOVE
+        || phase === TurnPhase.PASSIVE_MOVE
+        || phase === TurnPhase.LOCK_PENDING;
+  }
+
+  playerHasActed(pid: string): boolean {
+    const turn = this.turnState();
+    if (!turn) return false;
+    if (pid === turn.activePlayerId) {
+      return turn.phase !== TurnPhase.ROLL && turn.phase !== TurnPhase.ACTIVE_MOVE;
+    }
+    return !(turn.passivePlayerQueue ?? []).includes(pid);
   }
 
   rowsFor(pid: string): SheetRow[] {

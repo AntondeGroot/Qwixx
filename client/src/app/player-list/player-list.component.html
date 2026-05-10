@@ -13,8 +13,12 @@
         <span class="player-name" [class.active-name]="isActive(player.id)">
           {{ player.name }}
         </span>
-        @if (isActive(player.id)) {
-          <span class="turn-pip"></span>
+        @if (shouldShowPip(player.id)) {
+          @if (playerHasActed(player.id)) {
+            <span class="turn-done">✓</span>
+          } @else {
+            <span class="turn-pip"></span>
+          }
         }
       </div>
 

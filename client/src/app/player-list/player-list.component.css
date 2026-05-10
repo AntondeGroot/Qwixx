@@ -87,6 +87,22 @@
   box-shadow: 0 0 4px rgba(249, 168, 37, 0.8);
 }
 
+.turn-done {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #43a047;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+  box-shadow: 0 0 4px rgba(67, 160, 71, 0.6);
+}
+
 /* ── Mini sheet ──────────────────────────────────────────────── */
 
 .mini-sheet {

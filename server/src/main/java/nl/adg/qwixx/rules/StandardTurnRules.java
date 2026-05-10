@@ -110,19 +110,28 @@ public class StandardTurnRules implements TurnRules {
             if (isActive) actions.add(new GiveUpAction(playerId));
             actions.add(new ResetTurnAction(playerId));
         } else if (!turn.lockAcknowledged().contains(playerId)) {
-            if (TurnHelper.hasPendingCross(turn, playerId)) {
-                // Passive already crossed — offer undo so they can reconsider before deciding.
-                actions.add(new UndoLastCrossAction(playerId));
+            if (isActive) {
+                // Active player (non-declarant) retains full active options while in LOCK_PENDING:
+                // they may still use white+white and/or the color die before acknowledging.
+                addReachableCells(state, playerId, actions, true);
+                if (TurnHelper.hasPendingCross(turn, playerId)) {
+                    actions.add(new UndoLastCrossAction(playerId));
+                }
+                // EndTurn is always available — it is the acknowledgement for the active player.
+                actions.add(new EndTurnAction(playerId));
+                actions.add(new GiveUpAction(playerId));
             } else {
-                // No cross yet — offer white+white cells so the player can act or pass.
-                addReachableCells(state, playerId, actions, false);
+                // Passive non-declarant: white+white only (unchanged behavior).
+                if (TurnHelper.hasPendingCross(turn, playerId)) {
+                    actions.add(new UndoLastCrossAction(playerId));
+                } else {
+                    addReachableCells(state, playerId, actions, false);
+                }
+                actions.add(new EndTurnAction(playerId));
+                if (canCrossLock(state, playerId, turn.pendingLockRowIndex())) {
+                    actions.add(new CrossLockAction(playerId, turn.pendingLockRowIndex()));
+                }
             }
-            actions.add(new EndTurnAction(playerId));
-            if (canCrossLock(state, playerId, turn.pendingLockRowIndex())) {
-                actions.add(new CrossLockAction(playerId, turn.pendingLockRowIndex()));
-            }
-            // Active player can give up (counts as acknowledging the passive's lock intent)
-            if (isActive) actions.add(new GiveUpAction(playerId));
         }
         return actions;
     }
@@ -183,16 +192,22 @@ public class StandardTurnRules implements TurnRules {
         if (state.boardState().closedRows().containsKey(action.rowIndex()))
             throw new IllegalMoveException("row is closed");
 
-        if (isActive) {
-            requirePhase(turn, TurnPhase.ACTIVE_MOVE);
-        } else {
+        boolean actingAsPassive = !isActive;
+
+        if (actingAsPassive) {
             requirePassiveMayCrossCell(turn, playerId);
+        } else {
+            // Declarant in LOCK_PENDING must use CrossLockAction, not CrossCellAction.
+            if (turn.phase() == TurnPhase.LOCK_PENDING && playerId.equals(turn.pendingLockDeclarerId()))
+                throw new IllegalMoveException("declarant must use CrossLockAction in LOCK_PENDING");
+            if (turn.phase() != TurnPhase.ACTIVE_MOVE && turn.phase() != TurnPhase.LOCK_PENDING)
+                throw new IllegalMoveException("expected phase ACTIVE_MOVE or LOCK_PENDING but was " + turn.phase());
         }
 
         Map<Integer, Set<String>> crossed = crossCellWithAutoTags(state, playerId, action.rowIndex(), action.cellId());
         turn.undoBuffer().put(playerId, crossed);
 
-        if (isActive) {
+        if (!actingAsPassive) {
             recordActiveDiceUsage(turn.activeTurnState(), action.combination());
         } else {
             turn.passivesActed().add(playerId);
@@ -332,6 +347,11 @@ public class StandardTurnRules implements TurnRules {
 
         turn.undoBuffer().remove(playerId);
         turn.passivesActed().remove(playerId); // cross is undone — player may act again
+        // For the active player, also reset the active-turn die-usage flags so they
+        // can re-cross with the same combination after undoing.
+        if (playerId.equals(turn.activePlayerId()) && turn.activeTurnState() != null) {
+            turn.activeTurnState().reset();
+        }
     }
 
     private void applyGiveUp(GameState state, GiveUpAction action) {

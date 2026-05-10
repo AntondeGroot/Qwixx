@@ -686,6 +686,101 @@ class LongoTurnRulesTest {
                 "Longo '15': 6 normal, 6+1=7 = minCrosses → must be offered");
     }
 
+    // ── Passive declares lock intent for a LONGO row ─────────────────────────
+    //
+    // The lock mechanism is identical for LONGO rows: once the passive's conditions
+    // are met the active must acknowledge, after which the row closes globally.
+
+    @Test
+    void passiveDeclares_longoRow_activeAcknowledges_closesRow() {
+        GameState state = stateAfterRoll(p1, p1, p2);
+        crossOnlyLastCell(state, p2, 0);  // p2 has enough crosses via last-cell only
+        rules.apply(state, new DeclareLockIntentAction(p2, 0));
+
+        assertEquals(TurnPhase.LOCK_PENDING, state.turnState().phase(),
+                "game must enter LOCK_PENDING after passive declares lock intent for a LONGO row");
+        assertTrue(state.turnState().passivePlayerQueue().contains(p1),
+                "active player must be placed in the acknowledgement queue");
+
+        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p1));
+
+        assertTrue(state.boardState().closedRows().containsKey(0),
+                "LONGO row must close once the active player acknowledges the passive's lock");
+        assertEquals(TurnPhase.ROLL, state.turnState().phase(),
+                "turn must advance to ROLL after the LONGO lock closes");
+    }
+
+    @Test
+    void passiveDeclares_longoRow_activeCanCrossBeforeAcknowledging() {
+        GameState state = stateAfterRoll(p1, p1, p2);
+        crossOnlyLastCell(state, p2, 0);
+        rules.apply(state, new DeclareLockIntentAction(p2, 0));
+
+        nl.adg.qwixx.action.CrossCellAction cross = rules.getValidActions(state, p1).stream()
+                .filter(a -> a instanceof nl.adg.qwixx.action.CrossCellAction)
+                .map(a -> (nl.adg.qwixx.action.CrossCellAction) a)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no cross action for p1 in LOCK_PENDING"));
+
+        rules.apply(state, cross);
+        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p1));  // EndTurn acknowledges
+
+        nl.adg.qwixx.state.RowState rs = state.boardState().sheetProgress().get(p1)
+                .rowStates().getOrDefault(cross.rowIndex(),
+                        new nl.adg.qwixx.state.RowState(Set.of(), false));
+        assertTrue(rs.crossedCells().contains(cross.cellId()),
+                "active player's cross must be preserved after the LONGO lock closes");
+        assertTrue(state.boardState().closedRows().containsKey(0),
+                "LONGO row must close after the active player acknowledges via EndTurn");
+    }
+
+    // ── Bonus cross: cell display value ≠ white+white sum ────────────────────
+    //
+    // Regression guard: the server must accept a WHITE_WHITE cross for a bonus cell
+    // even when the cell's display value does NOT equal the dice white+white sum.
+    // (The frontend sends CROSS_WHITE_WHITE for bonus cells regardless of display value.)
+
+    @Test
+    void bonusCross_serverAcceptsWhiteWhiteCrossWhenDisplayValueDiffersFromDiceSum() {
+        // Fixed dice: white1=3, white2=4 → white sum=7.
+        // Bonus number = 7. Row 0 (RED ascending) starts at "2".
+        // The bonus cell is the first uncrossed cell (displayValue="2"), which ≠ 7.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        state.setVariantData(new LongoVariantData(Map.of(p1, List.of(7))));
+
+        SheetLayout layout     = state.sheetLayouts().get(p1);
+        String      bonusCellId = layout.rows().get(0).cells().get(0).id(); // displayValue "2"
+
+        // The server must accept this — it's a valid bonus cross even though "2" ≠ 7.
+        assertDoesNotThrow(
+                () -> rules.apply(state, new CrossCellAction(p1, 0, bonusCellId, DiceCombination.WHITE_WHITE)),
+                "server must accept WHITE_WHITE cross for a bonus cell even when displayValue ≠ white+white sum");
+
+        assertTrue(state.boardState().sheetProgress().get(p1)
+                           .rowStates().get(0).crossedCells().contains(bonusCellId),
+                "bonus cell must be crossed after the action is applied");
+    }
+
+    @Test
+    void bonusCross_setsWhiteWhiteUsedSoItCannotBeUsedAgain() {
+        // After a bonus cross, the white+white slot is consumed — no second cross allowed.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        state.setVariantData(new LongoVariantData(Map.of(p1, List.of(7))));
+
+        SheetLayout layout     = state.sheetLayouts().get(p1);
+        String      bonusCellId = layout.rows().get(0).cells().get(0).id();
+        rules.apply(state, new CrossCellAction(p1, 0, bonusCellId, DiceCombination.WHITE_WHITE));
+
+        assertTrue(state.turnState().activeTurnState().whiteWhiteUsed(),
+                "whiteWhiteUsed must be set after a bonus cross");
+
+        // Attempting a second WHITE_WHITE cross must be rejected.
+        String secondCellId = layout.rows().get(0).cells().get(1).id(); // displayValue "3"
+        assertThrows(IllegalMoveException.class,
+                () -> rules.apply(state, new CrossCellAction(p1, 0, secondCellId, DiceCombination.WHITE_WHITE)),
+                "a second white+white cross must be rejected after the bonus cross");
+    }
+
     private Random fixedRandom() {
         return rollSequence(2, 3, 1, 2, 3, 4); // → white1=3, white2=4, ..., blue=5
     }

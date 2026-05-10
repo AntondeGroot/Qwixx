@@ -33,6 +33,7 @@
 }
 
 .lock-cell {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -43,10 +44,10 @@
   flex-shrink: 0;
 }
 
-.lock-cell[data-color="RED"]    { background: #d32f2f; }
-.lock-cell[data-color="YELLOW"] { background: #f9a825; }
-.lock-cell[data-color="GREEN"]  { background: #388e3c; }
-.lock-cell[data-color="BLUE"]   { background: #1565c0; }
+.lock-cell[data-color="RED"]    { background: #d32f2f; color: white; }
+.lock-cell[data-color="YELLOW"] { background: #f9a825; color: #333; }
+.lock-cell[data-color="GREEN"]  { background: #388e3c; color: white; }
+.lock-cell[data-color="BLUE"]   { background: #1565c0; color: white; }
 
 .lock-icon {
   width: 22px;
@@ -56,8 +57,25 @@
   transition: opacity 0.15s;
 }
 
-.lock-cell.lock-crossed .lock-icon {
-  opacity: 1;
+.lock-cell.lock-crossed::before,
+.lock-cell.lock-crossed::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 62%;
+  height: 3px;
+  background: currentColor;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.lock-cell.lock-crossed::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.lock-cell.lock-crossed::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 .lock-cell.lock-clickable {

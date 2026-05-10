@@ -112,6 +112,31 @@ class ConnectedCellsTest {
         assertEquals(1, rowCrossed(state, p1, 1).size(), "row 1 should have exactly one cross");
     }
 
+    @Test
+    void autoCrossIsSkippedWhenTargetRowIsClosed() {
+        // Row 1 is already closed.  Crossing cellA (row 0) would normally auto-cross
+        // cellB (row 1), but since row 1 is closed the auto-cross must be silently skipped
+        // — neither an exception nor a corrupt state.
+        List<Row> rows = buildStandardRows();
+        Cell cellA = rows.get(0).cells().get(4); // pos 4, dv "6"
+        Cell cellB = rows.get(1).cells().get(3); // pos 3, dv "5"
+        cellA.setTags(List.of(new CellTag.AutoCross(cellB.id())));
+        cellB.setTags(List.of(new CellTag.AutoCross(cellA.id())));
+
+        GameState state = buildStateInRoll(rows, p1);
+        state.boardState().closedRows().put(1, p1);  // row 1 already closed
+
+        rules.apply(state, new RollAction(p1));
+        assertDoesNotThrow(
+                () -> rules.apply(state, new CrossCellAction(p1, 0, cellA.id(), DiceCombination.WHITE_COLOR)),
+                "crossing a cell whose auto-cross target is in a closed row must not throw");
+
+        assertTrue(rowCrossed(state, p1, 0).contains(cellA.id()),
+                "source cell must still be crossed");
+        assertFalse(rowCrossed(state, p1, 1).contains(cellB.id()),
+                "target cell in the closed row must NOT be crossed");
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------

@@ -16,8 +16,12 @@ import { TranslationService } from './services/translation.service';
            not the board's CSS transform (which would break it on mobile). -->
       <app-row-closure-modal
         [requests]="modal.requests()"
+        [hasPendingCross]="modal.hasPendingCross()"
+        [lockConfirmRequest]="modal.lockConfirmRequest()"
         (confirmSelection)="modal.confirmFn?.()"
-        (changeSelection)="modal.changeFn?.()">
+        (changeSelection)="modal.changeFn?.()"
+        (lockYes)="modal.lockConfirmYesFn?.()"
+        (lockNo)="modal.lockConfirmNoFn?.()">
       </app-row-closure-modal>
     </div>
   `,

@@ -84,14 +84,21 @@ public class BoardInteractionHelper {
     // ── Lock cell ──────────────────────────────────────────────────────────────
 
     /** Clicks the lock cell for the given row color. */
-    public static void clickLockButton(WebDriver driver, String rowColor) {
-        driver.findElement(lockCellLocator(rowColor)).click();
-    }
+//    public static void clickLockButton(WebDriver driver, String rowColor) {
+//        driver.findElement(lockCellLocator(rowColor)).click();
+//    }
 
     /** Returns true if the lock cell has the {@code lock-clickable} CSS class. */
-    public static boolean isLockButtonClickable(WebDriver driver, String rowColor) {
-        String classes = driver.findElement(lockCellLocator(rowColor)).getAttribute("class");
-        return classes != null && classes.contains("lock-clickable");
+//    public static boolean isLockButtonClickable(WebDriver driver, String rowColor) {
+//        String classes = driver.findElement(lockCellLocator(rowColor)).getAttribute("class");
+//        return classes != null && classes.contains("lock-clickable");
+//    }
+
+    public static boolean isLockButtonCrossed(WebDriver driver, String rowColor) {
+        By spanLocator = By.xpath(
+                SHEET + "//div[@data-color='" + rowColor + "' and contains(@class,'lock-cell')]"
+                        + "//span[contains(@class,'cell-cross')]");
+        return !driver.findElements(spanLocator).isEmpty();
     }
 
     private static By lockCellLocator(String rowColor) {

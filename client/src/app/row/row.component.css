@@ -57,38 +57,12 @@
   transition: opacity 0.15s;
 }
 
-.lock-cell.lock-crossed::before,
-.lock-cell.lock-crossed::after {
-  content: '';
+.lock-cell .cell-cross {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 62%;
-  height: 3px;
-  background: currentColor;
-  border-radius: 2px;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
   pointer-events: none;
-}
-
-.lock-cell.lock-crossed::before {
-  transform: translate(-50%, -50%) rotate(45deg);
-}
-
-.lock-cell.lock-crossed::after {
-  transform: translate(-50%, -50%) rotate(-45deg);
-}
-
-.lock-cell.lock-clickable {
-  cursor: pointer;
-  filter: brightness(1.1);
-}
-
-.lock-cell.lock-clickable:hover {
-  filter: brightness(1.2);
-}
-
-.lock-cell.lock-clickable .lock-icon {
-  opacity: 0.9;
 }
 
 .auto-cross-line {

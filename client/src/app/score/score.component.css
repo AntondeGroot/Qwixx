@@ -20,9 +20,32 @@
     overflow-x: hidden;
     transform: rotate(90deg);
     transform-origin: 50% 50%;
-    padding: 1rem;
+    /* Tighter padding so more vertical space is available for player rows.
+       host DOM height = 100dvw ≈ 390 px; 5 rows × 48 px + chrome must fit. */
+    padding: 0.5rem 0.75rem;
   }
 
+  /* Compact title — frees ~32 px compared with the landscape default */
+  .title {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Reduce score-table inner breathing room */
+  .score-table {
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* Reduce the gap below the column-header row */
+  .header-row {
+    padding-bottom: 0.5rem;
+    margin-bottom: 0;
+  }
+
+  /* Re-anchor the action bar bleed to the tighter portrait host padding */
+  .action-bar {
+    margin: -0.5rem -0.75rem 0.5rem;
+  }
 }
 
 .loading {

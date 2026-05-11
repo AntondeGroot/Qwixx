@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { afterEveryRender, Component, computed, DestroyRef, ElementRef, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../environments/environment';
 import { firstValueFrom, interval, EMPTY, of } from 'rxjs';
@@ -41,8 +41,72 @@ export class ScoreComponent implements OnInit {
   private gameStatesService = inject(GamestatesService);
   private playersService    = inject(PlayersService);
   private destroyRef        = inject(DestroyRef);
+  private readonly _host    = inject(ElementRef<HTMLElement>);
 
-  private readonly ROW_H = 80;  // px — keep in sync with CSS
+  // Measured row stride — updated after every render by _measureRowH().
+  // Defaults to 80 (the landscape value) so the first render is correct on desktop.
+  private readonly _rowH = signal(80);
+
+  // After every render, measure the actual space available for the rows-container
+  // and recompute the row stride.  Using afterRender (not a setTimeout) ensures
+  // the measurement and the resulting re-render complete synchronously before
+  // control returns to the browser event loop, so Selenium assertions that run
+  // immediately after an Angular DOM change always see the final layout.
+  constructor() {
+    afterEveryRender(() => this._measureRowH());
+  }
+
+  // Called synchronously before playerRows.set() so Angular batches both signal
+  // updates into one render.  160 px is a conservative overhead estimate for
+  // title + header + padding in portrait, giving a safety margin of ~60 px over
+  // the typical actual value (~96 px).  afterEveryRender refines to the exact
+  // DOM measurement on subsequent renders.
+  private _initPortraitRowH(n: number): void {
+    if (window.innerHeight > window.innerWidth && n > 0) {
+      const pre = Math.min(Math.floor((window.innerWidth - 160) / n), 80);
+      this._rowH.set(Math.max(pre, 20));
+    }
+  }
+
+  private _measureRowH(): void {
+    if (window.innerHeight <= window.innerWidth) {
+      if (this._rowH() !== 80) this._rowH.set(80);
+      return;
+    }
+    const n = this.playerRows().length;
+    if (n === 0) return;
+
+    const host = this._host.nativeElement as HTMLElement;
+    const rc   = host.querySelector('.rows-container') as HTMLElement | null;
+    if (!rc) return;
+
+    // offsetTop gives the distance from the element's top border to the inner
+    // (content-area) top of its offsetParent.  Walking the chain to the host
+    // gives the total offset from the host's content-area top.
+    let rcOffsetFromContent = 0;
+    let el: HTMLElement | null = rc;
+    while (el && el !== host) {
+      rcOffsetFromContent += el.offsetTop;
+      el = el.offsetParent as HTMLElement | null;
+    }
+
+    // offsetHeight on the host includes padding (box-sizing: border-box).
+    // Subtract both padding halves to get the content-area height, then
+    // subtract the rows-container's offset to find the space below it.
+    const hostStyle = window.getComputedStyle(host);
+    const padTop    = parseFloat(hostStyle.paddingTop)    || 0;
+    const padBottom = parseFloat(hostStyle.paddingBottom) || 0;
+    const available = host.offsetHeight - padTop - padBottom - rcOffsetFromContent;
+
+    if (available > 0) {
+      const next = Math.min(Math.floor(available / n), 80);
+      if (next !== this._rowH()) this._rowH.set(next);
+    }
+  }
+
+  // Public accessors read by the template.
+  get rowH(): number         { return this._rowH(); }
+  get playerRowHeight(): number { return Math.max(this.rowH - 8, 20); }
 
   // When ?fast=1 is in the URL every delay collapses to ~1 ms so E2E tests
   // finish in under 2 s instead of ~18 s without touching production logic.
@@ -83,7 +147,7 @@ export class ScoreComponent implements OnInit {
     return Object.values(p.displayed).reduce((s, v) => s + v, 0) + p.displayedPunishment;
   }
 
-  topPx(p: PlayerRow): number { return p.rank * this.ROW_H; }
+  topPx(p: PlayerRow): number { return p.rank * this.rowH; }
 
   ngOnInit() {
     this.sessionId = this.route.snapshot.paramMap.get('sessionId') ?? '';
@@ -134,6 +198,7 @@ export class ScoreComponent implements OnInit {
       const newRank = new Map(sorted.map((r, i) => [r.id, i]));
       rows.forEach(r => { r.rank = newRank.get(r.id) ?? r.rank; });
 
+      this._initPortraitRowH(rows.length);
       this.playerRows.set(rows);
       this.doneKeys.set(new Set(cols.map(c => c.key)));
       this.punishDone.set(true);
@@ -182,6 +247,7 @@ export class ScoreComponent implements OnInit {
         rank:                i,
         lifting:             false,
       }));
+      this._initPortraitRowH(rows.length);
       this.playerRows.set(rows);
 
       await delay(this.ms(700));

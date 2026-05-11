@@ -42,12 +42,13 @@
       </div>
 
       <!-- Player rows — absolutely positioned so rank drives top via CSS transition -->
-      <div class="rows-container" [style.height.px]="playerRows().length * 80">
+      <div class="rows-container" [style.height.px]="playerRows().length * rowH">
         @for (player of playerRows(); track player.id) {
           <div class="player-row"
                [class.lifting]="player.lifting"
                [class.winner]="allDone() && player.rank === 0"
-               [style.top.px]="topPx(player)">
+               [style.top.px]="topPx(player)"
+               [style.height.px]="playerRowHeight">
 
             <div class="name-cell player-name">{{ player.name }}</div>
 

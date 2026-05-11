@@ -218,6 +218,31 @@ public class ScoreInteractionHelper {
         }
     }
 
+    // ── Viewport containment ───────────────────────────────────────────────────
+
+    /**
+     * Returns true when every {@code .player-row} element is fully inside the
+     * browser viewport (1 px rounding tolerance on each edge).
+     *
+     * Uses {@code getBoundingClientRect()} which accounts for all CSS transforms
+     * (including the portrait-mode 90° rotation on the score host) so the check
+     * is correct on both desktop and mobile viewports.
+     */
+    public static boolean areAllPlayerRowsWithinViewport(WebDriver driver) {
+        return (boolean) ((JavascriptExecutor) driver).executeScript(
+                "const rows = document.querySelectorAll('.player-row');" +
+                "if (!rows.length) return false;" +
+                "for (const row of rows) {" +
+                "  const r = row.getBoundingClientRect();" +
+                "  if (r.width <= 0 || r.height <= 0)        return false;" +
+                "  if (r.top    < -1)                         return false;" +
+                "  if (r.left   < -1)                         return false;" +
+                "  if (r.bottom > window.innerHeight + 1)     return false;" +
+                "  if (r.right  > window.innerWidth  + 1)     return false;" +
+                "}" +
+                "return true;");
+    }
+
     // ── Score table ────────────────────────────────────────────────────────────
 
     /** Returns all visible player names from .player-name elements. */

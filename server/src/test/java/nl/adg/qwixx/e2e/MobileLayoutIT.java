@@ -423,6 +423,49 @@ public class MobileLayoutIT extends BaseIntegrationTest {
                 "Cross count must be unchanged after clicking No — cell must not be crossed");
     }
 
+    /**
+     * Regression test for the translation bug where the yes/no modal showed raw
+     * i18n keys ("rowClosure.selfClose", "rowClosure.yes", "rowClosure.no") instead
+     * of translated text.
+     *
+     * Root cause: TranslationService called use() for all 5 languages concurrently,
+     * causing ngx-translate's loadingTranslations observable to be overwritten on
+     * each call.  When a non-English language loaded first, pending dropped to false
+     * before English was in the store, so the translate pipe cached the key string.
+     */
+    @Test
+    void longoSelfCloseModalShowsTranslatedTextNotRawKeys() {
+        String sid = api.createGame(2, Map.of("base", "LONGO"));
+        List<String> pids = api.getPlayerIds(sid);
+
+        api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, 6);
+        api.roll(sid, pids.get(0));
+        api.setDice(sid, 1, 2);
+
+        driver0 = TestUtils.getDriver(sid, pids.get(0));
+        TestUtils.waitUntilBoardLoaded(driver0);
+
+        BoardInteractionHelper.clickCellByValue(driver0, "BLUE", "3");
+        BoardInteractionHelper.waitUntilModalVisible(driver0, 5);
+
+        String bodyText = BoardInteractionHelper.getModalText(driver0);
+        String yesText  = driver0.findElement(By.xpath("//button[contains(@class,'btn-primary')]")).getText();
+        String noText   = driver0.findElement(By.xpath("//button[contains(@class,'btn-secondary')]")).getText();
+
+        assertFalse(bodyText.contains("rowClosure."),
+                "Modal question must not show a raw translation key — got: " + bodyText);
+        assertFalse(bodyText.isBlank(),
+                "Modal question must not be empty");
+        assertFalse(yesText.contains("rowClosure."),
+                "Yes button must not show a raw translation key — got: " + yesText);
+        assertFalse(yesText.isBlank(),
+                "Yes button text must not be empty");
+        assertFalse(noText.contains("rowClosure."),
+                "No button must not show a raw translation key — got: " + noText);
+        assertFalse(noText.isBlank(),
+                "No button text must not be empty");
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Helper
     // ─────────────────────────────────────────────────────────────────────────

@@ -1,14 +1,11 @@
-import { Injectable, inject, effect } from '@angular/core';
-import { Router } from '@angular/router';
+import { Injectable, inject, effect, signal } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
-import { signal } from '@angular/core';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TranslationService {
   private translateService = inject(TranslateService);
-  private router = inject(Router);
 
   readonly languages = [
     { code: 'en', label: 'English' },
@@ -22,17 +19,10 @@ export class TranslationService {
 
   constructor() {
     this.translateService.setDefaultLang('en');
-    const langCodes = this.languages.map(l => l.code);
-    this.translateService.addLangs(langCodes);
-
-    // Preload all language files to ensure instant() works for all languages
-    langCodes.forEach(lang => {
-      this.translateService.use(lang).subscribe();
-    });
-
-    // Set back to English after preloading
+    this.translateService.addLangs(this.languages.map(l => l.code));
+    // Load the default language synchronously so currentLang is set before any
+    // component renders. The effect handles subsequent language switches.
     this.translateService.use('en').subscribe();
-
     effect(() => {
       this.translateService.use(this.currentLanguage());
     });

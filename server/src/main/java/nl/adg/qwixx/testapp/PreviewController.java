@@ -11,6 +11,8 @@ import nl.adg.qwixx.game.Player;
 import nl.adg.qwixx.state.RowClosureRequest;
 import nl.adg.qwixx.state.RowState;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,52 +45,143 @@ import java.util.UUID;
 @RequestMapping("/preview")
 public class PreviewController {
 
-    // Returned by GET /preview — shows available scenarios without creating games
-    public record ScenarioSummary(String id, String label, boolean isScoreScreen) {}
+    private record Scenario(String path, String label, boolean isScoreScreen) {}
 
-    // Returned by GET /preview/{id} — game is created, caller should navigate to redirectUrl
-    public record PreviewResult(
+    private record PreviewResult(
             String description,
             String redirectUrl,
             Map<String, String> otherPlayerUrls) {
-        public PreviewResult {
+        PreviewResult {
             otherPlayerUrls = Map.copyOf(otherPlayerUrls);
         }
     }
 
-    static final List<ScenarioSummary> SCENARIOS = List.of(
-            new ScenarioSummary("/preview/1",  "2-player · RED row almost closable (5 crosses, dice ready)", false),
-            new ScenarioSummary("/preview/2",  "2-player · game finished → score screen",                    true),
-            new ScenarioSummary("/preview/3",  "5-player · mid-game · you are the active player",            false),
-            new ScenarioSummary("/preview/4",  "5-player · game finished → score screen",                    true),
-            new ScenarioSummary("/preview/5",  "Longo variant · mid-game · you are the active player",       false),
-            new ScenarioSummary("/preview/6",  "Extra-row variant · mid-game",                               false),
-            new ScenarioSummary("/preview/7",  "2-player · RED row closure requested by other player",       false),
-            new ScenarioSummary("/preview/8",  "2-player · near game end (many crosses)",                    false),
-            new ScenarioSummary("/preview/9",  "5-player · extra-row variant · game finished → score screen",true),
-            new ScenarioSummary("/preview/10", "Longo · 3-player · close RED (white+white=16) AND YELLOW (white+yellow=16) this turn", false)
+    private static final List<Scenario> SCENARIOS = List.of(
+            new Scenario("/preview/1",  "2-player · RED row almost closable (5 crosses, dice ready)", false),
+            new Scenario("/preview/2",  "2-player · game finished → score screen",                    true),
+            new Scenario("/preview/3",  "5-player · mid-game · you are the active player",            false),
+            new Scenario("/preview/4",  "5-player · game finished → score screen",                    true),
+            new Scenario("/preview/5",  "Longo variant · mid-game · you are the active player",       false),
+            new Scenario("/preview/6",  "Extra-row variant · mid-game",                               false),
+            new Scenario("/preview/7",  "2-player · RED row closure requested by other player",       false),
+            new Scenario("/preview/8",  "2-player · near game end (many crosses)",                    false),
+            new Scenario("/preview/9",  "5-player · extra-row variant · game finished → score screen",true),
+            new Scenario("/preview/10", "Longo · 3-player · close RED (white+white=16) AND YELLOW (white+yellow=16) this turn", false),
+            new Scenario("/preview/11", "Longo · 3-player · cross value 15 twice: RED (white+white=15) AND YELLOW (white+yellow=15)", false)
     );
 
+    // ── HTML endpoints ────────────────────────────────────────────────────────────
+
     @GetMapping
-    public List<ScenarioSummary> listScenarios() {
-        return SCENARIOS;
+    public ResponseEntity<String> list() {
+        var rows = new StringBuilder();
+        for (var s : SCENARIOS) {
+            rows.append("<tr>")
+                .append("<td class='url'>").append(esc(s.path())).append("</td>")
+                .append("<td>").append(esc(s.label())).append("</td>")
+                .append("<td><span class='badge").append(s.isScoreScreen() ? " score" : "").append("'>")
+                    .append(s.isScoreScreen() ? "score" : "board").append("</span></td>")
+                .append("<td><a href='").append(s.path().substring(1)).append("' class='btn primary'>Open</a></td>")
+                .append("</tr>");
+        }
+        String body = "<h1>Scenario Previews</h1>"
+                + "<p class='hint'>Each button creates a fresh game — open multiple tabs for multiplayer testing.</p>"
+                + "<table><thead><tr><th>Path</th><th>Scenario</th><th>Type</th><th></th></tr></thead>"
+                + "<tbody>" + rows + "</tbody></table>";
+        return html(page("Scenario Previews", body));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PreviewResult> setup(@PathVariable int id) {
-        return switch (id) {
-            case 1  -> ResponseEntity.ok(scenario01());
-            case 2  -> ResponseEntity.ok(scenario02());
-            case 3  -> ResponseEntity.ok(scenario03());
-            case 4  -> ResponseEntity.ok(scenario04());
-            case 5  -> ResponseEntity.ok(scenario05());
-            case 6  -> ResponseEntity.ok(scenario06());
-            case 7  -> ResponseEntity.ok(scenario07());
-            case 8  -> ResponseEntity.ok(scenario08());
-            case 9  -> ResponseEntity.ok(scenario09());
-            case 10 -> ResponseEntity.ok(scenario10());
-            default -> ResponseEntity.notFound().build();
+    public ResponseEntity<String> open(@PathVariable int id) {
+        PreviewResult r = switch (id) {
+            case 1  -> scenario01();
+            case 2  -> scenario02();
+            case 3  -> scenario03();
+            case 4  -> scenario04();
+            case 5  -> scenario05();
+            case 6  -> scenario06();
+            case 7  -> scenario07();
+            case 8  -> scenario08();
+            case 9  -> scenario09();
+            case 10 -> scenario10();
+            case 11 -> scenario11();
+            default -> null;
         };
+        if (r == null) return ResponseEntity.notFound().build();
+
+        var actions = new StringBuilder();
+        actions.append("<a href='").append(r.redirectUrl()).append("' class='btn primary'>Open as active player</a>");
+        for (var e : r.otherPlayerUrls().entrySet()) {
+            actions.append("<a href='").append(e.getValue()).append("' class='btn ghost'>")
+                   .append(esc(e.getKey())).append("</a>");
+        }
+        String body = "<h1>Scenario " + id + "</h1>"
+                + "<p class='desc'>" + esc(r.description()) + "</p>"
+                + "<div class='actions'>" + actions + "</div>"
+                + "<a href='../preview' class='back'>&#8592; back to list</a>";
+        return html(page("Scenario " + id, body));
+    }
+
+    // ── HTML helpers ──────────────────────────────────────────────────────────────
+
+    private static ResponseEntity<String> html(String body) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML_VALUE + ";charset=UTF-8")
+                .body(body);
+    }
+
+    private static final String PAGE_TEMPLATE = """
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+              <meta charset="UTF-8">
+              <title>{{title}}</title>
+              <style>
+                *, *::before, *::after { box-sizing: border-box; }
+                body  { margin: 0; padding: 2rem 1.5rem; background: #12122a; color: #e0e0e0;
+                        font-family: system-ui, sans-serif; }
+                h1    { margin: 0 0 .4rem; color: #fff; font-size: 1.5rem; }
+                .hint { margin: 0 0 1.5rem; color: #888; font-size: .9rem; }
+                table { border-collapse: collapse; width: 100%; max-width: 880px; }
+                th    { padding: .45rem 1rem; text-align: left; color: #aaa; font-size: .75rem;
+                        text-transform: uppercase; letter-spacing: .06em;
+                        border-bottom: 2px solid rgba(255,255,255,.12); }
+                td    { padding: .6rem 1rem; border-bottom: 1px solid rgba(255,255,255,.06);
+                        vertical-align: middle; }
+                tr:hover td { background: rgba(255,255,255,.04); }
+                .url  { font-family: monospace; font-size: .85rem; color: gold;
+                        text-decoration: underline; white-space: nowrap; }
+                .badge { display: inline-block; font-size: .72rem; font-weight: 600;
+                         text-transform: uppercase; letter-spacing: .05em;
+                         padding: .15rem .5rem; border-radius: 3px;
+                         background: rgba(255,255,255,.1); color: #aaa; }
+                .badge.score { background: rgba(255,215,0,.15); color: gold; }
+                .btn  { display: inline-block; padding: .4rem 1.1rem; border-radius: 5px;
+                        font-size: .88rem; font-weight: 700; text-decoration: none;
+                        border: none; white-space: nowrap; }
+                .btn:hover { opacity: .82; }
+                .primary { background: gold; color: #111; }
+                .ghost   { background: rgba(255,255,255,.07); color: #ccc;
+                           border: 1px solid rgba(255,255,255,.18); }
+                .desc { color: #bbb; margin: 0 0 1.75rem; }
+                .actions { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 2rem; }
+                .back { color: #888; font-size: .85rem; text-decoration: none; }
+                .back:hover { color: #ccc; }
+              </style>
+            </head>
+            <body>{{body}}</body>
+            </html>
+            """;
+
+    private static String page(String title, String body) {
+        return PAGE_TEMPLATE
+                .replace("{{title}}", esc(title))
+                .replace("{{body}}", body);
+    }
+
+    private static String esc(String s) {
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                .replace("\"", "&quot;").replace("'", "&#39;");
     }
 
     // ── Shared helpers ────────────────────────────────────────────────────────────
@@ -143,12 +236,14 @@ public class PreviewController {
         return active;
     }
 
+    // Relative URLs so the links work regardless of nginx path prefix (e.g. /qwixx/).
+    // The launcher page lives at /preview/{id}, so ../game/... resolves correctly.
     private String gameUrl(String sessionId, UUID playerId) {
-        return "/game/" + sessionId + "/" + playerId;
+        return "../game/" + sessionId + "/" + playerId;
     }
 
     private String scoreUrl(String sessionId, UUID playerId) {
-        return "/score/" + sessionId + "?pid=" + playerId + "&fast=1";
+        return "../score/" + sessionId + "?pid=" + playerId + "&fast=1";
     }
 
     private Map<String, String> otherGameUrls(GameSetup g, UUID youId) {
@@ -371,5 +466,44 @@ public class PreviewController {
                 "5-player · extra-row variant · game finished (5 score columns)",
                 scoreUrl(g.sessionId(), you),
                 otherScoreUrls(g, you));
+    }
+
+    // 11 — Longo · 3-player · cross value 15 in RED (white+white) AND YELLOW (white+yellow die)
+    //
+    //  Longo ascending rows: position 13 = display value 15  (values run 2→16).
+    //  player0 has 13 crosses in RED and YELLOW (values 2–14, positions 0–12).
+    //  Value 15 (position 13) is the next available cell in both rows.
+    //
+    //  Dice: white1=7, white2=8  →  white+white = 15  →  RED position 13 (value 15)
+    //        yellow die = 8       →  white1+yellow = 7+8 = 15  →  YELLOW position 13 (value 15)
+    private PreviewResult scenario11() {
+        GameSetup g = startGame(3, GameSettings.builder().base(BaseVariant.LONGO).build());
+        Player p0 = g.players().get(0);
+        Player p1 = g.players().get(1);
+        Player p2 = g.players().get(2);
+
+        // player0: 13 crosses in RED and YELLOW — value 15 is the next cell in both
+        setCrosses(g, p0, 0, 13); // RED   positions 0-12 (values 2-14)
+        setCrosses(g, p0, 1, 13); // YELLOW positions 0-12 (values 2-14)
+        setCrosses(g, p0, 2,  4);
+        setCrosses(g, p0, 3,  3);
+
+        setCrosses(g, p1, 0,  5);
+        setCrosses(g, p1, 1,  4);
+        setCrosses(g, p1, 2,  8);
+        setCrosses(g, p1, 3,  7);
+
+        setCrosses(g, p2, 0,  7);
+        setCrosses(g, p2, 1,  6);
+        setCrosses(g, p2, 2,  5);
+        setCrosses(g, p2, 3,  4);
+
+        // white=7+8 (sum=15); yellow die=8 so white1(7)+yellow(8)=15
+        UUID you = rollAndSetColored(g, 7, 8, Map.of(Color.YELLOW, 8));
+
+        return new PreviewResult(
+                "Longo · 3-player · cross value 15 in RED (white+white=15) AND YELLOW (white+yellow=15) this turn",
+                gameUrl(g.sessionId(), you),
+                otherGameUrls(g, you));
     }
 }

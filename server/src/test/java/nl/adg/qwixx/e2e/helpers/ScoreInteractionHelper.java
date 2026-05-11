@@ -119,8 +119,15 @@ public class ScoreInteractionHelper {
      */
     public static void clickViewScoresButton(WebDriver driver) {
         driver.findElement(By.cssSelector(".winner-modal .btn-ghost")).click();
+        // Wait for: modal gone, action bar present, AND rows correctly repositioned.
+        // The last condition covers the afterEveryRender cycle that recalculates rowH
+        // to account for the action bar's extra height — without it the assertion that
+        // immediately follows this call can fire in the window between the first render
+        // (action bar visible, stale rowH) and the corrected second render.
         new WebDriverWait(driver, Duration.ofSeconds(3))
-                .until(d -> !isWinnerModalVisible(d) && isActionBarVisible(d));
+                .until(d -> !isWinnerModalVisible(d)
+                         && isActionBarVisible(d)
+                         && areAllPlayerRowsWithinViewport(d));
     }
 
     /** Clicks the "New Game" button (btn-primary) inside the winner modal. */

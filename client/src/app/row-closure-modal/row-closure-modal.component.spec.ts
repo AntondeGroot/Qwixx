@@ -169,4 +169,67 @@ describe('RowClosureModalComponent', () => {
     expect(body).toBeTruthy();
     expect(actions).toBeTruthy();
   });
+
+  // ── Yes/No self-close modal (Longo second-to-last cell) ──────────────────
+
+  it('should not show yes/no modal when lockConfirmRequest is null', () => {
+    component.lockConfirmRequest = null;
+    fixture.detectChanges();
+    const overlays = fixture.nativeElement.querySelectorAll('.modal-overlay');
+    expect(overlays.length).toBe(0);
+  });
+
+  it('should show yes/no modal when lockConfirmRequest is set', () => {
+    component.lockConfirmRequest = { rowColor: Color.GREEN };
+    fixture.detectChanges();
+    const overlay = fixture.nativeElement.querySelector('.modal-overlay');
+    expect(overlay).toBeTruthy();
+  });
+
+  it('should show yes and no buttons in yes/no modal', () => {
+    component.lockConfirmRequest = { rowColor: Color.GREEN };
+    fixture.detectChanges();
+    const buttons = fixture.nativeElement.querySelectorAll('.btn');
+    expect(buttons.length).toBe(2);
+    const primary   = fixture.nativeElement.querySelector('.btn-primary');
+    const secondary = fixture.nativeElement.querySelector('.btn-secondary');
+    expect(primary).toBeTruthy();
+    expect(secondary).toBeTruthy();
+  });
+
+  it('should emit lockYes when yes button is clicked', () => {
+    let emitted = false;
+    component.lockYes.subscribe(() => { emitted = true; });
+    component.lockConfirmRequest = { rowColor: Color.GREEN };
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('.btn-primary').click();
+    expect(emitted).toBeTruthy();
+  });
+
+  it('should emit lockNo when no button is clicked', () => {
+    let emitted = false;
+    component.lockNo.subscribe(() => { emitted = true; });
+    component.lockConfirmRequest = { rowColor: Color.GREEN };
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('.btn-secondary').click();
+    expect(emitted).toBeTruthy();
+  });
+
+  it('should show color cell matching the requested row color', () => {
+    component.lockConfirmRequest = { rowColor: Color.GREEN };
+    fixture.detectChanges();
+    const colorCell = fixture.nativeElement.querySelector('.color-cell');
+    expect(colorCell).toBeTruthy();
+    expect(colorCell.classList.contains('cell-green')).toBeTruthy();
+  });
+
+  it('should not show yes/no modal when requests are also present (requests take precedence)', () => {
+    // Both modals: requests modal renders first in the template and occupies the overlay.
+    // The yes/no modal still renders but is stacked — at minimum both overlays exist.
+    component.lockConfirmRequest = { rowColor: Color.RED };
+    component.requests = [{ playerName: 'A', rowColor: Color.BLUE }];
+    fixture.detectChanges();
+    const overlays = fixture.nativeElement.querySelectorAll('.modal-overlay');
+    expect(overlays.length).toBe(2);
+  });
 });

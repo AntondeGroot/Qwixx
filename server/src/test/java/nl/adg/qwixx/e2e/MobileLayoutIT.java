@@ -336,6 +336,94 @@ public class MobileLayoutIT extends BaseIntegrationTest {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Longo yes/no self-close modal
+    //
+    // BLUE descending (index 3) in LONGO: 16, 15, …, 4, 3, 2
+    //   second-to-last closing cell = "3" (pos 13)
+    //   last closing cell           = "2" (pos 14)
+    // Setup: 6 normal crosses (pos 0-5, values 16-11), dice white1=1+white2=2=3
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    void longoSecondToLastCellShowsYesNoModal() {
+        String sid = api.createGame(2, Map.of("base", "LONGO"));
+        List<String> pids = api.getPlayerIds(sid);
+
+        api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, 6);
+        api.roll(sid, pids.get(0));
+        api.setDice(sid, 1, 2); // white+white = 3 → "3" reachable
+
+        driver0 = TestUtils.getDriver(sid, pids.get(0));
+        TestUtils.waitUntilBoardLoaded(driver0);
+
+        assertFalse(BoardInteractionHelper.isModalVisible(driver0),
+                "No modal should be visible before clicking the second-to-last cell");
+
+        BoardInteractionHelper.clickCellByValue(driver0, "BLUE", "3");
+
+        new WebDriverWait(driver0, Duration.ofSeconds(5))
+                .until(d -> BoardInteractionHelper.isModalVisible(d));
+
+        assertTrue(BoardInteractionHelper.isModalVisible(driver0),
+                "Yes/No modal must appear after clicking the second-to-last closing cell in Longo");
+    }
+
+    @Test
+    void longoYesOnSelfCloseModalCrossesCell() {
+        String sid = api.createGame(2, Map.of("base", "LONGO"));
+        List<String> pids = api.getPlayerIds(sid);
+
+        api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, 6);
+        api.roll(sid, pids.get(0));
+        api.setDice(sid, 1, 2);
+
+        driver0 = TestUtils.getDriver(sid, pids.get(0));
+        TestUtils.waitUntilBoardLoaded(driver0);
+
+        BoardInteractionHelper.clickCellByValue(driver0, "BLUE", "3");
+        BoardInteractionHelper.waitUntilModalVisible(driver0, 5);
+        BoardInteractionHelper.clickModalYesButton(driver0);
+
+        // Modal must close and "3" must be crossed (7 crosses total).
+        new WebDriverWait(driver0, Duration.ofSeconds(5))
+                .until(d -> !BoardInteractionHelper.isModalVisible(d));
+
+        assertFalse(BoardInteractionHelper.isModalVisible(driver0),
+                "Modal must close after clicking Yes");
+        new WebDriverWait(driver0, Duration.ofSeconds(5))
+                .until(d -> BoardInteractionHelper.getCrossedCellCount(d, "BLUE") >= 7);
+        assertTrue(BoardInteractionHelper.getCrossedCellCount(driver0, "BLUE") >= 7,
+                "BLUE row must have at least 7 crosses after confirming with Yes");
+    }
+
+    @Test
+    void longoNoOnSelfCloseModalLeavesRowUnchanged() {
+        String sid = api.createGame(2, Map.of("base", "LONGO"));
+        List<String> pids = api.getPlayerIds(sid);
+
+        api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, 6);
+        api.roll(sid, pids.get(0));
+        api.setDice(sid, 1, 2);
+
+        driver0 = TestUtils.getDriver(sid, pids.get(0));
+        TestUtils.waitUntilBoardLoaded(driver0);
+
+        int crossesBefore = BoardInteractionHelper.getCrossedCellCount(driver0, "BLUE");
+
+        BoardInteractionHelper.clickCellByValue(driver0, "BLUE", "3");
+        BoardInteractionHelper.waitUntilModalVisible(driver0, 5);
+        BoardInteractionHelper.clickModalNoButton(driver0);
+
+        new WebDriverWait(driver0, Duration.ofSeconds(5))
+                .until(d -> !BoardInteractionHelper.isModalVisible(d));
+
+        assertFalse(BoardInteractionHelper.isModalVisible(driver0),
+                "Modal must close after clicking No");
+        assertEquals(crossesBefore, BoardInteractionHelper.getCrossedCellCount(driver0, "BLUE"),
+                "Cross count must be unchanged after clicking No — cell must not be crossed");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Helper
     // ─────────────────────────────────────────────────────────────────────────
 

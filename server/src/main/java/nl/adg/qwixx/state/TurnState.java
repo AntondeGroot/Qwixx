@@ -19,6 +19,7 @@ public class TurnState {
     ActiveTurnState activeTurnState;
     Integer pendingLockRowIndex;     // null outside LOCK_PENDING
     UUID pendingLockDeclarerId;      // who declared the current lock intent (active or passive)
+    Integer queuedLockRowIndex;      // second row queued by active declarant while in LOCK_PENDING
     Set<UUID> lockAcknowledged;
     Set<UUID> passivesActed;         // passives who used their white+white slot this turn
     Map<UUID, SheetProgress> moveStartProgress;
@@ -52,6 +53,8 @@ public class TurnState {
     public void setActiveTurnState(ActiveTurnState ats)                { this.activeTurnState = ats; }
     public void setPendingLockRowIndex(Integer idx)                    { this.pendingLockRowIndex = idx; }
     public void setPendingLockDeclarerId(UUID id)                      { this.pendingLockDeclarerId = id; }
+    public Integer queuedLockRowIndex()                                { return queuedLockRowIndex; }
+    public void setQueuedLockRowIndex(Integer idx)                     { this.queuedLockRowIndex = idx; }
     public void setLockAcknowledged(Set<UUID> acknowledged)            { this.lockAcknowledged = acknowledged; }
     public void setPassivesActed(Set<UUID> s)                          { this.passivesActed = s; }
     public void setMoveStartProgress(Map<UUID, SheetProgress> snap)    { this.moveStartProgress = snap; }

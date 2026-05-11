@@ -104,6 +104,18 @@ public class StandardTurnRules implements TurnRules {
         List<GameAction> actions = new ArrayList<>();
         boolean isDeclarant = playerId.equals(turn.pendingLockDeclarerId());
         if (isDeclarant) {
+            if (isActive) {
+                ActiveTurnState ats = turn.activeTurnState();
+                // Active declarant may still use their colored die before the lock resolves,
+                // enabling a second row close in the same turn (e.g. RED then YELLOW with color die).
+                if (ats != null && !ats.colorDieUsed()) {
+                    addReachableCells(state, playerId, actions, true);
+                    addLockIntents(state, playerId, actions); // second row lock intent
+                    if (TurnHelper.hasPendingCross(turn, playerId)) {
+                        actions.add(new UndoLastCrossAction(playerId));
+                    }
+                }
+            }
             if (TurnHelper.allNonActiveAcknowledged(state)) {
                 actions.add(new CrossLockAction(playerId, turn.pendingLockRowIndex()));
             }
@@ -197,15 +209,38 @@ public class StandardTurnRules implements TurnRules {
         if (actingAsPassive) {
             requirePassiveMayCrossCell(turn, playerId);
         } else {
-            // Declarant in LOCK_PENDING must use CrossLockAction, not CrossCellAction.
-            if (turn.phase() == TurnPhase.LOCK_PENDING && playerId.equals(turn.pendingLockDeclarerId()))
-                throw new IllegalMoveException("declarant must use CrossLockAction in LOCK_PENDING");
+            if (turn.phase() == TurnPhase.LOCK_PENDING && playerId.equals(turn.pendingLockDeclarerId())) {
+                // The active declarant may use their unused color die to close a second row.
+                // All other declarant crosses in LOCK_PENDING are rejected.
+                ActiveTurnState ats = turn.activeTurnState();
+                if (!isActive || ats == null || ats.colorDieUsed())
+                    throw new IllegalMoveException("declarant must use CrossLockAction in LOCK_PENDING");
+            }
             if (turn.phase() != TurnPhase.ACTIVE_MOVE && turn.phase() != TurnPhase.LOCK_PENDING)
                 throw new IllegalMoveException("expected phase ACTIVE_MOVE or LOCK_PENDING but was " + turn.phase());
         }
 
         Map<Integer, Set<String>> crossed = crossCellWithAutoTags(state, playerId, action.rowIndex(), action.cellId());
-        turn.undoBuffer().put(playerId, crossed);
+
+        // When the active declarant crosses a second row in LOCK_PENDING, accumulate both row
+        // crosses in the undo buffer so both lock indicators remain visible in the UI.
+        // The declarant's UndoLastCrossAction always delegates to applyResetTurn regardless,
+        // so accumulating here does not change the undo semantics.
+        if (isActive && turn.phase() == TurnPhase.LOCK_PENDING
+                && playerId.equals(turn.pendingLockDeclarerId())) {
+            Map<Integer, Set<String>> existing = turn.undoBuffer().get(playerId);
+            if (existing != null) {
+                Map<Integer, Set<String>> merged = new HashMap<>(existing);
+                crossed.forEach((k, v) -> merged.merge(k, v, (s1, s2) -> {
+                    Set<String> u = new HashSet<>(s1); u.addAll(s2); return u;
+                }));
+                turn.undoBuffer().put(playerId, merged);
+            } else {
+                turn.undoBuffer().put(playerId, crossed);
+            }
+        } else {
+            turn.undoBuffer().put(playerId, crossed);
+        }
 
         if (!actingAsPassive) {
             recordActiveDiceUsage(turn.activeTurnState(), action.combination());
@@ -247,6 +282,7 @@ public class StandardTurnRules implements TurnRules {
         if (turn.lockAcknowledged().contains(playerId)) return;
         turn.undoBuffer().remove(playerId);
         turn.lockAcknowledged().add(playerId);
+        turn.passivePlayerQueue().remove(playerId); // modal clears for this player immediately
         if (TurnHelper.allNonActiveAcknowledged(state)) {
             applyCrossLock(state, new CrossLockAction(turn.pendingLockDeclarerId(), turn.pendingLockRowIndex()));
         }
@@ -258,6 +294,15 @@ public class StandardTurnRules implements TurnRules {
         boolean isActive = declarerId.equals(turn.activePlayerId());
 
         if (isActive) {
+            // Allow the active declarant to queue a second row while already in LOCK_PENDING.
+            if (turn.phase() == TurnPhase.LOCK_PENDING && declarerId.equals(turn.pendingLockDeclarerId())) {
+                if (action.rowIndex() == turn.pendingLockRowIndex())
+                    throw new IllegalMoveException("cannot re-declare the row already pending");
+                if (!canCrossLock(state, declarerId, action.rowIndex()))
+                    throw new IllegalMoveException("second lock pre-conditions not met");
+                turn.setQueuedLockRowIndex(action.rowIndex());
+                return; // stay in LOCK_PENDING; queued row closes together with the first
+            }
             requirePhase(turn, TurnPhase.ACTIVE_MOVE);
             if (!canCrossLock(state, declarerId, action.rowIndex()))
                 throw new IllegalMoveException("lock pre-conditions not met");
@@ -314,7 +359,16 @@ public class StandardTurnRules implements TurnRules {
         if (isDeclarant) {
             if (!TurnHelper.allNonActiveAcknowledged(state))
                 throw new IllegalMoveException("not all players have acknowledged yet");
+            Integer queued = turn.queuedLockRowIndex();
+            turn.setQueuedLockRowIndex(null);
             closeRowGlobally(state, playerId, rowIndex);
+            // If the active declarant queued a second row (colored die close in LOCK_PENDING),
+            // close it now — passive players already acknowledged both via the combined modal.
+            if (queued != null && !state.boardState().closedRows().containsKey(queued)
+                    && canCrossLock(state, playerId, queued)) {
+                markLockCrossed(state, playerId, queued);
+                closeRowGlobally(state, playerId, queued);
+            }
             advanceTurnAfterLockClose(state);
         } else {
             turn.lockAcknowledged().add(playerId);
@@ -401,6 +455,7 @@ public class StandardTurnRules implements TurnRules {
         TurnState turn = state.turnState();
         turn.undoBuffer().remove(playerId); // sheet was restored; clear stale pending cross
         turn.lockAcknowledged().add(playerId);
+        turn.passivePlayerQueue().remove(playerId); // modal clears for this player immediately
         if (TurnHelper.allNonActiveAcknowledged(state)) {
             UUID declarerId = turn.pendingLockDeclarerId();
             int rowIndex    = turn.pendingLockRowIndex();
@@ -504,6 +559,7 @@ public class StandardTurnRules implements TurnRules {
         }
         turn.undoBuffer().remove(playerId);
         turn.lockAcknowledged().add(playerId);
+        turn.passivePlayerQueue().remove(playerId); // modal clears for this player immediately
         if (TurnHelper.allNonActiveAcknowledged(state)) {
             applyCrossLock(state, new CrossLockAction(turn.pendingLockDeclarerId(), turn.pendingLockRowIndex()));
         }
@@ -546,6 +602,12 @@ public class StandardTurnRules implements TurnRules {
         if (activeCanClose || passiveCanClose) {
             turn.setPassivePlayerQueue(remainingPassives);
             turn.setPhase(activeCanClose ? TurnPhase.ACTIVE_MOVE : TurnPhase.PASSIVE_MOVE);
+        } else if (!remainingPassives.isEmpty() && isGameOver(state)) {
+            // Game would end, but give unacted passives their final white+white move first.
+            // rowClosureRequests must be cleared so the stale lock modal does not reappear.
+            state.rowClosureRequests().clear();
+            turn.setPassivePlayerQueue(remainingPassives);
+            turn.setPhase(TurnPhase.PASSIVE_MOVE);
         } else {
             evaluate(state);
         }

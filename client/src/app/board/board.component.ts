@@ -288,6 +288,20 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
           }
         }
       }
+    } else if (turn.phase === TurnPhase.LOCK_PENDING && this.isMyTurn()
+               && turn.whiteWhiteUsed && !turn.colorDieUsed) {
+      // Active declarant used white+white to close the first row. They may still use
+      // their colored die to close a second row in the same turn.
+      for (const row of layout.rows) {
+        if (closedRows[row.id]) continue;
+        const rowColor = row.cells[0]?.color as Color;
+        const colorVal = roll.coloredDice[rowColor];
+        if (colorVal == null) continue;
+        this.collectCells(layout, progress, closedRows, roll.white1 + colorVal, row.id, result);
+        if (roll.white2 !== roll.white1) {
+          this.collectCells(layout, progress, closedRows, roll.white2 + colorVal, row.id, result);
+        }
+      }
     } else if ((turn.phase === TurnPhase.PASSIVE_MOVE
                 || turn.phase === TurnPhase.ACTIVE_MOVE
                 || turn.phase === TurnPhase.LOCK_PENDING)

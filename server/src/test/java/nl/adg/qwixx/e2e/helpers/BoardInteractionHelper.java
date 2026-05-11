@@ -61,6 +61,33 @@ public class BoardInteractionHelper {
         cell.click();
     }
 
+    /**
+     * Returns true if the cell with the given display value in the given row colour
+     * currently has the {@code clickable} CSS class on the current player's sheet.
+     * <p>
+     * The {@code clickable} class is set by the cell component whenever the cell's id
+     * is in {@code clickableCellIds} — i.e. the client considers it reachable with the
+     * current dice, regardless of server-side phase restrictions.
+     */
+    public static boolean isCellClickable(WebDriver driver, String rowColor, String displayValue) {
+        Object result = ((JavascriptExecutor) driver).executeScript(
+                "const section = document.querySelector('section.current-player');" +
+                "if (!section) return false;" +
+                "for (const span of section.querySelectorAll('.cell-value')) {" +
+                "  if (span.textContent.trim() !== arguments[1]) continue;" +
+                "  let cell = span.parentElement;" +
+                "  while (cell && !cell.classList.contains('cell')) cell = cell.parentElement;" +
+                "  if (!cell) continue;" +
+                "  let row = cell.parentElement;" +
+                "  while (row && !row.classList.contains('row')) row = row.parentElement;" +
+                "  if (!row || row.getAttribute('data-color') !== arguments[0]) continue;" +
+                "  return cell.classList.contains('clickable');" +
+                "}" +
+                "return false;",
+                rowColor, displayValue);
+        return Boolean.TRUE.equals(result);
+    }
+
     // ── Cell state queries ─────────────────────────────────────────────────────
 
     public static int getCrossedCellCount(WebDriver driver, String rowColor) {
@@ -169,6 +196,19 @@ public class BoardInteractionHelper {
     /** Clicks the "No" button in the self-close yes/no modal. */
     public static void clickModalNoButton(WebDriver driver) {
         driver.findElement(By.xpath("//button[contains(@class,'btn-secondary')]")).click();
+    }
+
+    // ── Pass button ───────────────────────────────────────────────────────────
+
+    /** Clicks the passive-pass button (btn-pass-arrow) visible in PASSIVE_MOVE. */
+    public static void clickPassButton(WebDriver driver) {
+        driver.findElement(By.className("btn-pass-arrow")).click();
+    }
+
+    /** Waits up to {@code seconds} seconds for the passive-pass button to appear. */
+    public static void waitUntilPassButtonVisible(WebDriver driver, int seconds) {
+        new WebDriverWait(driver, Duration.ofSeconds(seconds))
+                .until(d -> !d.findElements(By.className("btn-pass-arrow")).isEmpty());
     }
 
     // ── Viewport-bounds check ──────────────────────────────────────────────────

@@ -1109,9 +1109,10 @@ class StandardTurnRulesTest {
 
         // A closes row 1
         rules.apply(state, new DeclareLockIntentAction(p1, 1));
-        rules.apply(state, new EndTurnAction(p2));  // auto-close
+        rules.apply(state, new EndTurnAction(p2));  // p2 acknowledges → row 1 closes → PASSIVE_MOVE
         assertTrue(state.boardState().closedRows().containsKey(1), "row 1 must close");
-        // Closing 2 rows ends the game (closedRows.size() >= 2)
+        // p2 passes their final PASSIVE_MOVE turn, then the game ends
+        rules.apply(state, new EndTurnAction(p2));
         assertTrue(state.gameOver(), "game must be over after 2 rows close");
     }
 
@@ -2273,12 +2274,16 @@ class StandardTurnRulesTest {
         state.boardState().closedRows().put(1, p2);  // row 1 already closed
         crossEnoughForLock(state, p1, 0);
         rules.apply(state, new DeclareLockIntentAction(p1, 0));
-        rules.apply(state, new EndTurnAction(p2));  // p2 acknowledges → row 0 closes
+        rules.apply(state, new EndTurnAction(p2));  // p2 acknowledges → row 0 closes → PASSIVE_MOVE
 
         assertTrue(state.boardState().closedRows().containsKey(0),
                 "row 0 must close after acknowledgement");
+        assertFalse(state.gameOver(),
+                "game must not end yet — p2 still has a final PASSIVE_MOVE turn");
+
+        rules.apply(state, new EndTurnAction(p2));  // p2 passes their final PASSIVE_MOVE
         assertTrue(state.gameOver(),
-                "game must be over when two rows have been closed");
+                "game must be over when two rows have been closed and all passives have had their turn");
     }
 
     // ── Active uses color die in LOCK_PENDING (passive declared) ─────────────

@@ -262,16 +262,26 @@ public class LongoDoubleCloseIT extends BaseIntegrationTest {
         assertTrue(BoardInteractionHelper.isModalVisible(driver2),
                 "player2's modal must remain visible until they confirm");
 
-        // Player2 confirms → both rows close, PASSIVE_MOVE phase starts for player1 and player2
+        // Player2 confirms → both rows close → PASSIVE_MOVE starts for player1 and player2
         BoardInteractionHelper.clickModalConfirmButton(driver2);
         new WebDriverWait(driver2, Duration.ofSeconds(5))
                 .until(d -> !BoardInteractionHelper.isModalVisible(d));
         assertFalse(BoardInteractionHelper.isModalVisible(driver2),
                 "player2's modal must close after they confirm");
 
-        // Both passive players get a final white+white turn before the game ends
+        // Player1 has an empty BLUE row; white+white=8+8=16 makes BLUE "16" (the first cell
+        // of the descending row) clickable.  Player2 already has BLUE "16" crossed.
+        new WebDriverWait(driver1, Duration.ofSeconds(5))
+                .until(d -> BoardInteractionHelper.isCellClickable(d, "BLUE", "16"));
+        assertTrue(BoardInteractionHelper.isCellClickable(driver1, "BLUE", "16"),
+                "player1 must see BLUE-16 as clickable in their final PASSIVE_MOVE turn");
+
+        // Player1 crosses BLUE "16" then confirms (btn-confirm appears after pending cross)
+        BoardInteractionHelper.clickCellByValue(driver1, "BLUE", "16");
         BoardInteractionHelper.waitUntilPassButtonVisible(driver1, 5);
         BoardInteractionHelper.clickPassButton(driver1);
+
+        // Player2 has no clickable cells (BLUE "16" already crossed) — uses the pass button
         BoardInteractionHelper.waitUntilPassButtonVisible(driver2, 5);
         BoardInteractionHelper.clickPassButton(driver2);
 

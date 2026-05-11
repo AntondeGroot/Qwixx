@@ -27,7 +27,7 @@
          [class.lock-crossed]="rowState()?.lockCrossed"
          [class.lock-closed]="closed()">
       <img src="lock_icon.svg" alt="lock" class="lock-icon" />
-      @if (rowState()?.lockCrossed || (row().lock && row().lock.requiredCells.some(id => pendingCellIds().has(id)))) {
+      @if (rowState()?.lockCrossed || (row().lock && row().lock.requiredCells.length > 0 && pendingCellIds().has(row().lock.requiredCells[row().lock.requiredCells.length - 1]))) {
         <span class="cell-cross">✕</span>
       }
     </div>

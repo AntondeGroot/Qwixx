@@ -1,5 +1,8 @@
 package nl.adg.qwixx.testapp;
 
+import nl.adg.qwixx.action.CrossCellAction;
+import nl.adg.qwixx.action.DeclareLockIntentAction;
+import nl.adg.qwixx.action.DiceCombination;
 import nl.adg.qwixx.action.RollAction;
 import nl.adg.qwixx.data.Color;
 import nl.adg.qwixx.data.RollResult;
@@ -63,7 +66,7 @@ public class PreviewController {
             new Scenario("/preview/4",  "5-player · game finished → score screen",                    true),
             new Scenario("/preview/5",  "Longo variant · mid-game · you are the active player",       false),
             new Scenario("/preview/6",  "Extra-row variant · mid-game",                               false),
-            new Scenario("/preview/7",  "2-player · RED row closure requested by other player",       false),
+            new Scenario("/preview/7",  "2-player · player1 crossed RED 12 and declared lock intent · you (active) must confirm", false),
             new Scenario("/preview/8",  "2-player · near game end (many crosses)",                    false),
             new Scenario("/preview/9",  "5-player · extra-row variant · game finished → score screen",true),
             new Scenario("/preview/10", "Longo · 3-player · close RED (white+white=16) AND YELLOW (white+yellow=16) this turn", false),
@@ -369,17 +372,40 @@ public class PreviewController {
     }
 
     // 7 — 2-player · player1 has declared intent to close RED; you (player0) are about to act
+    // 7 — 2-player · passive player declares RED lock intent · active player gets the modal
+    //
+    //  player1 (passive) has 5 crosses in RED and crosses "12" using white+white=12,
+    //  then declares lock intent.  The game moves to LOCK_PENDING:
+    //    passivePlayerQueue = [player0]  → player0 (you, active) sees the modal
+    //    pendingLockDeclarerId = player1 → player1 does NOT see the modal
     private PreviewResult scenario07() {
         GameSetup g = startGame(2, GameSettings.builder().build());
-        setCrosses(g, g.players().get(0), 0, 5);
-        setCrosses(g, g.players().get(1), 0, 6);
+        Player p0 = g.players().get(0); // active player — this is "you"
+        Player p1 = g.players().get(1); // passive declarant
+
+        setCrosses(g, p0, 0, 5); // you have 5 crosses in RED (can also cross "12")
+        setCrosses(g, p1, 0, 5); // player1 has 5 crosses in RED (qualifies for lock)
+
+        // Roll with white=6+6=12 so "12" is the reachable closing cell
+        rollAndSet(g, 6, 6);
+
+        // player1 crosses RED "12" with white+white, then declares lock intent
+        var state   = g.session().currentState();
+        var redRow  = state.sheetLayouts().get(p1.id()).rows().get(0);
+        String red12Id = redRow.cells().stream()
+                .filter(c -> "12".equals(c.displayValue()))
+                .findFirst().orElseThrow().id();
+        g.session().applyAction(new CrossCellAction(p1.id(), 0, red12Id, DiceCombination.WHITE_WHITE));
+        g.session().applyAction(new DeclareLockIntentAction(p1.id(), 0));
+
+        // Populate the row-closure notification (normally done by MovesApiDelegateImpl)
         g.session().currentState().rowClosureRequests()
-                .add(new RowClosureRequest("player1", Color.RED));
-        UUID you = rollAndSet(g, 4, 3);
+                .add(new RowClosureRequest(p1.name(), Color.RED));
+
         return new PreviewResult(
-                "2-player · RED row closure declared by player1 · you have 5 crosses, dice=4+3",
-                gameUrl(g.sessionId(), you),
-                otherGameUrls(g, you));
+                "2-player · player1 crossed RED 12 and declared lock intent · you (active) must confirm",
+                gameUrl(g.sessionId(), p0.id()),
+                otherGameUrls(g, p0.id()));
     }
 
     // 8 — 2-player · near game end; RED+YELLOW almost full for both players
@@ -423,11 +449,11 @@ public class PreviewController {
         setCrosses(g, p0, 2,  5); // GREEN — some progress
         setCrosses(g, p0, 3,  4); // BLUE  — some progress
 
-        // player1: well progressed in GREEN and BLUE
+        // player1: progress in RED/YELLOW/GREEN; BLUE row empty so BLUE "16" is
+        // clickable (white+white=16) during the final PASSIVE_MOVE after the double-close
         setCrosses(g, p1, 0,  4);
         setCrosses(g, p1, 1,  3);
         setCrosses(g, p1, 2,  9);
-        setCrosses(g, p1, 3,  8);
 
         // player2: spread across all rows
         setCrosses(g, p2, 0,  6);
@@ -506,4 +532,5 @@ public class PreviewController {
                 gameUrl(g.sessionId(), you),
                 otherGameUrls(g, you));
     }
+
 }

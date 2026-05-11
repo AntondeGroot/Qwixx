@@ -287,48 +287,47 @@ public class LockMechanismIT extends BaseIntegrationTest {
     // lock declaration completes.
 
     @Test
-    void longoYesOnSelfCloseModal_showsLockCrossImmediately() {
+    void longoYesOnSelfCloseModal_crossesCellThenLockFiresWhenLastCrossed() {
+        // Clicking YES on the second-to-last Longo modal crosses "3" but does NOT yet
+        // declare lock intent — the lock fires only when the last required cell "2" is
+        // also crossed.  Set the BLUE die so "2" is reachable (white1+BLUE = 1+1 = 2).
         String sid = api.createGame(1, java.util.Map.of("base", "LONGO"));
         String pid = api.getPlayerIds(sid).get(0);
 
-        // 6 normal crosses (pos 0-5, values 16-11) — enough to make "3" eligible.
-        // Dice white1=1 + white2=2 = 3, so "3" is reachable.
         api.setCrosses(sid, pid, BLUE_ROW_INDEX, 6);
         api.roll(sid, pid);
         api.setDice(sid, 1, 2);
+        api.setColoredDie(sid, "BLUE", 1); // white1(1) + BLUE(1) = 2 → "2" reachable
 
         driver0 = TestUtils.getDriver(sid, pid);
         TestUtils.waitUntilBoardLoaded(driver0);
 
-        assertFalse(BoardInteractionHelper.isLockButtonCrossed(driver0, "BLUE"),
-                "Lock cross must not be visible before crossing '3'");
-
-        // Click "3" → yes/no modal appears; click Yes → cross is applied.
+        // Click "3" (second-to-last required cell) → modal appears → Yes
         BoardInteractionHelper.clickCellByValue(driver0, "BLUE", "3");
         BoardInteractionHelper.waitUntilModalVisible(driver0, 5);
         BoardInteractionHelper.clickModalYesButton(driver0);
 
-        // Lock cross must appear immediately once "3" is pending — no extra click needed.
+        // "3" must be crossed; lock cross must NOT appear yet (still need "2")
         new WebDriverWait(driver0, Duration.ofSeconds(5))
-                .until(d -> BoardInteractionHelper.isLockButtonCrossed(d, "BLUE"));
+                .until(d -> !BoardInteractionHelper.isModalVisible(d));
+        new WebDriverWait(driver0, Duration.ofSeconds(5))
+                .until(d -> BoardInteractionHelper.getCrossedCellCount(d, "BLUE") >= 7);
+        assertFalse(BoardInteractionHelper.isLockButtonCrossed(driver0, "BLUE"),
+                "Lock cross must NOT appear after crossing only '3' — '2' is still needed");
 
-        assertTrue(BoardInteractionHelper.isLockButtonCrossed(driver0, "BLUE"),
-                "Lock cross must appear on the lock icon immediately after confirming Yes "
-                + "on the self-close modal for the second-to-last Longo closing cell");
-        assertFalse(BoardInteractionHelper.isModalVisible(driver0),
-                "Modal must be dismissed after clicking Yes");
+        // Click "2" (colored die: white1+BLUE = 1+1 = 2) → lock fires automatically
+        BoardInteractionHelper.clickCellByValue(driver0, "BLUE", "2");
 
-        // In a single-player game the lock declaration auto-resolves: the row closes
-        // and the turn advances to ROLL.  The player must see the Roll button, not the
-        // Confirm button — confirming a move that is already done would be wrong.
+        new WebDriverWait(driver0, Duration.ofSeconds(8))
+                .until(d -> BoardInteractionHelper.isRowClosed(d, "BLUE"));
+        assertTrue(BoardInteractionHelper.isRowClosed(driver0, "BLUE"),
+                "BLUE row must close after crossing '2' (the last required cell)");
+
+        // Single-player: lock auto-resolves → turn advances to ROLL
         new WebDriverWait(driver0, Duration.ofSeconds(8))
                 .until(d -> !d.findElements(By.cssSelector(".btn-roll")).isEmpty());
-
-        assertFalse(driver0.findElements(By.cssSelector(".btn-confirm")).size() > 0
-                        && driver0.findElement(By.cssSelector(".btn-confirm")).isDisplayed(),
-                "Confirm button must NOT be shown after the lock auto-resolved — turn is over");
         assertTrue(driver0.findElement(By.cssSelector(".btn-roll")).isDisplayed(),
-                "Roll button must be visible after the Longo lock auto-resolves — player must roll next");
+                "Roll button must be visible after the Longo lock auto-resolves");
     }
 
     // ── Single-player lock: Bug regression tests ──────────────────────────────

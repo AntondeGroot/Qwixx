@@ -447,7 +447,10 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const row    = layout?.rows.find(r => r.id === rowId);
     const cell   = row?.cells.find(c => c.id === cellId);
 
-    // LONGO: second-to-last required cell → ask before crossing (may become part of a lock).
+    // LONGO: second-to-last required cell → ask whether to pursue the lock.
+    // The cell is always crossed (YES and NO both send the move); the question is only
+    // whether to keep pendingAutoLock set so the lock fires automatically when the last
+    // required cell ("16") is later crossed with the colored die.
     if (row && cell?.closingEligible && (row.lock?.requiredCells?.length ?? 0) > 1) {
       const secondToLastId = row.lock!.requiredCells[row.lock!.requiredCells.length - 2];
       if (cell.id === secondToLastId) {
@@ -457,11 +460,16 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
           this.rowClosureModal.showLockConfirm(
             rowColor,
             () => {
+              // YES: cross "15" and keep pendingAutoLock so the lock fires when "16" is crossed.
               this.rowClosureModal.clearLockConfirm();
               this.pendingAutoLock = { rowId: row!.id, autoLock: true };
               this.sendMove(req);
             },
-            () => this.rowClosureModal.clearLockConfirm()
+            () => {
+              // NO: cross "15" but do not set up auto-lock — the player is not committing to close.
+              this.rowClosureModal.clearLockConfirm();
+              this.sendMove(req);
+            }
           );
         }
         return;
@@ -622,14 +630,10 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const pending   = new Set(s.turnState?.pendingCrosses?.[pid] ?? []);
     const required  = row.lock.requiredCells;
     const last      = required[required.length - 1];
-    // Last required cell (permanent or pending) always enables locking.
-    if (permanent.has(last) || pending.has(last)) return true;
-    // Second-to-last required cell enables locking only while still pending this turn.
-    if (required.length > 1) {
-      const secondLast = required[required.length - 2];
-      return pending.has(secondLast);
-    }
-    return false;
+    // Only fire DECLARE_LOCK_INTENT when the last required cell is pending or permanent.
+    // The second-to-last cell ("15" in Longo) does NOT trigger declaration — the server
+    // requires ALL required cells to be crossed before it accepts a lock intent.
+    return permanent.has(last) || pending.has(last);
   }
 
   private checkPendingAutoLock(s: GameState) {

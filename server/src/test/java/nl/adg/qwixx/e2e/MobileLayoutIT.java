@@ -433,7 +433,9 @@ public class MobileLayoutIT extends BaseIntegrationTest {
     }
 
     @Test
-    void longoNoOnSelfCloseModalLeavesRowUnchanged() {
+    void longoNoOnSelfCloseModalStillCrossesCell() {
+        // Clicking No on the second-to-last Longo modal declines the lock intent,
+        // but the cell itself must still be crossed — the question is only about the lock.
         String sid = api.createGame(2, Map.of("base", "LONGO"));
         List<String> pids = api.getPlayerIds(sid);
 
@@ -455,8 +457,12 @@ public class MobileLayoutIT extends BaseIntegrationTest {
 
         assertFalse(BoardInteractionHelper.isModalVisible(driver0),
                 "Modal must close after clicking No");
-        assertEquals(crossesBefore, BoardInteractionHelper.getCrossedCellCount(driver0, "BLUE"),
-                "Cross count must be unchanged after clicking No — cell must not be crossed");
+        new WebDriverWait(driver0, Duration.ofSeconds(5))
+                .until(d -> BoardInteractionHelper.getCrossedCellCount(d, "BLUE") >= crossesBefore + 1);
+        assertEquals(crossesBefore + 1, BoardInteractionHelper.getCrossedCellCount(driver0, "BLUE"),
+                "Clicking No must still cross the cell — only the lock intent is declined, not the cross");
+        assertFalse(BoardInteractionHelper.isLockButtonCrossed(driver0, "BLUE"),
+                "Lock cross must NOT appear after clicking No (lock intent declined)");
     }
 
     /**

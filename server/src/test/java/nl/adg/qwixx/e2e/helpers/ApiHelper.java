@@ -86,6 +86,10 @@ public class ApiHelper {
         makeMove(sessionId, playerId, Map.of("moveType", "PASS"));
     }
 
+    public void giveUp(String sessionId, String playerId) {
+        makeMove(sessionId, playerId, Map.of("moveType", "GIVE_UP"));
+    }
+
     public void takePunishment(String sessionId, String playerId) {
         makeMove(sessionId, playerId, Map.of("moveType", "TAKE_PUNISHMENT"));
     }
@@ -125,6 +129,11 @@ public class ApiHelper {
 
     public void setDice(String sessionId, int white1, int white2) {
         post("/test/set-dice/" + sessionId + "/" + white1 + "/" + white2, null, Void.class);
+    }
+
+    /** Override one specific colored die, leaving all other dice unchanged. */
+    public void setColoredDie(String sessionId, String color, int value) {
+        post("/test/set-colored-die/" + sessionId + "/" + color + "/" + value, null, Void.class);
     }
 
     public void forceFinish(String sessionId) {

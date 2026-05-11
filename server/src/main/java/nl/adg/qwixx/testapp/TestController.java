@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -90,6 +92,28 @@ public class TestController {
 
         var current = turnState.currentRoll();
         turnState.setCurrentRoll(new RollResult(white1, white2, current.coloredDice()));
+
+        return ResponseEntity.ok().build();
+    }
+
+    /** Override the value of one specific colored die, leaving the rest of the roll unchanged. */
+    @PostMapping("/set-colored-die/{sessionId}/{color}/{value}")
+    public ResponseEntity<Void> setColoredDie(
+            @PathVariable String sessionId,
+            @PathVariable String color,
+            @PathVariable int value) {
+
+        GameSession session = GameRegistry.getGame(sessionId);
+        if (session == null) return ResponseEntity.notFound().build();
+
+        var turnState = session.currentState().turnState();
+        if (turnState == null || turnState.currentRoll() == null)
+            return ResponseEntity.badRequest().build();
+
+        var current    = turnState.currentRoll();
+        Map<Color, Integer> newColored = new HashMap<>(current.coloredDice());
+        newColored.put(Color.valueOf(color.toUpperCase()), value);
+        turnState.setCurrentRoll(new RollResult(current.white1(), current.white2(), newColored));
 
         return ResponseEntity.ok().build();
     }

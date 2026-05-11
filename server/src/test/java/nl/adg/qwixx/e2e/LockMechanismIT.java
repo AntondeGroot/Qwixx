@@ -556,13 +556,18 @@ public class LockMechanismIT extends BaseIntegrationTest {
         new WebDriverWait(driver0, Duration.ofSeconds(8))
                 .until(d -> BoardInteractionHelper.isRowClosed(d, "BLUE"));
 
-        // === Part 7: game ends (RED + BLUE = 2 locked rows); score screen after 1500 ms ===
-        new WebDriverWait(driver1, Duration.ofSeconds(6))
+        // === Part 7: player1 passes their final PASSIVE_MOVE before the game ends ===
+        // After a game-ending lock close, unacted passives get one final white+white turn.
+        BoardInteractionHelper.waitUntilPassButtonVisible(driver1, 5);
+        BoardInteractionHelper.clickPassButton(driver1);
+
+        // === Part 8: game ends (RED + BLUE = 2 locked rows); score screen appears ===
+        new WebDriverWait(driver1, Duration.ofSeconds(8))
                 .until(d -> d.getCurrentUrl().contains("/score"));
         assertTrue(driver1.getCurrentUrl().contains("/score"),
                 "Player1 must be navigated to the score screen after the game ends. "
                 + "Current URL: " + driver1.getCurrentUrl());
-        new WebDriverWait(driver0, Duration.ofSeconds(6))
+        new WebDriverWait(driver0, Duration.ofSeconds(8))
                 .until(d -> d.getCurrentUrl().contains("/score"));
         assertTrue(driver0.getCurrentUrl().contains("/score"),
                 "Player0 must be navigated to the score screen after the game ends. "

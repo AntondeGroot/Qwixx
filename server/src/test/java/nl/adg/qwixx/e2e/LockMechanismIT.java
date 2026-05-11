@@ -6,6 +6,7 @@ import nl.adg.qwixx.e2e.utils.TestUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -275,6 +276,59 @@ public class LockMechanismIT extends BaseIntegrationTest {
                 "Modal text should mention player0. Actual: " + modalText);
         assertTrue(modalText.contains("player1"),
                 "Modal text should mention player1. Actual: " + modalText);
+    }
+
+    // ── Longo: self-close yes/no modal ───────────────────────────────────────
+    //
+    // BLUE descending in LONGO: closing cells are "3" (second-to-last) and "2" (last).
+    // Clicking "3" shows a yes/no modal asking whether to close the row.
+    // After clicking Yes the lock cross (✕) must appear immediately on the lock icon —
+    // the cross is shown as soon as the required cell is pending, before the full
+    // lock declaration completes.
+
+    @Test
+    void longoYesOnSelfCloseModal_showsLockCrossImmediately() {
+        String sid = api.createGame(1, java.util.Map.of("base", "LONGO"));
+        String pid = api.getPlayerIds(sid).get(0);
+
+        // 6 normal crosses (pos 0-5, values 16-11) — enough to make "3" eligible.
+        // Dice white1=1 + white2=2 = 3, so "3" is reachable.
+        api.setCrosses(sid, pid, BLUE_ROW_INDEX, 6);
+        api.roll(sid, pid);
+        api.setDice(sid, 1, 2);
+
+        driver0 = TestUtils.getDriver(sid, pid);
+        TestUtils.waitUntilBoardLoaded(driver0);
+
+        assertFalse(BoardInteractionHelper.isLockButtonCrossed(driver0, "BLUE"),
+                "Lock cross must not be visible before crossing '3'");
+
+        // Click "3" → yes/no modal appears; click Yes → cross is applied.
+        BoardInteractionHelper.clickCellByValue(driver0, "BLUE", "3");
+        BoardInteractionHelper.waitUntilModalVisible(driver0, 5);
+        BoardInteractionHelper.clickModalYesButton(driver0);
+
+        // Lock cross must appear immediately once "3" is pending — no extra click needed.
+        new WebDriverWait(driver0, Duration.ofSeconds(5))
+                .until(d -> BoardInteractionHelper.isLockButtonCrossed(d, "BLUE"));
+
+        assertTrue(BoardInteractionHelper.isLockButtonCrossed(driver0, "BLUE"),
+                "Lock cross must appear on the lock icon immediately after confirming Yes "
+                + "on the self-close modal for the second-to-last Longo closing cell");
+        assertFalse(BoardInteractionHelper.isModalVisible(driver0),
+                "Modal must be dismissed after clicking Yes");
+
+        // In a single-player game the lock declaration auto-resolves: the row closes
+        // and the turn advances to ROLL.  The player must see the Roll button, not the
+        // Confirm button — confirming a move that is already done would be wrong.
+        new WebDriverWait(driver0, Duration.ofSeconds(8))
+                .until(d -> !d.findElements(By.cssSelector(".btn-roll")).isEmpty());
+
+        assertFalse(driver0.findElements(By.cssSelector(".btn-confirm")).size() > 0
+                        && driver0.findElement(By.cssSelector(".btn-confirm")).isDisplayed(),
+                "Confirm button must NOT be shown after the lock auto-resolved — turn is over");
+        assertTrue(driver0.findElement(By.cssSelector(".btn-roll")).isDisplayed(),
+                "Roll button must be visible after the Longo lock auto-resolves — player must roll next");
     }
 
     // ── Single-player lock: Bug regression tests ──────────────────────────────

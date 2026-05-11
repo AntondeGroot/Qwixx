@@ -161,6 +161,16 @@ public class BoardInteractionHelper {
         driver.findElement(By.xpath("//button[contains(@class,'btn-secondary')]")).click();
     }
 
+    /** Clicks the "Yes" button in the self-close yes/no modal. */
+    public static void clickModalYesButton(WebDriver driver) {
+        driver.findElement(By.xpath("//button[contains(@class,'btn-primary')]")).click();
+    }
+
+    /** Clicks the "No" button in the self-close yes/no modal. */
+    public static void clickModalNoButton(WebDriver driver) {
+        driver.findElement(By.xpath("//button[contains(@class,'btn-secondary')]")).click();
+    }
+
     // ── Viewport-bounds check ──────────────────────────────────────────────────
 
     /**

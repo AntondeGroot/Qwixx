@@ -29,12 +29,12 @@ import { RowClosureModalService } from '../services/row-closure-modal.service';
   styleUrl: './board.component.css'
 })
 export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
-  private route              = inject(ActivatedRoute);
-  private router             = inject(Router);
-  private gameStatesService  = inject(GamestatesService);
-  private movesService       = inject(MovesService);
-  private host               = inject(ElementRef<HTMLElement>);
-  private rowClosureModal    = inject(RowClosureModalService);
+  private readonly route              = inject(ActivatedRoute);
+  private readonly router             = inject(Router);
+  private readonly gameStatesService  = inject(GamestatesService);
+  private readonly movesService       = inject(MovesService);
+  private readonly host               = inject(ElementRef<HTMLElement>);
+  private readonly rowClosureModal    = inject(RowClosureModalService);
 
   sessionId   = signal('');
   playerId    = signal('');
@@ -43,7 +43,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   rollingDice = signal(false);
   // True while the player dismissed the lock-intent modal to pick a new cell.
   // Suppresses the modal until they cross something (pendingCellIds becomes non-empty).
-  private suppressModal = signal(false);
+  private readonly suppressModal = signal(false);
 
   private pollSub?: Subscription;
   private moveSub?: Subscription;
@@ -51,7 +51,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Sync modal state to the service so the modal renders at the root level,
   // outside the board's CSS transform (which would break position:fixed on mobile).
-  private _modalSync = effect(() => {
+  private readonly _modalSync = effect(() => {
     const requests = this.isInPassiveQueue()
       ? (this.gameState()?.rowClosureRequests ?? [])
       : [];
@@ -439,7 +439,11 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
           const rowColor = (row.lock!.color ?? row.cells[0]?.color) as Color;
           this.rowClosureModal.showLockConfirm(
             rowColor,
-            () => { this.rowClosureModal.clearLockConfirm(); this.sendMove(req); },
+            () => {
+              this.rowClosureModal.clearLockConfirm();
+              this.pendingAutoLock = { rowId: row!.id, autoLock: true };
+              this.sendMove(req);
+            },
             () => this.rowClosureModal.clearLockConfirm()
           );
         }
@@ -599,8 +603,16 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     if (rowState?.lockCrossed) return false;
     const permanent = new Set(rowState?.crossedCells ?? []);
     const pending   = new Set(s.turnState?.pendingCrosses?.[pid] ?? []);
-    const all       = new Set([...permanent, ...pending]);
-    return row.lock.requiredCells.every(id => all.has(id));
+    const required  = row.lock.requiredCells;
+    const last      = required[required.length - 1];
+    // Last required cell (permanent or pending) always enables locking.
+    if (permanent.has(last) || pending.has(last)) return true;
+    // Second-to-last required cell enables locking only while still pending this turn.
+    if (required.length > 1) {
+      const secondLast = required[required.length - 2];
+      return pending.has(secondLast);
+    }
+    return false;
   }
 
   private checkPendingAutoLock(s: GameState) {

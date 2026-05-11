@@ -347,6 +347,7 @@ export class ScoreComponent implements OnInit {
 
   /** Dismiss the winner modal and keep the score table in view. */
   viewScores() {
+    this._initPortraitRowH(this.playerRows().length);
     this.showModal.set(false);
     this.showActionBar.set(true);
   }

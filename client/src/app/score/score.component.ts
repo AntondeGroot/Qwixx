@@ -89,7 +89,60 @@ export class ScoreComponent implements OnInit {
     this.sessionId = this.route.snapshot.paramMap.get('sessionId') ?? '';
     this.playerId  = this.route.snapshot.queryParamMap.get('pid') ??
                      sessionStorage.getItem(`qwixx_pid_${this.sessionId}`) ?? '';
-    this.runAnimation();
+    const animationKey = `qwixx_score_shown_${this.sessionId}`;
+    if (sessionStorage.getItem(animationKey)) {
+      this.showFinalState();
+    } else {
+      this.runAnimation().then(() => sessionStorage.setItem(animationKey, '1'));
+    }
+  }
+
+  /** Skip animation and immediately render the final score state. Used on reload. */
+  private async showFinalState(): Promise<void> {
+    try {
+      const [state, scores] = await Promise.all([
+        firstValueFrom(this.gameStatesService.getGameState(this.sessionId)),
+        firstValueFrom(this.gamesService.getScores(this.sessionId)),
+      ]);
+
+      const layout   = Object.values(state.sheetLayouts)[0];
+      const colors   = layout.rows.map(r => r.cells[0]!.color as string);
+      const hasExtra = Object.values(scores).some(s => s.extraPoints > 0);
+      const hasBonus = Object.values(scores).some(s => s.bonusPoints > 0);
+      this.colorCols.set(colors);
+      this.showExtra.set(hasExtra);
+      this.showBonus.set(hasBonus);
+
+      const cols: Col[] = [
+        ...colors.map(c => ({ key: c, getValue: (sc: ScoreCard) => sc.pointsPerColor[c] ?? 0 })),
+        ...(hasExtra ? [{ key: 'EXTRA', getValue: (sc: ScoreCard) => sc.extraPoints }] : []),
+        ...(hasBonus ? [{ key: 'BONUS', getValue: (sc: ScoreCard) => sc.bonusPoints }] : []),
+      ];
+
+      const rows: PlayerRow[] = state.players.map((p, i) => ({
+        id:                  p.id,
+        name:                p.name,
+        scoreCard:           scores[p.id],
+        displayed:           Object.fromEntries(cols.map(c => [c.key, c.getValue(scores[p.id])])),
+        displayedPunishment: scores[p.id].punishmentPoints,
+        rank:                i,
+        lifting:             false,
+      }));
+
+      // Sort into final rank order immediately
+      const sorted  = [...rows].sort((a, b) => this.displayedTotal(b) - this.displayedTotal(a));
+      const newRank = new Map(sorted.map((r, i) => [r.id, i]));
+      rows.forEach(r => { r.rank = newRank.get(r.id) ?? r.rank; });
+
+      this.playerRows.set(rows);
+      this.doneKeys.set(new Set(cols.map(c => c.key)));
+      this.punishDone.set(true);
+      this.allDone.set(true);
+      this.showActionBar.set(true);
+      this.startRestartPoll();
+    } catch {
+      this.router.navigate(['/']);
+    }
   }
 
   private async runAnimation(): Promise<void> {

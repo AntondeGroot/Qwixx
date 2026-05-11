@@ -201,4 +201,20 @@ public class BoardInteractionHelper {
             return false;
         }
     }
+
+    /**
+     * Returns true if {@code child}'s bounding rect is fully inside {@code parent}'s bounding
+     * rect (allowing 1 px rounding tolerance on each edge).
+     */
+    public static boolean isElementWithinElement(WebDriver driver, WebElement child, WebElement parent) {
+        return (boolean) ((JavascriptExecutor) driver).executeScript(
+                "const c = arguments[0].getBoundingClientRect();" +
+                "const p = arguments[1].getBoundingClientRect();" +
+                "return c.width > 0 && c.height > 0" +
+                "  && c.top    >= p.top    - 1" +
+                "  && c.left   >= p.left   - 1" +
+                "  && c.bottom <= p.bottom + 1" +
+                "  && c.right  <= p.right  + 1;",
+                child, parent);
+    }
 }

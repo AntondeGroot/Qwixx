@@ -168,12 +168,15 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     // browser renders only once, so there is no visible flash.
     el.style.setProperty('--mobile-scale', '1');
     const h = layout.offsetHeight;
-    // Subtract the host's top padding (16px) from the available height so the
-    // board never scrolls past the bottom clip boundary.
-    const scale = h > 0
-      ? (window.innerWidth - 16) / h
-      : (window.innerWidth - 16) / this.MOBILE_DESIGN_H;
-    el.style.setProperty('--mobile-scale', Math.min(scale, 1).toFixed(4));
+    const w = layout.offsetWidth;
+    // In portrait the board is rotated 90°: DOM height → visual width, DOM width → visual height.
+    // Subtract 16px (host padding) from each available dimension.
+    // scaleH: fit the board's DOM height into the viewport's width (short side).
+    // scaleW: fit the board's DOM width into the viewport's height (long side) —
+    //         needed when wide variants (e.g. Longo) make the board wider than 100dvh.
+    const scaleH = h > 0 ? (window.innerWidth  - 16) / h : (window.innerWidth  - 16) / this.MOBILE_DESIGN_H;
+    const scaleW = w > 0 ? (window.innerHeight - 16) / w : 1;
+    el.style.setProperty('--mobile-scale', Math.min(scaleH, scaleW, 1).toFixed(4));
   }
 
   ngOnDestroy() {

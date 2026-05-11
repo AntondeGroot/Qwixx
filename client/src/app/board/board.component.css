@@ -17,6 +17,12 @@
 
   .board-layout {
     zoom: var(--mobile-scale, 1);
+    /* width:fit-content caps at the available space (100dvh = 844px in portrait),
+       which squeezes the auto column too narrow for wide variants like Longo.
+       min-width:max-content overrides that cap so the 3-column grid can expand
+       to its natural size (~1114px); applyMobileScale() then scales the whole
+       board down via zoom so it still fits within the rotated viewport. */
+    min-width: max-content;
   }
 }
 

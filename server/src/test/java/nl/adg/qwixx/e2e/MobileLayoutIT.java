@@ -335,6 +335,42 @@ public class MobileLayoutIT extends BaseIntegrationTest {
                 "Every punishment box must be displayed on mobile");
     }
 
+    /**
+     * Verifies that every Longo-specific element (rows, bonus track, punishment track)
+     * is fully contained within the {@code .current-player} section — i.e. nothing
+     * overflows the sheet boundary.
+     */
+    @Test
+    void longoVariantIsFullyWithinCurrentPlayerElement() {
+        String sid = api.createGame(1, Map.of("base", "LONGO"));
+        String pid = api.getPlayerIds(sid).get(0);
+
+        driver0 = TestUtils.getPortraitDriver(sid, pid);
+        TestUtils.waitUntilBoardLoaded(driver0);
+
+        ((org.openqa.selenium.JavascriptExecutor) driver0).executeScript(
+                "document.querySelector('app-board').style.setProperty('--mobile-scale','0.6')");
+        TestUtils.wait(150);
+
+        WebElement currentPlayer = driver0.findElement(By.cssSelector("section.current-player"));
+
+        for (String color : List.of("RED", "YELLOW", "GREEN", "BLUE")) {
+            WebElement row = driver0.findElement(By.xpath(
+                    "//section[contains(@class,'current-player')]" +
+                    "//div[@data-color='" + color + "' and contains(@class,'row')]"));
+            assertTrue(BoardInteractionHelper.isElementWithinElement(driver0, row, currentPlayer),
+                    color + " row must be fully within the current-player section");
+        }
+
+        WebElement bonusTrack = driver0.findElement(By.className("bonus-track"));
+        assertTrue(BoardInteractionHelper.isElementWithinElement(driver0, bonusTrack, currentPlayer),
+                "Bonus track must be fully within the current-player section");
+
+        WebElement punishmentTrack = driver0.findElement(By.className("punishment-track"));
+        assertTrue(BoardInteractionHelper.isElementWithinElement(driver0, punishmentTrack, currentPlayer),
+                "Punishment track must be fully within the current-player section");
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Longo yes/no self-close modal
     //

@@ -1470,6 +1470,43 @@ class StandardTurnRulesTest {
     }
 
     @Test
+    void passiveDeclares_activeAlsoCrossesClosingCell_autoAcknowledgedAndBothGetLock() {
+        // p2 (passive) declares lock intent for row 0.
+        // p1 (active) also crosses the closing cell while LOCK_PENDING.
+        // Expected: p1 is auto-acknowledged (no extra OK click), row closes,
+        //           and BOTH players have their lock marked as crossed.
+        GameState state = stateAfterRoll(p1, p1, p2);
+
+        crossEnoughForLock(state, p2, 0);
+        crossEnoughForLockWithoutClosingCell(state, p1, 0); // enough to qualify, but "12" not yet crossed
+
+        rules.apply(state, new DeclareLockIntentAction(p2, 0));
+        assertEquals(TurnPhase.LOCK_PENDING, state.turnState().phase());
+        assertTrue(state.turnState().passivePlayerQueue().contains(p1),
+                "p1 (active) must be in the acknowledgement queue");
+
+        // p1 crosses the closing cell — last in the requiredCells list
+        Row row  = state.sheetLayouts().get(p1).rows().get(0);
+        String closingCellId = row.lock().requiredCells().get(row.lock().requiredCells().size() - 1);
+        rules.apply(state, new CrossCellAction(p1, 0, closingCellId, DiceCombination.WHITE_WHITE));
+
+        // The row must close automatically — no separate EndTurnAction needed.
+        // (If auto-acknowledgement didn't fire the game would still be in LOCK_PENDING.)
+        assertTrue(state.boardState().closedRows().containsKey(0),
+                "row must close immediately after p1 crosses the closing cell — no OK click needed");
+
+        // Turn must have advanced out of LOCK_PENDING
+        assertNotEquals(TurnPhase.LOCK_PENDING, state.turnState().phase(),
+                "LOCK_PENDING must resolve automatically");
+
+        // Both players must show the lock cross (✕ on the lock button)
+        assertTrue(rowStateOf(state, p2, 0).lockCrossed(),
+                "p2 (declarant) must have the lock marked as crossed");
+        assertTrue(rowStateOf(state, p1, 0).lockCrossed(),
+                "p1 (also crossed closing cell) must also have the lock marked as crossed");
+    }
+
+    @Test
     void giveUpFromLockPending_passiveDeclarant_threePlayer_waitsForOtherPassive() {
         // p2 declares lock; p1 (active) gives up; p3 still needs to acknowledge.
         // Row must NOT close until p3 also acknowledges.
@@ -1864,6 +1901,24 @@ class StandardTurnRulesTest {
     // -------------------------------------------------------------------------
     // Test helpers
     // -------------------------------------------------------------------------
+
+    /**
+     * Cross minCrosses-1 regular cells (excluding required/closing cells) so the player
+     * qualifies to cross the closing cell but has not yet done so.
+     */
+    private void crossEnoughForLockWithoutClosingCell(GameState state, UUID playerId, int rowIndex) {
+        SheetLayout layout = state.sheetLayouts().get(playerId);
+        Row row = layout.rows().get(rowIndex);
+        LockCell lock = row.lock();
+        SheetProgress progress = state.boardState().sheetProgress().get(playerId);
+        Set<String> required = new HashSet<>(lock.requiredCells());
+        Set<String> crossed = new HashSet<>();
+        for (Cell c : row.cells()) {
+            if (crossed.size() >= lock.minCrosses() - 1) break;
+            if (!required.contains(c.id())) crossed.add(c.id());
+        }
+        progress.updateRowState(rowIndex, new RowState(crossed, false));
+    }
 
     /** Cross enough cells on rowIndex (and the closing-eligible cell) so the lock is openable. */
     private void crossEnoughForLock(GameState state, UUID playerId, int rowIndex) {

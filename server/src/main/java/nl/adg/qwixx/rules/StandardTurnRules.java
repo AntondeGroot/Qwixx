@@ -244,6 +244,9 @@ public class StandardTurnRules implements TurnRules {
 
         if (!actingAsPassive) {
             recordActiveDiceUsage(turn.activeTurnState(), action.combination());
+            // When a passive declared the lock and the active player also crosses the closing
+            // cell, auto-acknowledge so they don't need a separate OK click.
+            acknowledgeActiveNonDeclarantByClosingCellCross(state, turn, playerId, action.rowIndex());
         } else {
             turn.passivesActed().add(playerId);
             acknowledgePassiveByCellCrossInLockPending(state, turn, playerId);
@@ -271,6 +274,23 @@ public class StandardTurnRules implements TurnRules {
             if (ats.colorDieUsed())
                 throw new IllegalMoveException("color die already used this turn");
             ats.setColorDieUsed();
+        }
+    }
+
+    // When a passive declared the lock and the active player crosses the exact closing cell,
+    // treat it the same as an acknowledgement — no separate OK click needed.
+    private void acknowledgeActiveNonDeclarantByClosingCellCross(GameState state, TurnState turn, UUID playerId, int rowIndex) {
+        if (turn.phase() != TurnPhase.LOCK_PENDING) return;
+        if (playerId.equals(turn.pendingLockDeclarerId())) return;
+        Integer pendingRow = turn.pendingLockRowIndex();
+        if (pendingRow == null || pendingRow != rowIndex) return;
+        if (!canCrossLock(state, playerId, rowIndex)) return;
+        if (turn.lockAcknowledged().contains(playerId)) return;
+        turn.undoBuffer().remove(playerId);
+        turn.lockAcknowledged().add(playerId);
+        turn.passivePlayerQueue().remove(playerId);
+        if (TurnHelper.allNonActiveAcknowledged(state)) {
+            applyCrossLock(state, new CrossLockAction(turn.pendingLockDeclarerId(), pendingRow));
         }
     }
 
@@ -361,6 +381,14 @@ public class StandardTurnRules implements TurnRules {
                 throw new IllegalMoveException("not all players have acknowledged yet");
             Integer queued = turn.queuedLockRowIndex();
             turn.setQueuedLockRowIndex(null);
+            // Mark the lock for every player who has already crossed the required cells
+            // (e.g. the active player who also crossed the closing cell during LOCK_PENDING).
+            for (UUID pid : state.players()) {
+                if (!rowStateOf(state.boardState().sheetProgress().get(pid), rowIndex).lockCrossed()
+                        && canCrossLock(state, pid, rowIndex)) {
+                    markLockCrossed(state, pid, rowIndex);
+                }
+            }
             closeRowGlobally(state, playerId, rowIndex);
             // If the active declarant queued a second row (colored die close in LOCK_PENDING),
             // close it now — passive players already acknowledged both via the combined modal.

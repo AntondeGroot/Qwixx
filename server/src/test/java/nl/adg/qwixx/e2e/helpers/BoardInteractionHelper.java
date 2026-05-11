@@ -200,15 +200,24 @@ public class BoardInteractionHelper {
 
     // ── Pass button ───────────────────────────────────────────────────────────
 
-    /** Clicks the passive-pass button (btn-pass-arrow) visible in PASSIVE_MOVE. */
+    /**
+     * Clicks the passive player's pass or confirm button:
+     * <ul>
+     *   <li>{@code btn-pass-arrow} — no pending cross, skip the turn</li>
+     *   <li>{@code btn-confirm}   — pending cross present, commit it and end the turn</li>
+     * </ul>
+     */
     public static void clickPassButton(WebDriver driver) {
-        driver.findElement(By.className("btn-pass-arrow")).click();
+        List<WebElement> arrowBtns = driver.findElements(By.className("btn-pass-arrow"));
+        if (!arrowBtns.isEmpty()) { arrowBtns.get(0).click(); return; }
+        driver.findElement(By.className("btn-confirm")).click();
     }
 
-    /** Waits up to {@code seconds} seconds for the passive-pass button to appear. */
+    /** Waits up to {@code seconds} seconds for either the skip or confirm button to appear. */
     public static void waitUntilPassButtonVisible(WebDriver driver, int seconds) {
         new WebDriverWait(driver, Duration.ofSeconds(seconds))
-                .until(d -> !d.findElements(By.className("btn-pass-arrow")).isEmpty());
+                .until(d -> !d.findElements(By.className("btn-pass-arrow")).isEmpty()
+                         || !d.findElements(By.className("btn-confirm")).isEmpty());
     }
 
     // ── Viewport-bounds check ──────────────────────────────────────────────────

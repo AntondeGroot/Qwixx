@@ -24,5 +24,13 @@ export const routes: Routes = [
       return `/settings${localeParam}`;
     }
   },
+  {
+    path: 'preview',
+    loadComponent: () => import('./preview/preview.component').then(m => m.PreviewComponent)
+  },
+  {
+    path: 'preview/:id',
+    loadComponent: () => import('./preview/preview.component').then(m => m.PreviewComponent)
+  },
   { path: '**', redirectTo: 'settings' }
 ];

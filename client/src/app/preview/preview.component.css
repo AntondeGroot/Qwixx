@@ -1,0 +1,167 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #12122a;
+  color: #e0e0e0;
+  box-sizing: border-box;
+}
+
+.preview-page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem;
+}
+
+h1 {
+  color: #fff;
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+
+.hint {
+  color: #888;
+  font-size: 0.9rem;
+  margin: 0 0 1.75rem;
+}
+
+/* ── Scenario list ─────────────────────────────────────────────── */
+
+.scenario-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.scenario-row {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.5rem;
+  color: #ddd;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.scenario-row:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.num {
+  color: gold;
+  font-family: monospace;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.label {
+  flex: 1;
+  font-size: 0.95rem;
+}
+
+.badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.3rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: #aaa;
+  flex-shrink: 0;
+}
+
+.badge-score {
+  background: rgba(255, 215, 0, 0.15);
+  color: gold;
+}
+
+/* ── Launcher ──────────────────────────────────────────────────── */
+
+.status {
+  color: #aaa;
+  font-size: 1.1rem;
+}
+
+.description {
+  color: #ccc;
+  font-size: 1rem;
+  margin: 0 0 1.75rem;
+}
+
+.others {
+  margin-top: 1.5rem;
+}
+
+.others-label {
+  color: #888;
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem;
+}
+
+.others-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 2rem;
+  color: #888;
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: #ccc;
+}
+
+/* ── Shared buttons ────────────────────────────────────────────── */
+
+.btn {
+  padding: 0.7rem 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.12s;
+}
+
+.btn:hover { transform: scale(1.03); }
+
+.btn-primary {
+  background: gold;
+  color: #111;
+}
+
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.07);
+  color: #ccc;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.error {
+  color: #ef5350;
+  margin-bottom: 1rem;
+}

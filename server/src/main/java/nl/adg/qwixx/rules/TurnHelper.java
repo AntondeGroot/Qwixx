@@ -33,20 +33,12 @@ class TurnHelper {
     // ── Lock acknowledgement queries ──────────────────────────────────────────
 
     /**
-     * True when every player in the passive queue has acknowledged the current lock intent.
-     * Only players who were in the queue at the time of the declaration matter — players who
-     * EndTurned before the declaration left the queue and are never required to acknowledge.
+     * True when every player in the passive queue has acknowledged the lock intent AND completed
+     * their passive move opportunity (or auto-passed). Players leave the queue only after both
+     * steps — this is the trigger condition for applying the lock.
      */
     static boolean allNonActiveAcknowledged(GameState state) {
-        TurnState turn = state.turnState();
-        return turn.lockAcknowledged().containsAll(turn.passivePlayerQueue());
-    }
-
-    /** True if adding playerId's acknowledgement would make allNonActiveAcknowledged true. */
-    static boolean isLastMissingAcknowledgement(TurnState turn, UUID playerId) {
-        return turn.passivePlayerQueue().stream()
-                .filter(pid -> !turn.lockAcknowledged().contains(pid))
-                .allMatch(pid -> pid.equals(playerId));
+        return state.turnState().passivePlayerQueue().isEmpty();
     }
 
     // ── Passive queue construction ────────────────────────────────────────────

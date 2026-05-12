@@ -17,6 +17,8 @@ export class RowComponent {
   showClickableCellIds       = input<Set<string> | null>(null);
   whiteWhiteClickableCellIds = input<Set<string>>(new Set());
   pendingCellIds             = input<Set<string>>(new Set());
+  isDeclarantLockPending     = input(false);
+  isPendingAutoLock          = input(false);
 
   lockClickable = input(false);
 

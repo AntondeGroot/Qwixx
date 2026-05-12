@@ -77,15 +77,17 @@ public class LockMechanismIT extends BaseIntegrationTest {
         assertTrue(BoardInteractionHelper.isLockButtonCrossed(driver0, "BLUE"),
                 "Lock cross must appear on player0's board as soon as '2' is pending");
 
-        // Player1 sees the lock-intent modal and confirms → row closes.
+        // Player1 confirms, then completes their passive slot → row closes.
         BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
         BoardInteractionHelper.clickModalConfirmButton(driver1);
+        BoardInteractionHelper.waitUntilPassButtonVisible(driver1, 5);
+        BoardInteractionHelper.clickPassButton(driver1);
 
         new WebDriverWait(driver0, Duration.ofSeconds(8))
                 .until(d -> BoardInteractionHelper.isRowClosed(d, "BLUE"));
 
         assertTrue(BoardInteractionHelper.isRowClosed(driver0, "BLUE"),
-                "BLUE row must be closed after player1 acknowledges the auto-declared lock");
+                "BLUE row must be closed after player1 completes their passive slot");
     }
 
     // ── Lock-intent modal: declaring player ───────────────────────────────────
@@ -287,10 +289,10 @@ public class LockMechanismIT extends BaseIntegrationTest {
     // lock declaration completes.
 
     @Test
-    void longoYesOnSelfCloseModal_crossesCellThenLockFiresWhenLastCrossed() {
-        // Clicking YES on the second-to-last Longo modal crosses "3" but does NOT yet
-        // declare lock intent — the lock fires only when the last required cell "2" is
-        // also crossed.  Set the BLUE die so "2" is reachable (white1+BLUE = 1+1 = 2).
+    void longoYesOnSelfCloseModal_showsLockCrossPendingThenFiresWhenLastCrossed() {
+        // Clicking YES on the second-to-last Longo modal crosses "3" and shows the lock ✕
+        // immediately as a pending indicator.  The lock actually fires only when the last
+        // required cell "2" is also crossed.  Set the BLUE die so "2" is reachable (white1+BLUE = 1+1 = 2).
         String sid = api.createGame(1, java.util.Map.of("base", "LONGO"));
         String pid = api.getPlayerIds(sid).get(0);
 
@@ -307,13 +309,16 @@ public class LockMechanismIT extends BaseIntegrationTest {
         BoardInteractionHelper.waitUntilModalVisible(driver0, 5);
         BoardInteractionHelper.clickModalYesButton(driver0);
 
-        // "3" must be crossed; lock cross must NOT appear yet (still need "2")
+        // "3" must be crossed; lock cross MUST appear immediately as a pending indicator
+        // (the player said YES, so we show intent even though "2" is still needed)
         new WebDriverWait(driver0, Duration.ofSeconds(5))
                 .until(d -> !BoardInteractionHelper.isModalVisible(d));
         new WebDriverWait(driver0, Duration.ofSeconds(5))
                 .until(d -> BoardInteractionHelper.getCrossedCellCount(d, "BLUE") >= 7);
-        assertFalse(BoardInteractionHelper.isLockButtonCrossed(driver0, "BLUE"),
-                "Lock cross must NOT appear after crossing only '3' — '2' is still needed");
+        new WebDriverWait(driver0, Duration.ofSeconds(5))
+                .until(d -> BoardInteractionHelper.isLockButtonCrossed(d, "BLUE"));
+        assertTrue(BoardInteractionHelper.isLockButtonCrossed(driver0, "BLUE"),
+                "Lock cross must appear after clicking YES on '3' — pending indicator while '2' is still needed");
 
         // Click "2" (colored die: white1+BLUE = 1+1 = 2) → lock fires automatically
         BoardInteractionHelper.clickCellByValue(driver0, "BLUE", "2");
@@ -328,6 +333,219 @@ public class LockMechanismIT extends BaseIntegrationTest {
                 .until(d -> !d.findElements(By.cssSelector(".btn-roll")).isEmpty());
         assertTrue(driver0.findElement(By.cssSelector(".btn-roll")).isDisplayed(),
                 "Roll button must be visible after the Longo lock auto-resolves");
+    }
+
+    @Test
+    void longoYesOnSelfCloseModal_passivePlayerSeesModalImmediately() {
+        // When the active player clicks "3" (second-to-last required cell) and clicks YES,
+        // DECLARE_LOCK_INTENT is sent immediately. The passive player must see the row-closure
+        // modal even before the active player has crossed "2" (the last required cell).
+        String sid = api.createGame(2, java.util.Map.of("base", "LONGO"));
+        List<String> pids = api.getPlayerIds(sid);
+
+        api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, 6);
+        api.roll(sid, pids.get(0));
+        api.setDice(sid, 1, 2);
+        api.setColoredDie(sid, "BLUE", 1); // white+BLUE = 1+1 = 2 → "2" reachable later
+
+        driver0 = TestUtils.getDriver(sid, pids.get(0));
+        driver1 = TestUtils.getDriver(sid, pids.get(1));
+        TestUtils.waitUntilBoardLoaded(driver0);
+        TestUtils.waitUntilBoardLoaded(driver1);
+
+        // Active player clicks "3" → YES
+        BoardInteractionHelper.clickCellByValue(driver0, "BLUE", "3");
+        BoardInteractionHelper.waitUntilModalVisible(driver0, 5);
+        BoardInteractionHelper.clickModalYesButton(driver0);
+
+        // Passive player must see the row-closure modal immediately after YES
+        BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
+        assertTrue(BoardInteractionHelper.isModalVisible(driver1),
+                "Passive player must see the row-closure modal after active clicks YES "
+                + "on the second-to-last Longo cell — lock intent declared before '2' is crossed");
+    }
+
+    // ── Passive closes own row while acknowledging an active lock ─────────────
+    //
+    // Scenario: player0 (active) has all 11 crosses in BLUE → declares BLUE lock.
+    // Player1 (passive) has 5 crosses in RED and white+white=12 → crosses RED "12"
+    // during their BLUE acknowledgement slot.
+    //
+    // Expected behaviour:
+    //   1. Lock ✕ appears on player1's RED immediately (pendingAutoLock indicator).
+    //   2. Lock ✕ stays visible after player1 EndTurns (completing BLUE passive slot).
+    //   3. After BLUE closes, player1 auto-declares RED intent (checkPendingAutoLock).
+    //   4. Player0 sees the RED row-closure modal.
+    //   5. Player0 confirms and completes → RED closes → 2 rows locked → game over.
+
+    @Test
+    void passive_crossesClosingCell_lockCrossStaysVisible_afterEndTurn() {
+        // Setup: 2-player, standard Qwixx. Player0 already has all BLUE cells crossed.
+        // Player1 has 5 crosses in RED. white+white=12 → RED "12" reachable.
+        String sid = api.createGame(2);
+        List<String> pids = api.getPlayerIds(sid);
+
+        api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.setCrosses(sid, pids.get(1), RED_ROW_INDEX, 5);
+        api.roll(sid, pids.get(0));
+        api.setDice(sid, 6, 6);   // white+white = 12 → RED "12" (standard Qwixx closing cell)
+
+        driver0 = TestUtils.getDriver(sid, pids.get(0));
+        driver1 = TestUtils.getDriver(sid, pids.get(1));
+        TestUtils.waitUntilBoardLoaded(driver0);
+        TestUtils.waitUntilBoardLoaded(driver1);
+
+        // Player0 declares BLUE lock via API (already has all crosses)
+        String blueRowId = api.getRowId(sid, pids.get(0), BLUE_ROW_INDEX);
+        api.declareLockIntent(sid, pids.get(0), blueRowId);
+
+        // Player1 sees the BLUE modal; must dismiss it first (it blocks cell clicks)
+        BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
+        BoardInteractionHelper.clickModalConfirmButton(driver1);   // acknowledge BLUE
+        new WebDriverWait(driver1, Duration.ofSeconds(5))
+                .until(d -> !BoardInteractionHelper.isModalVisible(d));
+
+        // Player1 crosses RED "12" (white+white = 12)
+        BoardInteractionHelper.clickCellByValue(driver1, "RED", "12");
+
+        // Wait for the cross to be reflected in state before proceeding (lock ✕ as sync point)
+        new WebDriverWait(driver1, Duration.ofSeconds(5))
+                .until(d -> BoardInteractionHelper.isLockButtonCrossed(d, "RED"));
+
+        // Player1 clicks confirm (green button — pending cross commits the BLUE passive slot)
+        BoardInteractionHelper.waitUntilPassButtonVisible(driver1, 5);
+        BoardInteractionHelper.clickPassButton(driver1);
+
+        // BLUE fires (sole passive completed) → player1 reinvited → auto-declares RED.
+        // Player0's browser now sees the RED row-closure modal — use this as a reliable
+        // synchronisation point: once player0 sees it, the auto-declare has fully completed
+        // and player1's isDeclarantLockPending indicator is stable.
+        BoardInteractionHelper.waitUntilModalVisible(driver0, 10);
+
+        // Lock ✕ must be visible on player1's RED row via isDeclarantLockPending
+        assertTrue(BoardInteractionHelper.isLockButtonCrossed(driver1, "RED"),
+                "RED lock cross must be visible after player1 auto-declared RED intent — "
+                + "isDeclarantLockPending shows the ✕ once rowClosureRequests contains RED");
+    }
+
+    @Test
+    void passive_crossesClosingCell_redAutoDeclaresAfterBlueFires_gameEnds() {
+        // Full end-to-end: player1 crosses RED "12" during BLUE LOCK_PENDING.
+        // After BLUE fires, player1 auto-declares RED. Player0 acknowledges → RED closes → game over.
+        String sid = api.createGame(2);
+        List<String> pids = api.getPlayerIds(sid);
+
+        api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.setCrosses(sid, pids.get(1), RED_ROW_INDEX, 5);
+        api.roll(sid, pids.get(0));
+        api.setDice(sid, 6, 6);   // white+white = 12 → RED "12"
+
+        driver0 = TestUtils.getDriver(sid, pids.get(0));
+        driver1 = TestUtils.getDriver(sid, pids.get(1));
+        TestUtils.waitUntilBoardLoaded(driver0);
+        TestUtils.waitUntilBoardLoaded(driver1);
+
+        // Player0 declares BLUE lock
+        String blueRowId = api.getRowId(sid, pids.get(0), BLUE_ROW_INDEX);
+        api.declareLockIntent(sid, pids.get(0), blueRowId);
+
+        // Player1 acknowledges BLUE (dismiss modal), then crosses RED "12", then completes slot
+        BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
+        BoardInteractionHelper.clickModalConfirmButton(driver1);   // acknowledge BLUE
+        new WebDriverWait(driver1, Duration.ofSeconds(5))
+                .until(d -> !BoardInteractionHelper.isModalVisible(d));
+        BoardInteractionHelper.clickCellByValue(driver1, "RED", "12");
+        // Wait for RED cross to be reflected in state (lock ✕ sync point) before completing slot.
+        // Without this, waitUntilPassButtonVisible can return immediately (pass button was already
+        // visible), causing clickPassButton to cancel the in-flight CROSS_WHITE_WHITE request.
+        new WebDriverWait(driver1, Duration.ofSeconds(5))
+                .until(d -> BoardInteractionHelper.isLockButtonCrossed(d, "RED"));
+        BoardInteractionHelper.waitUntilPassButtonVisible(driver1, 5);
+        BoardInteractionHelper.clickPassButton(driver1);
+
+        // BLUE fires (sole passive completed slot) → player1 reinvited → auto-declares RED
+        // → player0 sees RED modal
+        new WebDriverWait(driver0, Duration.ofSeconds(8))
+                .until(d -> BoardInteractionHelper.isRowClosed(d, "BLUE"));
+        assertTrue(BoardInteractionHelper.isRowClosed(driver0, "BLUE"),
+                "BLUE must close after player1 completes passive slot");
+
+        // Player0 sees the RED row-closure modal (player1 auto-declared RED)
+        BoardInteractionHelper.waitUntilModalVisible(driver0, 8);
+        assertTrue(BoardInteractionHelper.isModalVisible(driver0),
+                "Player0 must see RED row-closure modal after player1 auto-declares RED intent");
+
+        // Player0 confirms RED → sees a pass button (passive declared during PASSIVE_MOVE reinvite,
+        // so no auto-pass) → clicks pass → RED fires → game over (BLUE + RED = 2 rows).
+        BoardInteractionHelper.clickModalConfirmButton(driver0);
+        BoardInteractionHelper.waitUntilPassButtonVisible(driver0, 5);
+        BoardInteractionHelper.clickPassButton(driver0);
+
+        // Both rows closed → game over → all browsers navigate to /score
+        new WebDriverWait(driver0, Duration.ofSeconds(10))
+                .until(d -> d.getCurrentUrl().contains("/score"));
+        new WebDriverWait(driver1, Duration.ofSeconds(10))
+                .until(d -> d.getCurrentUrl().contains("/score"));
+        assertTrue(driver0.getCurrentUrl().contains("/score"),
+                "Player0 must be on the score screen after 2 rows closed");
+        assertTrue(driver1.getCurrentUrl().contains("/score"),
+                "Player1 must be on the score screen after 2 rows closed");
+    }
+
+    @Test
+    void passive_crossesClosingCell_threePlayer_player2SeesRedModal() {
+        // 3-player: player0 declares BLUE, player1 crosses RED "12" during BLUE LOCK_PENDING.
+        // After BLUE fires, player1 auto-declares RED. Player2 must see the RED modal.
+        String sid = api.createGame(3);
+        List<String> pids = api.getPlayerIds(sid);
+        WebDriver driver2 = null;
+        try {
+            api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+            api.setCrosses(sid, pids.get(1), RED_ROW_INDEX, 5);
+            api.roll(sid, pids.get(0));
+            api.setDice(sid, 6, 6);   // white+white = 12
+
+            driver0 = TestUtils.getDriver(sid, pids.get(0));
+            driver1 = TestUtils.getDriver(sid, pids.get(1));
+            driver2 = TestUtils.getDriver(sid, pids.get(2));
+            TestUtils.waitUntilBoardLoaded(driver0);
+            TestUtils.waitUntilBoardLoaded(driver1);
+            TestUtils.waitUntilBoardLoaded(driver2);
+
+            // Player0 declares BLUE
+            String blueRowId = api.getRowId(sid, pids.get(0), BLUE_ROW_INDEX);
+            api.declareLockIntent(sid, pids.get(0), blueRowId);
+            BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
+            BoardInteractionHelper.waitUntilModalVisible(driver2, 8);
+
+            // Player1 acknowledges BLUE (dismiss modal), then crosses RED "12", then completes slot
+            BoardInteractionHelper.clickModalConfirmButton(driver1);
+            new WebDriverWait(driver1, Duration.ofSeconds(5))
+                    .until(d -> !BoardInteractionHelper.isModalVisible(d));
+            BoardInteractionHelper.clickCellByValue(driver1, "RED", "12");
+            // Wait for RED cross to be reflected in state (lock ✕ sync point) before completing slot.
+            new WebDriverWait(driver1, Duration.ofSeconds(5))
+                    .until(d -> BoardInteractionHelper.isLockButtonCrossed(d, "RED"));
+            BoardInteractionHelper.waitUntilPassButtonVisible(driver1, 5);
+            BoardInteractionHelper.clickPassButton(driver1);
+
+            // Player2 acknowledges BLUE and completes slot → BLUE fires → player1 reinvited → auto-declares RED
+            BoardInteractionHelper.clickModalConfirmButton(driver2);
+            BoardInteractionHelper.waitUntilPassButtonVisible(driver2, 5);
+            BoardInteractionHelper.clickPassButton(driver2);
+
+            // BLUE must be closed
+            new WebDriverWait(driver0, Duration.ofSeconds(8))
+                    .until(d -> BoardInteractionHelper.isRowClosed(d, "BLUE"));
+
+            // Player2 must see RED modal (player1 auto-declared RED intent after being reinvited)
+            BoardInteractionHelper.waitUntilModalVisible(driver2, 10);
+            assertTrue(BoardInteractionHelper.isModalVisible(driver2),
+                    "Player2 must see RED row-closure modal after player1 auto-declares RED "
+                    + "— this verifies the passive auto-declare chain works in 3-player games");
+        } finally {
+            if (driver2 != null) driver2.quit();
+        }
     }
 
     // ── Single-player lock: Bug regression tests ──────────────────────────────
@@ -465,6 +683,8 @@ public class LockMechanismIT extends BaseIntegrationTest {
 
         BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
         BoardInteractionHelper.clickModalConfirmButton(driver1);
+        BoardInteractionHelper.waitUntilPassButtonVisible(driver1, 5);
+        BoardInteractionHelper.clickPassButton(driver1);
 
         new WebDriverWait(driver0, Duration.ofSeconds(8))
                 .until(d -> BoardInteractionHelper.isRowClosed(d, "BLUE"));
@@ -472,9 +692,9 @@ public class LockMechanismIT extends BaseIntegrationTest {
                 .until(d -> BoardInteractionHelper.isRowClosed(d, "BLUE"));
 
         assertTrue(BoardInteractionHelper.isRowClosed(driver0, "BLUE"),
-                "BLUE row must be closed in player0's browser after the full lock flow");
+                "BLUE row must be closed in player0's browser after player1 completes their slot");
         assertTrue(BoardInteractionHelper.isRowClosed(driver1, "BLUE"),
-                "BLUE row must be closed in player1's browser after the full lock flow");
+                "BLUE row must be closed in player1's browser after player1 completes their slot");
         assertFalse(BoardInteractionHelper.isModalVisible(driver1),
                 "Lock-intent modal must be gone after the row closes");
     }
@@ -502,12 +722,8 @@ public class LockMechanismIT extends BaseIntegrationTest {
 
         String redRowId = api.getRowId(sessionId, p0, RED_ROW_INDEX);
         api.declareLockIntent(sessionId, p0, redRowId);
-        api.pass(sessionId, p1); // player1 acknowledges → RED closes
-
-        Map<String, Object> afterRedLock = api.getGameState(sessionId);
-        if ("PASSIVE_MOVE".equals(turnPhase(afterRedLock))) {
-            api.pass(sessionId, p1);
-        }
+        api.pass(sessionId, p1); // player1 acknowledges
+        api.pass(sessionId, p1); // player1 completes passive slot → RED closes
 
         // === Part 2: advance player1's active turn ===
         Map<String, Object> beforeP1Turn = api.getGameState(sessionId);
@@ -546,19 +762,20 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // === Part 5: player1 acknowledges via the OK button ===
         BoardInteractionHelper.clickModalConfirmButton(driver1);
 
-        // === Part 6: BLUE row must close after acknowledgement ===
+        // === Part 6: modal must close, then player1 completes their final passive-move slot ===
+        // In a game-ending lock, player1 stays in queue after acknowledging so they can
+        // make one final white+white cross.  The BLUE row closes once they pass/complete.
         assertFalse(BoardInteractionHelper.isModalVisible(driver1),
                 "Modal must be gone after player1 acknowledges via OK");
 
+        BoardInteractionHelper.waitUntilPassButtonVisible(driver1, 5);
+        BoardInteractionHelper.clickPassButton(driver1);
+
+        // === Part 7: BLUE row must close after player1 completes their passive slot ===
         new WebDriverWait(driver1, Duration.ofSeconds(8))
                 .until(d -> BoardInteractionHelper.isRowClosed(d, "BLUE"));
         new WebDriverWait(driver0, Duration.ofSeconds(8))
                 .until(d -> BoardInteractionHelper.isRowClosed(d, "BLUE"));
-
-        // === Part 7: player1 passes their final PASSIVE_MOVE before the game ends ===
-        // After a game-ending lock close, unacted passives get one final white+white turn.
-        BoardInteractionHelper.waitUntilPassButtonVisible(driver1, 5);
-        BoardInteractionHelper.clickPassButton(driver1);
 
         // === Part 8: game ends (RED + BLUE = 2 locked rows); score screen appears ===
         new WebDriverWait(driver1, Duration.ofSeconds(8))

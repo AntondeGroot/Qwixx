@@ -11,7 +11,6 @@ import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSession;
 import nl.adg.qwixx.game.GameSettings;
 import nl.adg.qwixx.game.Player;
-import nl.adg.qwixx.state.RowClosureRequest;
 import nl.adg.qwixx.state.RowState;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpHeaders;
@@ -372,12 +371,8 @@ public class PreviewController {
     }
 
     // 7 — 2-player · player1 has declared intent to close RED; you (player0) are about to act
-    // 7 — 2-player · passive player declares RED lock intent · active player gets the modal
-    //
-    //  player1 (passive) has 5 crosses in RED and crosses "12" using white+white=12,
-    //  then declares lock intent.  The game moves to LOCK_PENDING:
-    //    passivePlayerQueue = [player0]  → player0 (you, active) sees the modal
-    //    pendingLockDeclarerId = player1 → player1 does NOT see the modal
+    // player1 (passive) has 5 crosses in RED and crosses "12" using white+white=12,
+    // then declares lock intent. Row is pending closure at EVALUATE.
     private PreviewResult scenario07() {
         GameSetup g = startGame(2, GameSettings.builder().build());
         Player p0 = g.players().get(0); // active player — this is "you"
@@ -398,12 +393,8 @@ public class PreviewController {
         g.session().applyAction(new CrossCellAction(p1.id(), 0, red12Id, DiceCombination.WHITE_WHITE));
         g.session().applyAction(new DeclareLockIntentAction(p1.id(), 0));
 
-        // Populate the row-closure notification (normally done by MovesApiDelegateImpl)
-        g.session().currentState().rowClosureRequests()
-                .add(new RowClosureRequest(p1.name(), Color.RED));
-
         return new PreviewResult(
-                "2-player · player1 crossed RED 12 and declared lock intent · you (active) must confirm",
+                "2-player · player1 crossed RED 12 and declared lock intent · row closes at end of turn",
                 gameUrl(g.sessionId(), p0.id()),
                 otherGameUrls(g, p0.id()));
     }

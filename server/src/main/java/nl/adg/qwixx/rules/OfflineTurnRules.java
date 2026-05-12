@@ -1,7 +1,7 @@
 package nl.adg.qwixx.rules;
 
 import nl.adg.qwixx.action.CrossCellAction;
-import nl.adg.qwixx.action.CrossLockAction;
+import nl.adg.qwixx.action.DeclareLockIntentAction;
 import nl.adg.qwixx.action.DiceCombination;
 import nl.adg.qwixx.action.GameAction;
 import nl.adg.qwixx.action.TakePunishmentAction;
@@ -43,7 +43,7 @@ public class OfflineTurnRules extends StandardTurnRules {
             }
 
             if (canCrossLock(state, playerId, rowIndex)) {
-                actions.add(new CrossLockAction(playerId, rowIndex));
+                actions.add(new DeclareLockIntentAction(playerId, rowIndex));
             }
         }
 
@@ -54,9 +54,9 @@ public class OfflineTurnRules extends StandardTurnRules {
     @Override
     public GameState apply(GameState state, GameAction action) {
         switch (action) {
-            case CrossCellAction a      -> applyOfflineCrossCell(state, a);
-            case CrossLockAction a      -> applyOfflineCrossLock(state, a);
-            case TakePunishmentAction a -> applyOfflinePunishment(state, a);
+            case CrossCellAction a         -> applyOfflineCrossCell(state, a);
+            case DeclareLockIntentAction a -> applyOfflineDeclareClose(state, a);
+            case TakePunishmentAction a    -> applyOfflinePunishment(state, a);
             default -> throw new IllegalMoveException(
                     action.getClass().getSimpleName() + " is not valid in offline mode");
         }
@@ -71,9 +71,9 @@ public class OfflineTurnRules extends StandardTurnRules {
         crossCellWithAutoTags(state, action.playerId(), action.rowIndex(), action.cellId());
     }
 
-    // Lock crossing without phase check.
+    // Lock closing without phase check — immediately marks lock and closes row.
     // A player may lock their own card even if another player has already globally closed that row.
-    private void applyOfflineCrossLock(GameState state, CrossLockAction action) {
+    private void applyOfflineDeclareClose(GameState state, DeclareLockIntentAction action) {
         if (!canCrossLock(state, action.playerId(), action.rowIndex()))
             throw new IllegalMoveException("lock pre-conditions not met");
         markLockCrossed(state, action.playerId(), action.rowIndex());
@@ -87,7 +87,7 @@ public class OfflineTurnRules extends StandardTurnRules {
     }
 
     // No closedRows check: a player qualifies to lock based only on their own progress.
-    // allMatch is correct for both standard (1 required cell) and longo (2 required cells).
+    // Any ONE closing cell is sufficient (same semantics as online mode).
     @Override
     protected boolean canCrossLock(GameState state, UUID playerId, int rowIndex) {
         SheetLayout layout = state.sheetLayouts().get(playerId);
@@ -99,6 +99,6 @@ public class OfflineTurnRules extends StandardTurnRules {
         RowState rowState = rowStateOf(prog, rowIndex);
         if (rowState.lockCrossed()) return false;
         if (rowState.crossedCells().size() < lock.minCrosses()) return false;
-        return lock.requiredCells().stream().allMatch(id -> rowState.crossedCells().contains(id));
+        return lock.closingCells().stream().anyMatch(id -> rowState.crossedCells().contains(id));
     }
 }

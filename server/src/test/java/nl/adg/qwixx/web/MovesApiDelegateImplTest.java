@@ -562,7 +562,7 @@ class MovesApiDelegateImplTest {
         LockCell lock = row.lock();
         SheetProgress progress = state.boardState().sheetProgress().get(pid);
 
-        Set<String> crossed = new HashSet<>(lock.requiredCells());
+        Set<String> crossed = new HashSet<>(lock.closingCells());
         for (Cell c : row.cells()) {
             if (crossed.size() >= lock.minCrosses()) break;
             crossed.add(c.id());
@@ -621,7 +621,7 @@ class MovesApiDelegateImplTest {
         // Add row closure requests manually (simulating DECLARE_LOCK_INTENT)
         var state = GameRegistry.getGame(sessionId).currentState();
         state.rowClosureRequests().add(
-            new nl.adg.qwixx.state.RowClosureRequest("Bob", nl.adg.qwixx.data.Color.RED)
+            new nl.adg.qwixx.state.RowClosureRequest(alice.id(), nl.adg.qwixx.data.Color.RED)
         );
 
         // Verify requests populated
@@ -711,21 +711,27 @@ class MovesApiDelegateImplTest {
         GameRegistry.getGame(sessionId).addPlayer(alice);
         GameRegistry.getGame(sessionId).start();
 
-        // Manually set up state: roll the dice and set up 5 crosses in GREEN row
+        // Manually set up state: set up 5 normal crosses + the last closing cell in GREEN row.
+        // Having the closing cell permanently crossed allows an explicit DECLARE_LOCK_INTENT.
         var game = GameRegistry.getGame(sessionId);
         var state = game.currentState();
         var layout = state.sheetLayouts().get(alice.id());
         var progress = state.boardState().sheetProgress().get(alice.id());
         var greenRow = layout.rows().get(2);  // GREEN is rowIndex 2
 
-        // Add 5 crosses in GREEN row (cells 12, 11, 10, 9, 8)
+        // Get the lock-eligible (closing) cell for GREEN (last cell, displayValue "2")
+        Cell lockEligibleCell = greenRow.cells().get(greenRow.cells().size() - 1);
+        assertEquals("2", lockEligibleCell.displayValue(), "Lock-eligible cell should have displayValue 2");
+
+        // Add 5 normal crosses + the closing cell as PERMANENT crosses (enables explicit declare)
         Set<String> greenCrosses = new HashSet<>();
         for (int i = 0; i < 5; i++) {
             greenCrosses.add(greenRow.cells().get(i).id());
         }
+        greenCrosses.add(lockEligibleCell.id()); // permanent closing cell → DECLARE_LOCK_INTENT offered
         progress.updateRowState(2, new RowState(greenCrosses, false));
 
-        // Now roll the dice so the player can make a move
+        // Roll the dice so the player can make a move
         mvc.perform(post("/moves/{sid}/{pid}", sessionId, alice.id())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
@@ -733,19 +739,7 @@ class MovesApiDelegateImplTest {
                         """))
                 .andExpect(status().isOk());
 
-        // Get the lock-eligible cell for GREEN (displayValue "2", which is at the end of the row)
-        Cell lockEligibleCell = greenRow.cells().get(greenRow.cells().size() - 1);
-        assertEquals("2", lockEligibleCell.displayValue(), "Lock-eligible cell should have displayValue 2");
-
-        // Cross the lock-eligible cell (this makes lock intent available)
-        mvc.perform(post("/moves/{sid}/{pid}", sessionId, alice.id())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(String.format("""
-                        {"moveType":"CROSS_WHITE_WHITE","rowId":"%s","cellId":"%s"}
-                        """, greenRow.id(), lockEligibleCell.id())))
-                .andExpect(status().isOk());
-
-        // Now declare lock intent on GREEN row
+        // Declare lock intent on GREEN row — explicit action (permanent closing cell available)
         mvc.perform(post("/moves/{sid}/{pid}", sessionId, alice.id())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(String.format("""
@@ -754,17 +748,44 @@ class MovesApiDelegateImplTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.result").value("ACCEPTED"));
 
-        // In a single-player game the lock auto-resolves: no CROSS_LOCK step needed.
-        // The phase skips past LOCK_PENDING straight to ROLL (next turn for alice).
+        // In the new architecture, DECLARE_LOCK_INTENT stays in ACTIVE_MOVE.
+        var afterIntentBeforeEndTurn = GameRegistry.getGame(sessionId).currentState();
+        assertEquals("ACTIVE_MOVE", afterIntentBeforeEndTurn.turnState().phase().toString(),
+                "DECLARE_LOCK_INTENT must not change phase — stays in ACTIVE_MOVE");
+
+        // The player still needs to cross something to be allowed to EndTurn.
+        // Force dice to white+white=7 so we can cross a known cell in the RED row.
+        var stateForCross = GameRegistry.getGame(sessionId).currentState();
+        var existingColored = stateForCross.turnState().currentRoll().coloredDice();
+        stateForCross.turnState().setCurrentRoll(new nl.adg.qwixx.data.RollResult(3, 4, existingColored));
+
+        var redRow = layout.rows().get(0); // RED ascending row
+        // Cell at pos 5 has displayValue "7" (matches white+white=3+4=7).
+        Cell redCell7 = redRow.cells().get(5);
+        mvc.perform(post("/moves/{sid}/{pid}", sessionId, alice.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(String.format("""
+                        {"moveType":"CROSS_WHITE_WHITE","rowId":"%s","cellId":"%s"}
+                        """, redRow.id(), redCell7.id())))
+                .andExpect(status().isOk());
+
+        // EndTurn triggers EVALUATE which closes the row (single-player → no passives).
+        mvc.perform(post("/moves/{sid}/{pid}", sessionId, alice.id())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"moveType":"PASS"}
+                        """))
+                .andExpect(status().isOk());
+
         var afterIntent = GameRegistry.getGame(sessionId).currentState();
         assertEquals("ROLL", afterIntent.turnState().phase().toString(),
-                "Single-player lock intent must auto-resolve — phase should be ROLL, not LOCK_PENDING");
+                "Single-player lock intent must close row at EndTurn (EVALUATE) — phase should be ROLL");
 
-        // Verify the lock cell is marked crossed and the row is globally closed
+        // Verify the lock is marked crossed and the row is globally closed
         var greenStateLocked = afterIntent.boardState().sheetProgress().get(alice.id()).rowStates().get(2);
         assertTrue(greenStateLocked.lockCrossed(),
-                "Lock should be auto-crossed immediately after declaring intent in a single-player game");
+                "Lock should be marked crossed after EVALUATE closes the row");
         assertTrue(afterIntent.boardState().closedRows().containsKey(2),
-                "GREEN row (index 2) should be in closedRows after the auto-resolved lock");
+                "GREEN row (index 2) should be in closedRows after EVALUATE");
     }
 }

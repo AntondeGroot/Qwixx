@@ -52,13 +52,12 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   // Sync modal state to the service so the modal renders at the root level,
   // outside the board's CSS transform (which would break position:fixed on mobile).
   private readonly _modalSync = effect(() => {
-    const hasAcknowledged = (this.turnState()?.lockAcknowledged ?? []).includes(this.playerId());
-    const requests = (this.isInPassiveQueue() && !hasAcknowledged)
+    const requests = this.isInPassiveQueue()
       ? (this.gameState()?.rowClosureRequests ?? [])
       : [];
 
     if (requests.length === 0) {
-      // No lock pending — reset suppression so the next lock intent shows fresh.
+      // No pending closure — reset suppression so the next intent shows fresh.
       untracked(() => this.suppressModal.set(false));
       this.rowClosureModal.clear();
       return;
@@ -205,9 +204,12 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   canPassActive = computed(() => {
     const turn = this.turnState();
-    return this.isMyTurn()
-      && turn?.phase === TurnPhase.ACTIVE_MOVE
-      && (turn.whiteWhiteUsed === true || turn.colorDieUsed === true);
+    if (!this.isMyTurn() || turn?.phase !== TurnPhase.ACTIVE_MOVE) return false;
+    if (turn.whiteWhiteUsed === true || turn.colorDieUsed === true) return true;
+    // Allow EndTurn when this player has a pending lock-closure intent (declared without dice).
+    const pid = this.playerId();
+    const pendingClosures: Record<string, string> = this.gameState()?.pendingClosures ?? {};
+    return Object.values(pendingClosures).some(v => v === pid);
   });
 
   canGiveUp = computed(() => {
@@ -255,29 +257,11 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     return pending?.autoLock ? pending.rowId : null;
   });
 
-  // True when the active declarant in LOCK_PENDING has crossed a second closing cell
-  // and should confirm it via the green button rather than having it auto-apply.
-  canConfirmDeclarantLock = computed(() => {
-    const pending = this.pendingAutoLock();
-    if (!pending?.autoLock) return false;
-    if (this.turnState()?.phase !== TurnPhase.LOCK_PENDING) return false;
-    const s = this.gameState();
-    return !!s && this.isDeclarantInLockPending() && this.canDeclareLockForRow(s, pending.rowId);
-  });
-
-  confirmDeclarantLock() {
-    const pending = this.pendingAutoLock();
-    if (!pending) return;
-    this.pendingAutoLock.set(null);
-    this.sendMove({ moveType: MoveType.DECLARE_LOCK_INTENT, rowId: pending.rowId });
-  }
-
   canPassPassive = computed(() => {
     const phase = this.turnState()?.phase;
     return this.isInPassiveQueue()
       && (phase === TurnPhase.PASSIVE_MOVE
-          || phase === TurnPhase.ACTIVE_MOVE
-          || phase === TurnPhase.LOCK_PENDING);
+          || phase === TurnPhase.ACTIVE_MOVE);
   });
 
   gameFaces = computed((): 6 | 8 => {
@@ -339,28 +323,10 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
           }
         }
       }
-    } else if (turn.phase === TurnPhase.LOCK_PENDING && this.isMyTurn()
-               && turn.whiteWhiteUsed && !turn.colorDieUsed) {
-      // Active declarant used white+white to close the first row. They may still use
-      // their colored die to close a second row in the same turn.
-      for (const row of layout.rows) {
-        if (closedRows[row.id]) continue;
-        const rowColor = row.cells[0]?.color as Color;
-        const colorVal = roll.coloredDice[rowColor];
-        if (colorVal == null) continue;
-        this.collectCells(layout, progress, closedRows, roll.white1 + colorVal, row.id, result);
-        if (roll.white2 !== roll.white1) {
-          this.collectCells(layout, progress, closedRows, roll.white2 + colorVal, row.id, result);
-        }
-      }
     } else if ((turn.phase === TurnPhase.PASSIVE_MOVE
-                || turn.phase === TurnPhase.ACTIVE_MOVE
-                || turn.phase === TurnPhase.LOCK_PENDING)
+                || turn.phase === TurnPhase.ACTIVE_MOVE)
                && this.isInPassiveQueue()
                && this.pendingCellIds().size === 0) {
-      // Only offer cells before the passive player has made their one allowed cross.
-      // LOCK_PENDING is included because declaring lock re-invites all passives to
-      // reconsider crossing before the row closes.
       this.collectCells(layout, progress, closedRows, roll.white1 + roll.white2, null, result);
     }
 
@@ -390,8 +356,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.collectCells(layout, progress, closedRows, roll.white1 + roll.white2, null, result);
       }
     } else if ((turn.phase === TurnPhase.PASSIVE_MOVE
-                || turn.phase === TurnPhase.ACTIVE_MOVE
-                || turn.phase === TurnPhase.LOCK_PENDING)
+                || turn.phase === TurnPhase.ACTIVE_MOVE)
                && this.isInPassiveQueue()
                && this.pendingCellIds().size === 0) {
       this.collectCells(layout, progress, closedRows, roll.white1 + roll.white2, null, result);
@@ -419,8 +384,8 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
         if (cell.position <= lastPos) continue;
         if (parseInt(cell.displayValue) !== targetValue) continue;
         if (cell.closingEligible && row.lock) {
-          const alreadyCrossedRequired = row.lock.requiredCells.filter(id => crossed.has(id)).length;
-          const normalCrossed = crossed.size - alreadyCrossedRequired;
+          const alreadyCrossedClosing = row.lock.closingCells.filter(id => crossed.has(id)).length;
+          const normalCrossed = crossed.size - alreadyCrossedClosing;
           if (normalCrossed + 1 < row.lock.minCrosses) continue;
         }
         result.add(cell.id);
@@ -478,14 +443,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     if (this.pendingCellIds().has(cellId)) {
-      // In LOCK_PENDING, UNDO_LAST_CROSS is the right action for everyone:
-      // - passive non-declarant: undoes the cross and counts as acknowledgement
-      // - declarant: server treats it as RESET_TURN (cancels the whole lock declaration)
-      // Outside LOCK_PENDING, RESET_TURN clears the move.
-      const moveType = this.turnState()?.phase === TurnPhase.LOCK_PENDING
-        ? MoveType.UNDO_LAST_CROSS
-        : MoveType.RESET_TURN;
-      this.sendMove({ moveType });
+      this.sendMove({ moveType: MoveType.RESET_TURN });
       return;
     }
 
@@ -498,31 +456,27 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const row    = layout?.rows.find(r => r.id === rowId);
     const cell   = row?.cells.find(c => c.id === cellId);
 
-    // LONGO: both closing-eligible cells in a multi-required row show the self-close modal.
-    // Second-to-last ("15"): crossing it is needed to qualify; the lock only fires when "16" is
-    //   also crossed — YES sets pendingAutoLock so the lock fires automatically with "16".
-    // Last ("16"): crossing it closes the row directly — the player should still confirm.
-    // In LOCK_PENDING the player already committed (via YES on the second-to-last), so skip.
-    if (row && cell?.closingEligible && (row.lock?.requiredCells?.length ?? 0) > 1
-        && this.turnState()?.phase !== TurnPhase.LOCK_PENDING) {
-      const requiredCells  = row.lock!.requiredCells;
-      const secondToLastId = requiredCells[requiredCells.length - 2];
-      const lastId         = requiredCells[requiredCells.length - 1];
-      if (cell.id === secondToLastId || cell.id === lastId) {
+    // LONGO: the second-to-last closing cell ("15"/"3") shows a YES/NO modal.
+    // YES → cross the cell and send DECLARE_LOCK_INTENT immediately (notifies passives).
+    // NO  → just cross the cell; no closure intent.
+    // The last closing cell ("16"/"2") is auto-detected at EndTurn — no modal needed.
+    if (row && cell?.closingEligible && (row.lock?.closingCells?.length ?? 0) > 1) {
+      const closingCells   = row.lock!.closingCells;
+      const secondToLastId = closingCells[closingCells.length - 2];
+      if (cell.id === secondToLastId) {
         const req = this.buildCrossMoveRequest(row, cell, rowId, cellId);
         if (req) {
           const rowColor = (row.lock!.color ?? row.cells[0]?.color) as Color;
           this.rowClosureModal.showLockConfirm(
             rowColor,
             () => {
-              // YES: cross the cell and set pendingAutoLock so the lock fires
-              // (immediately for the last cell, or when "16" is crossed for "15").
+              // YES: cross the cell and queue DECLARE_LOCK_INTENT to fire once cross is applied.
               this.rowClosureModal.clearLockConfirm();
               this.pendingAutoLock.set({ rowId: row!.id, autoLock: true, cellId: cellId });
               this.sendMove(req);
             },
             () => {
-              // NO: cross the cell but do not commit to closing the row.
+              // NO: just cross the cell, no closing intent.
               this.rowClosureModal.clearLockConfirm();
               this.sendMove(req);
             }
@@ -590,7 +544,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   offlineLock(pid: string, rowId: string) {
-    this.sendMoveAs(pid, { moveType: MoveType.CROSS_LOCK, rowId });
+    this.sendMoveAs(pid, { moveType: MoveType.DECLARE_LOCK_INTENT, rowId });
   }
 
   onLockClicked(rowId: string, pid: string) {
@@ -635,20 +589,18 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const permanent = new Set(rowState?.crossedCells ?? []);
     if (permanent.size < row.lock.minCrosses) return false;
 
-    // Mirror LongoTurnRules.canCrossLock:
-    // The current-turn pending crosses act as the undo buffer.
-    const pending = this.pendingCellIds();
+    // Mirror LongoTurnRules.canCrossLock / StandardTurnRules.canCrossLock:
+    // Any ONE closing cell (permanent or pending) qualifies for the lock.
+    const pending  = this.pendingCellIds();
+    const closing  = row.lock.closingCells;
+    const lastCell = closing[closing.length - 1];
 
-    const required = row.lock.requiredCells;
-    const lastRequired = required[required.length - 1];
+    // Last closing cell in any crosses (permanent or pending) → eligible.
+    if (permanent.has(lastCell) || pending.has(lastCell)) return true;
 
-    // Last required cell in any crosses (permanent or pending) → eligible.
-    if (permanent.has(lastRequired) || pending.has(lastRequired)) return true;
-
-    // Second-to-last required cell enables locking only while it is still a
-    // pending cross (crossed this turn).  Once permanent it no longer suffices.
-    if (required.length > 1) {
-      const secondLast = required[required.length - 2];
+    // Second-to-last closing cell enables locking only while it is a pending cross.
+    if (closing.length > 1) {
+      const secondLast = closing[closing.length - 2];
       return pending.has(secondLast);
     }
     return false;
@@ -656,9 +608,9 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private computePendingAutoLock(row: SheetRow, cell: SheetCell): { rowId: string; autoLock: boolean; cellId: string } | null {
     if (!this.wouldEnableLockDeclaration(row, cell.id)) return null;
-    const requiredCells = row.lock!.requiredCells;
-    const lastRequiredId = requiredCells[requiredCells.length - 1];
-    const autoLock = cell.id === lastRequiredId;
+    const closingCells  = row.lock!.closingCells;
+    const lastClosingId = closingCells[closingCells.length - 1];
+    const autoLock = cell.id === lastClosingId;
     return { rowId: row.id, autoLock, cellId: cell.id };
   }
 
@@ -669,7 +621,8 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const permanent = new Set(state.sheetProgress[pid]?.rowStates[row.id]?.crossedCells ?? []);
     const pending   = new Set([...this.pendingCellIds(), newCellId]);
     const all       = new Set([...permanent, ...pending]);
-    return row.lock.requiredCells.every(id => all.has(id));
+    // Any ONE closing cell in all crosses is enough to qualify.
+    return row.lock.closingCells.some(id => all.has(id));
   }
 
   private canDeclareLockForRow(s: GameState, rowId: string): boolean {
@@ -677,16 +630,26 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const row      = s.sheetLayouts?.[pid]?.rows.find(r => r.id === rowId);
     if (!row?.lock) return false;
     if ((s.closedRows ?? {})[rowId]) return false;
+    if ((s.pendingClosures ?? {})[rowId]) return false; // already declared
     const rowState = s.sheetProgress?.[pid]?.rowStates?.[rowId];
     if (rowState?.lockCrossed) return false;
     const permanent = new Set(rowState?.crossedCells ?? []);
     const pending   = new Set(s.turnState?.pendingCrosses?.[pid] ?? []);
-    const required  = row.lock.requiredCells;
-    const last      = required[required.length - 1];
-    // Only fire DECLARE_LOCK_INTENT when the last required cell is pending or permanent.
-    // The second-to-last cell ("15" in Longo) does NOT trigger declaration — the server
-    // requires ALL required cells to be crossed before it accepts a lock intent.
-    return permanent.has(last) || pending.has(last);
+    const closing   = row.lock.closingCells;
+    const last      = closing[closing.length - 1];
+
+    // Last closing cell (permanent or pending) → can declare.
+    if (permanent.has(last) || pending.has(last)) return true;
+
+    // Second-to-last closing cell pending (Longo "15"/"3" YES scenario) → can declare.
+    if (closing.length > 1) {
+      const secondLast = closing[closing.length - 2];
+      if (pending.has(secondLast)) {
+        const allCount = permanent.size + 1; // pending adds 1
+        return allCount >= row.lock.minCrosses;
+      }
+    }
+    return false;
   }
 
   private checkPendingAutoLock(s: GameState) {
@@ -698,45 +661,26 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     const { rowId, autoLock, cellId } = pending;
-    if (!this.canDeclareLockForRow(s, rowId)) {
-      // Clear stale pendingAutoLock when the triggering cross has been undone.
-      const pid = this.playerId();
-      const permanent = new Set(s.sheetProgress?.[pid]?.rowStates?.[rowId]?.crossedCells ?? []);
-      const pendingCrosses = new Set(s.turnState?.pendingCrosses?.[pid] ?? []);
-      if (!permanent.has(cellId) && !pendingCrosses.has(cellId)) {
-        this.pendingAutoLock.set(null);
-        return;
-      }
-      // Triggering cell is still present but the last required cell hasn't been crossed yet
-      // (Longo second-to-last scenario: player crossed "15", still needs "16").
-      // Immediately declare lock intent so passive players see the modal. The declarant
-      // must still cross the last required cell via color die while in LOCK_PENDING.
-      const row = s.sheetLayouts?.[pid]?.rows.find(r => r.id === rowId);
-      if (autoLock && (row?.lock?.requiredCells?.length ?? 0) > 1
-          && s.turnState?.phase !== TurnPhase.LOCK_PENDING) {
-        this.pendingAutoLock.set(null);
-        this.sendMove({ moveType: MoveType.DECLARE_LOCK_INTENT, rowId });
-      }
+
+    // Clear stale pendingAutoLock when the triggering cross has been undone.
+    const pid = this.playerId();
+    const permanent    = new Set(s.sheetProgress?.[pid]?.rowStates?.[rowId]?.crossedCells ?? []);
+    const pendingCrosses = new Set(s.turnState?.pendingCrosses?.[pid] ?? []);
+    if (!permanent.has(cellId) && !pendingCrosses.has(cellId)) {
+      this.pendingAutoLock.set(null);
       return;
     }
-    // While in LOCK_PENDING: the active declarant uses the confirm button to queue a
-    // second row; an active acknowledger waits for the pending lock to resolve first.
-    if (s.turnState?.phase === TurnPhase.LOCK_PENDING) return;
+
+    if (!this.canDeclareLockForRow(s, rowId)) {
+      // Triggering cell is present but not yet qualifying (e.g. Longo "15" crossed,
+      // "16" not yet). Wait for the next state update.
+      return;
+    }
+
     this.pendingAutoLock.set(null);
 
     if (autoLock) {
       this.sendMove({ moveType: MoveType.DECLARE_LOCK_INTENT, rowId });
-    } else {
-      const row      = s.sheetLayouts?.[this.playerId()]?.rows.find(r => r.id === rowId);
-      const rowColor = (row?.lock?.color ?? row?.cells[0]?.color) as Color;
-      this.rowClosureModal.showLockConfirm(
-        rowColor,
-        () => {
-          this.rowClosureModal.clearLockConfirm();
-          this.sendMove({ moveType: MoveType.DECLARE_LOCK_INTENT, rowId });
-        },
-        () => this.rowClosureModal.clearLockConfirm()
-      );
     }
   }
 
@@ -849,7 +793,13 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onConfirmRowClosure() {
-    this.sendMove({ moveType: MoveType.PASS });
+    if (this.hasPendingPassiveCross()) {
+      this.sendMove({ moveType: MoveType.PASS });
+    } else {
+      // OK on the notification modal — just dismiss so the player can continue their passive move.
+      this.suppressModal.set(true);
+      this.rowClosureModal.clear();
+    }
   }
 
   onChangeRowClosure() {

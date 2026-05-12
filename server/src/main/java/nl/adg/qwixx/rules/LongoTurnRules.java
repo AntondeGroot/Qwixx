@@ -61,22 +61,24 @@ public class LongoTurnRules extends StandardTurnRules {
         if (rowIsNotLockable(state, playerId, rowIndex)) return false;
 
         LockCell lock     = state.sheetLayouts().get(playerId).rows().get(rowIndex).lock();
-        RowState rowState = rowStateOf(state.boardState().sheetProgress().get(playerId), rowIndex);
-        if (rowState.crossedCells().size() < lock.minCrosses()) return false;
 
         Set<String> allCrosses  = allCrossesForPlayer(state, playerId, rowIndex);
         Set<String> pendingInRow = pendingCrossesInRow(state, playerId, rowIndex);
 
-        List<String> required   = lock.requiredCells();
-        String lastRequired     = required.get(required.size() - 1);
+        // MinCrosses check uses ALL crosses (permanent + pending) so that the last pending
+        // cross counts toward the threshold needed to qualify for closing.
+        if (allCrosses.size() < lock.minCrosses()) return false;
 
-        // Last required cell always enables locking (permanent or pending).
-        if (allCrosses.contains(lastRequired)) return true;
+        List<String> closing    = lock.closingCells();
+        String lastClosing      = closing.get(closing.size() - 1);
 
-        // Second-to-last required cell enables locking only while it is still a pending
+        // Last closing cell always enables locking (permanent or pending).
+        if (allCrosses.contains(lastClosing)) return true;
+
+        // Second-to-last closing cell enables locking only while it is still a pending
         // cross (crossed this turn).  Once the turn ends the window closes.
-        if (required.size() > 1) {
-            String secondLast = required.get(required.size() - 2);
+        if (closing.size() > 1) {
+            String secondLast = closing.get(closing.size() - 2);
             return pendingInRow.contains(secondLast);
         }
         return false;

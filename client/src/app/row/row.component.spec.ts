@@ -8,7 +8,7 @@ function makeCell(id: string, closingEligible = false): SheetCell {
 }
 
 function makeRow(cells: SheetCell[]): SheetRow {
-  return { id: 'r1', cells, lock: { id: 'l1', color: 'RED' as any, minCrosses: 5, requiredCells: [] } };
+  return { id: 'r1', cells, lock: { id: 'l1', color: 'RED' as any, minCrosses: 5, closingCells: [] } };
 }
 
 describe('RowComponent', () => {

@@ -1,7 +1,7 @@
 package nl.adg.qwixx.rules;
 
 import nl.adg.qwixx.action.CrossCellAction;
-import nl.adg.qwixx.action.CrossLockAction;
+import nl.adg.qwixx.action.DeclareLockIntentAction;
 import nl.adg.qwixx.action.DiceCombination;
 import nl.adg.qwixx.action.TakePunishmentAction;
 import nl.adg.qwixx.data.Cell;
@@ -73,7 +73,7 @@ class OfflineTurnRulesTest {
         GameState state = buildState(p1, p2);
         crossEnoughForLock(state, p1, 0);
         assertTrue(rules.getValidActions(state, p1).stream()
-                .anyMatch(a -> a instanceof CrossLockAction cl && cl.rowIndex() == 0));
+                .anyMatch(a -> a instanceof DeclareLockIntentAction di && di.rowIndex() == 0));
     }
 
     @Test
@@ -84,7 +84,7 @@ class OfflineTurnRulesTest {
         state.boardState().closedRows().put(0, p2);
         // p1 can still lock their own card for row 0
         assertTrue(rules.getValidActions(state, p1).stream()
-                .anyMatch(a -> a instanceof CrossLockAction cl && cl.rowIndex() == 0));
+                .anyMatch(a -> a instanceof DeclareLockIntentAction di && di.rowIndex() == 0));
     }
 
     @Test
@@ -126,13 +126,13 @@ class OfflineTurnRulesTest {
                 () -> rules.apply(state, new CrossCellAction(p1, 0, cellId, DiceCombination.WHITE_WHITE)));
     }
 
-    // --- apply: CrossLockAction ---
+    // --- apply: DeclareLockIntentAction ---
 
     @Test
     void crossLockMarksLockAndClosesRowGlobally() {
         GameState state = buildState(p1, p2);
         crossEnoughForLock(state, p1, 0);
-        rules.apply(state, new CrossLockAction(p1, 0));
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
         assertTrue(state.boardState().sheetProgress().get(p1).rowStates().get(0).lockCrossed());
         assertTrue(state.boardState().closedRows().containsKey(0));
     }
@@ -142,9 +142,9 @@ class OfflineTurnRulesTest {
         GameState state = buildState(p1, p2);
         crossEnoughForLock(state, p1, 0);
         crossEnoughForLock(state, p2, 0);
-        rules.apply(state, new CrossLockAction(p2, 0));
+        rules.apply(state, new DeclareLockIntentAction(p2, 0));
         // p1 can still lock row 0 even though p2 already globally closed it
-        assertDoesNotThrow(() -> rules.apply(state, new CrossLockAction(p1, 0)));
+        assertDoesNotThrow(() -> rules.apply(state, new DeclareLockIntentAction(p1, 0)));
         assertTrue(state.boardState().sheetProgress().get(p1).rowStates().get(0).lockCrossed());
     }
 
@@ -153,16 +153,16 @@ class OfflineTurnRulesTest {
         GameState state = buildState(p1, p2);
         // only cross minCrosses-1 cells, no required cell
         assertThrows(IllegalMoveException.class,
-                () -> rules.apply(state, new CrossLockAction(p1, 0)));
+                () -> rules.apply(state, new DeclareLockIntentAction(p1, 0)));
     }
 
     @Test
     void crossLockRejectedIfAlreadyLocked() {
         GameState state = buildState(p1, p2);
         crossEnoughForLock(state, p1, 0);
-        rules.apply(state, new CrossLockAction(p1, 0));
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
         assertThrows(IllegalMoveException.class,
-                () -> rules.apply(state, new CrossLockAction(p1, 0)));
+                () -> rules.apply(state, new DeclareLockIntentAction(p1, 0)));
     }
 
     // --- apply: TakePunishmentAction ---
@@ -181,9 +181,9 @@ class OfflineTurnRulesTest {
         GameState state = buildState(p1, p2);
         crossEnoughForLock(state, p1, 0);
         crossEnoughForLock(state, p1, 1);
-        rules.apply(state, new CrossLockAction(p1, 0));
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
         assertFalse(state.gameOver());
-        rules.apply(state, new CrossLockAction(p1, 1));
+        rules.apply(state, new DeclareLockIntentAction(p1, 1));
         assertTrue(state.gameOver());
     }
 
@@ -203,8 +203,8 @@ class OfflineTurnRulesTest {
         GameState state = buildState(p1, p2);
         crossEnoughForLock(state, p1, 0);
         crossEnoughForLock(state, p2, 0);
-        rules.apply(state, new CrossLockAction(p1, 0));
-        rules.apply(state, new CrossLockAction(p2, 0));
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+        rules.apply(state, new DeclareLockIntentAction(p2, 0));
         assertEquals(1, state.boardState().closedRows().size());
         assertFalse(state.gameOver()); // only 1 distinct row closed
     }
@@ -216,8 +216,8 @@ class OfflineTurnRulesTest {
         crossEnoughForLock(state, p2, 0);
         crossEnoughForLock(state, p1, 1);
         crossEnoughForLock(state, p2, 1);
-        rules.apply(state, new CrossLockAction(p1, 0));
-        rules.apply(state, new CrossLockAction(p1, 1));
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+        rules.apply(state, new DeclareLockIntentAction(p1, 1));
         assertTrue(state.gameOver());
         // p2 can still lock their card even though game is over? No — gameOver blocks getValidActions
         assertTrue(rules.getValidActions(state, p2).isEmpty());
@@ -294,7 +294,7 @@ class OfflineTurnRulesTest {
     private void crossEnoughForLock(GameState state, UUID playerId, int rowIndex) {
         Row row = layout(state, playerId).rows().get(rowIndex);
         LockCell lock = row.lock();
-        Set<String> crossed = new HashSet<>(lock.requiredCells());
+        Set<String> crossed = new HashSet<>(lock.closingCells());
         for (Cell c : row.cells()) {
             if (crossed.size() >= lock.minCrosses()) break;
             crossed.add(c.id());

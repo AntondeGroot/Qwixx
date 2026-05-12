@@ -13,7 +13,10 @@ import { GameState } from '../../generated/model/gameState';
 import { MoveType } from '../../generated/model/moveType';
 import { TurnPhase } from '../../generated/model/turnPhase';
 import { RowClosureModalService } from '../services/row-closure-modal.service';
+import { DiceSvgService } from '../dice/dice-svg.service';
 import { BoardComponent } from './board.component';
+
+const mockDiceSvgService = { getUrl: () => Promise.resolve('') };
 
 class MockLoader implements TranslateLoader {
   getTranslation(): Observable<TranslationObject> { return of({}); }
@@ -49,6 +52,7 @@ describe('BoardComponent — punishment / pass', () => {
         { provide: ActivatedRoute,      useValue: { snapshot: { paramMap: { get: () => '' } } } },
         { provide: GamestatesService,   useValue: { getGameState: () => of(makeState()) } },
         { provide: MovesService,        useValue: movesService },
+        { provide: DiceSvgService,      useValue: mockDiceSvgService },
       ],
     }).compileComponents();
 
@@ -770,6 +774,7 @@ describe('BoardComponent — row-closure modal delegation', () => {
           { provide: ActivatedRoute,    useValue: { snapshot: { paramMap: { get: () => '' } } } },
           { provide: GamestatesService, useValue: { getGameState: () => of(makeState()) } },
           { provide: MovesService,      useValue: movesService },
+          { provide: DiceSvgService,    useValue: mockDiceSvgService },
           provideRouter([]),
           provideTranslateService({ loader: { provide: TranslateLoader, useClass: MockLoader } }),
         ],
@@ -825,5 +830,71 @@ describe('BoardComponent — row-closure modal delegation', () => {
       fixture.destroy();
       expect(modalService.requests()).toHaveLength(0);
       expect(modalService.confirmFn).toBeNull();
+    });
+
+    // ── Modal routing: who sees the notification ───────────────────────────────
+
+    describe('notification routing via _modalSync', () => {
+      function stateWithRequests(opts: {
+        declarantName: string;
+        activeId: string;
+        passiveQueue: string[];
+      }): GameState {
+        return makeState({
+          rowClosureRequests: [{ playerName: opts.declarantName, rowColor: Color.BLUE }],
+          turnState: {
+            activePlayerId: opts.activeId,
+            phase: TurnPhase.ACTIVE_MOVE,
+            passivePlayerQueue: opts.passiveQueue,
+            currentRoll: { white1: 1, white2: 1, coloredDice: {} },
+          },
+        } as unknown as Partial<GameState>);
+      }
+
+      it('does not show the modal to the player who declared the intent', () => {
+        // PLAYER_ID (name 'P1') is the declarant and also in the passive queue.
+        component.gameState.set(stateWithRequests({
+          declarantName: 'P1',
+          activeId: OTHER_ID,
+          passiveQueue: [PLAYER_ID],
+        }));
+        TestBed.flushEffects();
+        expect(modalService.requests()).toHaveLength(0);
+      });
+
+      it('shows the modal to a passive player who is not the declarant', () => {
+        // OTHER_ID (name 'P2') declared; PLAYER_ID is a passive observer.
+        component.gameState.set(stateWithRequests({
+          declarantName: 'P2',
+          activeId: OTHER_ID,
+          passiveQueue: [PLAYER_ID],
+        }));
+        TestBed.flushEffects();
+        expect(modalService.requests()).toHaveLength(1);
+        expect(modalService.requests()[0].rowColor).toBe(Color.BLUE);
+      });
+
+      it('shows the modal to the active player when a passive declares intent', () => {
+        // PLAYER_ID is the active player; OTHER_ID (name 'P2') is the passive declarant.
+        component.gameState.set(stateWithRequests({
+          declarantName: 'P2',
+          activeId: PLAYER_ID,
+          passiveQueue: [OTHER_ID],
+        }));
+        TestBed.flushEffects();
+        expect(modalService.requests()).toHaveLength(1);
+        expect(modalService.requests()[0].rowColor).toBe(Color.BLUE);
+      });
+
+      it('active player does not see their own declaration in the modal', () => {
+        // PLAYER_ID (name 'P1') is active and declared intent.
+        component.gameState.set(stateWithRequests({
+          declarantName: 'P1',
+          activeId: PLAYER_ID,
+          passiveQueue: [OTHER_ID],
+        }));
+        TestBed.flushEffects();
+        expect(modalService.requests()).toHaveLength(0);
+      });
     });
 });

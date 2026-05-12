@@ -606,6 +606,34 @@ class StandardTurnRulesTest {
     }
 
     @Test
+    void active_canResetAfterPassiveDeclaredIntent() {
+        // p1 (active) crosses a cell. p2 (passive) then declares closing intent.
+        // p1 is still allowed to reset their cross — the passive's declaration does not lock
+        // the active's move. After reset: p1's cross is undone, dice are reset, but p2's
+        // closing intent remains in pendingClosures.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        crossEnoughForLock(state, p2, 0);
+
+        CrossCellAction p1Cross = firstCrossAction(state, p1);
+        rules.apply(state, p1Cross);
+        assertEquals(TurnPhase.ACTIVE_MOVE, state.turnState().phase());
+
+        rules.apply(state, new DeclareLockIntentAction(p2, 0));
+        assertTrue(state.pendingClosures().containsKey(0), "p2's intent must be pending");
+
+        // Active resets — must succeed and undo p1's cross without touching p2's intent
+        rules.apply(state, new ResetTurnAction(p1));
+        assertFalse(state.turnState().activeTurnState().whiteWhiteUsed(),
+                "Active dice flag must be cleared after reset");
+        assertFalse(state.turnState().activeTurnState().colorDieUsed(),
+                "Active dice flag must be cleared after reset");
+        assertTrue(state.pendingClosures().containsKey(0),
+                "p2's closing intent must survive the active player's reset");
+        assertEquals(p2, state.pendingClosures().get(0),
+                "p2 must still be the declarant after active resets");
+    }
+
+    @Test
     void evaluate_marksLockCrossedForDeclarant() {
         // After row closes at EVALUATE, the declarant must have lockCrossed=true in their RowState.
         // Active declares (has permanent closing cell), also crosses another cell, then EndTurns.

@@ -136,6 +136,12 @@ class GameStateMapper {
             dto.setPendingCrosses(pending);
         }
 
+        if (!turn.lockAcknowledged().isEmpty()) {
+            dto.setLockAcknowledged(turn.lockAcknowledged().stream()
+                    .map(UUID::toString)
+                    .toList());
+        }
+
         return dto;
     }
 

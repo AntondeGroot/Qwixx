@@ -89,12 +89,14 @@ public class DoubleRowCloseIT extends BaseIntegrationTest {
         assertTrue(BoardInteractionHelper.isModalVisible(driver1),
                 "Player1 must see the row-closure modal");
 
-        // player1 confirms → RED row closes
+        // player1 confirms, then completes their passive slot → RED row closes
         BoardInteractionHelper.clickModalConfirmButton(driver1);
+        BoardInteractionHelper.waitUntilPassButtonVisible(driver1, 5);
+        BoardInteractionHelper.clickPassButton(driver1);
         new WebDriverWait(driver0, Duration.ofSeconds(8))
                 .until(d -> BoardInteractionHelper.isRowClosed(d, "RED"));
         assertTrue(BoardInteractionHelper.isRowClosed(driver0, "RED"),
-                "RED must be closed after player1 confirms");
+                "RED must be closed after player1 completes their passive slot");
     }
 
     // ── Test 2: YELLOW "12" is clickable while RED lock is pending ───────────────
@@ -174,22 +176,27 @@ public class DoubleRowCloseIT extends BaseIntegrationTest {
         new WebDriverWait(driver0, Duration.ofSeconds(5))
                 .until(d -> BoardInteractionHelper.isLockButtonCrossed(d, "YELLOW"));
 
+        // player0 must confirm the second lock intent via the confirm button
+        // (the YELLOW close is not auto-declared; player0 sees a green confirm button)
+        BoardInteractionHelper.waitUntilPassButtonVisible(driver0, 5);
+        BoardInteractionHelper.clickPassButton(driver0);
+
         // player1 sees the lock-intent modal and confirms
         BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
         BoardInteractionHelper.clickModalConfirmButton(driver1);
 
-        // Both rows must close
+        // player1 gets their final passive-move slot before rows close
+        BoardInteractionHelper.waitUntilPassButtonVisible(driver1, 5);
+        BoardInteractionHelper.clickPassButton(driver1);
+
+        // Both rows must close once player1 completes their passive slot
         new WebDriverWait(driver0, Duration.ofSeconds(8))
                 .until(d -> BoardInteractionHelper.isRowClosed(d, "RED")
                          && BoardInteractionHelper.isRowClosed(d, "YELLOW"));
         assertTrue(BoardInteractionHelper.isRowClosed(driver0, "RED"),
-                "RED must be closed after player1 confirms");
+                "RED must be closed after player1 completes passive slot");
         assertTrue(BoardInteractionHelper.isRowClosed(driver0, "YELLOW"),
-                "YELLOW must be closed after player1 confirms");
-
-        // player1 gets a final PASSIVE_MOVE turn before the game ends
-        BoardInteractionHelper.waitUntilPassButtonVisible(driver1, 5);
-        BoardInteractionHelper.clickPassButton(driver1);
+                "YELLOW must be closed after player1 completes passive slot");
 
         // 2 rows locked → game over → both players navigate to score screen
         new WebDriverWait(driver0, Duration.ofSeconds(10))

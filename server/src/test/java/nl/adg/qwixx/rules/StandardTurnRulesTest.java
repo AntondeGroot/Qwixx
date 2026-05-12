@@ -510,18 +510,25 @@ class StandardTurnRulesTest {
     @Test
     void lockAutoClosesOnlyAfterAllReaddedPassivesAcknowledge() {
         // p2 EndTurns during ACTIVE_MOVE then is re-added when lock is declared.
-        // The lock must NOT close until BOTH p2 and p3 have acknowledged.
+        // The lock must NOT close until BOTH p2 and p3 have completed their slots (2 EndTurns each).
         GameState state = stateAfterRoll(p1, p1, p2, p3);
         crossEnoughForLock(state, p1, 0);
         rules.apply(state, new EndTurnAction(p2));
         rules.apply(state, new DeclareLockIntentAction(p1, 0));
 
-        // Only p3 acknowledges first
+        // p3 acknowledges (first EndTurn)
         rules.apply(state, new EndTurnAction(p3));
         assertFalse(state.boardState().closedRows().containsKey(0),
                 "Row must not close while p2 (re-added) has not yet acknowledged");
 
-        // Now p2 acknowledges
+        // p2 acknowledges (first EndTurn)
+        rules.apply(state, new EndTurnAction(p2));
+        assertFalse(state.boardState().closedRows().containsKey(0),
+                "Row must not close until all passives complete their slots");
+
+        // p3 completes slot (second EndTurn)
+        rules.apply(state, new EndTurnAction(p3));
+        // p2 completes slot (second EndTurn)
         rules.apply(state, new EndTurnAction(p2));
         assertTrue(state.boardState().closedRows().containsKey(0),
                 "Row must close once all passives (including re-added p2) have acknowledged");
@@ -584,7 +591,7 @@ class StandardTurnRulesTest {
     @Test
     void passiveWhoUndoesGetsToActAgainBeforeLockCloses() {
         // Undo is not an acknowledgement — the player must still explicitly pass or cross.
-        // Only after the explicit EndTurn should the lock close.
+        // Only after the explicit EndTurn (completing the slot) should the lock close.
         GameState state = stateAfterRoll(p1, p1, p2);
         crossEnoughForLock(state, p1, 0);
         rules.apply(state, firstCrossAction(state, p2));
@@ -597,7 +604,9 @@ class StandardTurnRulesTest {
                 "lock must NOT close immediately after undo — player still has to act");
         assertEquals(TurnPhase.LOCK_PENDING, state.turnState().phase());
 
-        // p2 explicitly passes
+        // p2 acknowledges (first EndTurn = acknowledgement, stays in queue)
+        rules.apply(state, new EndTurnAction(p2));
+        // p2 completes passive slot (second EndTurn = complete)
         rules.apply(state, new EndTurnAction(p2));
 
         assertTrue(state.boardState().closedRows().containsKey(0),
@@ -695,7 +704,7 @@ class StandardTurnRulesTest {
     void passive_isNotFrozenWhenDeclarantClosingCellNoLongerQualifies() {
         // If the declarant's closing cell cross is somehow gone (edge case), the passive
         // must be able to escape via the declarant resetting — not be permanently stuck.
-        // This verifies that EndTurnAction from passive is blocked (expected) and that
+        // This verifies that the second EndTurnAction from passive is blocked (expected) and that
         // the declarant can then use RESET_TURN to unblock the game.
         GameState state = stateAfterRoll(p1, p1, p2);
         crossEnoughForLock(state, p1, 0);
@@ -711,7 +720,11 @@ class StandardTurnRulesTest {
         reduced.remove(closingCellId);
         prog.updateRowState(0, new RowState(reduced, false));
 
-        // Passive tries to acknowledge — must be rejected cleanly (not silently corrupt state).
+        // First EndTurn = acknowledgement (must succeed — modal closes, player stays in queue).
+        assertDoesNotThrow(() -> rules.apply(state, new EndTurnAction(p2)),
+                "passive acknowledgement must succeed (modal closes, player stays in queue)");
+
+        // Second EndTurn = completing passive slot — must be rejected because declarant no longer qualifies.
         assertThrows(IllegalMoveException.class,
                 () -> rules.apply(state, new EndTurnAction(p2)),
                 "passive acknowledgement must be rejected when declarant no longer qualifies");
@@ -791,12 +804,13 @@ class StandardTurnRulesTest {
 
     @Test
     void giveUpFromLockPending_acknowledgedPassiveDoesNotGetPassiveMove() {
-        // p2 acknowledges the lock (EndTurn in LOCK_PENDING) — their turn is done.
+        // p2 completes their slot (2 EndTurns in LOCK_PENDING) — their turn is done.
         // p1 then GivesUp. p2 should NOT appear in the PASSIVE_MOVE queue.
         GameState state = stateAfterRoll(p1, p1, p2, p3);
         crossEnoughForLock(state, p1, 0);
         rules.apply(state, new DeclareLockIntentAction(p1, 0));
-        rules.apply(state, new EndTurnAction(p2));  // p2 acknowledges lock
+        rules.apply(state, new EndTurnAction(p2));  // p2 acknowledges lock (first EndTurn)
+        rules.apply(state, new EndTurnAction(p2));  // p2 completes passive slot (second EndTurn)
         rules.apply(state, new GiveUpAction(p1));
 
         assertEquals(TurnPhase.PASSIVE_MOVE, state.turnState().phase());
@@ -827,9 +841,10 @@ class StandardTurnRulesTest {
         CrossCellAction cross = firstCrossAction(state, p2);
         // Must not throw — LOCK_PENDING is a valid phase for passive crosses.
         assertDoesNotThrow(() -> rules.apply(state, cross));
-        // Crossing immediately acknowledges the lock: sole passive → auto-close → row closed.
+        // Cross acknowledges (player stays in queue); need EndTurn to complete slot and close row.
+        rules.apply(state, new EndTurnAction(p2));
         assertTrue(state.boardState().closedRows().containsKey(0),
-                "crossing in LOCK_PENDING as the sole passive must immediately close the row");
+                "crossing in LOCK_PENDING as the sole passive must close the row after EndTurn");
     }
 
     @Test
@@ -846,17 +861,19 @@ class StandardTurnRulesTest {
 
     @Test
     void passiveCrossInLockPendingAloneTriggersAutoCloseAndPreservesTheCross() {
-        // p2 is the only passive; crossing immediately acknowledges the lock →
-        // auto-close fires without a separate EndTurn.
+        // p2 is the only passive; crossing acknowledges the lock →
+        // auto-close fires after p2 EndTurns to complete their slot.
         GameState state = stateInLockPending(p1, p1, p2, 0);
         CrossCellAction cross = firstCrossAction(state, p2);
         rules.apply(state, cross);
+        // EndTurn completes the passive slot → auto-close fires.
+        rules.apply(state, new EndTurnAction(p2));
 
         // Cross survives in sheetProgress after the auto-close.
         RowState rs = rowStateOf(state, p2, cross.rowIndex());
         assertTrue(rs.crossedCells().contains(cross.cellId()),
                 "cross must survive in sheetProgress after auto-close");
-        // Sole passive crossing triggers auto-close and turn advance.
+        // Sole passive EndTurn triggers auto-close and turn advance.
         assertEquals(TurnPhase.ROLL, state.turnState().phase());
         assertTrue(state.boardState().closedRows().containsKey(0));
     }
@@ -887,7 +904,7 @@ class StandardTurnRulesTest {
 
     @Test
     void passiveWithPendingCrossInLockPendingIsNotOfferedMoreCells() {
-        // Once a passive has crossed (and thus acknowledged), they must not be offered more cells.
+        // Once a passive has crossed (acknowledged), they must not be offered more cells.
         // Use a 3-player game so the game stays in LOCK_PENDING after p2 crosses
         // (p3 still needs to acknowledge), giving us a state to inspect.
         GameState state = stateInLockPending(p1, p1, p2, p3, 0);
@@ -896,21 +913,21 @@ class StandardTurnRulesTest {
         assertTrue(actions.stream().noneMatch(a -> a instanceof CrossCellAction cc
                         && cc.combination() == DiceCombination.WHITE_WHITE),
                 "acknowledged passive must not be offered more cells in LOCK_PENDING");
-        // p2 is already acknowledged — no EndTurn or Undo should be offered either.
-        assertTrue(actions.isEmpty(),
-                "acknowledged passive must have no valid actions while waiting for p3");
+        // p2 has acknowledged but not yet completed their slot; they must have EndTurn available.
+        // (They need a second EndTurn to complete their passive slot.)
+        assertTrue(actions.stream().anyMatch(a -> a instanceof EndTurnAction),
+                "acknowledged passive must have EndTurn available to complete their slot");
     }
 
     @Test
     void passiveCrossingInLockPendingAcknowledgesImmediatelyWhileOtherPassiveStillPending() {
-        // Scenario: p1 declares lock intent; p2 crosses a cell — this immediately
-        // acknowledges p2 (cross becomes permanent, no separate EndTurn needed).
-        // p3 has not yet acted, so the game stays in LOCK_PENDING.
-        // Only after p3 EndTurns should the row close.
+        // Scenario: p1 declares lock intent; p2 crosses a cell — this acknowledges p2
+        // (modal closes, player stays in queue). p3 has not yet acted, so the game stays
+        // in LOCK_PENDING. Row closes only after both p2 and p3 complete their slots.
         GameState state = stateInLockPending(p1, p1, p2, p3, 0);
 
         CrossCellAction cross = firstCrossAction(state, p2);
-        rules.apply(state, cross); // crossing = immediate acknowledgement
+        rules.apply(state, cross); // crossing = acknowledgement (stays in queue)
 
         // Game must still be in LOCK_PENDING waiting for p3.
         assertEquals(TurnPhase.LOCK_PENDING, state.turnState().phase(),
@@ -918,14 +935,23 @@ class StandardTurnRulesTest {
         assertFalse(state.boardState().closedRows().containsKey(0),
                 "row must not close until all passives have acknowledged");
 
-        // p2's cross must already be committed (permanent — no undo buffer entry).
+        // p2's cross is in sheetProgress (the cross was applied) but still in undo buffer
+        // (player has not yet EndTurned to complete their slot).
         RowState rs = rowStateOf(state, p2, cross.rowIndex());
         assertTrue(rs.crossedCells().contains(cross.cellId()),
-                "p2's cross must be permanent immediately after crossing in LOCK_PENDING");
-        assertFalse(state.turnState().undoBuffer().containsKey(p2),
-                "p2's cross must not be in the undo buffer — it is already permanent");
+                "p2's cross must be present in sheetProgress after crossing in LOCK_PENDING");
 
-        // p3 acknowledges — now the row should close.
+        // p3 acknowledges first EndTurn — row must not close yet.
+        rules.apply(state, new EndTurnAction(p3));
+        assertFalse(state.boardState().closedRows().containsKey(0),
+                "row must not close until all passives complete their slots");
+
+        // p2 completes slot (EndTurn after cross) — row must still wait for p3's second EndTurn.
+        rules.apply(state, new EndTurnAction(p2));
+        assertFalse(state.boardState().closedRows().containsKey(0),
+                "row must not close until p3 also completes their slot");
+
+        // p3 completes slot (second EndTurn) — now the row should close.
         rules.apply(state, new EndTurnAction(p3));
         assertTrue(state.boardState().closedRows().containsKey(0),
                 "row must close once all passives have acknowledged");
@@ -933,19 +959,20 @@ class StandardTurnRulesTest {
 
     @Test
     void passiveCrossInLockPendingClearsUndoBufferImmediately() {
-        // Crossing in LOCK_PENDING makes the cross permanent on the spot — the undo
-        // buffer must be empty right after the cross (no separate EndTurn needed).
+        // Crossing in LOCK_PENDING acknowledges (modal closes) — the undo buffer stays
+        // until the player EndTurns to complete their slot.
         GameState state = stateInLockPending(p1, p1, p2, 0);
         CrossCellAction cross = firstCrossAction(state, p2);
         rules.apply(state, cross);
 
-        // Undo buffer must already be empty (cross is permanent, not pending).
-        assertFalse(state.turnState().undoBuffer().containsKey(p2),
-                "undo buffer must be empty immediately after crossing in LOCK_PENDING — "
-                + "the cross is permanent, not an undoable pending move");
-        // Sole passive crossing triggers immediate auto-close.
+        // Undo buffer still contains the cross (player has not yet completed their slot).
+        assertTrue(state.turnState().undoBuffer().containsKey(p2),
+                "undo buffer must still contain the cross after acknowledging — "
+                + "it is cleared when the player EndTurns to complete the slot");
+        // EndTurn completes the passive slot → auto-close fires.
+        rules.apply(state, new EndTurnAction(p2));
         assertTrue(state.boardState().closedRows().containsKey(0),
-                "row must close after the only passive acknowledges by crossing");
+                "row must close after the only passive completes their slot");
     }
 
     @Test
@@ -958,7 +985,8 @@ class StandardTurnRulesTest {
         state.rowClosureRequests().add(new RowClosureRequest("P1", Color.RED));
         assertEquals(1, state.rowClosureRequests().size(), "request must be present before acknowledge");
 
-        rules.apply(state, new EndTurnAction(p2));  // sole passive → auto-close → evaluate
+        rules.apply(state, new EndTurnAction(p2));  // first EndTurn = acknowledgement
+        rules.apply(state, new EndTurnAction(p2));  // second EndTurn = complete slot → auto-close → evaluate
 
         assertEquals(TurnPhase.ROLL, state.turnState().phase(), "turn must advance");
         assertEquals(0, state.rowClosureRequests().size(),
@@ -979,8 +1007,8 @@ class StandardTurnRulesTest {
 
     @Test
     void gameAdvancesToNextPlayerAfterRowLocks() {
-        // After all passives acknowledge a lock intent the row closes and the turn
-        // must rotate to the NEXT player in order so they can roll.  If the turn
+        // After all passives complete their slots (2 EndTurns each) the row closes and
+        // the turn must rotate to the NEXT player in order so they can roll.  If the turn
         // stayed on p1 (the locker) or remained in LOCK_PENDING the game would be
         // unplayable for the remaining players.
         //
@@ -988,9 +1016,11 @@ class StandardTurnRulesTest {
         // next active player must be p2.
         GameState state = stateInLockPending(p1, p1, p2, p3, 0);
 
-        // Both passives acknowledge without crossing.
-        rules.apply(state, new EndTurnAction(p2));
-        rules.apply(state, new EndTurnAction(p3));
+        // Both passives complete their slots (2 EndTurns each).
+        rules.apply(state, new EndTurnAction(p2));  // p2 first EndTurn (acknowledgement)
+        rules.apply(state, new EndTurnAction(p3));  // p3 first EndTurn (acknowledgement)
+        rules.apply(state, new EndTurnAction(p2));  // p2 second EndTurn (complete slot)
+        rules.apply(state, new EndTurnAction(p3));  // p3 second EndTurn (complete slot) → auto-close
 
         // Row must be closed.
         assertTrue(state.boardState().closedRows().containsKey(0),
@@ -1048,9 +1078,10 @@ class StandardTurnRulesTest {
                 .anyMatch(a -> a instanceof DeclareLockIntentAction),
                 "DECLARE_LOCK_INTENT must be offered after crossing the closing cell in the same turn");
 
-        // Declaring lock intent and having p2 acknowledge must close the row.
+        // Declaring lock intent and having p2 complete their slot (2 EndTurns) must close the row.
         assertDoesNotThrow(() -> rules.apply(state, new DeclareLockIntentAction(p1, 0)));
-        rules.apply(state, new EndTurnAction(p2));
+        rules.apply(state, new EndTurnAction(p2));  // first EndTurn = acknowledgement
+        rules.apply(state, new EndTurnAction(p2));  // second EndTurn = complete slot → auto-close
         assertTrue(state.boardState().closedRows().containsKey(0),
                 "RED row must be closed after p2 acknowledges the lock");
         assertEquals(TurnPhase.ROLL, state.turnState().phase());
@@ -1084,7 +1115,8 @@ class StandardTurnRulesTest {
                 .anyMatch(a -> a instanceof DeclareLockIntentAction),
                 "DECLARE_LOCK_INTENT must be offered after crossing closing cell with color die");
         assertDoesNotThrow(() -> rules.apply(state, new DeclareLockIntentAction(p1, 0)));
-        rules.apply(state, new EndTurnAction(p2));
+        rules.apply(state, new EndTurnAction(p2));  // first EndTurn = acknowledgement
+        rules.apply(state, new EndTurnAction(p2));  // second EndTurn = complete slot → auto-close
         assertTrue(state.boardState().closedRows().containsKey(0));
     }
 
@@ -1093,26 +1125,26 @@ class StandardTurnRulesTest {
     @Test
     void aap_activeClosesTwoRowsPassiveAcknowledgesBoth() {
         // Active (p1) has enough crosses for BOTH row 0 and row 1.
-        // Passive (p2) just acknowledges each lock intent.
+        // Passive (p2) completes their slot (2 EndTurns) for each lock intent.
         GameState state = stateAfterRoll(p1, p1, p2);
         crossEnoughForLock(state, p1, 0);
         crossEnoughForLock(state, p1, 1);
 
-        // A closes row 0
+        // A closes row 0 — p2 needs 2 EndTurns to complete their slot
         rules.apply(state, new DeclareLockIntentAction(p1, 0));
-        rules.apply(state, new EndTurnAction(p2));  // auto-close
+        rules.apply(state, new EndTurnAction(p2));  // first EndTurn = acknowledgement
+        rules.apply(state, new EndTurnAction(p2));  // second EndTurn = complete slot → auto-close
         assertTrue(state.boardState().closedRows().containsKey(0), "row 0 must close");
 
         // Turn continues because p1 can still close row 1
         assertEquals(TurnPhase.ACTIVE_MOVE, state.turnState().phase(),
                 "turn must continue to ACTIVE_MOVE so p1 can close row 1");
 
-        // A closes row 1
+        // A closes row 1 — p2 always needs 2 EndTurns (acknowledge + complete slot)
         rules.apply(state, new DeclareLockIntentAction(p1, 1));
-        rules.apply(state, new EndTurnAction(p2));  // p2 acknowledges → row 1 closes → PASSIVE_MOVE
+        rules.apply(state, new EndTurnAction(p2));  // first EndTurn = acknowledgement
+        rules.apply(state, new EndTurnAction(p2));  // second EndTurn = complete slot → row closes → game over
         assertTrue(state.boardState().closedRows().containsKey(1), "row 1 must close");
-        // p2 passes their final PASSIVE_MOVE turn, then the game ends
-        rules.apply(state, new EndTurnAction(p2));
         assertTrue(state.gameOver(), "game must be over after 2 rows close");
     }
 
@@ -1123,9 +1155,10 @@ class StandardTurnRulesTest {
         crossEnoughForLock(state, p1, 0);
         crossEnoughForLock(state, p2, 1);
 
-        // A closes row 0
+        // A closes row 0 — p2 needs 2 EndTurns to complete their slot
         rules.apply(state, new DeclareLockIntentAction(p1, 0));
-        rules.apply(state, new EndTurnAction(p2));  // auto-close
+        rules.apply(state, new EndTurnAction(p2));  // p2 acknowledges (reachable cells → stays in queue)
+        rules.apply(state, new EndTurnAction(p2));  // p2 completes slot → auto-close
         assertTrue(state.boardState().closedRows().containsKey(0), "row 0 must close");
 
         // Turn continues because p2 can close row 1
@@ -1139,7 +1172,9 @@ class StandardTurnRulesTest {
                         .anyMatch(a -> a instanceof DeclareLockIntentAction dl && dl.rowIndex() == 1),
                 "p2 must be offered lock intent for row 1");
         rules.apply(state, new DeclareLockIntentAction(p2, 1));
-        rules.apply(state, new EndTurnAction(p1));  // p1 acknowledges p2's intent → auto-close
+        // p2 declared during PASSIVE_MOVE reinvite → p1 must acknowledge then explicitly pass
+        rules.apply(state, new EndTurnAction(p1));  // p1 acknowledge
+        rules.apply(state, new EndTurnAction(p1));  // p1 complete slot → row 1 closes
         assertTrue(state.boardState().closedRows().containsKey(1), "row 1 must close");
         assertTrue(state.gameOver(), "game must be over after 2 rows close");
     }
@@ -1158,16 +1193,18 @@ class StandardTurnRulesTest {
         rules.apply(state, new DeclareLockIntentAction(p2, 0));
         assertEquals(p2, state.turnState().pendingLockDeclarerId(),
                 "p2 must be recorded as declarant");
-        rules.apply(state, new EndTurnAction(p1));  // auto-close
+        rules.apply(state, new EndTurnAction(p1));  // p1 acknowledge
+        rules.apply(state, new EndTurnAction(p1));  // p1 complete slot → row 0 closes
         assertTrue(state.boardState().closedRows().containsKey(0), "row 0 must close");
 
         // Turn continues because p1 can close row 1
         assertEquals(TurnPhase.ACTIVE_MOVE, state.turnState().phase(),
                 "turn must continue to ACTIVE_MOVE so p1 can close row 1");
 
-        // A closes row 1
+        // A closes row 1 — p2 always needs 2 EndTurns (acknowledge + complete slot)
         rules.apply(state, new DeclareLockIntentAction(p1, 1));
-        rules.apply(state, new EndTurnAction(p2));  // auto-close
+        rules.apply(state, new EndTurnAction(p2));  // first EndTurn = acknowledgement
+        rules.apply(state, new EndTurnAction(p2));  // second EndTurn = complete slot → row closes → game over
         assertTrue(state.boardState().closedRows().containsKey(1), "row 1 must close");
         assertTrue(state.gameOver(), "game must be over after 2 rows close");
     }
@@ -1203,7 +1240,8 @@ class StandardTurnRulesTest {
 
         // p2 is now stuck in LOCK_PENDING — they can only acknowledge p1's lock.
         // They cannot declare their own lock for row 1 in this phase.
-        rules.apply(state, new EndTurnAction(p2));   // p2 acknowledges p1's lock → auto-close
+        rules.apply(state, new EndTurnAction(p2));   // p2 first EndTurn = acknowledgement
+        rules.apply(state, new EndTurnAction(p2));   // p2 second EndTurn = complete slot → auto-close
         assertTrue(state.boardState().closedRows().containsKey(0), "row 0 must close");
 
         // After p1's lock resolves, p2 must be re-invited (they never got to declare row 1).
@@ -1218,9 +1256,11 @@ class StandardTurnRulesTest {
                         .anyMatch(a -> a instanceof DeclareLockIntentAction dl && dl.rowIndex() == 1),
                 "p2 must be offered lock intent for row 1 after being re-invited");
 
-        // p2 declares lock for row 1; p1 acknowledges → row 1 closes → 2 rows closed → game over.
+        // p2 declares lock for row 1; p1 must acknowledge then explicitly pass
+        // (p2 declared during PASSIVE_MOVE reinvite → no auto-pass for p1).
         rules.apply(state, new DeclareLockIntentAction(p2, 1));
-        rules.apply(state, new EndTurnAction(p1));
+        rules.apply(state, new EndTurnAction(p1));  // p1 acknowledge
+        rules.apply(state, new EndTurnAction(p1));  // p1 complete slot → row 1 closes → game over
         assertTrue(state.boardState().closedRows().containsKey(1), "row 1 must close");
         assertTrue(state.gameOver(), "game must be over after 2 rows close");
     }
@@ -1274,10 +1314,11 @@ class StandardTurnRulesTest {
 
     @Test
     void lastPassiveEndTurnAutoClosesRow() {
-        // When the only passive player acknowledges via EndTurn, the row must close
+        // When the only passive player completes their slot (2 EndTurns), the row must close
         // automatically — mirroring the single-player auto-resolve on declareLockIntent.
         GameState state = stateInLockPending(p1, p1, p2, 0);
-        rules.apply(state, new EndTurnAction(p2));
+        rules.apply(state, new EndTurnAction(p2));  // first EndTurn = acknowledgement
+        rules.apply(state, new EndTurnAction(p2));  // second EndTurn = complete slot → auto-close
         assertTrue(state.boardState().closedRows().containsKey(0),
                 "Row must close when the last passive player acknowledges");
         assertEquals(TurnPhase.ROLL, state.turnState().phase(),
@@ -1294,31 +1335,37 @@ class StandardTurnRulesTest {
 
     @Test
     void allThreePassivesEndTurnAutoClosesRow() {
-        // With 3 players, auto-close fires only when ALL passives have acknowledged.
+        // With 3 players, auto-close fires only when ALL passives have completed their slots (2 EndTurns each).
         GameState state = stateInLockPending(p1, p1, p2, p3, 0);
-        rules.apply(state, new EndTurnAction(p2));
+        rules.apply(state, new EndTurnAction(p2));  // p2 first EndTurn (acknowledgement)
         assertFalse(state.boardState().closedRows().containsKey(0),
                 "Row must not close while p3 still hasn't acknowledged");
-        rules.apply(state, new EndTurnAction(p3));
+        rules.apply(state, new EndTurnAction(p3));  // p3 first EndTurn (acknowledgement)
+        assertFalse(state.boardState().closedRows().containsKey(0),
+                "Row must not close until all passives complete their slots");
+        rules.apply(state, new EndTurnAction(p2));  // p2 second EndTurn (complete slot)
+        rules.apply(state, new EndTurnAction(p3));  // p3 second EndTurn (complete slot) → auto-close
         assertTrue(state.boardState().closedRows().containsKey(0),
                 "Row must close once all passives have acknowledged");
     }
 
     @Test
     void crossLockClosesRowAndRemovesDie() {
-        // Auto-close fires on the last passive's EndTurn: verify die removal too.
+        // Auto-close fires on the last passive completing their slot (2 EndTurns): verify die removal too.
         GameState state = stateInLockPending(p1, p1, p2, 0);
         Color lockColor = state.sheetLayouts().get(p1).rows().get(0).lock().color();
-        rules.apply(state, new EndTurnAction(p2));
+        rules.apply(state, new EndTurnAction(p2));  // first EndTurn = acknowledgement
+        rules.apply(state, new EndTurnAction(p2));  // second EndTurn = complete slot → auto-close
         assertTrue(state.boardState().closedRows().containsKey(0));
         assertTrue(state.boardState().activeDice().stream().noneMatch(d -> d.color() == lockColor));
     }
 
     @Test
     void crossLockTransitionsToNextRoll() {
-        // Auto-close on passive EndTurn also advances the turn to ROLL.
+        // Auto-close on passive completing their slot (2 EndTurns) also advances the turn to ROLL.
         GameState state = stateInLockPending(p1, p1, p2, 0);
-        rules.apply(state, new EndTurnAction(p2));
+        rules.apply(state, new EndTurnAction(p2));  // first EndTurn = acknowledgement
+        rules.apply(state, new EndTurnAction(p2));  // second EndTurn = complete slot → auto-close
         assertEquals(TurnPhase.ROLL, state.turnState().phase());
     }
 
@@ -1508,8 +1555,8 @@ class StandardTurnRulesTest {
 
     @Test
     void giveUpFromLockPending_passiveDeclarant_threePlayer_waitsForOtherPassive() {
-        // p2 declares lock; p1 (active) gives up; p3 still needs to acknowledge.
-        // Row must NOT close until p3 also acknowledges.
+        // p2 declares lock; p1 (active) gives up; p3 still needs to complete their slot (2 EndTurns).
+        // Row must NOT close until p3 completes their slot.
         GameState state = stateAfterRoll(p1, p1, p2, p3);
         crossEnoughForLock(state, p2, 0);
         rules.apply(state, new DeclareLockIntentAction(p2, 0));
@@ -1521,7 +1568,8 @@ class StandardTurnRulesTest {
         assertEquals(TurnPhase.LOCK_PENDING, state.turnState().phase(),
                 "Game must remain in LOCK_PENDING while p3 is pending");
 
-        rules.apply(state, new EndTurnAction(p3));
+        rules.apply(state, new EndTurnAction(p3));  // p3 first EndTurn = acknowledgement
+        rules.apply(state, new EndTurnAction(p3));  // p3 second EndTurn = complete slot → auto-close
 
         assertTrue(state.boardState().closedRows().containsKey(0),
                 "Row must close once p3 has also acknowledged");
@@ -2101,8 +2149,11 @@ class StandardTurnRulesTest {
 
         assertDoesNotThrow(() -> rules.apply(state, new EndTurnAction(p1)),
                 "active player with no pending cross must be able to acknowledge via EndTurn");
+        assertFalse(state.boardState().closedRows().containsKey(0),
+                "row must not close until the active player completes their slot");
+        rules.apply(state, new EndTurnAction(p1));  // complete slot → row closes
         assertTrue(state.boardState().closedRows().containsKey(0),
-                "row must close after active player acknowledges");
+                "row must close after active player completes their slot");
     }
 
     @Test
@@ -2110,31 +2161,33 @@ class StandardTurnRulesTest {
         GameState state = stateAfterRoll(p1, p1, p2);
         crossEnoughForLock(state, p2, 0);
         rules.apply(state, new DeclareLockIntentAction(p2, 0));
-        rules.apply(state, new EndTurnAction(p1));
+        rules.apply(state, new EndTurnAction(p1));  // acknowledge
+        rules.apply(state, new EndTurnAction(p1));  // complete slot → row closes
 
         assertEquals(TurnPhase.ROLL, state.turnState().phase(),
-                "phase must advance to ROLL after active acknowledges the passive's lock");
+                "phase must advance to ROLL after active completes their slot");
         assertEquals(p2, state.turnState().activePlayerId(),
-                "turn must rotate to p2 after p1 acknowledges");
+                "turn must rotate to p2 after p1 completes their slot");
     }
 
     @Test
     void passiveDeclares_activeCrossesBeforeAcknowledging_crossSurvivesAfterLockCloses() {
         // p1 (active, no prior move) crosses a cell in LOCK_PENDING before acknowledging.
-        // That cross must survive in sheetProgress after p1 EndTurns to acknowledge.
+        // That cross must survive in sheetProgress after the lock closes.
         GameState state = stateAfterRoll(p1, p1, p2);
         crossEnoughForLock(state, p2, 0);
         rules.apply(state, new DeclareLockIntentAction(p2, 0));
 
         CrossCellAction cross = firstCrossAction(state, p1);
         rules.apply(state, cross);
-        rules.apply(state, new EndTurnAction(p1));  // EndTurn is the acknowledgement
+        rules.apply(state, new EndTurnAction(p1));  // acknowledge
+        rules.apply(state, new EndTurnAction(p1));  // complete slot → row closes
 
         RowState rs = rowStateOf(state, p1, cross.rowIndex());
         assertTrue(rs.crossedCells().contains(cross.cellId()),
                 "the cell crossed by the active player in LOCK_PENDING must be preserved after the lock closes");
         assertTrue(state.boardState().closedRows().containsKey(0),
-                "row must close after the active player acknowledges via EndTurn");
+                "row must close after the active player completes their slot");
     }
 
     @Test
@@ -2145,7 +2198,8 @@ class StandardTurnRulesTest {
         crossEnoughForLock(state, p1, 1);  // p1 ready to close row 1
         crossEnoughForLock(state, p2, 0);  // p2 ready to close row 0
         rules.apply(state, new DeclareLockIntentAction(p2, 0));
-        rules.apply(state, new EndTurnAction(p1));  // p1 acknowledges → row 0 closes
+        rules.apply(state, new EndTurnAction(p1));  // acknowledge
+        rules.apply(state, new EndTurnAction(p1));  // complete slot → row 0 closes
 
         assertEquals(TurnPhase.ACTIVE_MOVE, state.turnState().phase(),
                 "phase must return to ACTIVE_MOVE because p1 can still close row 1");
@@ -2160,7 +2214,8 @@ class StandardTurnRulesTest {
         crossEnoughForLock(state, p1, 1);
         crossEnoughForLock(state, p2, 0);
         rules.apply(state, new DeclareLockIntentAction(p2, 0));
-        rules.apply(state, new EndTurnAction(p1));  // acknowledge row 0 close
+        rules.apply(state, new EndTurnAction(p1));  // acknowledge
+        rules.apply(state, new EndTurnAction(p1));  // complete slot → row 0 closes
 
         List<GameAction> actions = rules.getValidActions(state, p1);
         assertTrue(actions.stream().anyMatch(a -> a instanceof DeclareLockIntentAction dl && dl.rowIndex() == 1),
@@ -2169,8 +2224,9 @@ class StandardTurnRulesTest {
 
     @Test
     void passiveDeclares_threePlayerGame_activeAndThirdPlayerBothAcknowledge() {
-        // p1 active (no moves), p2 declares lock, p3 and p1 both need to acknowledge.
-        // Lock must not close until both have acknowledged.
+        // p1 active (no moves), p2 declares lock, p3 and p1 both need to complete their slots.
+        // Lock must not close until BOTH p1 and p3 have acknowledged AND completed their slots.
+        // Both p1 and p3 need 2 EndTurns each (acknowledge + complete slot).
         GameState state = stateAfterRoll(p1, p1, p2, p3);
         crossEnoughForLock(state, p2, 0);
         rules.apply(state, new DeclareLockIntentAction(p2, 0));
@@ -2179,13 +2235,21 @@ class StandardTurnRulesTest {
         assertTrue(state.turnState().passivePlayerQueue().contains(p1));
         assertTrue(state.turnState().passivePlayerQueue().contains(p3));
 
-        rules.apply(state, new EndTurnAction(p3));
+        rules.apply(state, new EndTurnAction(p3));  // p3 acknowledge
         assertFalse(state.boardState().closedRows().containsKey(0),
-                "row must not close while p1 (active) has not yet acknowledged");
+                "row must not close while p1 has not yet acknowledged");
 
-        rules.apply(state, new EndTurnAction(p1));
+        rules.apply(state, new EndTurnAction(p1));  // p1 acknowledge
+        assertFalse(state.boardState().closedRows().containsKey(0),
+                "row must not close while neither player has completed their slot");
+
+        rules.apply(state, new EndTurnAction(p3));  // p3 complete slot
+        assertFalse(state.boardState().closedRows().containsKey(0),
+                "row must not close until p1 also completes their slot");
+
+        rules.apply(state, new EndTurnAction(p1));  // p1 complete slot → row closes
         assertTrue(state.boardState().closedRows().containsKey(0),
-                "row must close once both p1 and p3 have acknowledged");
+                "row must close once both p1 and p3 have completed their slots");
     }
 
     // ── Passive declares — active had already crossed before declaration ────────
@@ -2239,13 +2303,14 @@ class StandardTurnRulesTest {
         rules.apply(state, cross);
         rules.apply(state, new DeclareLockIntentAction(p2, 0));
 
-        rules.apply(state, new EndTurnAction(p1));
+        rules.apply(state, new EndTurnAction(p1));  // acknowledge
+        rules.apply(state, new EndTurnAction(p1));  // complete slot → row closes
 
         RowState rs = rowStateOf(state, p1, cross.rowIndex());
         assertTrue(rs.crossedCells().contains(cross.cellId()),
-                "active player's cross must persist after they acknowledge the passive's lock");
+                "active player's cross must persist after they complete their slot");
         assertTrue(state.boardState().closedRows().containsKey(0),
-                "row must close once the active player acknowledges");
+                "row must close once the active player completes their slot");
     }
 
     // ── Lock intent rejected for already-closed row ───────────────────────────
@@ -2329,14 +2394,15 @@ class StandardTurnRulesTest {
         state.boardState().closedRows().put(1, p2);  // row 1 already closed
         crossEnoughForLock(state, p1, 0);
         rules.apply(state, new DeclareLockIntentAction(p1, 0));
-        rules.apply(state, new EndTurnAction(p2));  // p2 acknowledges → row 0 closes → PASSIVE_MOVE
+        // Game-ending lock: p2's acknowledgement keeps them in queue for a final passive move.
+        rules.apply(state, new EndTurnAction(p2));  // p2 acknowledges (row 0 not closed yet)
+        assertFalse(state.boardState().closedRows().containsKey(0),
+                "row 0 must not close until p2 completes their passive-move slot");
+        assertFalse(state.gameOver(), "game must not end yet");
 
+        rules.apply(state, new EndTurnAction(p2));  // p2 completes passive slot → row closes → game over
         assertTrue(state.boardState().closedRows().containsKey(0),
-                "row 0 must close after acknowledgement");
-        assertFalse(state.gameOver(),
-                "game must not end yet — p2 still has a final PASSIVE_MOVE turn");
-
-        rules.apply(state, new EndTurnAction(p2));  // p2 passes their final PASSIVE_MOVE
+                "row 0 must close once p2's passive slot is complete");
         assertTrue(state.gameOver(),
                 "game must be over when two rows have been closed and all passives have had their turn");
     }
@@ -2372,12 +2438,13 @@ class StandardTurnRulesTest {
 
         rules.apply(state, colorCross);
         rules.apply(state, new EndTurnAction(p1));  // acknowledge
+        rules.apply(state, new EndTurnAction(p1));  // complete slot → row closes
 
         RowState rs = rowStateOf(state, p1, colorCross.rowIndex());
         assertTrue(rs.crossedCells().contains(colorCross.cellId()),
                 "color-die cross made during LOCK_PENDING must survive after the lock closes");
         assertTrue(state.boardState().closedRows().containsKey(0),
-                "row must close once the active player acknowledges");
+                "row must close once the active player completes their slot");
     }
 
     @Test
@@ -2421,6 +2488,136 @@ class StandardTurnRulesTest {
         assertTrue(actions.stream().anyMatch(a -> a instanceof CrossCellAction cc
                         && cc.combination() == firstCross.combination()),
                 "active must be offered the same die combination again after undoing in LOCK_PENDING");
+    }
+
+    // ── Passive crosses closing cell in LOCK_PENDING → reinvited after lock fires ─────────────
+
+    @Test
+    void passive_crossesClosingCellInLockPending_isReinvitedAfterActiveLockFires() {
+        // 3 players: p1=active, p2=passive (has enough crosses for row 1), p3=passive.
+        // p1 declares lock for row 0 → LOCK_PENDING.
+        // p2 and p3 both complete their slots (2 EndTurns each) → row 0 closes.
+        // Because p2 already qualifies to close row 1, p2 must be reinvited.
+        GameState state = stateAfterRoll(p1, p1, p2, p3);
+        crossEnoughForLock(state, p1, 0);
+        crossEnoughForLock(state, p2, 1);
+
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+        assertEquals(TurnPhase.LOCK_PENDING, state.turnState().phase());
+
+        // p2 completes their slot (first EndTurn = acknowledgement, second = complete)
+        rules.apply(state, new EndTurnAction(p2));  // p2 first EndTurn (acknowledgement)
+        rules.apply(state, new EndTurnAction(p3));  // p3 first EndTurn (acknowledgement)
+        rules.apply(state, new EndTurnAction(p2));  // p2 second EndTurn (complete slot)
+        rules.apply(state, new EndTurnAction(p3));  // p3 second EndTurn (complete slot) → row 0 closes
+
+        assertTrue(state.boardState().closedRows().containsKey(0), "row 0 must close after all passives ack");
+
+        // Turn must NOT immediately go to ROLL — p2 has a pending lock for row 1
+        assertNotEquals(TurnPhase.ROLL, state.turnState().phase(),
+                "turn must not advance to ROLL — p2 still needs to declare lock for row 1");
+        assertTrue(state.turnState().passivePlayerQueue().contains(p2),
+                "p2 must be reinvited because they can close row 1");
+
+        // p2 must be offered DeclareLockIntentAction for row 1
+        assertTrue(rules.getValidActions(state, p2).stream()
+                        .anyMatch(a -> a instanceof DeclareLockIntentAction dl && dl.rowIndex() == 1),
+                "p2 must be offered lock intent for row 1 after being reinvited");
+    }
+
+    @Test
+    void passive_crossesClosingCellInLockPending_declaresAndClosesOwnRowAfterResolve() {
+        // Same setup: p2 is lock-eligible for row 1 before LOCK_PENDING starts.
+        // After row 0 closes and p2 is reinvited, p2 declares row 1 intent.
+        // p1 and p3 acknowledge → row 1 closes → game over (2 rows closed).
+        GameState state = stateAfterRoll(p1, p1, p2, p3);
+        crossEnoughForLock(state, p1, 0);
+        crossEnoughForLock(state, p2, 1);
+
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+
+        // All passives complete their BLUE lock slots
+        rules.apply(state, new EndTurnAction(p2));  // p2 acknowledge
+        rules.apply(state, new EndTurnAction(p3));  // p3 acknowledge
+        rules.apply(state, new EndTurnAction(p2));  // p2 complete slot
+        rules.apply(state, new EndTurnAction(p3));  // p3 complete slot → row 0 closes
+        assertTrue(state.boardState().closedRows().containsKey(0), "row 0 must close");
+
+        // p2 declares lock for row 1 (reinvited)
+        rules.apply(state, new DeclareLockIntentAction(p2, 1));
+        assertEquals(TurnPhase.LOCK_PENDING, state.turnState().phase());
+
+        // p1 (active, in acknowledgement queue) acknowledges p2's intent.
+        // p2 declared during PASSIVE_MOVE (reinvite), so p1 is acting as a passive and needs
+        // an explicit second EndTurn to complete their slot (no auto-pass).
+        rules.apply(state, new EndTurnAction(p1));  // p1 acknowledge
+        rules.apply(state, new EndTurnAction(p1));  // p1 complete slot
+
+        // p3 must also complete their slot (2 EndTurns)
+        rules.apply(state, new EndTurnAction(p3));  // p3 acknowledge
+        rules.apply(state, new EndTurnAction(p3));  // p3 complete slot → row 1 closes
+
+        assertTrue(state.boardState().closedRows().containsKey(1), "row 1 must close after p2's lock");
+        assertTrue(state.gameOver(), "game must be over after 2 rows are closed");
+    }
+
+    @Test
+    void passive_crossesClosingCellDuringLockPending_crossStaysInPermanent() {
+        // p1 declares lock for row 0 → LOCK_PENDING.
+        // p2 crosses a cell in LOCK_PENDING; after p2 EndTurns to complete slot,
+        // the cross must remain permanently in sheetProgress (not just in undo buffer).
+        GameState state = stateAfterRoll(p1, p1, p2);
+        crossEnoughForLock(state, p1, 0);
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+
+        // p2 crosses a cell in LOCK_PENDING
+        CrossCellAction cross = firstCrossAction(state, p2);
+        rules.apply(state, cross);
+
+        // p2 completes their slot (second EndTurn) → row 0 auto-closes
+        rules.apply(state, new EndTurnAction(p2));
+
+        // Cross must survive in sheetProgress after auto-close
+        RowState rs = rowStateOf(state, p2, cross.rowIndex());
+        assertTrue(rs.crossedCells().contains(cross.cellId()),
+                "cross made in LOCK_PENDING must be permanently recorded in sheetProgress after auto-close");
+        assertTrue(state.boardState().closedRows().containsKey(0), "row 0 must be closed");
+        assertEquals(TurnPhase.ROLL, state.turnState().phase(), "turn must advance to ROLL after auto-close");
+    }
+
+    @Test
+    void passive_crossesClosingCellInLockPending_solePassive_declaresOwnLock_gameEnds() {
+        // 2 players: p1=active, p2=passive.
+        // p2 already has enough crosses for row 1.
+        // p1 declares row 0 → LOCK_PENDING → p2 completes slot (2 EndTurns) → row 0 closes.
+        // p2 is reinvited (sole passive can close row 1) → declares intent → p1 acknowledges → game over.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        crossEnoughForLock(state, p1, 0);
+        crossEnoughForLock(state, p2, 1);
+
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+
+        // p2 completes their slot → row 0 auto-closes
+        rules.apply(state, new EndTurnAction(p2));  // first EndTurn = acknowledgement
+        rules.apply(state, new EndTurnAction(p2));  // second EndTurn = complete slot → row 0 closes
+        assertTrue(state.boardState().closedRows().containsKey(0), "row 0 must close");
+
+        // p2 is reinvited and offered lock intent for row 1
+        assertNotEquals(TurnPhase.ROLL, state.turnState().phase(),
+                "turn must not advance to ROLL — p2 still needs to declare lock for row 1");
+        assertTrue(state.turnState().passivePlayerQueue().contains(p2),
+                "p2 must be reinvited as sole passive who can close row 1");
+        assertTrue(rules.getValidActions(state, p2).stream()
+                        .anyMatch(a -> a instanceof DeclareLockIntentAction dl && dl.rowIndex() == 1),
+                "p2 must be offered lock intent for row 1");
+
+        // p2 declares lock for row 1. p1 must acknowledge then explicitly pass
+        // (p2 declared during PASSIVE_MOVE reinvite — p1 is acting as a passive, no auto-pass).
+        rules.apply(state, new DeclareLockIntentAction(p2, 1));
+        rules.apply(state, new EndTurnAction(p1));  // p1 acknowledge
+        rules.apply(state, new EndTurnAction(p1));  // p1 complete slot → row 1 closes → game over
+        assertTrue(state.boardState().closedRows().containsKey(1), "row 1 must close after p2 declares");
+        assertTrue(state.gameOver(), "game must be over after 2 rows close");
     }
 
     /**

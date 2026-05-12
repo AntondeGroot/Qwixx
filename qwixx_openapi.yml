@@ -567,6 +567,11 @@ components:
             type: array
             items:
               type: string
+        lockAcknowledged:
+          type: array
+          items:
+            type: string
+          description: Player IDs who have acknowledged the current lock intent. Used by clients to hide the acknowledgement modal while the player completes their passive move slot.
 
     GameState:
       type: object

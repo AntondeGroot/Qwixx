@@ -52,20 +52,25 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   // Sync modal state to the service so the modal renders at the root level,
   // outside the board's CSS transform (which would break position:fixed on mobile).
   private readonly _modalSync = effect(() => {
-    const requests = this.isInPassiveQueue()
-      ? (this.gameState()?.rowClosureRequests ?? [])
-      : [];
+    const myName = this.playerName(this.playerId());
+    const allRequests = this.gameState()?.rowClosureRequests ?? [];
+    // Show requests from OTHER players only — the declarant never sees their own notification.
+    // All players (active and passive) can receive notifications, not just passives.
+    const requests = allRequests.filter(r => r.playerName !== myName);
 
     if (requests.length === 0) {
-      // No pending closure — reset suppression so the next intent shows fresh.
+      // No pending closure from others — reset suppression so the next intent shows fresh.
       untracked(() => this.suppressModal.set(false));
       this.rowClosureModal.clear();
       return;
     }
 
-    // Suppress the modal while the player is choosing a new cell (no pending cross yet).
-    // Auto-unsuppress once they cross something.
-    const suppress = this.suppressModal() && this.pendingCellIds().size === 0;
+    // For passive players: auto-unsuppress once they cross a cell (modal re-appears
+    // with hasPendingCross=true so they can confirm their cross alongside the notification).
+    // For the active player: stay suppressed until the request list clears — crossing a cell
+    // during their own turn should not re-open the notification modal.
+    const isPassive = this.isInPassiveQueue();
+    const suppress = this.suppressModal() && (!isPassive || this.pendingCellIds().size === 0);
     if (suppress) {
       this.rowClosureModal.clear();
     } else {

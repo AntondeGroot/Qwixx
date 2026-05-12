@@ -1,5 +1,6 @@
 import { Injectable, inject, effect, signal } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -20,23 +21,35 @@ export class TranslationService {
   constructor() {
     this.translateService.setDefaultLang('en');
     this.translateService.addLangs(this.languages.map(l => l.code));
-    // Load the default language synchronously so currentLang is set before any
-    // component renders. The effect handles subsequent language switches.
-    this.translateService.use('en').subscribe();
+    // Subsequent runtime language switches (user picks from the selector).
     effect(() => {
       this.translateService.use(this.currentLanguage());
     });
   }
 
-  initializeLanguage() {
+  /** Returns the locale to use, determined from URL params then browser language. */
+  detectLocale(): string {
     const queryLocale = new URLSearchParams(window.location.search).get('locale');
     const browserLang = navigator.language.split('-')[0];
+    return queryLocale && this.languages.find(l => l.code === queryLocale)
+      ? queryLocale
+      : (this.languages.find(l => l.code === browserLang)?.code ?? 'en');
+  }
 
-    const locale = queryLocale ||
-      (this.languages.find(l => l.code === browserLang)?.code) ||
-      'en';
+  /**
+   * Called by APP_INITIALIZER. Loads the correct locale's translations and blocks
+   * the app from rendering until they are ready, eliminating the translation race.
+   */
+  loadInitialLocale(): Observable<unknown> {
+    const locale = this.detectLocale();
+    this.currentLanguage.set(locale);
+    this.updateUrl(locale);
+    return this.translateService.use(locale);
+  }
 
-    this.setLanguage(locale);
+  initializeLanguage() {
+    // No-op: locale is already loaded by APP_INITIALIZER before any component renders.
+    // Kept for backwards-compatibility with App.ngOnInit().
   }
 
   setLanguage(language: string) {

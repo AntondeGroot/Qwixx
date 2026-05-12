@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+echo "🔨 Running client unit tests..."
+(cd client && npx ng test --watch=false)
+
 echo "🔨 Building frontend and running all tests..."
 mvn clean verify -P frontend --file server/pom.xml
 

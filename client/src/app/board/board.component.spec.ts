@@ -896,5 +896,43 @@ describe('BoardComponent — row-closure modal delegation', () => {
         TestBed.flushEffects();
         expect(modalService.requests()).toHaveLength(0);
       });
+
+      it('suppresses the notification modal while a passive has a pending lock confirmation', () => {
+        // Scenario: active declared BLUE intent. Passive crossed "3" via the YES/NO modal
+        // (pendingAutoLock set). The notification modal must stay suppressed so the passive
+        // can see the lock cross on the board and EndTurn via the board's confirm button.
+        const stateBase = stateWithRequests({ declarantName: 'P2', activeId: OTHER_ID, passiveQueue: [PLAYER_ID] });
+        component.gameState.set({
+          ...stateBase,
+          turnState: {
+            ...stateBase.turnState!,
+            pendingCrosses: { [PLAYER_ID]: ['cell-3'] }, // passive has a pending cross
+          },
+        } as GameState);
+        // Simulate pendingAutoLock being set (passive went through YES/NO modal).
+        (component as any).pendingAutoLock.set({ rowId: 'row-blue', autoLock: true, cellId: 'cell-3' });
+        TestBed.flushEffects();
+        // Modal must be suppressed — passive should see the board (and the lock cross) instead.
+        expect(modalService.requests()).toHaveLength(0);
+      });
+
+      it('re-shows the notification modal after a regular cross (no lock confirmation)', () => {
+        // Passive crossed a regular (non-closing) cell after dismissing the notification.
+        // The modal re-appears so they can confirm their cross.
+        const stateBase = stateWithRequests({ declarantName: 'P2', activeId: OTHER_ID, passiveQueue: [PLAYER_ID] });
+        component.gameState.set({
+          ...stateBase,
+          turnState: {
+            ...stateBase.turnState!,
+            pendingCrosses: { [PLAYER_ID]: ['cell-regular'] },
+          },
+        } as GameState);
+        (component as any).suppressModal.set(true); // simulate prior OK click
+        // No pendingAutoLock — regular cross, not a lock confirmation.
+        (component as any).pendingAutoLock.set(null);
+        TestBed.flushEffects();
+        // Modal re-appears (hasPendingCross=true) so the passive can confirm their cross.
+        expect(modalService.requests()).toHaveLength(1);
+      });
     });
 });

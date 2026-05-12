@@ -180,22 +180,24 @@ public class BoardInteractionHelper {
         }
     }
 
+    /** Clicks the OK/Confirm button on the row-closure notification modal. */
     public static void clickModalConfirmButton(WebDriver driver) {
-        driver.findElement(By.xpath("//button[contains(@class,'btn-primary')]")).click();
+        driver.findElement(By.xpath("//button[contains(@class,'btn-notification-ok')]")).click();
     }
 
+    /** Clicks the Change button on the row-closure notification modal. */
     public static void clickModalChangeButton(WebDriver driver) {
-        driver.findElement(By.xpath("//button[contains(@class,'btn-secondary')]")).click();
+        driver.findElement(By.xpath("//button[contains(@class,'btn-notification-change')]")).click();
     }
 
     /** Clicks the "Yes" button in the self-close yes/no modal. */
     public static void clickModalYesButton(WebDriver driver) {
-        driver.findElement(By.xpath("//button[contains(@class,'btn-primary')]")).click();
+        driver.findElement(By.xpath("//button[contains(@class,'btn-lock-yes')]")).click();
     }
 
     /** Clicks the "No" button in the self-close yes/no modal. */
     public static void clickModalNoButton(WebDriver driver) {
-        driver.findElement(By.xpath("//button[contains(@class,'btn-secondary')]")).click();
+        driver.findElement(By.xpath("//button[contains(@class,'btn-lock-no')]")).click();
     }
 
     // ── Pass button ───────────────────────────────────────────────────────────

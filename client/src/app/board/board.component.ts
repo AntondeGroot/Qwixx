@@ -65,12 +65,16 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    // For passive players: auto-unsuppress once they cross a cell (modal re-appears
-    // with hasPendingCross=true so they can confirm their cross alongside the notification).
-    // For the active player: stay suppressed until the request list clears — crossing a cell
-    // during their own turn should not re-open the notification modal.
+    // For passive players: auto-unsuppress once they cross a regular cell (modal
+    // re-appears with hasPendingCross=true so they can confirm alongside the notification).
+    // Exception: if pendingAutoLock is set, the player went through the YES/NO lock-confirm
+    // modal and their cross is pending a lock declaration — keep the modal suppressed so
+    // they can see the lock cross on the board and EndTurn via the board's confirm button.
+    // For the active player: stay suppressed until the request list clears.
     const isPassive = this.isInPassiveQueue();
-    const suppress = this.suppressModal() && (!isPassive || this.pendingCellIds().size === 0);
+    const lockConfirmInProgress = isPassive && this.pendingAutoLock() !== null;
+    const suppress = lockConfirmInProgress
+      || (this.suppressModal() && (!isPassive || this.pendingCellIds().size === 0));
     if (suppress) {
       this.rowClosureModal.clear();
     } else {

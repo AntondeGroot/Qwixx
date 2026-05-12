@@ -17,10 +17,6 @@ public class TurnState {
     List<UUID> passivePlayerQueue;
     RollResult currentRoll;
     ActiveTurnState activeTurnState;
-    Integer pendingLockRowIndex;     // null outside LOCK_PENDING
-    UUID pendingLockDeclarerId;      // who declared the current lock intent (active or passive)
-    Integer queuedLockRowIndex;      // second row queued by active declarant while in LOCK_PENDING
-    Set<UUID> lockAcknowledged;
     Set<UUID> passivesActed;         // passives who used their white+white slot this turn
     Map<UUID, SheetProgress> moveStartProgress;
     // cells crossed by each player's last CrossCellAction: playerId → rowIndex → cellIds
@@ -28,7 +24,6 @@ public class TurnState {
 
     public TurnState() {
         this.passivePlayerQueue  = new ArrayList<>();
-        this.lockAcknowledged    = new HashSet<>();
         this.passivesActed       = new HashSet<>();
         this.moveStartProgress   = new HashMap<>();
         this.undoBuffer          = new HashMap<>();
@@ -39,9 +34,6 @@ public class TurnState {
     public List<UUID> passivePlayerQueue()                { return passivePlayerQueue; }
     public RollResult currentRoll()                       { return currentRoll; }
     public ActiveTurnState activeTurnState()              { return activeTurnState; }
-    public Integer pendingLockRowIndex()                  { return pendingLockRowIndex; }
-    public UUID pendingLockDeclarerId()                   { return pendingLockDeclarerId; }
-    public Set<UUID> lockAcknowledged()                   { return lockAcknowledged; }
     public Set<UUID> passivesActed()                      { return passivesActed; }
     public Map<UUID, SheetProgress> moveStartProgress()   { return moveStartProgress; }
     public Map<UUID, Map<Integer, Set<String>>> undoBuffer() { return undoBuffer; }
@@ -51,11 +43,6 @@ public class TurnState {
     public void setPassivePlayerQueue(List<UUID> queue)                { this.passivePlayerQueue = queue; }
     public void setCurrentRoll(RollResult roll)                        { this.currentRoll = roll; }
     public void setActiveTurnState(ActiveTurnState ats)                { this.activeTurnState = ats; }
-    public void setPendingLockRowIndex(Integer idx)                    { this.pendingLockRowIndex = idx; }
-    public void setPendingLockDeclarerId(UUID id)                      { this.pendingLockDeclarerId = id; }
-    public Integer queuedLockRowIndex()                                { return queuedLockRowIndex; }
-    public void setQueuedLockRowIndex(Integer idx)                     { this.queuedLockRowIndex = idx; }
-    public void setLockAcknowledged(Set<UUID> acknowledged)            { this.lockAcknowledged = acknowledged; }
     public void setPassivesActed(Set<UUID> s)                          { this.passivesActed = s; }
     public void setMoveStartProgress(Map<UUID, SheetProgress> snap)    { this.moveStartProgress = snap; }
     public void setUndoBuffer(Map<UUID, Map<Integer, Set<String>>> buf) { this.undoBuffer = buf; }

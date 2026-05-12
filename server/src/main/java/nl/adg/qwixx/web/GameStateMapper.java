@@ -54,7 +54,8 @@ class GameStateMapper {
                 .closedRows(mapClosedRows(state))
                 .activeDiceColors(mapActiveDiceColors(board))
                 .bonusNumbers(mapBonusNumbers(state))
-                .rowClosureRequests(mapRowClosureRequests(state));
+                .rowClosureRequests(mapRowClosureRequests(state, session))
+                .pendingClosures(mapPendingClosures(state));
     }
 
     private static Map<String, nl.adg.qwixx.generated.model.SheetProgress> mapSheetProgress(GameState state) {
@@ -136,12 +137,6 @@ class GameStateMapper {
             dto.setPendingCrosses(pending);
         }
 
-        if (!turn.lockAcknowledged().isEmpty()) {
-            dto.setLockAcknowledged(turn.lockAcknowledged().stream()
-                    .map(UUID::toString)
-                    .toList());
-        }
-
         return dto;
     }
 
@@ -150,7 +145,6 @@ class GameStateMapper {
             case ROLL         -> nl.adg.qwixx.generated.model.TurnPhase.ROLL;
             case ACTIVE_MOVE  -> nl.adg.qwixx.generated.model.TurnPhase.ACTIVE_MOVE;
             case PASSIVE_MOVE -> nl.adg.qwixx.generated.model.TurnPhase.PASSIVE_MOVE;
-            case LOCK_PENDING -> nl.adg.qwixx.generated.model.TurnPhase.LOCK_PENDING;
             case EVALUATE     -> nl.adg.qwixx.generated.model.TurnPhase.EVALUATE;
         };
     }
@@ -201,7 +195,7 @@ class GameStateMapper {
         nl.adg.qwixx.generated.model.Color color =
                 nl.adg.qwixx.generated.model.Color.fromValue(lock.color().name());
         return new nl.adg.qwixx.generated.model.LockConfig(
-                lock.id(), color, lock.minCrosses(), new ArrayList<>(lock.requiredCells()));
+                lock.id(), color, lock.minCrosses(), new ArrayList<>(lock.closingCells()));
     }
 
     private static nl.adg.qwixx.generated.model.CellTag mapTag(CellTag tag) {
@@ -223,11 +217,27 @@ class GameStateMapper {
         };
     }
 
-    private static List<nl.adg.qwixx.generated.model.RowClosureRequest> mapRowClosureRequests(GameState state) {
+    private static Map<String, String> mapPendingClosures(GameState state) {
+        Map<String, String> result = new HashMap<>();
+        state.pendingClosures().forEach((rowIndex, declarantId) -> {
+            SheetLayout layout = state.sheetLayouts().get(declarantId);
+            if (layout != null) result.put(layout.rows().get(rowIndex).id(), declarantId.toString());
+        });
+        return result;
+    }
+
+    private static List<nl.adg.qwixx.generated.model.RowClosureRequest> mapRowClosureRequests(
+            GameState state, GameSession session) {
+        Map<UUID, Player> playerIndex = session.players().stream()
+                .collect(Collectors.toMap(Player::id, java.util.function.Function.identity()));
         return state.rowClosureRequests().stream()
-                .map(req -> new nl.adg.qwixx.generated.model.RowClosureRequest(
-                        req.playerName(),
-                        nl.adg.qwixx.generated.model.Color.fromValue(req.rowColor().name())))
+                .map(req -> {
+                    Player p = playerIndex.get(req.playerId());
+                    String name = p != null ? p.name() : req.playerId().toString();
+                    return new nl.adg.qwixx.generated.model.RowClosureRequest(
+                            name,
+                            nl.adg.qwixx.generated.model.Color.fromValue(req.rowColor().name()));
+                })
                 .toList();
     }
 }

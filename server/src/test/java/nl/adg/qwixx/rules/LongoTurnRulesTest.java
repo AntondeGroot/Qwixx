@@ -85,8 +85,8 @@ class LongoTurnRulesTest {
 
         // 6 permanent regular crosses (not closing-eligible)
         Set<String> perm = new HashSet<>();
-        String secondLast = lock.requiredCells().get(0); // "15"
-        String last       = lock.requiredCells().get(1); // "16"
+        String secondLast = lock.closingCells().get(0); // "15"
+        String last       = lock.closingCells().get(1); // "16"
         for (Cell c : row.cells()) {
             if (perm.size() >= 6) break;
             if (!c.id().equals(secondLast) && !c.id().equals(last)) perm.add(c.id());
@@ -388,11 +388,11 @@ class LongoTurnRulesTest {
     }
 
     @Test
-    void longoRowsHaveTwoRequiredCells() {
+    void longoRowsHaveTwoClosingCells() {
         GameState state = stateInRoll(p1, p1, p2);
         SheetLayout layout = state.sheetLayouts().get(p1);
         for (int i = 0; i < layout.rows().size(); i++) {
-            assertEquals(2, layout.rows().get(i).lock().requiredCells().size());
+            assertEquals(2, layout.rows().get(i).lock().closingCells().size());
         }
     }
 
@@ -434,8 +434,8 @@ class LongoTurnRulesTest {
         SheetLayout layout = state.sheetLayouts().get(playerId);
         Row row = layout.rows().get(rowIndex);
         LockCell lock = row.lock();
-        String secondRequired = lock.requiredCells().get(0);
-        String lastRequired   = lock.requiredCells().get(1);
+        String secondRequired = lock.closingCells().get(0);
+        String lastRequired   = lock.closingCells().get(1);
         Set<String> crossed = new HashSet<>();
         crossed.add(lastRequired);
         for (Cell c : row.cells()) {
@@ -450,8 +450,8 @@ class LongoTurnRulesTest {
         SheetLayout layout = state.sheetLayouts().get(playerId);
         Row row = layout.rows().get(rowIndex);
         LockCell lock = row.lock();
-        String secondRequired = lock.requiredCells().get(0);
-        String lastRequired   = lock.requiredCells().get(1);
+        String secondRequired = lock.closingCells().get(0);
+        String lastRequired   = lock.closingCells().get(1);
         Set<String> crossed = new HashSet<>();
         crossed.add(secondRequired);
         for (Cell c : row.cells()) {
@@ -471,7 +471,7 @@ class LongoTurnRulesTest {
         SheetLayout layout = state.sheetLayouts().get(playerId);
         Row row = layout.rows().get(rowIndex);
         LockCell lock = row.lock();
-        Set<String> required = new HashSet<>(lock.requiredCells());
+        Set<String> required = new HashSet<>(lock.closingCells());
         Set<String> crossed = new HashSet<>(required);
         for (Cell c : row.cells()) {
             if (crossed.size() >= total) break;
@@ -496,6 +496,15 @@ class LongoTurnRulesTest {
                 rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(passive));
             }
         }
+    }
+
+    /** Returns the first CrossCellAction offered to playerId, or throws if none. */
+    private nl.adg.qwixx.action.CrossCellAction completeCrossAction(GameState state, UUID playerId) {
+        return rules.getValidActions(state, playerId).stream()
+                .filter(a -> a instanceof nl.adg.qwixx.action.CrossCellAction)
+                .map(a -> (nl.adg.qwixx.action.CrossCellAction) a)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no CrossCellAction available for " + playerId));
     }
 
     // -------------------------------------------------------------------------
@@ -697,16 +706,22 @@ class LongoTurnRulesTest {
         crossOnlyLastCell(state, p2, 0);  // p2 has enough crosses via last-cell only
         rules.apply(state, new DeclareLockIntentAction(p2, 0));
 
-        assertEquals(TurnPhase.LOCK_PENDING, state.turnState().phase(),
-                "game must enter LOCK_PENDING after passive declares lock intent for a LONGO row");
-        assertTrue(state.turnState().passivePlayerQueue().contains(p1),
-                "active player must be placed in the acknowledgement queue");
+        // In the new architecture, DECLARE_LOCK_INTENT does not change phase.
+        // Phase stays in ACTIVE_MOVE. The row closes at EVALUATE after all passives EndTurn.
+        assertEquals(TurnPhase.ACTIVE_MOVE, state.turnState().phase(),
+                "game must remain in ACTIVE_MOVE after passive declares lock intent for a LONGO row");
+        // p2 is in the passive queue (they will EndTurn to trigger EVALUATE)
+        assertTrue(state.turnState().passivePlayerQueue().contains(p2),
+                "p2 must remain in the passive queue after declaring intent");
 
-        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p1));  // acknowledge
-        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p1));  // complete slot → row closes
+        // p1 (active) makes a move and EndTurns → PASSIVE_MOVE
+        rules.apply(state, completeCrossAction(state, p1));
+        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p1));  // → PASSIVE_MOVE
+        // p2 EndTurns → EVALUATE → row closes
+        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p2));
 
         assertTrue(state.boardState().closedRows().containsKey(0),
-                "LONGO row must close once the active player completes their slot");
+                "LONGO row must close once all passives have EndTurned (EVALUATE)");
         assertEquals(TurnPhase.ROLL, state.turnState().phase(),
                 "turn must advance to ROLL after the LONGO lock closes");
     }
@@ -717,15 +732,17 @@ class LongoTurnRulesTest {
         crossOnlyLastCell(state, p2, 0);
         rules.apply(state, new DeclareLockIntentAction(p2, 0));
 
+        // In the new architecture, p1 (active) can cross a cell in ACTIVE_MOVE,
+        // then EndTurns → PASSIVE_MOVE. p2 EndTurns → EVALUATE → row closes.
         nl.adg.qwixx.action.CrossCellAction cross = rules.getValidActions(state, p1).stream()
                 .filter(a -> a instanceof nl.adg.qwixx.action.CrossCellAction)
                 .map(a -> (nl.adg.qwixx.action.CrossCellAction) a)
                 .findFirst()
-                .orElseThrow(() -> new AssertionError("no cross action for p1 in LOCK_PENDING"));
+                .orElseThrow(() -> new AssertionError("no cross action for p1 in ACTIVE_MOVE"));
 
         rules.apply(state, cross);
-        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p1));  // acknowledge
-        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p1));  // complete slot → row closes
+        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p1));  // active EndTurns → PASSIVE_MOVE
+        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p2));  // p2 EndTurns → EVALUATE → row closes
 
         nl.adg.qwixx.state.RowState rs = state.boardState().sheetProgress().get(p1)
                 .rowStates().getOrDefault(cross.rowIndex(),
@@ -733,7 +750,7 @@ class LongoTurnRulesTest {
         assertTrue(rs.crossedCells().contains(cross.cellId()),
                 "active player's cross must be preserved after the LONGO lock closes");
         assertTrue(state.boardState().closedRows().containsKey(0),
-                "LONGO row must close after the active player completes their slot");
+                "LONGO row must close after the active player EndTurns and p2 EndTurns (EVALUATE)");
     }
 
     // ── Bonus cross: cell display value ≠ white+white sum ────────────────────
@@ -783,28 +800,28 @@ class LongoTurnRulesTest {
                 "a second white+white cross must be rejected after the bonus cross");
     }
 
-    // ── Passive crosses last required cell in LOCK_PENDING, declares after resolve ─────────────
+    // ── Longo: two rows close across two turns ──────────────────────────────────
 
     @Test
-    void longo_passive_crossesLastRequiredCell_inLockPending_declaresAfterResolve() {
+    void longo_twoRowsCloseAcrossTwoTurns() {
         // 2 players (p1=active, p2=passive), Longo variant.
-        // p1 has enough crosses for row 0 (RED ascending, index 0) — all required + enough total.
-        // p2 has both required cells permanently crossed for row 1 (YELLOW ascending, index 1).
-        // p1 declares lock for row 0 → LOCK_PENDING.
-        // p2 completes their slot (2 EndTurns) → row 0 closes.
-        // p2 is reinvited (eligible to close row 1) → p2 declares lock for row 1.
-        // p1 acknowledges → row 1 closes → 2 rows → game over.
+        // p1 has enough crosses for row 0 (RED ascending, index 0).
+        // p2 has both closing cells permanently crossed for row 1 (YELLOW ascending, index 1).
+        //
+        // New architecture flow:
+        // Turn 1: p1 is active, declares row 0, EndTurns → PASSIVE_MOVE. p2 EndTurns → EVALUATE.
+        //         row 0 closes. p2 becomes next active.
+        // Turn 2: p2 rolls, declares row 1, EndTurns → PASSIVE_MOVE. p1 EndTurns → EVALUATE.
+        //         row 1 closes. Game over.
         GameState state = stateAfterRoll(p1, p1, p2);
 
-        // Give p1 enough crosses on row 0 (RED): both required cells + fill to 8 total.
-        // Note: crossBothRequiredCellsWithEnough has a hardcoded bug (uses p1 always), so we
-        // use the correct private helper crossBothRequiredCellsWithExactly indirectly via row setup.
+        // Give p1 enough crosses on row 0 (RED): both closing cells + fill to 8 total.
         {
             SheetLayout layout = state.sheetLayouts().get(p1);
             Row row = layout.rows().get(0);
             LockCell lock = row.lock();
-            Set<String> required = new HashSet<>(lock.requiredCells());
-            Set<String> crossed = new HashSet<>(required);
+            Set<String> closingCells = new HashSet<>(lock.closingCells());
+            Set<String> crossed = new HashSet<>(closingCells);
             for (Cell c : row.cells()) {
                 if (crossed.size() >= 8) break;
                 crossed.add(c.id());
@@ -812,13 +829,13 @@ class LongoTurnRulesTest {
             state.boardState().sheetProgress().get(p1).updateRowState(0, new RowState(crossed, false));
         }
 
-        // Give p2 enough crosses on row 1 (YELLOW): both required cells + fill to 8 total.
+        // Give p2 enough crosses on row 1 (YELLOW): both closing cells + fill to 8 total.
         {
             SheetLayout layout = state.sheetLayouts().get(p2);
             Row row = layout.rows().get(1);
             LockCell lock = row.lock();
-            Set<String> required = new HashSet<>(lock.requiredCells());
-            Set<String> crossed = new HashSet<>(required);
+            Set<String> closingCells = new HashSet<>(lock.closingCells());
+            Set<String> crossed = new HashSet<>(closingCells);
             for (Cell c : row.cells()) {
                 if (crossed.size() >= 8) break;
                 crossed.add(c.id());
@@ -826,33 +843,32 @@ class LongoTurnRulesTest {
             state.boardState().sheetProgress().get(p2).updateRowState(1, new RowState(crossed, false));
         }
 
-        // p1 declares lock for row 0 → LOCK_PENDING
+        // Turn 1: p1 declares row 0, also crosses another cell (required to EndTurn), then EndTurns
         rules.apply(state, new DeclareLockIntentAction(p1, 0));
-        assertEquals(TurnPhase.LOCK_PENDING, state.turnState().phase(),
-                "game must be in LOCK_PENDING after p1 declares lock for row 0");
+        assertEquals(TurnPhase.ACTIVE_MOVE, state.turnState().phase(),
+                "phase must stay ACTIVE_MOVE after DECLARE_LOCK_INTENT");
+        rules.apply(state, completeCrossAction(state, p1)); // active must cross to satisfy EndTurn requirement
+        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p1));
+        assertEquals(TurnPhase.PASSIVE_MOVE, state.turnState().phase());
 
-        // p2 completes their slot (2 EndTurns) → row 0 auto-closes
-        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p2));  // first = acknowledgement
-        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p2));  // second = complete slot → auto-close
-        assertTrue(state.boardState().closedRows().containsKey(0), "row 0 must close after p2 acks");
+        // p2 EndTurns → EVALUATE → row 0 closes → Turn 2: p2 is active
+        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p2));
+        assertTrue(state.boardState().closedRows().containsKey(0), "row 0 must close after EVALUATE");
+        assertEquals(TurnPhase.ROLL, state.turnState().phase(), "Turn 2 must start with ROLL");
+        assertEquals(p2, state.turnState().activePlayerId(), "p2 must be active for Turn 2");
 
-        // p2 must be reinvited — they can close row 1
-        assertNotEquals(TurnPhase.ROLL, state.turnState().phase(),
-                "turn must not go to ROLL — p2 can still close row 1");
-        assertTrue(state.turnState().passivePlayerQueue().contains(p2),
-                "p2 must be reinvited in the passive queue");
-
-        // p2 is offered lock intent for row 1
+        // Turn 2: p2 rolls, declares row 1, also crosses something, then EndTurns → PASSIVE_MOVE
+        rules.apply(state, new nl.adg.qwixx.action.RollAction(p2));
         assertTrue(rules.getValidActions(state, p2).stream()
                         .anyMatch(a -> a instanceof DeclareLockIntentAction dl && dl.rowIndex() == 1),
-                "p2 must be offered DeclareLockIntentAction for row 1 after reinvitation");
-
-        // p2 declares lock for row 1 (during PASSIVE_MOVE reinvite) → p1 must acknowledge
-        // then explicitly pass (no auto-pass since the lock was not declared in ACTIVE_MOVE).
+                "p2 must be offered lock intent for row 1 in Turn 2");
         rules.apply(state, new DeclareLockIntentAction(p2, 1));
-        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p1));  // p1 acknowledge
-        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p1));  // p1 complete slot → row 1 closes
-        assertTrue(state.boardState().closedRows().containsKey(1), "row 1 must close after p2 declares lock");
+        rules.apply(state, completeCrossAction(state, p2)); // p2 must also cross to EndTurn
+        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p2));
+
+        // p1 EndTurns → EVALUATE → row 1 closes → game over
+        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p1));
+        assertTrue(state.boardState().closedRows().containsKey(1), "row 1 must close after p1 EndTurns");
         assertTrue(state.gameOver(), "game must be over after 2 rows close");
     }
 

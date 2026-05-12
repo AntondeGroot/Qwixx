@@ -167,13 +167,14 @@ class GameStateMapperTest {
 
     @Test
     void toDtoRowClosureRequestsMappedCorrectly() {
-        // Manually add row closure requests to the internal state
+        // Manually add row closure requests to the internal state using player UUIDs.
+        // The mapper looks up the player name from the session.
         var state = GameRegistry.getGame(sessionId).currentState();
         state.rowClosureRequests().add(
-            new nl.adg.qwixx.state.RowClosureRequest("Alice", nl.adg.qwixx.data.Color.RED)
+            new nl.adg.qwixx.state.RowClosureRequest(alice.id(), nl.adg.qwixx.data.Color.RED)
         );
         state.rowClosureRequests().add(
-            new nl.adg.qwixx.state.RowClosureRequest("Bob", nl.adg.qwixx.data.Color.YELLOW)
+            new nl.adg.qwixx.state.RowClosureRequest(bob.id(), nl.adg.qwixx.data.Color.YELLOW)
         );
 
         var dto = GameStateMapper.toDto(state, GameRegistry.getGame(sessionId));
@@ -193,17 +194,18 @@ class GameStateMapperTest {
     @Test
     void toDtoRowClosureRequestsAllColorsSupported() {
         var state = GameRegistry.getGame(sessionId).currentState();
+        // Use alice's UUID for all requests; the mapper resolves to the player's name.
         state.rowClosureRequests().add(
-            new nl.adg.qwixx.state.RowClosureRequest("P1", nl.adg.qwixx.data.Color.RED)
+            new nl.adg.qwixx.state.RowClosureRequest(alice.id(), nl.adg.qwixx.data.Color.RED)
         );
         state.rowClosureRequests().add(
-            new nl.adg.qwixx.state.RowClosureRequest("P2", nl.adg.qwixx.data.Color.YELLOW)
+            new nl.adg.qwixx.state.RowClosureRequest(alice.id(), nl.adg.qwixx.data.Color.YELLOW)
         );
         state.rowClosureRequests().add(
-            new nl.adg.qwixx.state.RowClosureRequest("P3", nl.adg.qwixx.data.Color.GREEN)
+            new nl.adg.qwixx.state.RowClosureRequest(alice.id(), nl.adg.qwixx.data.Color.GREEN)
         );
         state.rowClosureRequests().add(
-            new nl.adg.qwixx.state.RowClosureRequest("P4", nl.adg.qwixx.data.Color.BLUE)
+            new nl.adg.qwixx.state.RowClosureRequest(alice.id(), nl.adg.qwixx.data.Color.BLUE)
         );
 
         var dto = GameStateMapper.toDto(state, GameRegistry.getGame(sessionId));

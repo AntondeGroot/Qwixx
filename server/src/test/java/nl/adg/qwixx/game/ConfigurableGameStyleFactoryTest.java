@@ -127,7 +127,7 @@ class ConfigurableGameStyleFactoryTest {
         for (Row row : rows) {
             assertEquals(6, row.lock().minCrosses());
             Cell lastCell = row.cells().get(row.cells().size() - 1);
-            assertEquals(List.of(lastCell.id()), row.lock().requiredCells());
+            assertEquals(List.of(lastCell.id()), row.lock().closingCells());
         }
     }
 

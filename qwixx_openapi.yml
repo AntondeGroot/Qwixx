@@ -370,7 +370,6 @@ components:
         - ROLL
         - ACTIVE_MOVE
         - PASSIVE_MOVE
-        - LOCK_PENDING
         - EVALUATE
 
     MoveType:
@@ -567,11 +566,6 @@ components:
             type: array
             items:
               type: string
-        lockAcknowledged:
-          type: array
-          items:
-            type: string
-          description: Player IDs who have acknowledged the current lock intent. Used by clients to hide the acknowledgement modal while the player completes their passive move slot.
 
     GameState:
       type: object
@@ -621,7 +615,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/RowClosureRequest'
-          description: Pending row closure requests from players.
+          description: Pending row closure notifications for the UI.
+        pendingClosures:
+          type: object
+          description: Map of rowId to the playerId who declared closing intent; rows in this map close at EVALUATE.
+          additionalProperties:
+            type: string
         gameOver:
           type: boolean
         version:
@@ -713,7 +712,7 @@ components:
         - id
         - color
         - minCrosses
-        - requiredCells
+        - closingCells
       properties:
         id:
           type: string
@@ -722,11 +721,11 @@ components:
         minCrosses:
           type: integer
           description: Minimum number of crossed cells required before the lock can be triggered.
-        requiredCells:
+        closingCells:
           type: array
           items:
             type: string
-          description: Cell IDs that must all be crossed before the lock can be triggered.
+          description: Cell IDs that can each independently close the row (any ONE is sufficient).
 
     SheetRow:
       type: object

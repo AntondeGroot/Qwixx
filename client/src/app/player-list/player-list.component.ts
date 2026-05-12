@@ -36,8 +36,7 @@ export class PlayerListComponent {
     if (pid === turn.activePlayerId) return true;
     const phase = turn.phase;
     return phase === TurnPhase.ACTIVE_MOVE
-        || phase === TurnPhase.PASSIVE_MOVE
-        || phase === TurnPhase.LOCK_PENDING;
+        || phase === TurnPhase.PASSIVE_MOVE;
   }
 
   playerHasActed(pid: string): boolean {

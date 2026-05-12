@@ -6,7 +6,6 @@ public sealed interface GameAction permits
         RollAction,
         CrossCellAction,
         DeclareLockIntentAction,
-        CrossLockAction,
         UndoLastCrossAction,
         GiveUpAction,
         ResetTurnAction,

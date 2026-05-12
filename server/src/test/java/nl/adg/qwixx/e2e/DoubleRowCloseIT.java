@@ -28,10 +28,11 @@ import static org.junit.jupiter.api.Assertions.*;
  * is the only closing-eligible cell.  Lock minimum = 6 crosses (5 pre-set + "12" = 6).
  *
  * Expected flow:
- *   1. player0 clicks RED "12"  → RED lock auto-crossed (no modal for player0).
+ *   1. player0 clicks RED "12"  → RED lock auto-declared (no modal for player0).
  *   2. YELLOW "12" is still shown as clickable (colored die option: white+yellow=12).
- *   3. player0 clicks YELLOW "12" → YELLOW lock also auto-crossed.
- *   4. player1 confirms via the modal → RED and YELLOW both close → 2 rows locked → game ends.
+ *   3. player0 clicks YELLOW "12" → YELLOW lock also auto-declared.
+ *   4. player0 EndTurns → phase = PASSIVE_MOVE.
+ *   5. player1 confirms the combined modal (EndTurn) → EVALUATE → both rows close → game ends.
  */
 public class DoubleRowCloseIT extends BaseIntegrationTest {
 
@@ -84,19 +85,21 @@ public class DoubleRowCloseIT extends BaseIntegrationTest {
         assertFalse(BoardInteractionHelper.isModalVisible(driver0),
                 "Declaring player must NOT see the row-closure modal");
 
-        // Passive player (player1) sees the modal
+        // Player1 sees the notification modal and dismisses it (OK = notification only, not EndTurn).
         BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
         assertTrue(BoardInteractionHelper.isModalVisible(driver1),
                 "Player1 must see the row-closure modal");
-
-        // player1 confirms, then completes their passive slot → RED row closes
-        BoardInteractionHelper.clickModalConfirmButton(driver1);
+        BoardInteractionHelper.clickModalConfirmButton(driver1); // dismiss notification
         BoardInteractionHelper.waitUntilPassButtonVisible(driver1, 5);
-        BoardInteractionHelper.clickPassButton(driver1);
+        BoardInteractionHelper.clickPassButton(driver1); // player1 EndTurns via board pass button
+
+        // player0 EndTurns → passive queue empty → EVALUATE → RED closes.
+        BoardInteractionHelper.waitUntilPassButtonVisible(driver0, 5);
+        BoardInteractionHelper.clickPassButton(driver0);
         new WebDriverWait(driver0, Duration.ofSeconds(8))
                 .until(d -> BoardInteractionHelper.isRowClosed(d, "RED"));
         assertTrue(BoardInteractionHelper.isRowClosed(driver0, "RED"),
-                "RED must be closed after player1 completes their passive slot");
+                "RED must be closed after EVALUATE");
     }
 
     // ── Test 2: YELLOW "12" is clickable while RED lock is pending ───────────────
@@ -156,9 +159,11 @@ public class DoubleRowCloseIT extends BaseIntegrationTest {
 
     /**
      * Full double-close flow in one turn:
-     *   player0 clicks RED "12" → RED lock pending.
-     *   player0 clicks YELLOW "12" → YELLOW lock also queued.
-     *   player1 confirms the combined modal → both rows close → 2 rows locked → game ends.
+     *   player0 clicks RED "12" → RED lock auto-declared.
+     *   player0 clicks YELLOW "12" → YELLOW lock also auto-declared.
+     *   player0 EndTurns → phase = PASSIVE_MOVE.
+     *   player1 confirms the combined modal (EndTurn in PASSIVE_MOVE → EVALUATE) →
+     *   both rows close → 2 rows locked → game ends.
      */
     @Test
     void clickingBothClosingCellsAndConfirmingEndsGame() {
@@ -167,7 +172,8 @@ public class DoubleRowCloseIT extends BaseIntegrationTest {
         TestUtils.waitUntilBoardLoaded(driver0);
         TestUtils.waitUntilBoardLoaded(driver1);
 
-        // player0 closes RED then YELLOW in the same turn
+        // player0 crosses RED "12" (white+white) then YELLOW "12" (white+yellow).
+        // Both lock intents are auto-declared by the client.
         BoardInteractionHelper.clickCellByValue(driver0, "RED", "12");
         new WebDriverWait(driver0, Duration.ofSeconds(5))
                 .until(d -> BoardInteractionHelper.isLockButtonCrossed(d, "RED"));
@@ -176,27 +182,25 @@ public class DoubleRowCloseIT extends BaseIntegrationTest {
         new WebDriverWait(driver0, Duration.ofSeconds(5))
                 .until(d -> BoardInteractionHelper.isLockButtonCrossed(d, "YELLOW"));
 
-        // player0 must confirm the second lock intent via the confirm button
-        // (the YELLOW close is not auto-declared; player0 sees a green confirm button)
+        // player0 EndTurns → phase transitions to PASSIVE_MOVE.
         BoardInteractionHelper.waitUntilPassButtonVisible(driver0, 5);
         BoardInteractionHelper.clickPassButton(driver0);
 
-        // player1 sees the lock-intent modal and confirms
+        // player1 sees the notification modal and dismisses it (OK = notification only, not EndTurn),
+        // then EndTurns via the board pass button → passive queue empty → EVALUATE.
         BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
-        BoardInteractionHelper.clickModalConfirmButton(driver1);
-
-        // player1 gets their final passive-move slot before rows close
+        BoardInteractionHelper.clickModalConfirmButton(driver1); // dismiss notification
         BoardInteractionHelper.waitUntilPassButtonVisible(driver1, 5);
-        BoardInteractionHelper.clickPassButton(driver1);
+        BoardInteractionHelper.clickPassButton(driver1); // player1 EndTurns → EVALUATE
 
-        // Both rows must close once player1 completes their passive slot
+        // Both rows close and the game ends.
         new WebDriverWait(driver0, Duration.ofSeconds(8))
                 .until(d -> BoardInteractionHelper.isRowClosed(d, "RED")
                          && BoardInteractionHelper.isRowClosed(d, "YELLOW"));
         assertTrue(BoardInteractionHelper.isRowClosed(driver0, "RED"),
-                "RED must be closed after player1 completes passive slot");
+                "RED must be closed after EVALUATE");
         assertTrue(BoardInteractionHelper.isRowClosed(driver0, "YELLOW"),
-                "YELLOW must be closed after player1 completes passive slot");
+                "YELLOW must be closed after EVALUATE");
 
         // 2 rows locked → game over → both players navigate to score screen
         new WebDriverWait(driver0, Duration.ofSeconds(10))

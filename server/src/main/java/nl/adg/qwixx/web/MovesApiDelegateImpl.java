@@ -1,7 +1,6 @@
 package nl.adg.qwixx.web;
 
 import nl.adg.qwixx.action.CrossCellAction;
-import nl.adg.qwixx.action.CrossLockAction;
 import nl.adg.qwixx.action.DeclareLockIntentAction;
 import nl.adg.qwixx.action.DiceCombination;
 import nl.adg.qwixx.action.EndTurnAction;
@@ -14,17 +13,14 @@ import nl.adg.qwixx.action.UndoLastCrossAction;
 import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSession;
-import nl.adg.qwixx.game.Player;
 import nl.adg.qwixx.state.SheetLayout;
 import nl.adg.qwixx.game.SessionNotFoundException;
-import nl.adg.qwixx.state.RowClosureRequest;
 import nl.adg.qwixx.generated.api.MovesApiDelegate;
 import nl.adg.qwixx.generated.model.MoveRequest;
 import nl.adg.qwixx.generated.model.MoveResponse;
 import nl.adg.qwixx.generated.model.MoveResult;
 import nl.adg.qwixx.rules.IllegalMoveException;
 import nl.adg.qwixx.state.GameState;
-import nl.adg.qwixx.state.TurnPhase;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -47,15 +43,6 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
                 session.currentState().boardState().closedRows());
 
         GameState newState = session.applyAction(action);
-
-        // Populate row closure requests only when the game is actually waiting in LOCK_PENDING.
-        // In a single-player game the lock auto-resolves inside applyDeclareLockIntent, so the
-        // phase has already advanced — no notifications are needed in that case.
-        if (action instanceof DeclareLockIntentAction declareLock
-                && newState.turnState() != null
-                && newState.turnState().phase() == TurnPhase.LOCK_PENDING) {
-            populateRowClosureRequests(newState, session, pid, declareLock.rowIndex());
-        }
 
         MoveResult result = newState.gameOver() ? MoveResult.GAME_OVER : MoveResult.ACCEPTED;
 
@@ -82,13 +69,13 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
                     pid, parseRowIndex(req.getRowId(), session, pid), req.getCellId(), DiceCombination.WHITE_WHITE);
             case CROSS_COLOR_DIE   -> new CrossCellAction(
                     pid, parseRowIndex(req.getRowId(), session, pid), req.getCellId(), DiceCombination.WHITE_COLOR);
-            case CROSS_LOCK          -> new CrossLockAction(pid, parseRowIndex(req.getRowId(), session, pid));
-            case TAKE_PUNISHMENT     -> new TakePunishmentAction(pid);
-            case PASS                -> new EndTurnAction(pid);
+            case TAKE_PUNISHMENT   -> new TakePunishmentAction(pid);
+            case PASS              -> new EndTurnAction(pid);
             case DECLARE_LOCK_INTENT -> new DeclareLockIntentAction(pid, parseRowIndex(req.getRowId(), session, pid));
-            case RESET_TURN          -> new ResetTurnAction(pid);
-            case GIVE_UP             -> new GiveUpAction(pid);
-            case UNDO_LAST_CROSS     -> new UndoLastCrossAction(pid);
+            case RESET_TURN        -> new ResetTurnAction(pid);
+            case GIVE_UP           -> new GiveUpAction(pid);
+            case UNDO_LAST_CROSS   -> new UndoLastCrossAction(pid);
+            case CROSS_LOCK        -> throw new IllegalMoveException("CROSS_LOCK is no longer a valid move type");
         };
     }
 
@@ -115,20 +102,5 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
         GameSession session = GameRegistry.getGame(sessionId);
         if (session == null) throw new SessionNotFoundException(sessionId);
         return session;
-    }
-
-    private void populateRowClosureRequests(GameState state, GameSession session, UUID activePlayerId, int rowIndex) {
-        SheetLayout layout = state.sheetLayouts().get(activePlayerId);
-        nl.adg.qwixx.data.Color rowColor = layout.rows().get(rowIndex).lock().color();
-
-        // The modal must show the DECLARING player's name, so look up the active player
-        String declarerName = session.players().stream()
-                .filter(p -> p.id().equals(activePlayerId))
-                .findFirst()
-                .map(Player::name)
-                .orElse(activePlayerId.toString());
-
-        // Accumulate one request per declaring player (not one per passive player)
-        state.rowClosureRequests().add(new RowClosureRequest(declarerName, rowColor));
     }
 }

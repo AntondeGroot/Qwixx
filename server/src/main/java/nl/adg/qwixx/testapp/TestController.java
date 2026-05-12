@@ -63,17 +63,18 @@ public class TestController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/add-closure-request/{sessionId}/{playerName}/{rowColor}")
+    @PostMapping("/add-closure-request/{sessionId}/{playerId}/{rowColor}")
     public ResponseEntity<Void> addClosureRequest(
             @PathVariable String sessionId,
-            @PathVariable String playerName,
+            @PathVariable String playerId,
             @PathVariable String rowColor) {
 
         GameSession session = GameRegistry.getGame(sessionId);
         if (session == null) return ResponseEntity.notFound().build();
 
         Color color = Color.valueOf(rowColor.toUpperCase());
-        session.currentState().rowClosureRequests().add(new RowClosureRequest(playerName, color));
+        session.currentState().rowClosureRequests().add(new RowClosureRequest(UUID.fromString(playerId), color));
+        session.currentState().incrementVersion();
         return ResponseEntity.ok().build();
     }
 

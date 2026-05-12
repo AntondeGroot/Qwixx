@@ -327,12 +327,13 @@ describe('BoardComponent — punishment / pass', () => {
   // ── onConfirmRowClosure ────────────────────────────────────────────────────
 
   describe('onConfirmRowClosure', () => {
-    it('sends PASS so the passive player acknowledges the lock intent', () => {
+    it('sends PASS when the passive player has a pending cross', () => {
       component.gameState.set(makeState({
         turnState: {
           activePlayerId: OTHER_ID,
-          phase: TurnPhase.LOCK_PENDING,
+          phase: TurnPhase.PASSIVE_MOVE,
           passivePlayerQueue: [PLAYER_ID],
+          pendingCrosses: { [PLAYER_ID]: ['some-cell'] },
         },
       }));
       component.sessionId.set('s1');
@@ -346,16 +347,16 @@ describe('BoardComponent — punishment / pass', () => {
     });
   });
 
-  // ── passive undo during LOCK_PENDING ─────────────────────────────────────
+  // ── passive undo during PASSIVE_MOVE ─────────────────────────────────────
 
-  describe('passive player undo during LOCK_PENDING', () => {
+  describe('passive player undo during PASSIVE_MOVE', () => {
     const PENDING_CELL = 'cell-pending';
 
-    function stateInLockPending(hasPending = true): GameState {
+    function stateInPassiveMove(hasPending = true): GameState {
       return makeState({
         turnState: {
           activePlayerId: OTHER_ID,
-          phase: TurnPhase.LOCK_PENDING,
+          phase: TurnPhase.PASSIVE_MOVE,
           passivePlayerQueue: [PLAYER_ID],
           ...(hasPending ? { pendingCrosses: { [PLAYER_ID]: [PENDING_CELL] } } : {}),
           currentRoll: { white1: 1, white2: 1, coloredDice: {} },
@@ -363,26 +364,8 @@ describe('BoardComponent — punishment / pass', () => {
       } as unknown as Partial<GameState>);
     }
 
-    it('clicking a pending cell in LOCK_PENDING sends UNDO_LAST_CROSS, not RESET_TURN', () => {
-      component.gameState.set(stateInLockPending());
-      component.sessionId.set('s1');
-
-      component.onCellClicked('any-row', PENDING_CELL);
-
-      expect(movesService.makeMove).toHaveBeenCalledWith(
-        's1', PLAYER_ID, expect.objectContaining({ moveType: MoveType.UNDO_LAST_CROSS })
-      );
-    });
-
-    it('clicking a pending cell in PASSIVE_MOVE still sends RESET_TURN', () => {
-      component.gameState.set(makeState({
-        turnState: {
-          activePlayerId: OTHER_ID, phase: TurnPhase.PASSIVE_MOVE,
-          passivePlayerQueue: [PLAYER_ID],
-          pendingCrosses: { [PLAYER_ID]: [PENDING_CELL] },
-          currentRoll: { white1: 1, white2: 1, coloredDice: {} },
-        },
-      } as unknown as Partial<GameState>));
+    it('clicking a pending cell in PASSIVE_MOVE sends RESET_TURN', () => {
+      component.gameState.set(stateInPassiveMove());
       component.sessionId.set('s1');
 
       component.onCellClicked('any-row', PENDING_CELL);
@@ -393,7 +376,7 @@ describe('BoardComponent — punishment / pass', () => {
     });
 
     it('onChangeRowClosure with a pending cross sends UNDO_LAST_CROSS', () => {
-      component.gameState.set(stateInLockPending());
+      component.gameState.set(stateInPassiveMove());
       component.sessionId.set('s1');
 
       (component as any).onChangeRowClosure();
@@ -406,7 +389,7 @@ describe('BoardComponent — punishment / pass', () => {
     it('onChangeRowClosure without a pending cross dismisses the modal locally without a server call', () => {
       // No pending cross — "Change" means "let me pick a cell", not "reset state".
       // The modal is dismissed client-side so the player can click the board.
-      component.gameState.set(stateInLockPending(false));
+      component.gameState.set(stateInPassiveMove(false));
       component.sessionId.set('s1');
 
       (component as any).onChangeRowClosure();
@@ -456,9 +439,8 @@ describe('BoardComponent — punishment / pass', () => {
       );
     });
 
-    it('sends CROSS_WHITE_WHITE in LOCK_PENDING when passive has no pending cross', () => {
-      // Declaring lock re-invites passive players; they must be able to cross a cell.
-      component.gameState.set(makeStateWithCell({ phase: TurnPhase.LOCK_PENDING }));
+    it('sends CROSS_WHITE_WHITE in ACTIVE_MOVE when passive has no pending cross', () => {
+      component.gameState.set(makeStateWithCell({ phase: TurnPhase.ACTIVE_MOVE }));
       component.sessionId.set('s1');
 
       component.onCellClicked(ROW_ID, CELL_ID);
@@ -504,7 +486,7 @@ describe('BoardComponent — punishment / pass', () => {
                 { id: CLOSING_ID, position: 10, displayValue: '12',
                   color: 'RED', closingEligible: true, tags: [] },
               ],
-              lock: { id: 'lock-1', color: 'RED', minCrosses: 6, requiredCells: [CLOSING_ID] },
+              lock: { id: 'lock-1', color: 'RED', minCrosses: 6, closingCells: [CLOSING_ID] },
             }],
           },
           [OTHER_ID]: { rows: [] },
@@ -812,9 +794,17 @@ describe('BoardComponent — row-closure modal delegation', () => {
     // Instead we verify the behaviour through the component's public methods,
     // which are exactly what the service callbacks invoke.
 
-    it('onConfirmRowClosure sends a PASS move', () => {
+    it('onConfirmRowClosure sends a PASS move when there is a pending cross', () => {
       component.sessionId.set('sess1');
-      // This is the method wired to modalService.confirmFn inside the effect.
+      // Give the player a pending cross so hasPendingPassiveCross() is true.
+      component.gameState.set(makeState({
+        turnState: {
+          activePlayerId: OTHER_ID,
+          phase: TurnPhase.PASSIVE_MOVE,
+          passivePlayerQueue: [PLAYER_ID],
+          pendingCrosses: { [PLAYER_ID]: ['some-cell'] },
+        },
+      } as unknown as Partial<GameState>));
       (component as any).onConfirmRowClosure();
       expect(movesService.makeMove).toHaveBeenCalledWith(
         'sess1', PLAYER_ID, expect.objectContaining({ moveType: MoveType.PASS }));

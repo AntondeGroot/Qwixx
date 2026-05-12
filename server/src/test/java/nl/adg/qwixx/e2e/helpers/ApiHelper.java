@@ -140,8 +140,8 @@ public class ApiHelper {
         post("/test/force-finish/" + sessionId, null, Void.class);
     }
 
-    public void addClosureRequest(String sessionId, String playerName, String rowColor) {
-        post("/test/add-closure-request/" + sessionId + "/" + playerName + "/" + rowColor,
+    public void addClosureRequest(String sessionId, String playerId, String rowColor) {
+        post("/test/add-closure-request/" + sessionId + "/" + playerId + "/" + rowColor,
                 null, Void.class);
     }
 

@@ -55,7 +55,7 @@ class CellCrosser {
 
                 if (cell.isClosingEligible() && row.lock() != null) {
                     LockCell lock = row.lock();
-                    long alreadyCrossedRequired = lock.requiredCells().stream()
+                    long alreadyCrossedRequired = lock.closingCells().stream()
                             .filter(id -> rowState.crossedCells().contains(id))
                             .count();
                     long normalCrossed = rowState.crossedCells().size() - alreadyCrossedRequired;

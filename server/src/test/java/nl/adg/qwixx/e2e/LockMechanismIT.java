@@ -342,6 +342,69 @@ public class LockMechanismIT extends BaseIntegrationTest {
                 "Passive player must see the row-closure modal after active clicks YES on second-to-last cell");
     }
 
+    @Test
+    void passive_crossesSecondToLastLockCell_seesLockCrossBeforeGameEnds() {
+        // Regression test for: passive clicked YES on the lock-confirm modal after the active
+        // already declared the same row. The notification modal must stay suppressed so the
+        // passive can see their own lock cross on the board (not hidden behind the modal).
+        //
+        // Setup: both players have 6 crosses in BLUE. white+white=3 → "3" (second-to-last
+        // closing cell) is reachable. Active declares first; passive follows.
+        String sid = api.createGame(2, java.util.Map.of("base", "LONGO"));
+        List<String> pids = api.getPlayerIds(sid);
+
+        api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, 6);
+        api.setCrosses(sid, pids.get(1), BLUE_ROW_INDEX, 6);
+        api.roll(sid, pids.get(0));
+        api.setDice(sid, 1, 2); // white+white = 3 → "3" reachable
+
+        driver0 = TestUtils.getDriver(sid, pids.get(0));
+        driver1 = TestUtils.getDriver(sid, pids.get(1));
+        TestUtils.waitUntilBoardLoaded(driver0);
+        TestUtils.waitUntilBoardLoaded(driver1);
+
+        // player0 (active) crosses "3" → YES/NO modal → YES → DECLARE_LOCK_INTENT fires
+        BoardInteractionHelper.clickCellByValue(driver0, "BLUE", "3");
+        BoardInteractionHelper.waitUntilModalVisible(driver0, 5);
+        BoardInteractionHelper.clickModalYesButton(driver0);
+
+        new WebDriverWait(driver0, Duration.ofSeconds(5))
+                .until(d -> BoardInteractionHelper.isLockButtonCrossed(d, "BLUE"));
+        assertTrue(BoardInteractionHelper.isLockButtonCrossed(driver0, "BLUE"),
+                "player0 must see BLUE lock cross after clicking YES");
+
+        // player1 (passive) sees the notification modal and dismisses it (OK = notification only)
+        BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
+        BoardInteractionHelper.clickModalConfirmButton(driver1);
+
+        // player1 crosses "3" → YES/NO lock-confirm modal appears → YES
+        BoardInteractionHelper.clickCellByValue(driver1, "BLUE", "3");
+        BoardInteractionHelper.waitUntilModalVisible(driver1, 5);
+        BoardInteractionHelper.clickModalYesButton(driver1);
+
+        // KEY ASSERTIONS: player1 must see the BLUE lock cross on their board AND
+        // the notification modal must NOT re-appear and cover it.
+        new WebDriverWait(driver1, Duration.ofSeconds(5))
+                .until(d -> BoardInteractionHelper.isLockButtonCrossed(d, "BLUE"));
+        assertTrue(BoardInteractionHelper.isLockButtonCrossed(driver1, "BLUE"),
+                "player1 must see BLUE lock cross after clicking YES on '3'");
+        assertFalse(BoardInteractionHelper.isModalVisible(driver1),
+                "Notification modal must NOT cover the board — player1 must see their lock cross");
+
+        // player1 EndTurns via board confirm button (pending cross → hasPendingCross=true)
+        BoardInteractionHelper.waitUntilPassButtonVisible(driver1, 5);
+        BoardInteractionHelper.clickPassButton(driver1);
+
+        // player0 EndTurns → passive queue empty → EVALUATE → BLUE closes
+        BoardInteractionHelper.waitUntilPassButtonVisible(driver0, 5);
+        BoardInteractionHelper.clickPassButton(driver0);
+
+        new WebDriverWait(driver0, Duration.ofSeconds(8))
+                .until(d -> BoardInteractionHelper.isRowClosed(d, "BLUE"));
+        assertTrue(BoardInteractionHelper.isRowClosed(driver0, "BLUE"),
+                "BLUE must close after EVALUATE");
+    }
+
     // ── Passive closes own row while active also declared ─────────────────────
     //
     // Player0 (active) declares BLUE. Player1 (passive) also has RED "12" reachable.
@@ -421,6 +484,10 @@ public class LockMechanismIT extends BaseIntegrationTest {
         BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
         BoardInteractionHelper.clickModalConfirmButton(driver1);
 
+        // Player0 sees notification about player1's RED declaration; dismiss it first
+        BoardInteractionHelper.waitUntilModalVisible(driver0, 8);
+        BoardInteractionHelper.clickModalConfirmButton(driver0);
+
         // Player0 EndTurns → EVALUATE → both BLUE and RED close → game over
         BoardInteractionHelper.waitUntilPassButtonVisible(driver0, 5);
         BoardInteractionHelper.clickPassButton(driver0);
@@ -478,6 +545,10 @@ public class LockMechanismIT extends BaseIntegrationTest {
             BoardInteractionHelper.clickModalConfirmButton(driver2); // dismiss notification
             BoardInteractionHelper.waitUntilPassButtonVisible(driver2, 5);
             BoardInteractionHelper.clickPassButton(driver2); // player2 EndTurns
+
+            // Player0 sees notification about player1's RED declaration; dismiss it first
+            BoardInteractionHelper.waitUntilModalVisible(driver0, 8);
+            BoardInteractionHelper.clickModalConfirmButton(driver0);
 
             // Player0 EndTurns → EVALUATE → BLUE and RED close → game over (2 rows)
             BoardInteractionHelper.waitUntilPassButtonVisible(driver0, 5);

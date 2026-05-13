@@ -7,7 +7,7 @@
      [class.clickable]="showClickable() ?? clickable()"
      [attr.data-color]="cell().color"
      (click)="(clickable() || pending()) && clicked.emit()"
-      translate="no">
+      [attr.translate]="'no'">
   <span class="cell-value">{{ cell().displayValue }}</span>
   @if (crossed() || pending()) {
     <span class="cell-cross">✕</span>

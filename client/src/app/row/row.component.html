@@ -1,4 +1,4 @@
-<div class="row" [class.closed]="closed()" [attr.data-color]="row().cells[0]?.color" translate="no">
+<div class="row" [class.closed]="closed()" [attr.data-color]="row().cells[0]?.color" [attr.translate]="'no'">
   @for (offset of connectorOffsetsAbove(); track offset) {
     <div class="auto-cross-line up" [style.left.px]="offset"></div>
   }

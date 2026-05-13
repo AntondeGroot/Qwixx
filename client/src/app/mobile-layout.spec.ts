@@ -46,6 +46,24 @@ function portraitBlockHas(cssText: string, selector: string, prop: string, value
   return false;
 }
 
+/** Extracts the value of a CSS property from a selector inside a portrait @media block. */
+function getPortraitPropertyValue(cssText: string, selector: string, prop: string): string | null {
+  const portraitBlocks = cssText.match(
+    /@media\s*\([^)]*orientation:\s*portrait[^)]*\)\s*\{([\s\S]*?)(?=@media\s|\s*$)/g
+  ) ?? [];
+  for (const block of portraitBlocks) {
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(escaped + '\\s*\\{([^}]*)\\}', 'g');
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(block)) !== null) {
+      const propRe = new RegExp(prop + '\\s*:\\s*([^;]+)', 'i');
+      const pm = propRe.exec(m[1]);
+      if (pm) return pm[1].trim();
+    }
+  }
+  return null;
+}
+
 function globalSelectorHas(cssText: string, selector: string, prop: string, value: string): boolean {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const re = new RegExp(escaped + '\\s*\\{([^}]*)\\}', 'g');
@@ -104,42 +122,37 @@ describe('row-closure-modal — mobile CSS structure', () => {
 describe('score component — mobile CSS structure', () => {
   const scoreCss = css('score/score.component.css');
 
-  it(':host is rotated 90deg in portrait mode', () => {
-    expect(portraitBlockHas(scoreCss, ':host', 'transform', 'rotate(90deg)')).toBe(true);
+  // Score screen is no longer rotated on mobile — it renders normally in portrait
+  // and shows the player's final board (scaled to fit) below the score table.
+  it(':host is NOT rotated in portrait mode', () => {
+    expect(portraitBlockHas(scoreCss, ':host', 'transform', 'rotate(90deg)')).toBe(false);
   });
 
-  // Regression: zoom < 1 on .score-screen shrinks the content to a fraction of
-  // the viewport, leaving blank background visible around it on mobile.
-  // Only rotation is needed — no zoom scaling.
-  it('.score-screen must not have zoom applied in portrait mode', () => {
-    expect(portraitBlockHas(scoreCss, '.score-screen', 'zoom', '')).toBe(false);
+  // Horizontal overflow prevention so white browser background doesn't show on right.
+  it(':host has overflow-x:hidden in portrait mode', () => {
+    expect(portraitBlockHas(scoreCss, ':host', 'overflow-x', 'hidden')).toBe(true);
+  });
+
+  // Bucket columns narrow enough to leave room for the player name on a 390 px screen.
+  it('.bucket-cell is narrower in portrait mode (≤ 44px)', () => {
+    const widthStr = getPortraitPropertyValue(scoreCss, '.bucket-cell', 'width');
+    const px = parseFloat(widthStr ?? '56px');
+    expect(px).toBeLessThanOrEqual(44);
+  });
+
+  // Total column must also be reduced so it fits within 390 px.
+  it('.total-cell is narrower in portrait mode (≤ 56px)', () => {
+    const widthStr = getPortraitPropertyValue(scoreCss, '.total-cell', 'width');
+    const px = parseFloat(widthStr ?? '72px');
+    expect(px).toBeLessThanOrEqual(56);
   });
 
   it('.modal-overlay uses position:fixed in the default rule', () => {
     expect(globalSelectorHas(scoreCss, '.modal-overlay', 'position', 'fixed')).toBe(true);
   });
 
-  // Same fix: inside the rotated :host the overlay must use position:absolute.
-  it('.modal-overlay overrides to position:absolute inside the portrait media query', () => {
-    expect(portraitBlockHas(scoreCss, '.modal-overlay', 'position', 'absolute')).toBe(true);
-  });
-
-  // Regression: default :host has min-height:100vh which overrides height:100vw in portrait,
-  // making :host 844×844 instead of 844×390. The overlay fills this oversized box and its
-  // AABB after rotation extends outside the viewport.
-  it(':host resets min-height in portrait mode so height:100dvw is not overridden', () => {
-    expect(portraitBlockHas(scoreCss, ':host', 'min-height', '0')).toBe(true);
-  });
-
-  // Regression: 100vh includes the Android navigation-bar area; 100dvh is the
-  // usable height only. Using vh causes the right edge of the rotated landscape
-  // view to be hidden behind the navigation bar.
-  it(':host uses 100dvh for width (not plain vh) so the nav bar is excluded', () => {
-    expect(portraitBlockHas(scoreCss, ':host', 'width', '100dvh')).toBe(true);
-  });
-
-  it(':host uses 100dvw for height (not plain vw) so the nav bar is excluded', () => {
-    expect(portraitBlockHas(scoreCss, ':host', 'height', '100dvw')).toBe(true);
+  it('.final-board-outer has overflow:hidden to clip the scaled board', () => {
+    expect(globalSelectorHas(scoreCss, '.final-board-outer', 'overflow', 'hidden')).toBe(true);
   });
 });
 

@@ -39,7 +39,8 @@
     "winner": "wint!",
     "newGame": "Nieuw spel",
     "leaveGame": "Spel verlaten",
-    "viewScores": "Eindstand bekijken"
+    "viewScores": "Eindstand bekijken",
+    "yourCard": "Jouw kaart"
   },
   "rowClosure": {
     "wantsToCloseThe": "wil de",

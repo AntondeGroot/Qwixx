@@ -39,7 +39,8 @@
     "winner": "gagne !",
     "newGame": "Nouvelle partie",
     "leaveGame": "Quitter le jeu",
-    "viewScores": "Voir le score final"
+    "viewScores": "Voir le score final",
+    "yourCard": "Votre carte"
   },
   "rowClosure": {
     "wantsToCloseThe": "veut fermer la",

@@ -9,6 +9,9 @@ import { GamesService } from '../../generated/api/games.service';
 import { GamestatesService } from '../../generated/api/gamestates.service';
 import { PlayersService } from '../../generated/api/players.service';
 import { ScoreCard } from '../../generated/model/scoreCard';
+import { GameState } from '../../generated/model/gameState';
+import { RowState } from '../../generated/model/rowState';
+import { RowComponent } from '../row/row.component';
 
 const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -30,7 +33,7 @@ interface Col {
 @Component({
   selector: 'app-score',
   standalone: true,
-  imports: [TranslateModule],
+  imports: [TranslateModule, RowComponent],
   templateUrl:  './score.component.html',
   styleUrl: './score.component.css'
 })
@@ -53,7 +56,10 @@ export class ScoreComponent implements OnInit {
   // control returns to the browser event loop, so Selenium assertions that run
   // immediately after an Angular DOM change always see the final layout.
   constructor() {
-    afterEveryRender(() => this._measureRowH());
+    afterEveryRender(() => {
+      this._measureRowH();
+      this._updateBoardLayout();
+    });
   }
 
   // Called synchronously before playerRows.set() so Angular batches both signal
@@ -116,6 +122,49 @@ export class ScoreComponent implements OnInit {
   sessionId = '';
   playerId  = '';
 
+  // Final game state — set once the animation (or fast-show) has loaded it.
+  // Used to display the player's own board at the bottom for score verification.
+  readonly finalState = signal<GameState | null>(null);
+
+  myLayout    = computed(() => this.finalState()?.sheetLayouts?.[this.playerId]  ?? null);
+  myProgress  = computed(() => this.finalState()?.sheetProgress?.[this.playerId] ?? null);
+  myClosedRows = computed(() => this.finalState()?.closedRows ?? {});
+
+  myScoreRows = computed(() => {
+    const cellCount = this.myLayout()?.rows[0]?.cells.length ?? 11;
+    const max       = cellCount > 11 ? cellCount + 1 : 12; // 12 standard, 16 Longo
+    return Array.from({ length: max }, (_, i) => ({
+      crosses: i + 1,
+      points:  (i + 1) * (i + 2) / 2,
+    }));
+  });
+
+  myRowStateFor(rowId: string): RowState | null {
+    return this.myProgress()?.rowStates?.[rowId] ?? null;
+  }
+
+  myIsRowClosed(rowId: string): boolean {
+    return rowId in this.myClosedRows();
+  }
+
+  /** Scale the final board to fit the available width after it has rendered. */
+  private _updateBoardLayout(): void {
+    const host  = this._host.nativeElement as HTMLElement;
+    const inner = host.querySelector('.final-board-inner') as HTMLElement | null;
+    const outer = host.querySelector('.final-board-outer') as HTMLElement | null;
+    if (!inner || !outer) return;
+
+    inner.style.transform = 'none';
+    const naturalW = inner.scrollWidth;
+    const naturalH = inner.scrollHeight;
+    const availW   = outer.clientWidth;
+    const scale    = availW > 0 && naturalW > 0 ? Math.min(availW / naturalW, 1) : 1;
+
+    inner.style.transformOrigin = 'top left';
+    inner.style.transform       = scale < 1 ? `scale(${scale})` : 'none';
+    outer.style.height          = scale < 1 ? `${Math.ceil(naturalH * scale)}px` : '';
+  }
+
   // Column descriptors (colour order from server layout)
   colorCols  = signal<string[]>([]); // e.g. ['RED','YELLOW','GREEN','BLUE']
   showExtra  = signal(false);
@@ -168,6 +217,7 @@ export class ScoreComponent implements OnInit {
         firstValueFrom(this.gameStatesService.getGameState(this.sessionId)),
         firstValueFrom(this.gamesService.getScores(this.sessionId)),
       ]);
+      this.finalState.set(state);
 
       const layout   = Object.values(state.sheetLayouts)[0];
       const colors   = layout.rows.map(r => r.cells[0]!.color as string);
@@ -216,6 +266,7 @@ export class ScoreComponent implements OnInit {
         firstValueFrom(this.gameStatesService.getGameState(this.sessionId)),
         firstValueFrom(this.gamesService.getScores(this.sessionId)),
       ]);
+      this.finalState.set(state);
 
       // Derive column structure from any player's layout
       const layout   = Object.values(state.sheetLayouts)[0];

@@ -232,20 +232,20 @@ public class ScoreScreenIT extends BaseIntegrationTest {
                 "Leave Game button must redirect to the lobby. Current URL: " + driver.getCurrentUrl());
     }
 
-    // ── Mobile portrait rotation ──────────────────────────────────────────────
+    // ── Mobile portrait layout ────────────────────────────────────────────────
 
     /**
-     * Opens the score screen with a portrait viewport (390×844, like an iPhone 14).
-     * Verifies that the host has a 90-degree CSS transform applied.
+     * The score screen is no longer rotated on mobile — it renders normally in portrait.
+     * The player's final board is shown scaled below the score table instead.
      */
     @Test
-    void scoreScreenIsRotated90DegreesInPortraitMode() {
+    void scoreScreenIsNotRotatedInPortraitMode() {
         driver = TestUtils.getPortraitScoreDriver(sessionId);
         TestUtils.waitUntilScoreLoaded(driver);
 
-        assertTrue(ScoreInteractionHelper.isRotated90Degrees(driver),
-                "app-score must have rotate(90deg) transform in portrait mode "
-                + "(CSS @media (orientation: portrait) must be active)");
+        assertFalse(ScoreInteractionHelper.isRotated90Degrees(driver),
+                "app-score must NOT have rotate(90deg) in portrait mode — "
+                + "the score screen is now a normal portrait layout");
     }
 
     /**
@@ -274,10 +274,9 @@ public class ScoreScreenIT extends BaseIntegrationTest {
     }
 
     /**
-     * Regression: checks that the score content (.score-table) actually fills
-     * most of the available space in the rotated viewport.  getBoundingClientRect()
-     * after all CSS transforms gives the axis-aligned box in viewport coords;
-     * the table should be at least 80 % as tall as the shorter viewport dimension.
+     * Checks that the score table fills most of the viewport width in portrait mode.
+     * The table is a normal block (no rotation), so its rect.width should span
+     * at least 60% of the viewport width.
      */
     @Test
     void scoreTableCoversEnoughOfPortraitViewport() {
@@ -288,23 +287,16 @@ public class ScoreScreenIT extends BaseIntegrationTest {
                 "const table = document.querySelector('.score-table');" +
                 "if (!table) return false;" +
                 "const rect = table.getBoundingClientRect();" +
-                // After 90° rotation the 'width' in landscape space corresponds
-                // to the rect's height in viewport coordinates.
-                // The table should span at least 80% of the shorter viewport side.
-                "const shorter = Math.min(window.innerWidth, window.innerHeight);" +
                 "return rect.width > 0 && rect.height > 0 && " +
-                "       Math.max(rect.width, rect.height) >= shorter * 0.8;");
+                "       rect.width >= window.innerWidth * 0.6;");
 
         assertTrue(coversViewport,
-                "Score table must cover at least 80% of the portrait viewport — "
-                + "zoom < 1 shrinks it to a fraction of the available space");
+                "Score table must span at least 60% of the portrait viewport width");
     }
 
     /**
-     * Confirms the winner modal (position:fixed inside the rotated host) is still
-     * visible and functional when the score screen is in portrait mode.
-     * Because the host element creates a new fixed-positioning context via its
-     * transform, the modal is correctly rotated alongside the rest of the screen.
+     * Confirms the winner modal (position:fixed) is visible and functional
+     * when the score screen is in portrait mode.
      */
     @Test
     void winnerModalIsVisibleInPortraitMode() {
@@ -323,5 +315,80 @@ public class ScoreScreenIT extends BaseIntegrationTest {
                 "View Scores must dismiss the modal in portrait mode");
         assertTrue(ScoreInteractionHelper.isActionBarVisible(driver),
                 "Action bar must appear in portrait mode after dismissing modal");
+    }
+
+    /**
+     * Player names must be readable in a portrait (390 × 844) mobile viewport.
+     * The score table columns use fixed widths that exceed 390 px at desktop sizes,
+     * collapsing the name cell to 0 and making names invisible. The portrait layout
+     * must reduce column widths so the name cell has room for at least the first
+     * few characters of each player's name.
+     */
+    @Test
+    void scoreScreenPortrait_playerNamesAreVisible() {
+        driver = TestUtils.getPortraitScoreDriver(sessionId);
+        TestUtils.waitUntilScoreLoaded(driver);
+        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver, 10);
+        ScoreInteractionHelper.clickViewScoresButton(driver);
+
+        boolean namesVisible = (boolean) ((org.openqa.selenium.JavascriptExecutor) driver).executeScript(
+                "const names = document.querySelectorAll('.player-name');" +
+                "if (!names.length) return false;" +
+                "for (const el of names) {" +
+                "  const r = el.getBoundingClientRect();" +
+                // Name must have positive rendered width AND the text must not be empty
+                "  if (r.width < 20 || el.textContent.trim() === '') return false;" +
+                "}" +
+                "return true;");
+
+        assertTrue(namesVisible,
+                "Every .player-name must have at least 20px rendered width in a 390px portrait " +
+                "viewport — currently the fixed bucket-cell widths push the name cell to 0.");
+    }
+
+    /**
+     * The total-value column must be fully within the viewport in portrait mode.
+     * Previously the row content was wider than 390 px, pushing the rightmost
+     * column (the total) off-screen so the user had to scroll to see scores.
+     */
+    @Test
+    void scoreScreenPortrait_totalColumnIsWithinViewport() {
+        driver = TestUtils.getPortraitScoreDriver(sessionId);
+        TestUtils.waitUntilScoreLoaded(driver);
+        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver, 10);
+        ScoreInteractionHelper.clickViewScoresButton(driver);
+
+        boolean totalsVisible = (boolean) ((org.openqa.selenium.JavascriptExecutor) driver).executeScript(
+                "const totals = document.querySelectorAll('.total-value');" +
+                "if (!totals.length) return false;" +
+                "for (const el of totals) {" +
+                "  const r = el.getBoundingClientRect();" +
+                "  if (r.right > window.innerWidth + 1) return false;" +
+                "  if (r.width <= 0) return false;" +
+                "}" +
+                "return true;");
+
+        assertTrue(totalsVisible,
+                "All .total-value cells must fit within the 390px viewport width — " +
+                "currently they are pushed off-screen by wide bucket and name columns.");
+    }
+
+    /**
+     * The score screen must not produce horizontal overflow in portrait mode.
+     * When content is wider than the viewport the browser makes the page scrollable
+     * and shows white background (the browser default) to the right of the host.
+     */
+    @Test
+    void scoreScreenPortrait_noHorizontalOverflow() {
+        driver = TestUtils.getPortraitScoreDriver(sessionId);
+        TestUtils.waitUntilScoreLoaded(driver);
+
+        boolean noOverflow = (boolean) ((org.openqa.selenium.JavascriptExecutor) driver).executeScript(
+                // document.documentElement.scrollWidth > window.innerWidth means horizontal scrollbar
+                "return document.documentElement.scrollWidth <= window.innerWidth + 1;");
+
+        assertTrue(noOverflow,
+                "The score screen must not produce horizontal overflow in a 390px portrait " +
+                "viewport — overflow causes the white browser background to show on the right.");
     }
 }

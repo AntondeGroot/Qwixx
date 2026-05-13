@@ -800,6 +800,89 @@ class LongoTurnRulesTest {
                 "a second white+white cross must be rejected after the bonus cross");
     }
 
+    // ── Passive co-closer: second-to-last cell crossed this turn ─────────────────
+    //
+    // Regression: endTurnInPassiveMove previously cleared the undo buffer BEFORE calling
+    // evaluate(), so canCrossLock found no pending cross and returned false for the
+    // non-declarant passive player — leaving them without a lock cross.
+    // Fix: undo buffer is now cleared AFTER evaluate() in endTurnInPassiveMove.
+
+    @Test
+    void passive_crossesSecondToLastThisTurn_getsLockCrossed_asNonDeclarant() {
+        // p1 (active) declares BLUE row (index 3, descending) via its permanent last cell "2".
+        // p2 (passive) crosses "3" (second-to-last) during the same turn.
+        // At EVALUATE p2 is a non-declarant — canCrossLock must still return true because
+        // the undo buffer is now cleared AFTER evaluate, not before.
+        GameState state = stateInRoll(p1, p1, p2);
+        int rowIndex = 3; // BLUE descending: closing cells "3" (pos 13) and "2" (pos 14)
+
+        // Each player has their own layout with unique cell IDs — use each player's own layout.
+        Row blueRowP1 = state.sheetLayouts().get(p1).rows().get(rowIndex);
+        Row blueRowP2 = state.sheetLayouts().get(p2).rows().get(rowIndex);
+        LockCell lockP1 = blueRowP1.lock();
+        LockCell lockP2 = blueRowP2.lock();
+        String p1SecondLast = lockP1.closingCells().get(0); // p1's "3" cell ID
+        String p1Last       = lockP1.closingCells().get(1); // p1's "2" cell ID
+        String p2SecondLast = lockP2.closingCells().get(0); // p2's "3" cell ID
+        String p2Last       = lockP2.closingCells().get(1); // p2's "2" cell ID
+
+        // p1: 6 normal crosses + "2" permanently = 7 total → can declare via permanent last cell.
+        Set<String> p1Crossed = new HashSet<>();
+        p1Crossed.add(p1Last);
+        for (Cell c : blueRowP1.cells()) {
+            if (p1Crossed.size() >= 7) break;
+            if (!c.id().equals(p1SecondLast) && !c.id().equals(p1Last)) p1Crossed.add(c.id());
+        }
+        state.boardState().sheetProgress().get(p1).updateRowState(rowIndex, new RowState(p1Crossed, false));
+
+        // p2: 6 normal crosses (no closing cells) — "3" not yet crossed at turn start.
+        Set<String> p2Crossed = new HashSet<>();
+        for (Cell c : blueRowP2.cells()) {
+            if (p2Crossed.size() >= 6) break;
+            if (!c.id().equals(p2SecondLast) && !c.id().equals(p2Last)) p2Crossed.add(c.id());
+        }
+        state.boardState().sheetProgress().get(p2).updateRowState(rowIndex, new RowState(p2Crossed, false));
+
+        // Roll (snapshot taken here: p1 has permanent "2", p2 has 6 normal crosses).
+        // Override dice to white+white=3 so p2 can cross BLUE "3" as passive.
+        rules.apply(state, new RollAction(p1));
+        state.turnState().setCurrentRoll(
+                new RollResult(1, 2, state.turnState().currentRoll().coloredDice()));
+
+        // p1 declares BLUE lock intent (permanent "2" qualifies).
+        rules.apply(state, new DeclareLockIntentAction(p1, rowIndex));
+        assertEquals(TurnPhase.ACTIVE_MOVE, state.turnState().phase());
+
+        // p1 EndTurns → PASSIVE_MOVE (p2 is in passive queue).
+        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p1));
+        assertEquals(TurnPhase.PASSIVE_MOVE, state.turnState().phase());
+
+        // p2 crosses "3" (second-to-last closing cell, white+white=3) as passive.
+        CrossCellAction crossThree = rules.getValidActions(state, p2).stream()
+                .filter(a -> a instanceof CrossCellAction cc && cc.cellId().equals(p2SecondLast))
+                .map(a -> (CrossCellAction) a)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("BLUE '3' must be offered to p2 as passive"));
+        rules.apply(state, crossThree);
+
+        // Sanity: undo buffer is present before EndTurn.
+        assertTrue(state.turnState().undoBuffer().containsKey(p2));
+
+        // p2 EndTurns → EVALUATE.  The undo buffer is now cleared AFTER evaluate,
+        // so canCrossLock sees "3" as a pending cross and returns true for p2.
+        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p2));
+
+        nl.adg.qwixx.state.RowState p2RowState = state.boardState()
+                .sheetProgress().get(p2).rowStates()
+                .getOrDefault(rowIndex, new nl.adg.qwixx.state.RowState(Set.of(), false));
+        assertTrue(p2RowState.lockCrossed(),
+                "p2 must have lockCrossed=true: crossed second-to-last cell this turn " +
+                "even though undo buffer is cleared in endTurnInPassiveMove");
+
+        assertTrue(state.boardState().closedRows().containsKey(rowIndex),
+                "BLUE row must be closed after EVALUATE");
+    }
+
     // ── Longo: two rows close across two turns ──────────────────────────────────
 
     @Test

@@ -335,6 +335,126 @@ public class LongoDoubleCloseIT extends BaseIntegrationTest {
         assertTrue(driver2.getCurrentUrl().contains("/score"), "Player2 must be on score screen");
     }
 
+    // ── Test 6: passive co-locker's lock cross survives the game-over transition ──
+    //
+    // Regression (scenario 11): player0 (active) closes RED and BLUE in one turn.
+    // player2 (passive) crossed BLUE "3" (second-to-last closing cell) the same turn
+    // and is a NON-DECLARANT (player0 already declared BLUE).
+    //
+    // Bug: endTurnInPassiveMove cleared the undo buffer BEFORE evaluate(), so
+    //      canCrossLock returned false for player2 → lockCrossed=false.
+    //      The client's pendingAutoLock was then cleared on game-over → lock cross
+    //      disappeared for ~1.5 s before the score screen appeared.
+    //
+    // Fix: undo buffer is now cleared AFTER evaluate() in endTurnInPassiveMove,
+    //      so canCrossLock sees "3" as a pending cross and returns true → lockCrossed=true.
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void passive_coLocker_lockCrossRemainsVisible_beforeScoreScreen() {
+        String sid = api.createGame(3, Map.of("base", "LONGO"));
+        List<String> pids3 = api.getPlayerIds(sid);
+
+        // player0: 14 crosses on RED ascending ("2"-"15"), all 15 on BLUE descending (incl. "2")
+        api.setCrosses(sid, pids3.get(0), RED_ROW_INDEX,  14);
+        api.setCrosses(sid, pids3.get(0), BLUE_ROW_INDEX, 15); // positions 0-14 = "16"-"2"
+
+        // player2: 6 crosses on BLUE (positions 0-5 = "16"-"11")
+        api.setCrosses(sid, pids3.get(2), BLUE_ROW_INDEX, 6);
+
+        // Roll; white+white=16 so player0 can cross RED "16" (last closing cell)
+        api.roll(sid, pids3.get(0));
+        api.setDice(sid, 8, 8);
+
+        // player0 declares BLUE lock intent (permanent "2" qualifies — no cell crossed needed)
+        String blueRowId0 = api.getRowId(sid, pids3.get(0), BLUE_ROW_INDEX);
+        api.declareLockIntent(sid, pids3.get(0), blueRowId0);
+
+        // player0 crosses RED "16" (auto-detected as intent at EndTurn) and EndTurns
+        String redRowId0    = api.getRowId(sid, pids3.get(0), RED_ROW_INDEX);
+        String redLastId    = lastCellId(sid, pids3.get(0), RED_ROW_INDEX);
+        api.crossCell(sid, pids3.get(0), redRowId0, redLastId, false);
+        api.pass(sid, pids3.get(0)); // EndTurn → autoDetect RED → phase PASSIVE_MOVE
+
+        // Override dice: white+white=3 so player2 can cross BLUE "3" (second-to-last, value=3)
+        api.setDice(sid, 1, 2);
+
+        WebDriver d1 = TestUtils.getDriver(sid, pids3.get(1));
+        WebDriver d2 = TestUtils.getDriver(sid, pids3.get(2));
+        TestUtils.waitUntilBoardLoaded(d1);
+        TestUtils.waitUntilBoardLoaded(d2);
+
+        try {
+            // Both passives see the notification modal (player0 declared RED and BLUE)
+            BoardInteractionHelper.waitUntilModalVisible(d1, 8);
+            BoardInteractionHelper.waitUntilModalVisible(d2, 8);
+
+            // player1 dismisses and EndTurns immediately
+            BoardInteractionHelper.clickModalConfirmButton(d1);
+            BoardInteractionHelper.waitUntilPassButtonVisible(d1, 5);
+            BoardInteractionHelper.clickPassButton(d1);
+
+            // player2 dismisses notification so the board is accessible
+            BoardInteractionHelper.clickModalConfirmButton(d2);
+
+            // player2 clicks BLUE "3" (second-to-last closing cell) → YES/NO modal → YES
+            // The server will reject DECLARE_LOCK_INTENT (BLUE already declared by player0),
+            // but player2 still qualifies for the lock cross as a co-locker.
+            BoardInteractionHelper.clickCellByValue(d2, "BLUE", "3");
+            BoardInteractionHelper.waitUntilModalVisible(d2, 5);
+            BoardInteractionHelper.clickModalYesButton(d2);
+
+            // Lock cross must appear (via pendingAutoLock) even though DECLARE_LOCK_INTENT is rejected
+            new WebDriverWait(d2, Duration.ofSeconds(5))
+                    .until(d -> BoardInteractionHelper.isLockButtonCrossed(d, "BLUE"));
+            assertTrue(BoardInteractionHelper.isLockButtonCrossed(d2, "BLUE"),
+                    "player2 must see BLUE lock cross after clicking YES on '3'");
+
+            // player2 EndTurns → EVALUATE: RED and BLUE both close → 2 rows → game over.
+            // Fix: undo buffer cleared AFTER evaluate → canCrossLock sees "3" → lockCrossed=true.
+            // Bug: undo buffer cleared BEFORE evaluate → lockCrossed=false → cross disappears.
+            BoardInteractionHelper.waitUntilPassButtonVisible(d2, 5);
+            BoardInteractionHelper.clickPassButton(d2);
+
+            // After game-over state arrives the 1500 ms navigation timer fires.
+            // During that window the lock cross must remain visible via rowState.lockCrossed=true
+            // (not just via the now-cleared pendingAutoLock).
+            new WebDriverWait(d2, Duration.ofSeconds(8))
+                    .until(d -> BoardInteractionHelper.isLockButtonCrossed(d, "BLUE")
+                             || d.getCurrentUrl().contains("/score"));
+            if (!d2.getCurrentUrl().contains("/score")) {
+                assertTrue(BoardInteractionHelper.isLockButtonCrossed(d2, "BLUE"),
+                        "BLUE lock cross must remain visible in the game-over board state " +
+                        "before the score screen appears");
+            }
+
+            // All browsers navigate to score screen
+            new WebDriverWait(d2, Duration.ofSeconds(10))
+                    .until(d -> d.getCurrentUrl().contains("/score"));
+            new WebDriverWait(d1, Duration.ofSeconds(10))
+                    .until(d -> d.getCurrentUrl().contains("/score"));
+            assertTrue(d2.getCurrentUrl().contains("/score"), "player2 must reach score screen");
+
+            // Server-side confirmation: lockCrossed=true for player2's BLUE row in final state.
+            // This is the root assertion — without it the visual cross would disappear.
+            Map<String, Object> state3     = api.getGameState(sid);
+            Map<String, Object> progMap    = (Map<String, Object>) state3.get("sheetProgress");
+            Map<String, Object> p2prog     = (Map<String, Object>) progMap.get(pids3.get(2));
+            Map<String, Object> rowStates  = (Map<String, Object>) p2prog.get("rowStates");
+            Map<String, Object> layouts    = (Map<String, Object>) state3.get("sheetLayouts");
+            Map<String, Object> p2layout   = (Map<String, Object>) layouts.get(pids3.get(2));
+            List<Map<String, Object>> rows = (List<Map<String, Object>>) p2layout.get("rows");
+            String blueRowId2              = (String) rows.get(BLUE_ROW_INDEX).get("id");
+            Map<String, Object> blueState  = (Map<String, Object>) rowStates.get(blueRowId2);
+            assertTrue(blueState != null && Boolean.TRUE.equals(blueState.get("lockCrossed")),
+                    "player2 must have lockCrossed=true for BLUE in the final game state — " +
+                    "without this the lock cross disappears before the score screen");
+        } finally {
+            d1.quit();
+            d2.quit();
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────────
 
     private void advancePlayerTurnViaApi(String activeId, String passive1, String passive2) {

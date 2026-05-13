@@ -7,46 +7,6 @@
   box-sizing: border-box;
 }
 
-/* ── Mobile: rotate 90° so the score screen reads in landscape ─── */
-@media (orientation: portrait) {
-  :host {
-    position: fixed;
-    top:    calc((100dvh - 100dvw) / 2);
-    left:   calc((100dvw - 100dvh) / 2);
-    width:  100dvh;
-    height: 100dvw;
-    min-height: 0;  /* cancel the default min-height:100vh so height:100dvw is respected */
-    overflow-y: auto;
-    overflow-x: hidden;
-    transform: rotate(90deg);
-    transform-origin: 50% 50%;
-    /* Tighter padding so more vertical space is available for player rows.
-       host DOM height = 100dvw ≈ 390 px; 5 rows × 48 px + chrome must fit. */
-    padding: 0.5rem 0.75rem;
-  }
-
-  /* Compact title — frees ~32 px compared with the landscape default */
-  .title {
-    font-size: 1.25rem;
-    margin-bottom: 0.5rem;
-  }
-
-  /* Reduce score-table inner breathing room */
-  .score-table {
-    padding: 0.5rem 0.75rem;
-  }
-
-  /* Reduce the gap below the column-header row */
-  .header-row {
-    padding-bottom: 0.5rem;
-    margin-bottom: 0;
-  }
-
-  /* Re-anchor the action bar bleed to the tighter portrait host padding */
-  .action-bar {
-    margin: -0.5rem -0.75rem 0.5rem;
-  }
-}
 
 .loading {
   display: flex;
@@ -96,7 +56,7 @@
 }
 
 /* Column sizing */
-.name-cell    { flex: 1; min-width: 0; }
+.name-cell    { flex: 0 1 180px; min-width: 0; }
 .bucket-cell  { width: 56px; text-align: center; flex-shrink: 0; }
 .total-cell   { width: 72px; text-align: right;  flex-shrink: 0; }
 
@@ -241,15 +201,95 @@
   animation: fade-in 0.4s ease-out;
 }
 
-/* In portrait mode :host is already position:fixed and covers the full screen
-   via the same rotation trick as the board. Switch the overlay to
-   position:absolute so it fills :host rather than trying to pin to the
-   real viewport (which breaks inside a CSS transform). */
-@media (orientation: portrait) {
-  .modal-overlay {
-    position: absolute;
-  }
+/* ── Final board (player's own card shown below the score table) ── */
+
+.final-board {
+  max-width: 820px;
+  margin: 2rem auto 0;
 }
+
+.final-board-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 0.75rem;
+}
+
+.final-board-outer {
+  /* overflow:hidden clips the transform so the board doesn't bleed outside */
+  overflow: hidden;
+  width: 100%;
+}
+
+.final-board-inner {
+  /* Inline-block: shrinks to the board's natural content width */
+  display: inline-block;
+  transform-origin: top left;
+}
+
+/* Sheet layout — same as board.component.css .sheet */
+.final-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: fit-content;
+}
+
+/* Score reference strip — copied from board.component.css */
+.score-strip {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  background: white;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 6px 10px;
+  margin-top: 4px;
+  width: fit-content;
+}
+
+.score-labels {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  padding-right: 6px;
+  border-right: 1px solid #ddd;
+  margin-right: 2px;
+}
+
+.score-labels span {
+  font-size: 10px;
+  font-weight: 700;
+  color: #777;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.score-box {
+  display: flex;
+  flex-direction: column;
+  min-width: 32px;
+  border: 1.5px solid #d0d0d0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: linear-gradient(to bottom, #fafafa 50%, #f0f0f0 50%);
+}
+
+.score-box__top,
+.score-box__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 2px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.score-box__top    { color: #444; border-bottom: 1px solid #d0d0d0; }
+.score-box__bottom { color: #1565c0; }
 @keyframes fade-in {
   from { opacity: 0; }
 }
@@ -325,4 +365,58 @@
 .action-bar .btn {
   padding: 0.5rem 1.1rem;
   font-size: 0.9rem;
+}
+
+/* ── Portrait mobile: tighten layout so names and totals fit within 390 px ──
+   MUST be last in the file — same-specificity rules are resolved by source
+   order, so placing this block after the base .bucket-cell / .total-cell
+   rules ensures it wins the cascade in portrait orientation.               */
+@media (orientation: portrait) {
+  :host {
+    padding: 1.25rem 0.5rem;
+    /* Prevent horizontal overflow that exposes the white browser background */
+    overflow-x: hidden;
+  }
+
+  .title {
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+  }
+
+  .score-table {
+    padding: 0.6rem 0.75rem;
+    /* Clip any accidental child overflow so the border-radius stays clean */
+    overflow: hidden;
+  }
+
+  /* Name cell: lift the desktop width cap so it fills all remaining space */
+  .name-cell { flex: 1; }
+
+  /* Tighter inter-column gap (0.5rem → 0.1rem saves ~24 px across 6 gaps) */
+  .header-row,
+  .player-row {
+    gap: 0.1rem;
+  }
+
+  /* Narrower colour/punishment columns: 56 px → 32 px (saves ~120 px total) */
+  .bucket-cell { width: 32px; }
+
+  /* Narrower total column: 72 px → 44 px */
+  .total-cell  { width: 44px; }
+
+  /* Shorter rows free vertical space */
+  .player-row  { height: 56px; }
+
+  /* Scale down text to match the narrower columns */
+  .player-name  { font-size: 0.9rem; }
+  .score-value  { font-size: 0.85rem; }
+  .total-value  { font-size: 1rem; }
+  .color-dot    { width: 18px; height: 18px; }
+  .pun-symbol   { font-size: 0.85rem; }
+  .header-total { font-size: 0.65rem; }
+
+  /* Tighten the action-bar bleed margin to match the narrower host padding */
+  .action-bar {
+    margin: -1.25rem -0.5rem 1rem;
+  }
 }

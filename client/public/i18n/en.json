@@ -39,7 +39,8 @@
     "winner": "wins!",
     "newGame": "New game",
     "leaveGame": "Leave game",
-    "viewScores": "View final scores"
+    "viewScores": "View final scores",
+    "yourCard": "Your card"
   },
   "rowClosure": {
     "wantsToCloseThe": "wants to close the",

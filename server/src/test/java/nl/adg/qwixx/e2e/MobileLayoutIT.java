@@ -193,18 +193,19 @@ public class MobileLayoutIT extends BaseIntegrationTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * The score screen :host must have transform:rotate(90deg) at 390×844.
+     * The score screen :host must NOT be rotated in portrait — the layout is now
+     * normal portrait; the player's final board is shown scaled at the bottom.
      */
     @Test
-    void scoreHostIsRotated90DegreesInPortraitViewport() {
+    void scoreHostIsNotRotatedInPortraitViewport() {
         api.setCrosses(sessionId, playerIds.get(0), RED_ROW_INDEX, 4);
         api.forceFinish(sessionId);
 
         driver0 = TestUtils.getPortraitScoreDriver(sessionId);
         TestUtils.waitUntilScoreLoaded(driver0);
 
-        assertTrue(ScoreInteractionHelper.isRotated90Degrees(driver0),
-                "Score screen :host must have transform:rotate(90deg) in portrait mode");
+        assertFalse(ScoreInteractionHelper.isRotated90Degrees(driver0),
+                "Score screen :host must NOT be rotated in portrait mode");
     }
 
     /**

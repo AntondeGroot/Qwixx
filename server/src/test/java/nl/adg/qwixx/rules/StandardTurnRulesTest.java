@@ -662,6 +662,41 @@ class StandardTurnRulesTest {
     }
 
     @Test
+    void evaluate_activePlayerGetsLockCrossedWhenPassiveDeclaredFirst() {
+        // Regression: active player's undo buffer was cleared BEFORE evaluate(), so
+        // canCrossLock(p1) could not see their pending closing-cell cross and returned false.
+        //
+        // Setup: p2 (passive) has the closing cell permanently and declares first.
+        // p1 (active) crossed the closing cell this turn (only in undo buffer, not permanent).
+        // Both must receive lockCrossed=true after EVALUATE.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        crossEnoughForLock(state, p2, 0);                  // p2 qualifies to declare
+
+        rules.apply(state, firstCrossAction(state, p1));   // p1 makes a real move (sets whiteWhiteUsed)
+
+        // Put row-0's closing cell in p1's undo buffer only (not permanent crosses).
+        String closingCellId = state.sheetLayouts().get(p1).rows().get(0)
+                .lock().closingCells().get(0);
+        state.turnState().undoBuffer()
+                .computeIfAbsent(p1, k -> new HashMap<>())
+                .computeIfAbsent(0, k -> new HashSet<>())
+                .add(closingCellId);
+
+        rules.apply(state, new DeclareLockIntentAction(p2, 0)); // p2 declares before p1 ends
+
+        // p1 ends — autoDetectClosingIntent skips row 0 (already claimed by p2), so p1 stays
+        // as a non-declarant whose qualifying cross lives only in the undo buffer.
+        rules.apply(state, new EndTurnAction(p1));
+        rules.apply(state, new EndTurnAction(p2));         // last passive → evaluate()
+
+        assertTrue(rowStateOf(state, p2, 0).lockCrossed(),
+                "Declarant (p2) must have lockCrossed=true after EVALUATE");
+        assertTrue(rowStateOf(state, p1, 0).lockCrossed(),
+                "Active player (p1) must also have lockCrossed=true: they crossed the closing " +
+                "cell this turn (undo buffer only) and must still qualify when evaluate() runs");
+    }
+
+    @Test
     void evaluate_removesColoredDie() {
         // After row closes at EVALUATE, the colored die for that row's color must be removed.
         GameState state = stateAfterRoll(p1, p1, p2);

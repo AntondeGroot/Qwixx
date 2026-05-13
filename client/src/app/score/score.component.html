@@ -1,7 +1,7 @@
 @if (playerRows().length === 0) {
   <div class="loading">Loading…</div>
 } @else {
-  <div class="score-screen" translate="no">
+  <div class="score-screen" [attr.translate]="'no'">
 
     <!-- Sticky action bar — visible once the winner modal is dismissed via "View Scores" -->
     @if (showActionBar()) {
@@ -78,6 +78,38 @@
     </div><!-- /.score-table -->
 
   </div>
+
+  <!-- Player's own board — shown below the score table for verification.
+       Scaled to fit the viewport width; the player can compare crosses and points. -->
+  @if (myLayout(); as layout) {
+    <div class="final-board" [attr.translate]="'no'">
+      <h2 class="final-board-title">{{ 'score.yourCard' | translate }}</h2>
+      <div class="final-board-outer">
+        <div class="final-board-inner">
+          <div class="final-sheet">
+            @for (row of layout.rows; track row.id) {
+              <app-row
+                [row]="row"
+                [rowState]="myRowStateFor(row.id)"
+                [closed]="myIsRowClosed(row.id)" />
+            }
+            <div class="score-strip">
+              <div class="score-labels">
+                <span>{{ 'crosses' | translate }}</span>
+                <span>{{ 'points' | translate }}</span>
+              </div>
+              @for (col of myScoreRows(); track col.crosses) {
+                <div class="score-box">
+                  <div class="score-box__top">{{ col.crosses }}×</div>
+                  <div class="score-box__bottom">{{ col.points }}</div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
 
   <!-- Winner modal outside .score-screen so the zoom on that div
        does not distort the overlay's bounding rect on mobile. -->

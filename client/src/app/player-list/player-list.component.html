@@ -1,4 +1,4 @@
-<div class="player-list" translate="no">
+<div class="player-list" [attr.translate]="'no'">
   @for (player of otherPlayers(); track player.id) {
     <div class="player-card" [class.active-turn]="isActive(player.id)">
 

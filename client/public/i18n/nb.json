@@ -39,7 +39,8 @@
     "winner": "vinner!",
     "newGame": "Nytt spill",
     "leaveGame": "Forlat spillet",
-    "viewScores": "Se sluttresultat"
+    "viewScores": "Se sluttresultat",
+    "yourCard": "Ditt kort"
   },
   "rowClosure": {
     "wantsToCloseThe": "vil lukke",

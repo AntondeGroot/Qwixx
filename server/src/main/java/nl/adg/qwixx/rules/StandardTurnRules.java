@@ -322,9 +322,16 @@ public class StandardTurnRules implements TurnRules {
             if (!ats.whiteWhiteUsed() && !ats.colorDieUsed() && !state.pendingClosures().containsValue(playerId))
                 throw new IllegalMoveException("must make at least one move before ending turn");
             autoDetectClosingIntent(state, turn, playerId);
-            turn.undoBuffer().remove(playerId);
-            if (turn.passivePlayerQueue().isEmpty()) evaluate(state);
-            else turn.setPhase(TurnPhase.PASSIVE_MOVE);
+            if (turn.passivePlayerQueue().isEmpty()) {
+                evaluate(state);
+                // Clear after evaluate so canCrossLock can still see this player's pending
+                // crosses when deciding whether non-declarant players qualify for the lock cross.
+                turn.undoBuffer().remove(playerId);
+            } else {
+                // Don't clear: evaluate runs later (last passive's endTurn), at which point
+                // evaluate() replaces the whole TurnState — naturally discarding all buffers.
+                turn.setPhase(TurnPhase.PASSIVE_MOVE);
+            }
         } else {
             if (!turn.passivePlayerQueue().contains(playerId))
                 throw new IllegalMoveException("player not in passive queue");
@@ -337,9 +344,11 @@ public class StandardTurnRules implements TurnRules {
         if (!turn.passivePlayerQueue().contains(playerId))
             throw new IllegalMoveException("player not in passive queue");
         autoDetectClosingIntent(state, turn, playerId);
-        turn.undoBuffer().remove(playerId);
         turn.passivePlayerQueue().remove(playerId);
         if (turn.passivePlayerQueue().isEmpty()) evaluate(state);
+        // Clear after evaluate so that canCrossLock can still read this player's pending
+        // crosses when deciding whether non-declarant players qualify for the lock cross.
+        turn.undoBuffer().remove(playerId);
     }
 
     // Auto-detect closing intent for a player who crossed the LAST closing cell this turn.

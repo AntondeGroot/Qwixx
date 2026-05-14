@@ -33,6 +33,25 @@ public class SseEmitterRegistry {
         emit(sessionId, GameStateMapper.toDto(state, session));
     }
 
+    /** Emits any serialisable object (e.g. LobbyState) to all subscribers of the given key. */
+    public void emitObject(String key, Object payload) {
+        List<SseEmitter> list = sessions.get(key);
+        if (list == null || list.isEmpty()) return;
+
+        SseEmitter.SseEventBuilder event = SseEmitter.event()
+                .data(payload, MediaType.APPLICATION_JSON);
+
+        List<SseEmitter> dead = new ArrayList<>();
+        for (SseEmitter emitter : list) {
+            try {
+                emitter.send(event);
+            } catch (Exception e) {
+                dead.add(emitter);
+            }
+        }
+        list.removeAll(dead);
+    }
+
     void emit(String sessionId, nl.adg.qwixx.generated.model.GameState dto) {
         List<SseEmitter> list = sessions.get(sessionId);
         if (list == null || list.isEmpty()) return;

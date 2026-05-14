@@ -606,6 +606,50 @@ describe('BoardComponent — state-sync race guards', () => {
     expect(component.gameState()?.gameOver).toBe(true);
   });
 
+  it('applyState: active player — delays state update while rolling so animation plays first', () => {
+    vi.useFakeTimers();
+    // Active player's turn, rolling in progress.
+    const preRoll = makeState({ version: 1, turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ROLL } as any });
+    component.gameState.set(preRoll);
+    component.rollingDice.set(true);
+    (component as any).rollStartTime = Date.now();
+
+    const postRoll = makeState({ version: 2, turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE } as any });
+    (component as any).applyState(postRoll);
+
+    // State must NOT be applied yet — active player waits for animation.
+    expect(component.gameState()?.version).toBe(1);
+    expect(component.rollingDice()).toBe(true);
+
+    vi.advanceTimersByTime(3000);
+
+    expect(component.gameState()?.version).toBe(2);
+    expect(component.rollingDice()).toBe(false);
+    vi.useRealTimers();
+  });
+
+  it('applyState: passive player — applies state immediately so dice area becomes visible', () => {
+    vi.useFakeTimers();
+    // It is another player's turn; rolling animation is running (triggered by SSE).
+    const preRoll = makeState({ version: 1, turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ROLL } as any });
+    component.gameState.set(preRoll);
+    component.rollingDice.set(true);
+    (component as any).rollStartTime = Date.now();
+
+    const postRoll = makeState({ version: 2, turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ACTIVE_MOVE } as any });
+    (component as any).applyState(postRoll);
+
+    // State IS applied immediately so the dice area can render.
+    expect(component.gameState()?.version).toBe(2);
+    // Animation still running — cleared only after the roll window.
+    expect(component.rollingDice()).toBe(true);
+
+    vi.advanceTimersByTime(3000);
+
+    expect(component.rollingDice()).toBe(false);
+    vi.useRealTimers();
+  });
+
   // 2. fetchState on rejection ──────────────────────────────────────────────
 
   it('refreshes state after a move is rejected by the server', () => {

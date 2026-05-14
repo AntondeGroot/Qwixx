@@ -32,6 +32,9 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
     @Autowired
     private SseEmitterRegistry sseRegistry;
 
+    @Autowired
+    private LobbyController lobbyController;
+
     @Override
     public ResponseEntity<CreateNewGame201Response> createNewGame(NewGameRequest req) {
         GameSettings.Builder builder = GameSettings.builder();
@@ -103,6 +106,7 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
         } catch (IllegalStateException ex) {
             throw new GameAlreadyStartedException(sessionId);
         }
+        lobbyController.emitLobby(sessionId, session);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new AddPlayerToGame201Response().playerId(player.id().toString()));
     }
@@ -126,6 +130,7 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
         } catch (IllegalArgumentException ex) {
             throw new SessionNotFoundException(playerId);
         }
+        lobbyController.emitLobby(sessionId, session);
         return ResponseEntity.noContent().build();
     }
 

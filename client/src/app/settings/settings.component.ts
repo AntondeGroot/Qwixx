@@ -2,8 +2,7 @@ import { Component, DestroyRef, inject, OnDestroy, OnInit, signal } from '@angul
 import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../environments/environment';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime, distinctUntilChanged, EMPTY, interval, Subscription } from 'rxjs';
-import { catchError, switchMap } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { GamesService } from '../../generated/api/games.service';
@@ -106,17 +105,16 @@ export class SettingsComponent implements OnInit, OnDestroy {
     this.previewSub?.unsubscribe();
   }
 
-  // Poll the lobby every 2 s to pick up option changes from other players.
   private startLobbySync(): void {
-    interval(2000).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      switchMap(() =>
-        this.lobbyService.get(this.sessionId()!).pipe(catchError(() => EMPTY))
-      ),
-    ).subscribe(lobby => {
+    const es = new EventSource(
+      `${environment.apiBaseUrl}/games/${this.sessionId()!}/lobby/stream`
+    );
+    this.destroyRef.onDestroy(() => es.close());
+    es.onmessage = (event: MessageEvent) => {
+      const lobby = JSON.parse(event.data);
       this.lobbyPlayers.set(lobby.players);
       this.applyLobbyOptions(lobby.proposedOptions);
-    });
+    };
   }
 
   // Subscribe to SSE; when another player starts the game the server pushes

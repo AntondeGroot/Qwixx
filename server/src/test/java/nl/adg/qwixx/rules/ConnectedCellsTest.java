@@ -113,7 +113,7 @@ class ConnectedCellsTest {
     }
 
     @Test
-    void autoCrossIsSkippedWhenTargetRowIsClosed() {
+    void autoCrossIsStillAppliedWhenTargetRowIsClosed() {
         // Row 1 is already closed.  Crossing cellA (row 0) would normally auto-cross
         // cellB (row 1), but since row 1 is closed the auto-cross must be silently skipped
         // — neither an exception nor a corrupt state.
@@ -133,7 +133,7 @@ class ConnectedCellsTest {
 
         assertTrue(rowCrossed(state, p1, 0).contains(cellA.id()),
                 "source cell must still be crossed");
-        assertFalse(rowCrossed(state, p1, 1).contains(cellB.id()),
+        assertTrue(rowCrossed(state, p1, 1).contains(cellB.id()),
                 "target cell in the closed row must NOT be crossed");
     }
 

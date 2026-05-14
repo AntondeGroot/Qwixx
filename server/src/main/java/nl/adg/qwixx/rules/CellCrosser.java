@@ -118,9 +118,7 @@ class CellCrosser {
     private void findAndCrossAutoTarget(GameState state, UUID playerId, String targetCellId,
                                         Map<Integer, Set<String>> crossed) {
         SheetLayout layout = state.sheetLayouts().get(playerId);
-        Map<Integer, UUID> closedRows = state.boardState().closedRows();
         for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
-            if (closedRows.containsKey(rowIndex)) continue;
             for (Cell cell : layout.rows().get(rowIndex).cells()) {
                 if (cell.id().equals(targetCellId)) {
                     crossRecursive(state, playerId, rowIndex, targetCellId, crossed, true);

@@ -731,8 +731,6 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private sendMoveAs(pid: string, req: MoveRequest) {
     if (this.moveSub && !this.moveSub.closed) {
-      // A previous request is still in flight — cancel it but refresh state immediately
-      // in case the server already processed it before the cancellation arrived.
       this.moveSub.unsubscribe();
       this.fetchState();
     }
@@ -741,8 +739,6 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
         next: () => this.fetchState(),
         error: e => {
           console.error('Move rejected:', e);
-          // A rejection can mean a prior cancelled request already changed the state;
-          // refresh so the UI reflects whatever the server actually did.
           this.fetchState();
         }
       });
@@ -769,18 +765,23 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const curr = this.gameState()?.version;
     if (curr !== undefined && s.version !== undefined && s.version < curr) return;
 
-    if (this.rollingDice()) {
-      const remaining = Math.max(0, this.ROLL_ANIM_MIN_MS - (Date.now() - this.rollStartTime));
+    const remaining = Math.max(0, this.ROLL_ANIM_MIN_MS - (Date.now() - this.rollStartTime));
+    if (this.rollingDice() && this.isMyTurn()) {
+      // Active player who rolled: delay showing the result until the animation finishes.
       setTimeout(() => {
-        // Re-check: a newer state may have arrived while the roll animation was playing.
         if ((s.version ?? 0) >= (this.gameState()?.version ?? -1)) {
           this.gameState.set(s);
         }
         this.rollingDice.set(false);
       }, remaining);
     } else {
+      // Apply state immediately so dice area and values are visible right away.
       this.gameState.set(s);
       this.checkPendingAutoLock(s);
+      // If a roll animation is in progress (passive player watching), clear it after the window.
+      if (this.rollingDice()) {
+        setTimeout(() => this.rollingDice.set(false), remaining);
+      }
     }
   }
 

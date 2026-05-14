@@ -768,6 +768,12 @@ describe('BoardComponent — row-closure modal delegation', () => {
     beforeEach(async () => {
       movesService = { makeMove: vi.fn().mockReturnValue(of({ result: 'ACCEPTED' } as any)) } as unknown as Mocked<MovesService>;
 
+      // EventSource is not available in jsdom — stub it so ngOnInit → setupSse() does not throw.
+      vi.stubGlobal('EventSource', Object.assign(
+        vi.fn().mockImplementation(function(this: any) { this.close = vi.fn(); this.readyState = 1; }),
+        { CONNECTING: 0, OPEN: 1, CLOSED: 2 }
+      ));
+
       await TestBed.configureTestingModule({
         imports: [BoardComponent, HttpClientTestingModule],
         providers: [

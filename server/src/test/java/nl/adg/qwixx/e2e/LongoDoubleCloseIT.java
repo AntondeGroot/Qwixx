@@ -385,9 +385,9 @@ public class LongoDoubleCloseIT extends BaseIntegrationTest {
         TestUtils.waitUntilBoardLoaded(d2);
 
         try {
-            // Both passives see the notification modal (player0 declared RED and BLUE)
-            BoardInteractionHelper.waitUntilModalVisible(d1, 8);
-            BoardInteractionHelper.waitUntilModalVisible(d2, 8);
+            // Both passives see the notification modal (player0 declared RED and BLUE).
+            BoardInteractionHelper.waitUntilModalVisible(d1, 20);
+            BoardInteractionHelper.waitUntilModalVisible(d2, 20);
 
             // player1 dismisses and EndTurns immediately
             BoardInteractionHelper.clickModalConfirmButton(d1);

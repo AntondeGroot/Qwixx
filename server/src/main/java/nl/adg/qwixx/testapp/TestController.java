@@ -6,6 +6,8 @@ import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSession;
 import nl.adg.qwixx.state.RowClosureRequest;
 import nl.adg.qwixx.state.RowState;
+import nl.adg.qwixx.web.SseEmitterRegistry;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,6 +25,9 @@ import java.util.UUID;
 @Profile("e2e")
 @RequestMapping("/test")
 public class TestController {
+
+    @Autowired
+    private SseEmitterRegistry sseRegistry;
 
     @PostMapping("/reset")
     public ResponseEntity<Void> reset() {
@@ -60,6 +65,7 @@ public class TestController {
         GameSession session = GameRegistry.getGame(sessionId);
         if (session == null) return ResponseEntity.notFound().build();
         session.forceFinish();
+        sseRegistry.emit(sessionId, session.currentState(), session);
         return ResponseEntity.ok().build();
     }
 
@@ -75,6 +81,7 @@ public class TestController {
         Color color = Color.valueOf(rowColor.toUpperCase());
         session.currentState().rowClosureRequests().add(new RowClosureRequest(UUID.fromString(playerId), color));
         session.currentState().incrementVersion();
+        sseRegistry.emit(sessionId, session.currentState(), session);
         return ResponseEntity.ok().build();
     }
 
@@ -93,6 +100,8 @@ public class TestController {
 
         var current = turnState.currentRoll();
         turnState.setCurrentRoll(new RollResult(white1, white2, current.coloredDice()));
+        session.currentState().incrementVersion();
+        sseRegistry.emit(sessionId, session.currentState(), session);
 
         return ResponseEntity.ok().build();
     }
@@ -115,6 +124,8 @@ public class TestController {
         Map<Color, Integer> newColored = new HashMap<>(current.coloredDice());
         newColored.put(Color.valueOf(color.toUpperCase()), value);
         turnState.setCurrentRoll(new RollResult(current.white1(), current.white2(), newColored));
+        session.currentState().incrementVersion();
+        sseRegistry.emit(sessionId, session.currentState(), session);
 
         return ResponseEntity.ok().build();
     }

@@ -1,5 +1,6 @@
 import { Component, DestroyRef, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { environment } from '../../environments/environment';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, EMPTY, interval, Subscription } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
@@ -81,7 +82,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
       if (this.isRestartMode) {
         this.startLobbySync();
-        this.startGameStartPoll();
+        this.startGameStartSse();
 
         // Push local form changes to the lobby so other players see them.
         this.form.valueChanges.pipe(
@@ -118,18 +119,20 @@ export class SettingsComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Poll game state every 2 s; when another player starts the game navigate to the board.
-  private startGameStartPoll(): void {
-    interval(2000).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      switchMap(() =>
-        this.gameStatesService.getGameState(this.sessionId()!).pipe(catchError(() => EMPTY))
-      ),
-    ).subscribe(state => {
+  // Subscribe to SSE; when another player starts the game the server pushes
+  // the initial state (gameOver: false) and we navigate to the board.
+  private startGameStartSse(): void {
+    const es = new EventSource(
+      `${environment.apiBaseUrl}/gamestates/${this.sessionId()!}/stream`
+    );
+    this.destroyRef.onDestroy(() => es.close());
+    es.onmessage = (event: MessageEvent) => {
+      const state = JSON.parse(event.data);
       if (!state.gameOver) {
+        es.close();
         this.router.navigate(['/game', this.sessionId(), this.playerId()]);
       }
-    });
+    };
   }
 
   // Update the form with lobby options without triggering an outgoing PUT.

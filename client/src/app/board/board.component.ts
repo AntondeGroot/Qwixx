@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, computed, effect, ElementRef, HostListener, inject, OnDestroy, OnInit, signal, untracked } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { interval, Subscription, switchMap } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { TranslateModule } from '@ngx-translate/core';
 import { GamestatesService } from '../../generated/api/gamestates.service';
@@ -45,7 +45,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   // Suppresses the modal until they cross something (pendingCellIds becomes non-empty).
   private readonly suppressModal = signal(false);
 
-  private pollSub?: Subscription;
+  private eventSource?: EventSource;
   private moveSub?: Subscription;
   private stateSub?: Subscription;
 
@@ -65,16 +65,17 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    // For passive players: auto-unsuppress once they cross a regular cell (modal
-    // re-appears with hasPendingCross=true so they can confirm alongside the notification).
-    // Exception: if pendingAutoLock is set, the player went through the YES/NO lock-confirm
-    // modal and their cross is pending a lock declaration — keep the modal suppressed so
-    // they can see the lock cross on the board and EndTurn via the board's confirm button.
-    // For the active player: stay suppressed until the request list clears.
     const isPassive = this.isInPassiveQueue();
+    // Keep modal suppressed when the player is awaiting a lock-declaration auto-send
+    // after confirming the YES/NO prompt (Longo second-to-last cell).
     const lockConfirmInProgress = isPassive && this.pendingAutoLock() !== null;
+    // Active player re-queued for final look: treat as hard-suppress (their pending crosses
+    // are from the active turn, not a passive cross, so auto-unsuppress must not fire).
+    const isActiveFinalReview = this.isMyTurn() && isPassive;
+    // Passive: auto-unsuppress when they make a new cross (so the modal re-appears).
+    // Active (normal or final-review): stay suppressed — they've acknowledged the notification.
     const suppress = lockConfirmInProgress
-      || (this.suppressModal() && (!isPassive || this.pendingCellIds().size === 0));
+      || (this.suppressModal() && (!isPassive || isActiveFinalReview || this.pendingCellIds().size === 0));
     if (suppress) {
       this.rowClosureModal.clear();
     } else {
@@ -82,7 +83,8 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
         requests,
         () => this.onConfirmRowClosure(),
         () => this.onChangeRowClosure(),
-        this.hasPendingPassiveCross()
+        this.hasPendingPassiveCross() || this.hasPendingActiveCross() || this.hasRevertableEndTurn() || this.hasRevertablePassiveEndTurn(),
+        this.hasPendingPassiveCross()  // passive: Confirm = EndTurn; active/revert: OK = dismiss
       );
     }
   });
@@ -124,25 +126,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.sessionId.set(sid);
     this.playerId.set(pid);
     this.fetchState();
-
-    this.pollSub = interval(2000).pipe(
-      switchMap(() => this.gameStatesService.getGameState(sid))
-    ).subscribe({
-      next: (s: GameState) => {
-        if (s.version !== this.gameState()?.version) {
-          // If the active player just rolled (currentRoll appeared) and we are a
-          // passive observer, start our own dice animation so the roll feels live.
-          const prevRoll = this.gameState()?.turnState?.currentRoll;
-          const newRoll  = s.turnState?.currentRoll;
-          if (this.gameState() !== null && !prevRoll && newRoll) {
-            this.rollingDice.set(true);
-            this.rollStartTime = Date.now();
-          }
-          this.applyState(s);
-        }
-      },
-      error: () => {}
-    });
+    this.setupSse(sid);
   }
 
   // Re-measure after every game-state render so Longo's bonus chips (80px each)
@@ -189,10 +173,35 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.pollSub?.unsubscribe();
+    this.eventSource?.close();
     this.moveSub?.unsubscribe();
     this.stateSub?.unsubscribe();
     this.rowClosureModal.clear();
+  }
+
+  private setupSse(sessionId: string): void {
+    this.eventSource?.close();
+    const es = new EventSource(`${environment.apiBaseUrl}/gamestates/${sessionId}/stream`);
+    this.eventSource = es;
+
+    es.onmessage = (event: MessageEvent) => {
+      const s: GameState = JSON.parse(event.data);
+      if (s.version !== this.gameState()?.version) {
+        const prevRoll = this.gameState()?.turnState?.currentRoll;
+        const newRoll  = s.turnState?.currentRoll;
+        if (this.gameState() !== null && !prevRoll && newRoll) {
+          this.rollingDice.set(true);
+          this.rollStartTime = Date.now();
+        }
+        this.applyState(s);
+      }
+    };
+
+    es.onerror = () => {
+      if (es.readyState === EventSource.CLOSED) {
+        setTimeout(() => this.setupSse(sessionId), 3000);
+      }
+    };
   }
 
   // ── Computed turn helpers ──────────────────────────────────────────────────
@@ -230,8 +239,35 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   });
 
   hasPendingPassiveCross = computed(() =>
-    this.isInPassiveQueue() && this.pendingCellIds().size > 0
+    this.isInPassiveQueue() && !this.isMyTurn() && this.pendingCellIds().size > 0
   );
+
+  // Active player has a pending cross (in undo buffer) while a passive has declared.
+  // Surfaces the Change/OK buttons in the notification modal for the active player too.
+  hasPendingActiveCross = computed(() =>
+    this.isMyTurn()
+    && this.turnState()?.phase === TurnPhase.ACTIVE_MOVE
+    && this.pendingCellIds().size > 0
+  );
+
+  // Active player has already EndTurned (phase=PASSIVE_MOVE) but passives are still acting.
+  // Allows them to revert their EndTurn via RESET_TURN and make additional moves.
+  hasRevertableEndTurn = computed(() =>
+    this.isMyTurn()
+    && this.turnState()?.phase === TurnPhase.PASSIVE_MOVE
+    && (this.turnState()?.passivePlayerQueue?.length ?? 0) > 0
+  );
+
+  // Passive player has already EndTurned (left the queue) but other passives are still acting.
+  // Allows them to revert their EndTurn via RESET_TURN to reconsider their cross.
+  hasRevertablePassiveEndTurn = computed(() => {
+    const turn = this.turnState();
+    const phase = turn?.phase;
+    return !this.isMyTurn()
+      && !this.isInPassiveQueue()
+      && (phase === TurnPhase.ACTIVE_MOVE || phase === TurnPhase.PASSIVE_MOVE)
+      && (turn?.passivePlayerQueue?.length ?? 0) > 0;
+  });
 
   // True when this player has declared a lock intent that is currently pending.
   // Derived from rowClosureRequests so it works even when no cell was crossed this turn
@@ -804,8 +840,17 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   onConfirmRowClosure() {
     if (this.hasPendingPassiveCross()) {
       this.sendMove({ moveType: MoveType.PASS });
+    } else if (this.hasPendingActiveCross()) {
+      // Active player acknowledges the notification and continues their turn.
+      // They still have their pending cross(es) and can make more before clicking EndTurn.
+      this.suppressModal.set(true);
+    } else if (this.isMyTurn() && this.isInPassiveQueue()) {
+      // Active player was re-queued for a final look before EVALUATE.
+      // OK = proceed without reverting → EndTurn as passive to trigger EVALUATE.
+      this.suppressModal.set(true);
+      this.passPassive();
     } else {
-      // OK on the notification modal — just dismiss so the player can continue their passive move.
+      // Notification-only dismiss (no pending cross).
       this.suppressModal.set(true);
       this.rowClosureModal.clear();
     }
@@ -813,10 +858,20 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onChangeRowClosure() {
     if (this.hasPendingPassiveCross()) {
-      // Player has a pending cross — undo it so they can reconsider.
-      // Reset suppressModal so the modal re-shows after the undo.
+      // Passive player undoes their cross to reconsider.
       this.suppressModal.set(false);
       this.sendMove({ moveType: MoveType.UNDO_LAST_CROSS });
+    } else if (this.hasPendingActiveCross()) {
+      // Active player resets their entire turn to reconsider — suppress modal until
+      // they make a new cross, at which point hasPendingActiveCross becomes true again
+      // and the auto-unsuppress (pendingCellIds > 0) brings the modal back.
+      this.suppressModal.set(true);
+      this.sendMove({ moveType: MoveType.RESET_TURN });
+    } else if (this.hasRevertableEndTurn() || this.hasRevertablePassiveEndTurn()) {
+      // Active or passive player reverts their EndTurn to make a different/additional move.
+      // Server restores the player's state and puts them back in the appropriate phase/queue.
+      this.suppressModal.set(true);
+      this.sendMove({ moveType: MoveType.RESET_TURN });
     } else {
       // No pending cross — dismiss the modal so the player can click a cell on the board.
       // The modal re-appears automatically once they make a cross (pendingCellIds > 0).

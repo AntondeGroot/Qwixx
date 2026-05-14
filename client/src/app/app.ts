@@ -17,6 +17,7 @@ import { TranslationService } from './services/translation.service';
       <app-row-closure-modal
         [requests]="modal.requests()"
         [hasPendingCross]="modal.hasPendingCross()"
+        [confirmEndsRound]="modal.confirmEndsRound()"
         [lockConfirmRequest]="modal.lockConfirmRequest()"
         (confirmSelection)="modal.confirmFn?.()"
         (changeSelection)="modal.changeFn?.()"

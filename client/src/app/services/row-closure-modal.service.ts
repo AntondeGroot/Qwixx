@@ -4,15 +4,18 @@ import { RowClosureRequest } from '../row-closure-modal/row-closure-modal.compon
 
 @Injectable({ providedIn: 'root' })
 export class RowClosureModalService {
-  readonly requests       = signal<RowClosureRequest[]>([]);
+  readonly requests        = signal<RowClosureRequest[]>([]);
   readonly hasPendingCross = signal(false);
+  // false for active players (Confirm = dismiss, continue turn) vs true for passive (Confirm = EndTurn)
+  readonly confirmEndsRound = signal(false);
   confirmFn: (() => void) | null = null;
   changeFn:  (() => void) | null = null;
 
   show(requests: RowClosureRequest[], onConfirm: () => void, onChange: () => void,
-       hasPendingCross = false) {
+       hasPendingCross = false, confirmEndsRound = hasPendingCross) {
     this.requests.set(requests);
     this.hasPendingCross.set(hasPendingCross);
+    this.confirmEndsRound.set(confirmEndsRound);
     this.confirmFn = onConfirm;
     this.changeFn  = onChange;
   }
@@ -20,6 +23,7 @@ export class RowClosureModalService {
   clear() {
     this.requests.set([]);
     this.hasPendingCross.set(false);
+    this.confirmEndsRound.set(false);
     this.confirmFn = null;
     this.changeFn  = null;
   }

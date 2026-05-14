@@ -1,9 +1,6 @@
 package nl.adg.qwixx.e2e;
 
-import nl.adg.qwixx.e2e.helpers.ScoreInteractionHelper;
-import nl.adg.qwixx.e2e.helpers.SettingsInteractionHelper;
 import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
-import nl.adg.qwixx.e2e.utils.TestUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +11,10 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
+import static nl.adg.qwixx.e2e.helpers.ScoreInteractionHelper.*;
+import static nl.adg.qwixx.e2e.helpers.SettingsInteractionHelper.*;
+import static nl.adg.qwixx.e2e.utils.TestUtils.createDriver;
+import static nl.adg.qwixx.e2e.utils.TestUtils.waitUntilScoreLoaded;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -68,14 +69,14 @@ public class NewGameLobbyIT extends BaseIntegrationTest {
 
     /** Open a score page; playerId is passed as a query param so no root navigation is needed. */
     private WebDriver openScoreAsPlayer(int playerIndex) {
-        WebDriver driver = TestUtils.createDriver();
+        WebDriver driver = createDriver();
         driver.get(BASE + "/score/" + sessionId + "?fast=1&pid=" + playerIds.get(playerIndex));
         return driver;
     }
 
     /** Open a settings page; sessionId and playerId are passed as query params. */
     private WebDriver openSettingsAsPlayer(int playerIndex) {
-        WebDriver driver = TestUtils.createDriver();
+        WebDriver driver = createDriver();
         driver.get(BASE + "/settings?sessionId=" + sessionId
                 + "&playerId=" + playerIds.get(playerIndex));
         return driver;
@@ -96,12 +97,12 @@ public class NewGameLobbyIT extends BaseIntegrationTest {
         d3 = openScoreAsPlayer(3);
 
         for (WebDriver d : List.of(d0, d1, d2, d3)) {
-            TestUtils.waitUntilScoreLoaded(d);
-            ScoreInteractionHelper.waitUntilWinnerModalVisible(d, 10);
+            waitUntilScoreLoaded(d);
+            waitUntilWinnerModalVisible(d, 10);
         }
 
         // Player3 leaves.
-        ScoreInteractionHelper.clickLeaveGameButton(d3);
+        clickLeaveGameButton(d3);
         d3.quit();
         d3 = null;
 
@@ -115,14 +116,14 @@ public class NewGameLobbyIT extends BaseIntegrationTest {
         d1 = openSettingsAsPlayer(1);
         d2 = openSettingsAsPlayer(2);
 
-        SettingsInteractionHelper.waitUntilLoaded(d0);
-        SettingsInteractionHelper.waitUntilLoaded(d1);
-        SettingsInteractionHelper.waitUntilLoaded(d2);
+        waitUntilLoaded(d0);
+        waitUntilLoaded(d1);
+        waitUntilLoaded(d2);
 
         // Lobby must reflect only 3 players once the first poll fires.
-        SettingsInteractionHelper.waitUntilLobbyHasPlayers(d0, 3);
+        waitUntilLobbyHasPlayers(d0, 3);
 
-        List<String> lobbyNames = SettingsInteractionHelper.getLobbyPlayerNames(d0);
+        List<String> lobbyNames = getLobbyPlayerNames(d0);
         assertEquals(3, lobbyNames.size(),
                 "Lobby must show 3 players after player3 left. Got: " + lobbyNames);
         assertFalse(lobbyNames.contains("player3"),
@@ -144,19 +145,19 @@ public class NewGameLobbyIT extends BaseIntegrationTest {
         d1 = openSettingsAsPlayer(1);
         d2 = openSettingsAsPlayer(2);
 
-        SettingsInteractionHelper.waitUntilLoaded(d0);
-        SettingsInteractionHelper.waitUntilLoaded(d1);
-        SettingsInteractionHelper.waitUntilLoaded(d2);
+        waitUntilLoaded(d0);
+        waitUntilLoaded(d1);
+        waitUntilLoaded(d2);
 
         // Determine the initial state of the "extraRow" option on player0's form.
-        boolean initial = SettingsInteractionHelper.isCheckboxChecked(d0, "extraRow");
+        boolean initial = isCheckboxChecked(d0, "extraRow");
 
         // Player1 toggles the "extraRow" checkbox — this will push to the lobby.
-        SettingsInteractionHelper.setCheckbox(d1, "extraRow", !initial);
+        setCheckbox(d1, "extraRow", !initial);
 
         // Player0 and player2 should see the same value within ~4 s (2 s poll + margin).
-        SettingsInteractionHelper.waitUntilCheckboxIs(d0, "extraRow", !initial);
-        SettingsInteractionHelper.waitUntilCheckboxIs(d2, "extraRow", !initial);
+        waitUntilCheckboxIs(d0, "extraRow", !initial);
+        waitUntilCheckboxIs(d2, "extraRow", !initial);
 
         // Server-side proposed options must reflect the change.
         Map<String, Object> proposed = api.getProposedOptions(sessionId);
@@ -176,9 +177,9 @@ public class NewGameLobbyIT extends BaseIntegrationTest {
     void anyPlayerCanStartGame_othersAreRedirectedAutomatically() {
         // Player3 leaves at the score screen.
         d3 = openScoreAsPlayer(3);
-        TestUtils.waitUntilScoreLoaded(d3);
-        ScoreInteractionHelper.waitUntilWinnerModalVisible(d3, 10);
-        ScoreInteractionHelper.clickLeaveGameButton(d3);
+        waitUntilScoreLoaded(d3);
+        waitUntilWinnerModalVisible(d3, 10);
+        clickLeaveGameButton(d3);
         d3.quit();
         d3 = null;
 
@@ -187,16 +188,16 @@ public class NewGameLobbyIT extends BaseIntegrationTest {
         d1 = openSettingsAsPlayer(1);
         d2 = openScoreAsPlayer(2);
 
-        SettingsInteractionHelper.waitUntilLoaded(d0);
-        SettingsInteractionHelper.waitUntilLoaded(d1);
-        TestUtils.waitUntilScoreLoaded(d2);
-        ScoreInteractionHelper.waitUntilWinnerModalVisible(d2, 10);
+        waitUntilLoaded(d0);
+        waitUntilLoaded(d1);
+        waitUntilScoreLoaded(d2);
+        waitUntilWinnerModalVisible(d2, 10);
 
         // Player1 changes an option to verify it takes effect in the restarted game.
         api.updateLobby(sessionId, Map.of("extraRow", false));
 
         // Player0 starts the game.
-        SettingsInteractionHelper.clickStartGame(d0);
+        clickStartGame(d0);
 
         // All three browsers must navigate to the game board.
         String gamePrefix = "/game/" + sessionId;

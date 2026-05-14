@@ -1,7 +1,5 @@
 package nl.adg.qwixx.e2e;
 
-import nl.adg.qwixx.e2e.helpers.BoardInteractionHelper;
-import nl.adg.qwixx.e2e.helpers.ScoreInteractionHelper;
 import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
 import nl.adg.qwixx.e2e.utils.TestUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -16,6 +14,11 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
+import static nl.adg.qwixx.e2e.helpers.BoardInteractionHelper.*;
+import static nl.adg.qwixx.e2e.helpers.ScoreInteractionHelper.*;
+import static nl.adg.qwixx.e2e.utils.TestUtils.getPortraitDriver;
+import static nl.adg.qwixx.e2e.utils.TestUtils.waitUntilBoardLoaded;
+import static nl.adg.qwixx.e2e.utils.TestUtils.waitUntilScoreLoaded;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -70,8 +73,8 @@ public class MobileLayoutIT extends BaseIntegrationTest {
     @Test
     void boardHostIsRotated90DegreesInPortraitViewport() {
         api.roll(sessionId, playerIds.get(0));
-        driver0 = TestUtils.getPortraitDriver(sessionId, playerIds.get(0));
-        TestUtils.waitUntilBoardLoaded(driver0);
+        driver0 = getPortraitDriver(sessionId, playerIds.get(0));
+        waitUntilBoardLoaded(driver0);
 
         assertTrue(isBoardHostRotated(driver0),
                 "Board :host must have transform: rotate(90deg) in portrait mode");
@@ -87,15 +90,15 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         api.roll(sessionId, playerIds.get(0));
         api.setDice(sessionId, 1, 1);
 
-        driver1 = TestUtils.getPortraitDriver(sessionId, playerIds.get(1));
-        TestUtils.waitUntilBoardLoaded(driver1);
+        driver1 = getPortraitDriver(sessionId, playerIds.get(1));
+        waitUntilBoardLoaded(driver1);
 
         String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
         api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
 
-        BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
+        waitUntilModalVisible(driver1, 8);
 
-        assertTrue(BoardInteractionHelper.isModalVisible(driver1),
+        assertTrue(isModalVisible(driver1),
                 "Lock-intent modal must be visible in a portrait (mobile) viewport");
     }
 
@@ -111,15 +114,15 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         api.roll(sessionId, playerIds.get(0));
         api.setDice(sessionId, 1, 1);
 
-        driver1 = TestUtils.getPortraitDriver(sessionId, playerIds.get(1));
-        TestUtils.waitUntilBoardLoaded(driver1);
+        driver1 = getPortraitDriver(sessionId, playerIds.get(1));
+        waitUntilBoardLoaded(driver1);
 
         String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
         api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
 
-        BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
+        waitUntilModalVisible(driver1, 8);
 
-        assertTrue(BoardInteractionHelper.isModalOverlayWithinViewport(driver1),
+        assertTrue(isModalOverlayWithinViewport(driver1),
                 "Modal overlay must be fully within the viewport on mobile — " +
                 "position:fixed inside a CSS transform breaks this");
     }
@@ -135,16 +138,16 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         api.roll(sessionId, playerIds.get(0));
         api.setDice(sessionId, 1, 1);
 
-        driver1 = TestUtils.getPortraitDriver(sessionId, playerIds.get(1));
-        TestUtils.waitUntilBoardLoaded(driver1);
+        driver1 = getPortraitDriver(sessionId, playerIds.get(1));
+        waitUntilBoardLoaded(driver1);
 
         String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
         api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
 
-        BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
+        waitUntilModalVisible(driver1, 8);
 
         // This click must NOT throw — if the button is off-screen it will
-        assertDoesNotThrow(() -> BoardInteractionHelper.clickModalConfirmButton(driver1),
+        assertDoesNotThrow(() -> clickModalConfirmButton(driver1),
                 "Confirm button must be interactable in a portrait (mobile) viewport");
     }
 
@@ -202,9 +205,9 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         api.forceFinish(sessionId);
 
         driver0 = TestUtils.getPortraitScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver0);
+        waitUntilScoreLoaded(driver0);
 
-        assertFalse(ScoreInteractionHelper.isRotated90Degrees(driver0),
+        assertFalse(isRotated90Degrees(driver0),
                 "Score screen :host must NOT be rotated in portrait mode");
     }
 
@@ -217,11 +220,11 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         api.forceFinish(sessionId);
 
         driver0 = TestUtils.getPortraitScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver0);
+        waitUntilScoreLoaded(driver0);
 
-        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver0, 25);
+        waitUntilWinnerModalVisible(driver0, 25);
 
-        assertTrue(ScoreInteractionHelper.isWinnerModalVisible(driver0),
+        assertTrue(isWinnerModalVisible(driver0),
                 "Winner modal must appear on the score screen in portrait (mobile) viewport");
     }
 
@@ -237,11 +240,11 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         api.forceFinish(sessionId);
 
         driver0 = TestUtils.getPortraitScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver0);
+        waitUntilScoreLoaded(driver0);
 
-        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver0, 25);
+        waitUntilWinnerModalVisible(driver0, 25);
 
-        assertTrue(ScoreInteractionHelper.isWinnerModalWithinViewport(driver0),
+        assertTrue(isWinnerModalWithinViewport(driver0),
                 "Winner modal overlay must be fully within the viewport on mobile");
     }
 
@@ -256,18 +259,18 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         api.forceFinish(sessionId);
 
         driver0 = TestUtils.getPortraitScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver0);
+        waitUntilScoreLoaded(driver0);
 
-        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver0, 25);
+        waitUntilWinnerModalVisible(driver0, 25);
 
         // This must NOT throw — if the button is off-screen Selenium throws
-        assertDoesNotThrow(() -> ScoreInteractionHelper.clickViewScoresButton(driver0),
+        assertDoesNotThrow(() -> clickViewScoresButton(driver0),
                 "View Scores button must be clickable in portrait (mobile) viewport");
 
         // After clicking, modal must dismiss and action bar must appear
-        assertFalse(ScoreInteractionHelper.isWinnerModalVisible(driver0),
+        assertFalse(isWinnerModalVisible(driver0),
                 "Winner modal must close after clicking View Scores on mobile");
-        assertTrue(ScoreInteractionHelper.isActionBarVisible(driver0),
+        assertTrue(isActionBarVisible(driver0),
                 "Action bar must appear after dismissing the winner modal on mobile");
     }
 
@@ -292,8 +295,8 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         String sid = api.createGame(1, Map.of("base", "LONGO"));
         String pid = api.getPlayerIds(sid).get(0);
 
-        driver0 = TestUtils.getPortraitDriver(sid, pid);
-        TestUtils.waitUntilBoardLoaded(driver0);
+        driver0 = getPortraitDriver(sid, pid);
+        waitUntilBoardLoaded(driver0);
 
         // Force --mobile-scale so all elements fit within the host's 844px clip boundary.
         // The component's _scaleEffect computes this asynchronously after each render;
@@ -346,8 +349,8 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         String sid = api.createGame(1, Map.of("base", "LONGO"));
         String pid = api.getPlayerIds(sid).get(0);
 
-        driver0 = TestUtils.getPortraitDriver(sid, pid);
-        TestUtils.waitUntilBoardLoaded(driver0);
+        driver0 = getPortraitDriver(sid, pid);
+        waitUntilBoardLoaded(driver0);
 
         ((org.openqa.selenium.JavascriptExecutor) driver0).executeScript(
                 "document.querySelector('app-board').style.setProperty('--mobile-scale','0.6')");
@@ -359,16 +362,16 @@ public class MobileLayoutIT extends BaseIntegrationTest {
             WebElement row = driver0.findElement(By.xpath(
                     "//section[contains(@class,'current-player')]" +
                     "//div[@data-color='" + color + "' and contains(@class,'row')]"));
-            assertTrue(BoardInteractionHelper.isElementWithinElement(driver0, row, currentPlayer),
+            assertTrue(isElementWithinElement(driver0, row, currentPlayer),
                     color + " row must be fully within the current-player section");
         }
 
         WebElement bonusTrack = driver0.findElement(By.className("bonus-track"));
-        assertTrue(BoardInteractionHelper.isElementWithinElement(driver0, bonusTrack, currentPlayer),
+        assertTrue(isElementWithinElement(driver0, bonusTrack, currentPlayer),
                 "Bonus track must be fully within the current-player section");
 
         WebElement punishmentTrack = driver0.findElement(By.className("punishment-track"));
-        assertTrue(BoardInteractionHelper.isElementWithinElement(driver0, punishmentTrack, currentPlayer),
+        assertTrue(isElementWithinElement(driver0, punishmentTrack, currentPlayer),
                 "Punishment track must be fully within the current-player section");
     }
 
@@ -391,17 +394,17 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         api.setDice(sid, 1, 2); // white+white = 3 → "3" reachable
 
         driver0 = TestUtils.getDriver(sid, pids.get(0));
-        TestUtils.waitUntilBoardLoaded(driver0);
+        waitUntilBoardLoaded(driver0);
 
-        assertFalse(BoardInteractionHelper.isModalVisible(driver0),
+        assertFalse(isModalVisible(driver0),
                 "No modal should be visible before clicking the second-to-last cell");
 
-        BoardInteractionHelper.clickCellByValue(driver0, "BLUE", "3");
+        clickCellByValue(driver0, "BLUE", "3");
 
         new WebDriverWait(driver0, Duration.ofSeconds(5))
-                .until(d -> BoardInteractionHelper.isModalVisible(d));
+                .until(d -> isModalVisible(d));
 
-        assertTrue(BoardInteractionHelper.isModalVisible(driver0),
+        assertTrue(isModalVisible(driver0),
                 "Yes/No modal must appear after clicking the second-to-last closing cell in Longo");
     }
 
@@ -415,21 +418,21 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         api.setDice(sid, 1, 2);
 
         driver0 = TestUtils.getDriver(sid, pids.get(0));
-        TestUtils.waitUntilBoardLoaded(driver0);
+        waitUntilBoardLoaded(driver0);
 
-        BoardInteractionHelper.clickCellByValue(driver0, "BLUE", "3");
-        BoardInteractionHelper.waitUntilModalVisible(driver0, 5);
-        BoardInteractionHelper.clickModalYesButton(driver0);
+        clickCellByValue(driver0, "BLUE", "3");
+        waitUntilModalVisible(driver0, 5);
+        clickModalYesButton(driver0);
 
         // Modal must close and "3" must be crossed (7 crosses total).
         new WebDriverWait(driver0, Duration.ofSeconds(5))
-                .until(d -> !BoardInteractionHelper.isModalVisible(d));
+                .until(d -> !isModalVisible(d));
 
-        assertFalse(BoardInteractionHelper.isModalVisible(driver0),
+        assertFalse(isModalVisible(driver0),
                 "Modal must close after clicking Yes");
         new WebDriverWait(driver0, Duration.ofSeconds(5))
-                .until(d -> BoardInteractionHelper.getCrossedCellCount(d, "BLUE") >= 7);
-        assertTrue(BoardInteractionHelper.getCrossedCellCount(driver0, "BLUE") >= 7,
+                .until(d -> getCrossedCellCount(d, "BLUE") >= 7);
+        assertTrue(getCrossedCellCount(driver0, "BLUE") >= 7,
                 "BLUE row must have at least 7 crosses after confirming with Yes");
     }
 
@@ -445,24 +448,24 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         api.setDice(sid, 1, 2);
 
         driver0 = TestUtils.getDriver(sid, pids.get(0));
-        TestUtils.waitUntilBoardLoaded(driver0);
+        waitUntilBoardLoaded(driver0);
 
-        int crossesBefore = BoardInteractionHelper.getCrossedCellCount(driver0, "BLUE");
+        int crossesBefore = getCrossedCellCount(driver0, "BLUE");
 
-        BoardInteractionHelper.clickCellByValue(driver0, "BLUE", "3");
-        BoardInteractionHelper.waitUntilModalVisible(driver0, 5);
-        BoardInteractionHelper.clickModalNoButton(driver0);
+        clickCellByValue(driver0, "BLUE", "3");
+        waitUntilModalVisible(driver0, 5);
+        clickModalNoButton(driver0);
 
         new WebDriverWait(driver0, Duration.ofSeconds(5))
-                .until(d -> !BoardInteractionHelper.isModalVisible(d));
+                .until(d -> !isModalVisible(d));
 
-        assertFalse(BoardInteractionHelper.isModalVisible(driver0),
+        assertFalse(isModalVisible(driver0),
                 "Modal must close after clicking No");
         new WebDriverWait(driver0, Duration.ofSeconds(5))
-                .until(d -> BoardInteractionHelper.getCrossedCellCount(d, "BLUE") >= crossesBefore + 1);
-        assertEquals(crossesBefore + 1, BoardInteractionHelper.getCrossedCellCount(driver0, "BLUE"),
+                .until(d -> getCrossedCellCount(d, "BLUE") >= crossesBefore + 1);
+        assertEquals(crossesBefore + 1, getCrossedCellCount(driver0, "BLUE"),
                 "Clicking No must still cross the cell — only the lock intent is declined, not the cross");
-        assertFalse(BoardInteractionHelper.isLockButtonCrossed(driver0, "BLUE"),
+        assertFalse(isLockButtonCrossed(driver0, "BLUE"),
                 "Lock cross must NOT appear after clicking No (lock intent declined)");
     }
 
@@ -486,12 +489,12 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         api.setDice(sid, 1, 2);
 
         driver0 = TestUtils.getDriver(sid, pids.get(0));
-        TestUtils.waitUntilBoardLoaded(driver0);
+        waitUntilBoardLoaded(driver0);
 
-        BoardInteractionHelper.clickCellByValue(driver0, "BLUE", "3");
-        BoardInteractionHelper.waitUntilModalVisible(driver0, 5);
+        clickCellByValue(driver0, "BLUE", "3");
+        waitUntilModalVisible(driver0, 5);
 
-        String bodyText = BoardInteractionHelper.getModalText(driver0);
+        String bodyText = getModalText(driver0);
         String yesText  = driver0.findElement(By.xpath("//button[contains(@class,'btn-primary')]")).getText();
         String noText   = driver0.findElement(By.xpath("//button[contains(@class,'btn-secondary')]")).getText();
 

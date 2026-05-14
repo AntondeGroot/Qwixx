@@ -2,16 +2,20 @@ package nl.adg.qwixx.e2e;
 
 import nl.adg.qwixx.e2e.helpers.ScoreInteractionHelper;
 import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
-import nl.adg.qwixx.e2e.utils.TestUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
 import java.util.List;
 
+import static nl.adg.qwixx.e2e.helpers.ScoreInteractionHelper.*;
+import static nl.adg.qwixx.e2e.utils.TestUtils.getPortraitScoreDriver;
+import static nl.adg.qwixx.e2e.utils.TestUtils.getScoreDriver;
+import static nl.adg.qwixx.e2e.utils.TestUtils.waitUntilScoreLoaded;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -68,10 +72,10 @@ public class ScoreScreenIT extends BaseIntegrationTest {
 
     @Test
     void scoreScreenLoadsAndShowsAllPlayers() {
-        driver = TestUtils.getScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver);
+        driver = getScoreDriver(sessionId);
+        waitUntilScoreLoaded(driver);
 
-        List<String> names = ScoreInteractionHelper.getVisiblePlayerNames(driver);
+        List<String> names = getVisiblePlayerNames(driver);
         assertTrue(names.contains("player0"),
                 "Score screen should show player0. Visible names: " + names);
         assertTrue(names.contains("player1"),
@@ -82,53 +86,53 @@ public class ScoreScreenIT extends BaseIntegrationTest {
 
     @Test
     void winnerModalAppearsWithCorrectWinner() {
-        driver = TestUtils.getScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver);
+        driver = getScoreDriver(sessionId);
+        waitUntilScoreLoaded(driver);
 
         // Wait for the full animation + modal to appear (up to 35 s)
-        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver, 10);
+        waitUntilWinnerModalVisible(driver, 10);
 
-        String winner = ScoreInteractionHelper.getWinnerName(driver);
+        String winner = getWinnerName(driver);
         assertEquals("player0", winner,
                 "player0 has 31 pts vs player1's 21 pts and should be declared winner");
     }
 
     @Test
     void winnerIsAtTopOfRankingAfterAnimation() {
-        driver = TestUtils.getScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver);
+        driver = getScoreDriver(sessionId);
+        waitUntilScoreLoaded(driver);
 
-        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver, 10);
+        waitUntilWinnerModalVisible(driver, 10);
 
-        assertTrue(ScoreInteractionHelper.isPlayerAtRank(driver, "player0", 0),
+        assertTrue(isPlayerAtRank(driver, "player0", 0),
                 "player0 (31 pts) should be at rank 0 (top) after the full animation");
-        assertTrue(ScoreInteractionHelper.isPlayerAtRank(driver, "player1", 1),
+        assertTrue(isPlayerAtRank(driver, "player1", 1),
                 "player1 (21 pts) should be at rank 1 after the full animation");
     }
 
     @Test
     void winnerRowReceivesGoldenWinnerClass() {
-        driver = TestUtils.getScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver);
+        driver = getScoreDriver(sessionId);
+        waitUntilScoreLoaded(driver);
 
-        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver, 10);
+        waitUntilWinnerModalVisible(driver, 10);
 
-        assertTrue(ScoreInteractionHelper.isPlayerRowMarkedWinner(driver, "player0"),
+        assertTrue(isPlayerRowMarkedWinner(driver, "player0"),
                 "player0's row should carry the 'winner' CSS class for the golden glow");
-        assertFalse(ScoreInteractionHelper.isPlayerRowMarkedWinner(driver, "player1"),
+        assertFalse(isPlayerRowMarkedWinner(driver, "player1"),
                 "player1's row should NOT carry the 'winner' CSS class");
     }
 
     @Test
     void finalDisplayedTotalsMatchExpectedScores() {
-        driver = TestUtils.getScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver);
+        driver = getScoreDriver(sessionId);
+        waitUntilScoreLoaded(driver);
 
-        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver, 10);
+        waitUntilWinnerModalVisible(driver, 10);
 
-        assertEquals(31, ScoreInteractionHelper.getPlayerDisplayedTotal(driver, "player0"),
+        assertEquals(31, getPlayerDisplayedTotal(driver, "player0"),
                 "player0: RED 4×=10 + BLUE 6×=21 → 31 pts");
-        assertEquals(21, ScoreInteractionHelper.getPlayerDisplayedTotal(driver, "player1"),
+        assertEquals(21, getPlayerDisplayedTotal(driver, "player1"),
                 "player1: RED 5×=15 + BLUE 3×=6 → 21 pts");
     }
 
@@ -136,11 +140,11 @@ public class ScoreScreenIT extends BaseIntegrationTest {
 
     @Test
     void winnerModalHasAllThreeButtons() {
-        driver = TestUtils.getScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver);
-        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver, 10);
+        driver = getScoreDriver(sessionId);
+        waitUntilScoreLoaded(driver);
+        waitUntilWinnerModalVisible(driver, 10);
 
-        assertEquals(3, ScoreInteractionHelper.getModalButtonCount(driver),
+        assertEquals(3, getModalButtonCount(driver),
                 "Winner modal must have exactly 3 buttons: View Scores, New Game, Leave Game");
     }
 
@@ -148,56 +152,56 @@ public class ScoreScreenIT extends BaseIntegrationTest {
 
     @Test
     void viewScoresButtonDismissesModal() {
-        driver = TestUtils.getScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver);
-        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver, 10);
+        driver = getScoreDriver(sessionId);
+        waitUntilScoreLoaded(driver);
+        waitUntilWinnerModalVisible(driver, 10);
 
-        assertTrue(ScoreInteractionHelper.isWinnerModalVisible(driver),
+        assertTrue(isWinnerModalVisible(driver),
                 "Modal must be visible before clicking View Scores");
 
-        ScoreInteractionHelper.clickViewScoresButton(driver);
+        clickViewScoresButton(driver);
 
-        assertFalse(ScoreInteractionHelper.isWinnerModalVisible(driver),
+        assertFalse(isWinnerModalVisible(driver),
                 "Modal must be gone after clicking View Scores");
     }
 
     @Test
     void viewScoresButtonRevealsActionBar() {
-        driver = TestUtils.getScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver);
-        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver, 10);
+        driver = getScoreDriver(sessionId);
+        waitUntilScoreLoaded(driver);
+        waitUntilWinnerModalVisible(driver, 10);
 
-        assertFalse(ScoreInteractionHelper.isActionBarVisible(driver),
+        assertFalse(isActionBarVisible(driver),
                 "Action bar must not be visible while the modal is open");
 
-        ScoreInteractionHelper.clickViewScoresButton(driver);
+        clickViewScoresButton(driver);
 
-        assertTrue(ScoreInteractionHelper.isActionBarVisible(driver),
+        assertTrue(isActionBarVisible(driver),
                 "Action bar must appear after clicking View Scores");
     }
 
     @Test
     void actionBarHasTwoButtonsAfterViewScores() {
-        driver = TestUtils.getScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver);
-        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver, 10);
-        ScoreInteractionHelper.clickViewScoresButton(driver);
+        driver = getScoreDriver(sessionId);
+        waitUntilScoreLoaded(driver);
+        waitUntilWinnerModalVisible(driver, 10);
+        clickViewScoresButton(driver);
 
-        assertEquals(2, ScoreInteractionHelper.getActionBarButtonCount(driver),
+        assertEquals(2, getActionBarButtonCount(driver),
                 "Action bar must have exactly 2 buttons: New Game and Leave Game");
     }
 
     @Test
     void scoreTableRemainsVisibleAfterViewScores() {
-        driver = TestUtils.getScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver);
-        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver, 10);
-        ScoreInteractionHelper.clickViewScoresButton(driver);
+        driver = getScoreDriver(sessionId);
+        waitUntilScoreLoaded(driver);
+        waitUntilWinnerModalVisible(driver, 10);
+        clickViewScoresButton(driver);
 
-        List<String> names = ScoreInteractionHelper.getVisiblePlayerNames(driver);
+        List<String> names = getVisiblePlayerNames(driver);
         assertTrue(names.contains("player0") && names.contains("player1"),
                 "Score table must still show all player names after modal is dismissed. Found: " + names);
-        assertEquals(31, ScoreInteractionHelper.getPlayerDisplayedTotal(driver, "player0"),
+        assertEquals(31, getPlayerDisplayedTotal(driver, "player0"),
                 "player0's final total must still be visible after modal is dismissed");
     }
 
@@ -205,11 +209,11 @@ public class ScoreScreenIT extends BaseIntegrationTest {
 
     @Test
     void newGameButtonNavigatesToSettings() {
-        driver = TestUtils.getScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver);
-        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver, 10);
+        driver = getScoreDriver(sessionId);
+        waitUntilScoreLoaded(driver);
+        waitUntilWinnerModalVisible(driver, 10);
 
-        ScoreInteractionHelper.clickNewGameButton(driver);
+       clickNewGameButton(driver);
 
         // Angular Router navigation is async — wait for the URL to settle
         new WebDriverWait(driver, Duration.ofSeconds(10))
@@ -220,11 +224,11 @@ public class ScoreScreenIT extends BaseIntegrationTest {
 
     @Test
     void leaveGameButtonNavigatesToLobby() {
-        driver = TestUtils.getScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver);
-        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver, 10);
+        driver = getScoreDriver(sessionId);
+        waitUntilScoreLoaded(driver);
+        waitUntilWinnerModalVisible(driver, 10);
 
-        ScoreInteractionHelper.clickLeaveGameButton(driver);
+        clickLeaveGameButton(driver);
 
         new WebDriverWait(driver, Duration.ofSeconds(10))
                 .until(d -> d.getCurrentUrl().startsWith("http://localhost:4100"));
@@ -240,10 +244,10 @@ public class ScoreScreenIT extends BaseIntegrationTest {
      */
     @Test
     void scoreScreenIsNotRotatedInPortraitMode() {
-        driver = TestUtils.getPortraitScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver);
+        driver = getPortraitScoreDriver(sessionId);
+        waitUntilScoreLoaded(driver);
 
-        assertFalse(ScoreInteractionHelper.isRotated90Degrees(driver),
+        assertFalse(isRotated90Degrees(driver),
                 "app-score must NOT have rotate(90deg) in portrait mode — "
                 + "the score screen is now a normal portrait layout");
     }
@@ -259,10 +263,10 @@ public class ScoreScreenIT extends BaseIntegrationTest {
      */
     @Test
     void scoreScreenIsNotZoomedInPortraitMode() {
-        driver = TestUtils.getPortraitScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver);
+        driver = getPortraitScoreDriver(sessionId);
+        waitUntilScoreLoaded(driver);
 
-        String zoom = (String) ((org.openqa.selenium.JavascriptExecutor) driver).executeScript(
+        String zoom = (String) ((JavascriptExecutor) driver).executeScript(
                 "const el = document.querySelector('.score-screen');" +
                 "if (!el) return 'not-found';" +
                 "return window.getComputedStyle(el).zoom;");
@@ -280,10 +284,10 @@ public class ScoreScreenIT extends BaseIntegrationTest {
      */
     @Test
     void scoreTableCoversEnoughOfPortraitViewport() {
-        driver = TestUtils.getPortraitScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver);
+        driver = getPortraitScoreDriver(sessionId);
+        waitUntilScoreLoaded(driver);
 
-        boolean coversViewport = (boolean) ((org.openqa.selenium.JavascriptExecutor) driver).executeScript(
+        boolean coversViewport = (boolean) ((JavascriptExecutor) driver).executeScript(
                 "const table = document.querySelector('.score-table');" +
                 "if (!table) return false;" +
                 "const rect = table.getBoundingClientRect();" +
@@ -300,20 +304,20 @@ public class ScoreScreenIT extends BaseIntegrationTest {
      */
     @Test
     void winnerModalIsVisibleInPortraitMode() {
-        driver = TestUtils.getPortraitScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver);
-        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver, 10);
+        driver = getPortraitScoreDriver(sessionId);
+        waitUntilScoreLoaded(driver);
+        waitUntilWinnerModalVisible(driver, 10);
 
-        assertTrue(ScoreInteractionHelper.isWinnerModalVisible(driver),
+        assertTrue(isWinnerModalVisible(driver),
                 "Winner modal must be visible in portrait mode");
-        assertEquals(3, ScoreInteractionHelper.getModalButtonCount(driver),
+        assertEquals(3, getModalButtonCount(driver),
                 "Winner modal must still show all 3 buttons in portrait mode");
 
         // Verify the modal is interactive: clicking View Scores works in portrait too
-        ScoreInteractionHelper.clickViewScoresButton(driver);
-        assertFalse(ScoreInteractionHelper.isWinnerModalVisible(driver),
+        clickViewScoresButton(driver);
+        assertFalse(isWinnerModalVisible(driver),
                 "View Scores must dismiss the modal in portrait mode");
-        assertTrue(ScoreInteractionHelper.isActionBarVisible(driver),
+        assertTrue(isActionBarVisible(driver),
                 "Action bar must appear in portrait mode after dismissing modal");
     }
 
@@ -326,12 +330,12 @@ public class ScoreScreenIT extends BaseIntegrationTest {
      */
     @Test
     void scoreScreenPortrait_playerNamesAreVisible() {
-        driver = TestUtils.getPortraitScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver);
-        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver, 10);
-        ScoreInteractionHelper.clickViewScoresButton(driver);
+        driver = getPortraitScoreDriver(sessionId);
+        waitUntilScoreLoaded(driver);
+        waitUntilWinnerModalVisible(driver, 10);
+        clickViewScoresButton(driver);
 
-        boolean namesVisible = (boolean) ((org.openqa.selenium.JavascriptExecutor) driver).executeScript(
+        boolean namesVisible = (boolean) ((JavascriptExecutor) driver).executeScript(
                 "const names = document.querySelectorAll('.player-name');" +
                 "if (!names.length) return false;" +
                 "for (const el of names) {" +
@@ -353,12 +357,12 @@ public class ScoreScreenIT extends BaseIntegrationTest {
      */
     @Test
     void scoreScreenPortrait_totalColumnIsWithinViewport() {
-        driver = TestUtils.getPortraitScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver);
-        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver, 10);
-        ScoreInteractionHelper.clickViewScoresButton(driver);
+        driver = getPortraitScoreDriver(sessionId);
+        waitUntilScoreLoaded(driver);
+        waitUntilWinnerModalVisible(driver, 10);
+        clickViewScoresButton(driver);
 
-        boolean totalsVisible = (boolean) ((org.openqa.selenium.JavascriptExecutor) driver).executeScript(
+        boolean totalsVisible = (boolean) ((JavascriptExecutor) driver).executeScript(
                 "const totals = document.querySelectorAll('.total-value');" +
                 "if (!totals.length) return false;" +
                 "for (const el of totals) {" +
@@ -380,10 +384,10 @@ public class ScoreScreenIT extends BaseIntegrationTest {
      */
     @Test
     void scoreScreenPortrait_noHorizontalOverflow() {
-        driver = TestUtils.getPortraitScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver);
+        driver = getPortraitScoreDriver(sessionId);
+        waitUntilScoreLoaded(driver);
 
-        boolean noOverflow = (boolean) ((org.openqa.selenium.JavascriptExecutor) driver).executeScript(
+        boolean noOverflow = (boolean) ((JavascriptExecutor) driver).executeScript(
                 // document.documentElement.scrollWidth > window.innerWidth means horizontal scrollbar
                 "return document.documentElement.scrollWidth <= window.innerWidth + 1;");
 

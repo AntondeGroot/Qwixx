@@ -287,6 +287,31 @@ public class StandardTurnRules implements TurnRules {
         UUID playerId  = action.playerId();
         boolean isActive = playerId.equals(turn.activePlayerId());
 
+        // Special case: active player reverts their EndTurn while passives are still acting
+        // (or after being re-added to the passive queue for a final-look notification).
+        // Just flip back to ACTIVE_MOVE — the undo buffer, activeTurnState, and pending declarations
+        // are all still intact, so the player can continue from where they left off.
+        if (isActive && turn.phase() == TurnPhase.PASSIVE_MOVE) {
+            turn.passivePlayerQueue().remove(playerId); // in case they were re-added for final look
+            turn.setPhase(TurnPhase.ACTIVE_MOVE);
+            return;
+        }
+
+        // Special case: passive player reverts their EndTurn while the turn is still active.
+        // Passives may EndTurn during ACTIVE_MOVE (before the active player passes) or during
+        // PASSIVE_MOVE; in both cases they leave the queue. Restore from the turn-start snapshot
+        // (the undo buffer was cleared on EndTurn) and put them back in the passive queue.
+        if (!isActive
+                && (turn.phase() == TurnPhase.ACTIVE_MOVE || turn.phase() == TurnPhase.PASSIVE_MOVE)
+                && !turn.passivePlayerQueue().contains(playerId)) {
+            restoreToSnapshot(state, turn, playerId);
+            cancelPlayerClosingIntents(state, playerId);
+            turn.undoBuffer().remove(playerId);
+            turn.passivesActed().remove(playerId);
+            turn.passivePlayerQueue().add(playerId);
+            return;
+        }
+
         restoreToSnapshot(state, turn, playerId);
         cancelPlayerClosingIntents(state, playerId);
 
@@ -345,10 +370,52 @@ public class StandardTurnRules implements TurnRules {
             throw new IllegalMoveException("player not in passive queue");
         autoDetectClosingIntent(state, turn, playerId);
         turn.passivePlayerQueue().remove(playerId);
-        if (turn.passivePlayerQueue().isEmpty()) evaluate(state);
+        if (turn.passivePlayerQueue().isEmpty()) {
+            UUID activeId = turn.activePlayerId();
+            if (playerId.equals(activeId)) {
+                // The active player was re-queued for a final look and is now passing.
+                // Run evaluate directly — no further re-check.
+                evaluate(state);
+            } else {
+                // Before evaluating, check whether the active player could still claim any of the
+                // newly declared rows (not yet crossed the closing cell, but enough crosses to qualify).
+                // If so, re-add them to the passive queue so they can revert (RESET_TURN) or proceed (PASS).
+                boolean activeCouldLock = state.pendingClosures().entrySet().stream()
+                        .anyMatch(e -> !e.getValue().equals(activeId)
+                                       && couldActivePlayerLockRow(state, activeId, e.getKey()));
+                if (activeCouldLock) {
+                    turn.passivePlayerQueue().add(activeId);
+                    // Don't evaluate yet — active player must respond to the notification first.
+                } else {
+                    evaluate(state);
+                }
+            }
+        }
         // Clear after evaluate so that canCrossLock can still read this player's pending
         // crosses when deciding whether non-declarant players qualify for the lock cross.
         turn.undoBuffer().remove(playerId);
+    }
+
+    /**
+     * Returns true when the active player could lock {@code rowIndex} IF they crossed the
+     * closing cell this turn (i.e. they have enough permanent+pending crosses to meet
+     * minCrosses but have not yet crossed any closing cell for this row).
+     * Used to decide whether to delay EVALUATE and give the active player a last look.
+     */
+    private boolean couldActivePlayerLockRow(GameState state, UUID activeId, int rowIndex) {
+        if (rowIsNotLockable(state, activeId, rowIndex)) return false;
+        // Don't re-queue if the active player already declared this row themselves.
+        if (activeId.equals(state.pendingClosures().get(rowIndex))) return false;
+        LockCell lock = state.sheetLayouts().get(activeId).rows().get(rowIndex).lock();
+        Set<String> allCrosses = allCrossesForPlayer(state, activeId, rowIndex);
+        // If the player already has the LAST closing cell crossed they already qualify at
+        // evaluate — re-queuing would interrupt the game without benefit.
+        // (Earlier closing cells like Longo "15" may be crossed from a prior turn; in that
+        // case the player might still want to also cross "16" this turn, so we allow re-queue.)
+        String lastClosingCell = lock.closingCells().get(lock.closingCells().size() - 1);
+        if (allCrosses.contains(lastClosingCell)) return false;
+        // Re-queue if crossing the last closing cell would give them enough crosses to qualify.
+        return allCrosses.size() + 1 >= lock.minCrosses();
     }
 
     // Auto-detect closing intent for a player who crossed the LAST closing cell this turn.

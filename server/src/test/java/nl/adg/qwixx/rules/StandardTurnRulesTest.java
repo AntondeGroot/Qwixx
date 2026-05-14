@@ -1379,6 +1379,122 @@ class StandardTurnRulesTest {
     }
 
     @Test
+    void resetTurn_fromPassiveMove_revertsToActiveMove_keepsPendingCrosses() {
+        // When the active player EndTurns (→ PASSIVE_MOVE) and then sees a passive declare a
+        // row they could also close, RESET_TURN must revert the phase to ACTIVE_MOVE while
+        // preserving the undo buffer and activeTurnState so they can make additional moves.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        crossEnoughForLock(state, p1, 0);
+
+        // p1 crosses the closing cell → auto-declares row-0 intent
+        rules.apply(state, firstCrossAction(state, p1));
+        String closingCellId = state.sheetLayouts().get(p1).rows().get(0)
+                .lock().closingCells().get(0);
+        state.turnState().undoBuffer()
+                .computeIfAbsent(p1, k -> new HashMap<>())
+                .computeIfAbsent(0, k -> new HashSet<>())
+                .add(closingCellId);
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+
+        // p1 EndTurns → PASSIVE_MOVE
+        rules.apply(state, new EndTurnAction(p1));
+        assertEquals(TurnPhase.PASSIVE_MOVE, state.turnState().phase());
+        assertFalse(state.turnState().undoBuffer().getOrDefault(p1, Map.of()).isEmpty(),
+                "Undo buffer must still have p1's pending cross after EndTurn");
+
+        // p1 sends RESET_TURN from PASSIVE_MOVE → phase reverts to ACTIVE_MOVE
+        rules.apply(state, new ResetTurnAction(p1));
+
+        assertEquals(TurnPhase.ACTIVE_MOVE, state.turnState().phase(),
+                "Phase must revert to ACTIVE_MOVE after RESET_TURN from PASSIVE_MOVE");
+        assertFalse(state.turnState().undoBuffer().getOrDefault(p1, Map.of()).isEmpty(),
+                "Undo buffer must be preserved after reverting EndTurn");
+        ActiveTurnState ats = state.turnState().activeTurnState();
+        assertTrue(ats.whiteWhiteUsed() || ats.colorDieUsed(),
+                "activeTurnState must be preserved (at least one die was used before EndTurn)");
+    }
+
+    @Test
+    void resetTurn_passive_fromPassiveMove_revertsToPassiveQueue_undoesCross() {
+        // Passive player EndTurns (PASSIVE_MOVE), then sends RESET_TURN.
+        // Must be re-added to the passive queue with their cross reverted via the turn-start snapshot.
+        GameState state = stateAfterRoll(p1, p1, p2, p3);
+
+        rules.apply(state, firstCrossAction(state, p2)); // p2 makes a cross
+        rules.apply(state, new EndTurnAction(p2));       // p2 EndTurns — leaves queue
+
+        assertEquals(List.of(p3), state.turnState().passivePlayerQueue(),
+                "Only p3 must remain in passive queue after p2 EndTurns");
+
+        int crossedBefore = state.boardState().sheetProgress().get(p2)
+                .rowStates().values().stream().mapToInt(r -> r.crossedCells().size()).sum();
+        assertTrue(crossedBefore > 0, "p2 must have at least one cross before revert");
+
+        // p2 reverts their EndTurn
+        rules.apply(state, new ResetTurnAction(p2));
+
+        assertTrue(state.turnState().passivePlayerQueue().contains(p2),
+                "p2 must be back in the passive queue after reverting EndTurn");
+        int crossedAfter = state.boardState().sheetProgress().get(p2)
+                .rowStates().values().stream().mapToInt(r -> r.crossedCells().size()).sum();
+        assertEquals(0, crossedAfter,
+                "p2's cross must be undone (restored to turn-start snapshot)");
+    }
+
+    @Test
+    void activePlayerReaddedToQueue_whenLastPassiveDeclareRowTheyCouldLock() {
+        // When the last passive EndTurns and declares a row the active player could also lock
+        // (enough crosses, closing cell not yet crossed), the active player is re-added to
+        // the passive queue so they can revert (Change) or proceed (Pass → evaluate).
+        GameState state = stateAfterRoll(p1, p1, p2);
+
+        // p1 has enough crosses but NOT the closing cell — they could lock if given a chance
+        crossEnoughForLockWithoutClosingCell(state, p1, 0);
+        // p2 has the closing cell so they can declare
+        crossEnoughForLock(state, p2, 0);
+
+        // p1 EndTurns (used a die) — goes to PASSIVE_MOVE
+        rules.apply(state, firstCrossAction(state, p1));
+        rules.apply(state, new EndTurnAction(p1));
+        assertEquals(TurnPhase.PASSIVE_MOVE, state.turnState().phase());
+
+        // p2 (passive) crosses the closing cell and EndTurns — last passive
+        rules.apply(state, new DeclareLockIntentAction(p2, 0));
+        rules.apply(state, new EndTurnAction(p2));
+
+        // p1 should be re-added to passive queue instead of evaluate running
+        assertEquals(TurnPhase.PASSIVE_MOVE, state.turnState().phase(),
+                "Phase must stay PASSIVE_MOVE — active player gets a final look");
+        assertTrue(state.turnState().passivePlayerQueue().contains(p1),
+                "Active player (p1) must be re-added to passive queue for final look");
+        // Row must NOT be closed yet (evaluate has not run)
+        assertFalse(state.boardState().closedRows().containsKey(0),
+                "Row must not be closed yet — evaluate has not run");
+    }
+
+    @Test
+    void activePlayerProceedsWithoutReverts_passTriggersEvaluate() {
+        // When the active player is re-queued for a final look and sends PASS (without reverting),
+        // evaluate must run and close the row normally.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        crossEnoughForLockWithoutClosingCell(state, p1, 0);
+        crossEnoughForLock(state, p2, 0);
+
+        rules.apply(state, firstCrossAction(state, p1));
+        rules.apply(state, new EndTurnAction(p1));
+        rules.apply(state, new DeclareLockIntentAction(p2, 0));
+        rules.apply(state, new EndTurnAction(p2));
+
+        // p1 is re-queued — they send PASS (accept, don't change anything)
+        rules.apply(state, new EndTurnAction(p1)); // p1 passes from the final-look queue
+
+        assertEquals(TurnPhase.ROLL, state.turnState().phase(),
+                "Phase must advance to ROLL after evaluate");
+        assertTrue(state.boardState().closedRows().containsKey(0),
+                "Row must be closed after p1 passes from final-look queue");
+    }
+
+    @Test
     void rollInWrongPhaseIsRejected() {
         GameState state = stateAfterRoll(p1, p1, p2);  // already in ACTIVE_MOVE
         assertThrows(IllegalMoveException.class, () -> rules.apply(state, new RollAction(p1)));

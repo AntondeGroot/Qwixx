@@ -29,7 +29,7 @@
             </div>
           }
         </div>
-        @if (hasPendingCross) {
+        @if (hasPendingCross && confirmEndsRound) {
           <div class="separator"></div>
           <p class="confirm-question">{{ 'rowClosure.confirmQuestion' | translate }}</p>
         }
@@ -40,7 +40,7 @@
             {{ 'rowClosure.changeButton' | translate }}
           </button>
           <button class="btn btn-primary btn-notification-ok" (click)="onConfirm()">
-            {{ 'rowClosure.confirmButton' | translate }}
+            {{ (confirmEndsRound ? 'rowClosure.confirmButton' : 'rowClosure.okButton') | translate }}
           </button>
         } @else {
           <button class="btn btn-primary btn-notification-ok" (click)="onConfirm()">

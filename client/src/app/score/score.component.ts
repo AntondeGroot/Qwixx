@@ -1,9 +1,8 @@
 import { afterEveryRender, Component, computed, DestroyRef, ElementRef, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../environments/environment';
-import { firstValueFrom, interval, EMPTY, of } from 'rxjs';
-import { catchError, switchMap } from 'rxjs/operators';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { firstValueFrom, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { TranslateModule } from '@ngx-translate/core';
 import { GamesService } from '../../generated/api/games.service';
 import { GamestatesService } from '../../generated/api/gamestates.service';
@@ -254,7 +253,7 @@ export class ScoreComponent implements OnInit {
       this.punishDone.set(true);
       this.allDone.set(true);
       this.showActionBar.set(true);
-      this.startRestartPoll();
+      this.startRestartSse();
     } catch {
       this.router.navigate(['/']);
     }
@@ -343,27 +342,27 @@ export class ScoreComponent implements OnInit {
 
       // After the winner modal appears, poll for a game restart so all players
       // are redirected automatically when any player starts a new game.
-      this.startRestartPoll();
+      this.startRestartSse();
 
     } catch {
       this.router.navigate(['/']);
     }
   }
 
-  // Polls the game state every 2 s. When another player triggers a restart
-  // the game transitions from FINISHED back to IN_PROGRESS (gameOver: false),
-  // and we navigate every watcher back to their game board automatically.
-  private startRestartPoll(): void {
-    interval(2000).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      switchMap(() =>
-        this.gameStatesService.getGameState(this.sessionId).pipe(catchError(() => EMPTY))
-      ),
-    ).subscribe(state => {
+  // Subscribes to the SSE stream. When another player triggers a restart the
+  // server pushes a state with gameOver: false, and we navigate automatically.
+  private startRestartSse(): void {
+    const es = new EventSource(
+      `${environment.apiBaseUrl}/gamestates/${this.sessionId}/stream`
+    );
+    this.destroyRef.onDestroy(() => es.close());
+    es.onmessage = (event: MessageEvent) => {
+      const state = JSON.parse(event.data);
       if (!state.gameOver) {
+        es.close();
         this.router.navigate(['/game', this.sessionId, this.playerId]);
       }
-    });
+    };
   }
 
   private animate(duration: number, onTick: (eased: number) => void): Promise<void> {

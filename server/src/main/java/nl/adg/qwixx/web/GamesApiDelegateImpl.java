@@ -16,6 +16,7 @@ import nl.adg.qwixx.generated.model.GameStatus;
 import nl.adg.qwixx.generated.model.NewGameRequest;
 import nl.adg.qwixx.generated.model.RestartGameRequest;
 import nl.adg.qwixx.generated.model.ScoreCard;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,9 @@ import java.util.UUID;
 
 @Service
 public class GamesApiDelegateImpl implements GamesApiDelegate {
+
+    @Autowired
+    private SseEmitterRegistry sseRegistry;
 
     @Override
     public ResponseEntity<CreateNewGame201Response> createNewGame(NewGameRequest req) {
@@ -58,6 +62,7 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
         } catch (IllegalStateException ex) {
             throw new GameAlreadyStartedException(sessionId);
         }
+        sseRegistry.emit(sessionId, session.currentState(), session);
         return ResponseEntity.ok().build();
     }
 
@@ -74,6 +79,7 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
         } catch (IllegalStateException ex) {
             throw new GameNotFinishedException(sessionId);
         }
+        sseRegistry.emit(sessionId, session.currentState(), session);
         return ResponseEntity.ok().build();
     }
 

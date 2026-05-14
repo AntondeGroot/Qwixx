@@ -21,6 +21,7 @@ import nl.adg.qwixx.generated.model.MoveResponse;
 import nl.adg.qwixx.generated.model.MoveResult;
 import nl.adg.qwixx.rules.IllegalMoveException;
 import nl.adg.qwixx.state.GameState;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +32,9 @@ import java.util.UUID;
 
 @Service
 public class MovesApiDelegateImpl implements MovesApiDelegate {
+
+    @Autowired
+    private SseEmitterRegistry sseRegistry;
 
     @Override
     public ResponseEntity<MoveResponse> makeMove(String sessionId, String playerId,
@@ -43,6 +47,7 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
                 session.currentState().boardState().closedRows());
 
         GameState newState = session.applyAction(action);
+        sseRegistry.emit(sessionId, newState, session);
 
         MoveResult result = newState.gameOver() ? MoveResult.GAME_OVER : MoveResult.ACCEPTED;
 

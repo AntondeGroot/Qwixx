@@ -18,6 +18,8 @@ export interface RowClosureRequest {
 export class RowClosureModalComponent {
   @Input() requests: RowClosureRequest[] = [];
   @Input() hasPendingCross = false;
+  // When false (active player), the confirm button just dismisses so the player can continue their turn.
+  @Input() confirmEndsRound = false;
   @Output() confirmSelection = new EventEmitter<void>();
   @Output() changeSelection = new EventEmitter<void>();
 

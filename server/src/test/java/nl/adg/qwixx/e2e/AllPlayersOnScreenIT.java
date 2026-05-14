@@ -1,6 +1,5 @@
 package nl.adg.qwixx.e2e;
 
-import nl.adg.qwixx.e2e.helpers.ScoreInteractionHelper;
 import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
 import nl.adg.qwixx.e2e.utils.TestUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -10,6 +9,8 @@ import org.openqa.selenium.WebDriver;
 
 import java.util.List;
 
+import static nl.adg.qwixx.e2e.helpers.ScoreInteractionHelper.*;
+import static nl.adg.qwixx.e2e.utils.TestUtils.waitUntilScoreLoaded;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -78,15 +79,21 @@ public class AllPlayersOnScreenIT extends BaseIntegrationTest {
      */
     @Test
     void allFivePlayersAreVisibleDuringScoreAnimation() {
+        // GIVEN
         driver = TestUtils.getPortraitScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver);
 
-        assertTrue(ScoreInteractionHelper.areAllPlayerRowsWithinViewport(driver),
+        // WHEN
+        waitUntilScoreLoaded(driver);
+
+        // THEN
+        assertTrue(areAllPlayerRowsWithinViewport(driver),
                 "All 5 player rows must be within the viewport at the start of the score animation");
 
-        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver, 30);
+        // WHEN
+        waitUntilWinnerModalVisible(driver, 30);
 
-        assertTrue(ScoreInteractionHelper.areAllPlayerRowsWithinViewport(driver),
+        // THEN
+        assertTrue(areAllPlayerRowsWithinViewport(driver),
                 "All 5 player rows must be within the viewport once the animation has completed");
     }
 
@@ -98,12 +105,16 @@ public class AllPlayersOnScreenIT extends BaseIntegrationTest {
      */
     @Test
     void allFivePlayersAreVisibleAfterViewScores() {
+        // GIVEN
         driver = TestUtils.getPortraitScoreDriver(sessionId);
-        TestUtils.waitUntilScoreLoaded(driver);
-        ScoreInteractionHelper.waitUntilWinnerModalVisible(driver, 30);
-        ScoreInteractionHelper.clickViewScoresButton(driver);
 
-        assertTrue(ScoreInteractionHelper.areAllPlayerRowsWithinViewport(driver),
+        // WHEN
+        waitUntilScoreLoaded(driver);
+        waitUntilWinnerModalVisible(driver, 30);
+        clickViewScoresButton(driver);
+
+        // THEN
+        assertTrue(areAllPlayerRowsWithinViewport(driver),
                 "All 5 player rows must be within the viewport after clicking 'View Scores'");
     }
 }

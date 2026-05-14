@@ -1,8 +1,6 @@
 package nl.adg.qwixx.e2e;
 
-import nl.adg.qwixx.e2e.helpers.BoardInteractionHelper;
 import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
-import nl.adg.qwixx.e2e.utils.TestUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,6 +9,9 @@ import org.openqa.selenium.WebDriver;
 
 import java.util.List;
 
+import static nl.adg.qwixx.e2e.helpers.BoardInteractionHelper.getCrossedCellCount;
+import static nl.adg.qwixx.e2e.utils.TestUtils.getDriver;
+import static nl.adg.qwixx.e2e.utils.TestUtils.waitUntilBoardLoaded;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class GameBoardE2ETest extends BaseIntegrationTest {
@@ -30,8 +31,8 @@ public class GameBoardE2ETest extends BaseIntegrationTest {
         api.roll(sessionId, playerIds.get(0));
         api.setDice(sessionId, 1, 1);
 
-        driver = TestUtils.getDriver(sessionId, playerIds.get(0));
-        TestUtils.waitUntilBoardLoaded(driver);
+        driver = getDriver(sessionId, playerIds.get(0));
+        waitUntilBoardLoaded(driver);
     }
 
     @AfterEach
@@ -47,7 +48,7 @@ public class GameBoardE2ETest extends BaseIntegrationTest {
 
     @Test
     void player0HasFiveCrossesInBlueRow() {
-        int crossed = BoardInteractionHelper.getCrossedCellCount(driver, "BLUE");
+        int crossed = getCrossedCellCount(driver, "BLUE");
         assertEquals(5, crossed, "Player 0 should see exactly 5 crossed cells in BLUE row");
     }
 

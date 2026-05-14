@@ -1,6 +1,5 @@
 package nl.adg.qwixx.e2e;
 
-import nl.adg.qwixx.e2e.helpers.BoardInteractionHelper;
 import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
 import nl.adg.qwixx.e2e.utils.TestUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -12,6 +11,8 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import java.time.Duration;
 import java.util.List;
 
+import static nl.adg.qwixx.e2e.helpers.BoardInteractionHelper.*;
+import static nl.adg.qwixx.e2e.utils.TestUtils.waitUntilBoardLoaded;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -70,35 +71,35 @@ public class DoubleRowCloseIT extends BaseIntegrationTest {
     void clickingRed12AutoCrossesRedLock() {
         driver0 = TestUtils.getDriver(sessionId, pids.get(0));
         driver1 = TestUtils.getDriver(sessionId, pids.get(1));
-        TestUtils.waitUntilBoardLoaded(driver0);
-        TestUtils.waitUntilBoardLoaded(driver1);
+        waitUntilBoardLoaded(driver0);
+        waitUntilBoardLoaded(driver1);
 
-        assertFalse(BoardInteractionHelper.isLockButtonCrossed(driver0, "RED"),
+        assertFalse(isLockButtonCrossed(driver0, "RED"),
                 "RED lock must not be crossed before clicking RED-12");
 
-        BoardInteractionHelper.clickCellByValue(driver0, "RED", "12");
+        clickCellByValue(driver0, "RED", "12");
 
         new WebDriverWait(driver0, Duration.ofSeconds(5))
-                .until(d -> BoardInteractionHelper.isLockButtonCrossed(d, "RED"));
-        assertTrue(BoardInteractionHelper.isLockButtonCrossed(driver0, "RED"),
+                .until(d -> isLockButtonCrossed(d, "RED"));
+        assertTrue(isLockButtonCrossed(driver0, "RED"),
                 "RED lock cross must appear after clicking RED-12");
-        assertFalse(BoardInteractionHelper.isModalVisible(driver0),
+        assertFalse(isModalVisible(driver0),
                 "Declaring player must NOT see the row-closure modal");
 
         // Player1 sees the notification modal and dismisses it (OK = notification only, not EndTurn).
-        BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
-        assertTrue(BoardInteractionHelper.isModalVisible(driver1),
+        waitUntilModalVisible(driver1, 8);
+        assertTrue(isModalVisible(driver1),
                 "Player1 must see the row-closure modal");
-        BoardInteractionHelper.clickModalConfirmButton(driver1); // dismiss notification
-        BoardInteractionHelper.waitUntilPassButtonVisible(driver1, 5);
-        BoardInteractionHelper.clickPassButton(driver1); // player1 EndTurns via board pass button
+        clickModalConfirmButton(driver1); // dismiss notification
+        waitUntilPassButtonVisible(driver1, 5);
+        clickPassButton(driver1); // player1 EndTurns via board pass button
 
         // player0 EndTurns → passive queue empty → EVALUATE → RED closes.
-        BoardInteractionHelper.waitUntilPassButtonVisible(driver0, 5);
-        BoardInteractionHelper.clickPassButton(driver0);
+        waitUntilPassButtonVisible(driver0, 5);
+        clickPassButton(driver0);
         new WebDriverWait(driver0, Duration.ofSeconds(8))
-                .until(d -> BoardInteractionHelper.isRowClosed(d, "RED"));
-        assertTrue(BoardInteractionHelper.isRowClosed(driver0, "RED"),
+                .until(d -> isRowClosed(d, "RED"));
+        assertTrue(isRowClosed(driver0, "RED"),
                 "RED must be closed after EVALUATE");
     }
 
@@ -107,24 +108,24 @@ public class DoubleRowCloseIT extends BaseIntegrationTest {
     @Test
     void yellow12IsClickableAndCrossesSecondLockAfterRed12IsCrossed() {
         driver0 = TestUtils.getDriver(sessionId, pids.get(0));
-        TestUtils.waitUntilBoardLoaded(driver0);
+        waitUntilBoardLoaded(driver0);
 
-        BoardInteractionHelper.clickCellByValue(driver0, "RED", "12");
+        clickCellByValue(driver0, "RED", "12");
         new WebDriverWait(driver0, Duration.ofSeconds(5))
-                .until(d -> BoardInteractionHelper.isLockButtonCrossed(d, "RED"));
+                .until(d -> isLockButtonCrossed(d, "RED"));
 
         // YELLOW "12" must have the .clickable CSS class (white+yellow die = 6+6 = 12)
-        assertTrue(BoardInteractionHelper.isCellClickable(driver0, "YELLOW", "12"),
+        assertTrue(isCellClickable(driver0, "YELLOW", "12"),
                 "YELLOW-12 must be shown as clickable (white+yellow=12) "
                 + "even while RED lock intent is pending");
 
         // Clicking YELLOW "12" must also cross the YELLOW lock
-        BoardInteractionHelper.clickCellByValue(driver0, "YELLOW", "12");
+        clickCellByValue(driver0, "YELLOW", "12");
         new WebDriverWait(driver0, Duration.ofSeconds(5))
-                .until(d -> BoardInteractionHelper.isLockButtonCrossed(d, "YELLOW"));
-        assertTrue(BoardInteractionHelper.isLockButtonCrossed(driver0, "YELLOW"),
+                .until(d -> isLockButtonCrossed(d, "YELLOW"));
+        assertTrue(isLockButtonCrossed(driver0, "YELLOW"),
                 "YELLOW lock cross must appear after clicking YELLOW-12");
-        assertTrue(BoardInteractionHelper.isLockButtonCrossed(driver0, "RED"),
+        assertTrue(isLockButtonCrossed(driver0, "RED"),
                 "RED lock cross must still be visible after YELLOW-12 is clicked");
     }
 
@@ -133,25 +134,25 @@ public class DoubleRowCloseIT extends BaseIntegrationTest {
     @Test
     void clickingYellow12AfterRed12AlsoCrossesYellowLock() {
         driver0 = TestUtils.getDriver(sessionId, pids.get(0));
-        TestUtils.waitUntilBoardLoaded(driver0);
+        waitUntilBoardLoaded(driver0);
 
         // Click RED "12" — RED lock cross appears (lock intent declared)
-        BoardInteractionHelper.clickCellByValue(driver0, "RED", "12");
+        clickCellByValue(driver0, "RED", "12");
         new WebDriverWait(driver0, Duration.ofSeconds(5))
-                .until(d -> BoardInteractionHelper.isLockButtonCrossed(d, "RED"));
+                .until(d -> isLockButtonCrossed(d, "RED"));
 
-        assertTrue(BoardInteractionHelper.isCellClickable(driver0, "YELLOW", "12"),
+        assertTrue(isCellClickable(driver0, "YELLOW", "12"),
                 "YELLOW-12 must be clickable after RED lock is pending");
 
         // Click YELLOW "12" — YELLOW lock cross must also appear
-        BoardInteractionHelper.clickCellByValue(driver0, "YELLOW", "12");
+        clickCellByValue(driver0, "YELLOW", "12");
         new WebDriverWait(driver0, Duration.ofSeconds(5))
-                .until(d -> BoardInteractionHelper.isLockButtonCrossed(d, "RED")
-                         && BoardInteractionHelper.isLockButtonCrossed(d, "YELLOW"));
+                .until(d -> isLockButtonCrossed(d, "RED")
+                         && isLockButtonCrossed(d, "YELLOW"));
 
-        assertTrue(BoardInteractionHelper.isLockButtonCrossed(driver0, "RED"),
+        assertTrue(isLockButtonCrossed(driver0, "RED"),
                 "RED lock cross must still be visible after YELLOW-12 is clicked");
-        assertTrue(BoardInteractionHelper.isLockButtonCrossed(driver0, "YELLOW"),
+        assertTrue(isLockButtonCrossed(driver0, "YELLOW"),
                 "YELLOW lock cross must appear after clicking YELLOW-12");
     }
 
@@ -169,37 +170,37 @@ public class DoubleRowCloseIT extends BaseIntegrationTest {
     void clickingBothClosingCellsAndConfirmingEndsGame() {
         driver0 = TestUtils.getDriver(sessionId, pids.get(0));
         driver1 = TestUtils.getDriver(sessionId, pids.get(1));
-        TestUtils.waitUntilBoardLoaded(driver0);
-        TestUtils.waitUntilBoardLoaded(driver1);
+        waitUntilBoardLoaded(driver0);
+        waitUntilBoardLoaded(driver1);
 
         // player0 crosses RED "12" (white+white) then YELLOW "12" (white+yellow).
         // Both lock intents are auto-declared by the client.
-        BoardInteractionHelper.clickCellByValue(driver0, "RED", "12");
+        clickCellByValue(driver0, "RED", "12");
         new WebDriverWait(driver0, Duration.ofSeconds(5))
-                .until(d -> BoardInteractionHelper.isLockButtonCrossed(d, "RED"));
+                .until(d -> isLockButtonCrossed(d, "RED"));
 
-        BoardInteractionHelper.clickCellByValue(driver0, "YELLOW", "12");
+        clickCellByValue(driver0, "YELLOW", "12");
         new WebDriverWait(driver0, Duration.ofSeconds(5))
-                .until(d -> BoardInteractionHelper.isLockButtonCrossed(d, "YELLOW"));
+                .until(d -> isLockButtonCrossed(d, "YELLOW"));
 
         // player0 EndTurns → phase transitions to PASSIVE_MOVE.
-        BoardInteractionHelper.waitUntilPassButtonVisible(driver0, 5);
-        BoardInteractionHelper.clickPassButton(driver0);
+        waitUntilPassButtonVisible(driver0, 5);
+        clickPassButton(driver0);
 
         // player1 sees the notification modal and dismisses it (OK = notification only, not EndTurn),
         // then EndTurns via the board pass button → passive queue empty → EVALUATE.
-        BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
-        BoardInteractionHelper.clickModalConfirmButton(driver1); // dismiss notification
-        BoardInteractionHelper.waitUntilPassButtonVisible(driver1, 5);
-        BoardInteractionHelper.clickPassButton(driver1); // player1 EndTurns → EVALUATE
+        waitUntilModalVisible(driver1, 8);
+        clickModalConfirmButton(driver1); // dismiss notification
+        waitUntilPassButtonVisible(driver1, 5);
+        clickPassButton(driver1); // player1 EndTurns → EVALUATE
 
         // Both rows close and the game ends.
         new WebDriverWait(driver0, Duration.ofSeconds(8))
-                .until(d -> BoardInteractionHelper.isRowClosed(d, "RED")
-                         && BoardInteractionHelper.isRowClosed(d, "YELLOW"));
-        assertTrue(BoardInteractionHelper.isRowClosed(driver0, "RED"),
+                .until(d -> isRowClosed(d, "RED")
+                         && isRowClosed(d, "YELLOW"));
+        assertTrue(isRowClosed(driver0, "RED"),
                 "RED must be closed after EVALUATE");
-        assertTrue(BoardInteractionHelper.isRowClosed(driver0, "YELLOW"),
+        assertTrue(isRowClosed(driver0, "YELLOW"),
                 "YELLOW must be closed after EVALUATE");
 
         // 2 rows locked → game over → both players navigate to score screen

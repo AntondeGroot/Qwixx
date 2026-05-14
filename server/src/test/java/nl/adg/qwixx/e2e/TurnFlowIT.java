@@ -1,8 +1,6 @@
 package nl.adg.qwixx.e2e;
 
-import nl.adg.qwixx.e2e.helpers.BoardInteractionHelper;
 import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
-import nl.adg.qwixx.e2e.utils.TestUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,6 +11,10 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
+import static nl.adg.qwixx.e2e.helpers.BoardInteractionHelper.clickCellByValue;
+import static nl.adg.qwixx.e2e.helpers.BoardInteractionHelper.getCrossedCellCount;
+import static nl.adg.qwixx.e2e.utils.TestUtils.getDriver;
+import static nl.adg.qwixx.e2e.utils.TestUtils.waitUntilBoardLoaded;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -80,15 +82,15 @@ public class TurnFlowIT extends BaseIntegrationTest {
         api.roll(sessionId, playerIds.get(0));
         api.setDice(sessionId, 1, 1); // white+white = 2 → RED "2" reachable
 
-        driver1 = TestUtils.getDriver(sessionId, playerIds.get(1));
-        TestUtils.waitUntilBoardLoaded(driver1);
+        driver1 = getDriver(sessionId, playerIds.get(1));
+        waitUntilBoardLoaded(driver1);
 
-        BoardInteractionHelper.clickCellByValue(driver1, "RED", "2");
+        clickCellByValue(driver1, "RED", "2");
 
         new WebDriverWait(driver1, Duration.ofSeconds(8))
-                .until(d -> BoardInteractionHelper.getCrossedCellCount(d, "RED") >= 1);
+                .until(d -> getCrossedCellCount(d, "RED") >= 1);
 
-        assertEquals(1, BoardInteractionHelper.getCrossedCellCount(driver1, "RED"),
+        assertEquals(1, getCrossedCellCount(driver1, "RED"),
                 "Passive player's board must show +1 cross in RED after clicking the white+white cell");
     }
 
@@ -159,15 +161,15 @@ public class TurnFlowIT extends BaseIntegrationTest {
 
         // Open player1's board — initial state already has phase=ACTIVE_MOVE + currentRoll,
         // so no dice animation fires and cells are clickable as soon as the board loads.
-        driver1 = TestUtils.getDriver(sessionId, playerIds.get(1));
-        TestUtils.waitUntilBoardLoaded(driver1);
+        driver1 = getDriver(sessionId, playerIds.get(1));
+        waitUntilBoardLoaded(driver1);
 
-        BoardInteractionHelper.clickCellByValue(driver1, "RED", "2");
+        clickCellByValue(driver1, "RED", "2");
 
         new WebDriverWait(driver1, Duration.ofSeconds(8))
-                .until(d -> BoardInteractionHelper.getCrossedCellCount(d, "RED") >= 1);
+                .until(d -> getCrossedCellCount(d, "RED") >= 1);
 
-        assertEquals(1, BoardInteractionHelper.getCrossedCellCount(driver1, "RED"),
+        assertEquals(1, getCrossedCellCount(driver1, "RED"),
                 "New active player (player1) must be able to cross RED '2' as the active player in the browser");
     }
 
@@ -215,15 +217,15 @@ public class TurnFlowIT extends BaseIntegrationTest {
         api.pass(sessionId, playerIds.get(0)); // → PASSIVE_MOVE
 
         // Open player1's board with state already at PASSIVE_MOVE (no animation)
-        driver1 = TestUtils.getDriver(sessionId, playerIds.get(1));
-        TestUtils.waitUntilBoardLoaded(driver1);
+        driver1 = getDriver(sessionId, playerIds.get(1));
+        waitUntilBoardLoaded(driver1);
 
-        BoardInteractionHelper.clickCellByValue(driver1, "RED", "2");
+        clickCellByValue(driver1, "RED", "2");
 
         new WebDriverWait(driver1, Duration.ofSeconds(8))
-                .until(d -> BoardInteractionHelper.getCrossedCellCount(d, "RED") >= 1);
+                .until(d -> getCrossedCellCount(d, "RED") >= 1);
 
-        assertEquals(1, BoardInteractionHelper.getCrossedCellCount(driver1, "RED"),
+        assertEquals(1, getCrossedCellCount(driver1, "RED"),
                 "Passive player's board must show +1 cross in RED after clicking in PASSIVE_MOVE phase");
     }
 

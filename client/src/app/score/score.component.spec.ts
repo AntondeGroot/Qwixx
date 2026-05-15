@@ -37,6 +37,38 @@ describe('ScoreComponent', () => {
     component.playerId  = 'player-1';
   });
 
+  describe('animationKey cleanup', () => {
+    const ANIMATION_KEY = 'qwixx_score_shown_session-1';
+
+    beforeEach(() => {
+      sessionStorage.setItem(ANIMATION_KEY, '1');
+    });
+
+    afterEach(() => {
+      sessionStorage.removeItem(ANIMATION_KEY);
+    });
+
+    it('newGame() removes the animation key so the next score screen replays the animation', () => {
+      component.newGame();
+      expect(sessionStorage.getItem(ANIMATION_KEY)).toBeNull();
+    });
+
+    it('SSE restart removes the animation key before navigating to the new game', () => {
+      const mockEventSource = {
+        close: vi.fn(),
+        onmessage: null as any,
+        onerror:   null as any,
+      };
+      vi.stubGlobal('EventSource', vi.fn().mockImplementation(function() { return mockEventSource; }));
+
+      (component as any).startRestartSse();
+      mockEventSource.onmessage({ data: JSON.stringify({ gameOver: false }) });
+
+      expect(sessionStorage.getItem(ANIMATION_KEY)).toBeNull();
+      vi.unstubAllGlobals();
+    });
+  });
+
   describe('leaveGame', () => {
     it('redirects to the lobby URL defined in environment, not to /settings', () => {
       let navigatedTo = '';

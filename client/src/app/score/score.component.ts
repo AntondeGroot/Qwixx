@@ -360,6 +360,7 @@ export class ScoreComponent implements OnInit {
       const state = JSON.parse(event.data);
       if (!state.gameOver) {
         es.close();
+        sessionStorage.removeItem(`qwixx_score_shown_${this.sessionId}`);
         this.router.navigate(['/game', this.sessionId, this.playerId]);
       }
     };
@@ -404,7 +405,7 @@ export class ScoreComponent implements OnInit {
 
   /** Navigate to settings in restart mode (preserving the current session). */
   newGame() {
-    // Store restart context so the settings component can pick it up.
+    sessionStorage.removeItem(`qwixx_score_shown_${this.sessionId}`);
     if (this.sessionId && this.playerId) {
       sessionStorage.setItem('qwixx_lobby_sid', this.sessionId);
       sessionStorage.setItem('qwixx_lobby_pid', this.playerId);

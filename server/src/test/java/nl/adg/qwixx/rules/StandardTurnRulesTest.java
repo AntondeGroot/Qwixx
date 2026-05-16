@@ -1379,10 +1379,11 @@ class StandardTurnRulesTest {
     }
 
     @Test
-    void resetTurn_fromPassiveMove_revertsToActiveMove_keepsPendingCrosses() {
+    void resetTurn_fromPassiveMove_revertsToActiveMove_clearsPendingCross() {
         // When the active player EndTurns (→ PASSIVE_MOVE) and then sees a passive declare a
-        // row they could also close, RESET_TURN must revert the phase to ACTIVE_MOVE while
-        // preserving the undo buffer and activeTurnState so they can make additional moves.
+        // row they could also close, RESET_TURN must revert the phase to ACTIVE_MOVE AND
+        // fully clear the pending cross — the player should be able to redo their move from
+        // scratch without having to click the crossed cell again to undo it.
         GameState state = stateAfterRoll(p1, p1, p2);
         crossEnoughForLock(state, p1, 0);
 
@@ -1407,11 +1408,14 @@ class StandardTurnRulesTest {
 
         assertEquals(TurnPhase.ACTIVE_MOVE, state.turnState().phase(),
                 "Phase must revert to ACTIVE_MOVE after RESET_TURN from PASSIVE_MOVE");
-        assertFalse(state.turnState().undoBuffer().getOrDefault(p1, Map.of()).isEmpty(),
-                "Undo buffer must be preserved after reverting EndTurn");
+        assertTrue(state.turnState().undoBuffer().getOrDefault(p1, Map.of()).isEmpty(),
+                "Undo buffer must be cleared after RESET_TURN from PASSIVE_MOVE");
+        var rowState = state.boardState().sheetProgress().get(p1).rowStates().get(0);
+        assertFalse(rowState != null && rowState.crossedCells().contains(closingCellId),
+                "Closing cell must be uncrossed after RESET_TURN from PASSIVE_MOVE");
         ActiveTurnState ats = state.turnState().activeTurnState();
-        assertTrue(ats.whiteWhiteUsed() || ats.colorDieUsed(),
-                "activeTurnState must be preserved (at least one die was used before EndTurn)");
+        assertFalse(ats.whiteWhiteUsed(),  "whiteWhiteUsed must be reset");
+        assertFalse(ats.colorDieUsed(),    "colorDieUsed must be reset");
     }
 
     @Test

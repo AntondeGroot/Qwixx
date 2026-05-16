@@ -965,9 +965,18 @@ public class LockMechanismIT extends BaseIntegrationTest {
             assertFalse(isModalVisible(driver0),
                     "Modal must dismiss after player0 clicks Change");
 
-            // Player0 is back in ACTIVE_MOVE; RED cross still pending
+            // Player0 is back in ACTIVE_MOVE; RED cross was cleared (snapshot restored)
+            new WebDriverWait(driver0, Duration.ofSeconds(5))
+                    .until(d -> !isLockButtonCrossed(d, "RED"));
+            assertFalse(isLockButtonCrossed(driver0, "RED"),
+                    "RED lock cross must be gone after Change clears the pending cross");
+
+            // Player0 re-crosses RED "16" (activeTurnState was reset, so white+white is usable again)
+            clickCellByValue(driver0, "RED", "16");
+            new WebDriverWait(driver0, Duration.ofSeconds(5))
+                    .until(d -> isLockButtonCrossed(d, "RED"));
             assertTrue(isLockButtonCrossed(driver0, "RED"),
-                    "RED lock cross must still be there after reverting");
+                    "RED lock cross must reappear after player0 re-crosses RED '16'");
 
             // Player0 crosses YELLOW "16" (yellow colored die: white+yellow=16)
             clickCellByValue(driver0, "YELLOW", "16");
@@ -1114,9 +1123,18 @@ public class LockMechanismIT extends BaseIntegrationTest {
             assertFalse(isModalVisible(driver0),
                     "Modal must be dismissed after clicking Change");
 
-            // Player0 is back in ACTIVE_MOVE; RED "16" is still crossed (14 permanent + 1 pending)
+            // Player0 is back in ACTIVE_MOVE; RED cross was cleared (snapshot restored)
+            new WebDriverWait(driver0, Duration.ofSeconds(5))
+                    .until(d -> !isLockButtonCrossed(d, "RED"));
+            assertFalse(isLockButtonCrossed(driver0, "RED"),
+                    "RED lock cross must be gone after Change clears the pending cross");
+
+            // Player0 re-crosses RED "16" (activeTurnState was reset, so white+white is usable again)
+            clickCellByValue(driver0, "RED", "16");
+            new WebDriverWait(driver0, Duration.ofSeconds(5))
+                    .until(d -> isLockButtonCrossed(d, "RED"));
             assertTrue(isLockButtonCrossed(driver0, "RED"),
-                    "RED lock cross must still be there after reverting EndTurn");
+                    "RED lock cross must reappear after player0 re-crosses RED '16'");
 
             // Player0 crosses YELLOW "16" (color die: white+yellow=16)
             clickCellByValue(driver0, "YELLOW", "16");

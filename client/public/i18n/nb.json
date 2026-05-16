@@ -2,7 +2,7 @@
   "crosses": "Kryss",
   "points": "Poeng",
   "punishment": "Straffpoeng",
-  "yourTurn": "Din Tur",
+  "yourTurn": "Din tur",
   "playerTurn": "{{ name }}s tur",
   "confirm": "Bekreft",
   "roll": "Kast",
@@ -42,7 +42,9 @@
     "viewScores": "Se sluttresultat",
     "yourCard": "Ditt kort",
     "share": "Del resultater",
-    "download": "Last ned resultater"
+    "download": "Last ned resultater",
+    "tied": "uavgjort!",
+    "winners": "Vinnere"
   },
   "rowClosure": {
     "wantsToCloseThe": "vil lukke",

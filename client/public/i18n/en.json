@@ -42,7 +42,9 @@
     "viewScores": "View final scores",
     "yourCard": "Your card",
     "share": "Share scores",
-    "download": "Download scores"
+    "download": "Download scores",
+    "tied": "tied the game!",
+    "winners": "Winners"
   },
   "rowClosure": {
     "wantsToCloseThe": "wants to close the",

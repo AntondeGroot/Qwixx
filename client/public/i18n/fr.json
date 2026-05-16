@@ -42,7 +42,9 @@
     "viewScores": "Voir le score final",
     "yourCard": "Votre carte",
     "share": "Partager les scores",
-    "download": "Télécharger les scores"
+    "download": "Télécharger les scores",
+    "tied": "match nul !",
+    "winners": "Gagnants"
   },
   "rowClosure": {
     "wantsToCloseThe": "veut fermer la",

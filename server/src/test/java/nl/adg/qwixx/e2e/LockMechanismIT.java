@@ -734,6 +734,8 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // Active dismisses the notification via OK (no pending cross → notification-only)
         waitUntilModalVisible(driver0, 8);
         clickModalConfirmButton(driver0);
+        new WebDriverWait(driver0, Duration.ofSeconds(5))
+                .until(d -> !isModalVisible(d));
         assertFalse(isModalVisible(driver0),
                 "Modal must be dismissed after active player clicks OK");
 
@@ -785,6 +787,8 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // Active has a pending cross → modal shows "Change" button
         waitUntilModalVisible(driver0, 8);
         clickModalChangeButton(driver0); // → RESET_TURN
+        new WebDriverWait(driver0, Duration.ofSeconds(5))
+                .until(d -> !isModalVisible(d));
         assertFalse(isModalVisible(driver0),
                 "Modal must be dismissed after active player clicks Change");
 
@@ -817,6 +821,8 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // Active clicks OK → modal dismisses, active still in ACTIVE_MOVE with pending RED cross
         waitUntilModalVisible(driver0, 8);
         clickModalConfirmButton(driver0); // OK = dismiss, NOT EndTurn
+        new WebDriverWait(driver0, Duration.ofSeconds(5))
+                .until(d -> !isModalVisible(d));
         assertFalse(isModalVisible(driver0),
                 "Modal must be gone after active clicks OK");
 
@@ -954,6 +960,8 @@ public class LockMechanismIT extends BaseIntegrationTest {
 
             // Player0 clicks Change → RESET_TURN → back to ACTIVE_MOVE
             clickModalChangeButton(driver0);
+            new WebDriverWait(driver0, Duration.ofSeconds(5))
+                    .until(d -> !isModalVisible(d));
             assertFalse(isModalVisible(driver0),
                     "Modal must dismiss after player0 clicks Change");
 
@@ -1101,6 +1109,8 @@ public class LockMechanismIT extends BaseIntegrationTest {
 
             // Player0 clicks Change → RESET_TURN reverts to ACTIVE_MOVE
             clickModalChangeButton(driver0);
+            new WebDriverWait(driver0, Duration.ofSeconds(5))
+                    .until(d -> !isModalVisible(d));
             assertFalse(isModalVisible(driver0),
                     "Modal must be dismissed after clicking Change");
 
@@ -1200,6 +1210,8 @@ public class LockMechanismIT extends BaseIntegrationTest {
 
             // Player0 clicks OK — dismisses the notification WITHOUT ending their turn
             clickModalConfirmButton(driver0);
+            new WebDriverWait(driver0, Duration.ofSeconds(5))
+                    .until(d -> !isModalVisible(d));
             assertFalse(isModalVisible(driver0),
                     "Modal must be dismissed after player0 clicks OK");
 
@@ -1296,6 +1308,8 @@ public class LockMechanismIT extends BaseIntegrationTest {
 
             // Player1 clicks Change → RESET_TURN reverts their EndTurn
             clickModalChangeButton(driver1);
+            new WebDriverWait(driver1, Duration.ofSeconds(5))
+                    .until(d -> !isModalVisible(d));
             assertFalse(isModalVisible(driver1),
                     "Modal must dismiss after player1 clicks Change");
 
@@ -1418,6 +1432,8 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // Player1 sees notification modal and dismisses it (OK = notification only)
         waitUntilModalVisible(driver1, 8);
         clickModalConfirmButton(driver1);
+        new WebDriverWait(driver1, Duration.ofSeconds(5))
+                .until(d -> !isModalVisible(d));
         assertFalse(isModalVisible(driver1),
                 "Modal must be gone after player1 dismisses");
         waitUntilPassButtonVisible(driver1, 5);

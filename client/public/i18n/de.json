@@ -40,7 +40,9 @@
     "newGame": "Neues Spiel",
     "leaveGame": "Spiel verlassen",
     "viewScores": "Endstand anzeigen",
-    "yourCard": "Deine Karte"
+    "yourCard": "Deine Karte",
+    "share": "Ergebnis teilen",
+    "download": "Ergebnis herunterladen"
   },
   "rowClosure": {
     "wantsToCloseThe": "möchte die",

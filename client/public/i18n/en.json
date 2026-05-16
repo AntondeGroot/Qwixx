@@ -40,7 +40,9 @@
     "newGame": "New game",
     "leaveGame": "Leave game",
     "viewScores": "View final scores",
-    "yourCard": "Your card"
+    "yourCard": "Your card",
+    "share": "Share scores",
+    "download": "Download scores"
   },
   "rowClosure": {
     "wantsToCloseThe": "wants to close the",

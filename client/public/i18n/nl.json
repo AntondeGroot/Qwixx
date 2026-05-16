@@ -40,7 +40,9 @@
     "newGame": "Nieuw spel",
     "leaveGame": "Spel verlaten",
     "viewScores": "Eindstand bekijken",
-    "yourCard": "Jouw kaart"
+    "yourCard": "Jouw kaart",
+    "share": "Scores delen",
+    "download": "Scores downloaden"
   },
   "rowClosure": {
     "wantsToCloseThe": "wil de",

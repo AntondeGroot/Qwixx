@@ -187,8 +187,8 @@ public class ScoreScreenIT extends BaseIntegrationTest {
         waitUntilWinnerModalVisible(driver, 10);
         clickViewScoresButton(driver);
 
-        assertEquals(2, getActionBarButtonCount(driver),
-                "Action bar must have exactly 2 buttons: New Game and Leave Game");
+        assertEquals(3, getActionBarButtonCount(driver),
+                "Action bar must have exactly 3 buttons: New Game, Leave Game and Share Scores");
     }
 
     @Test

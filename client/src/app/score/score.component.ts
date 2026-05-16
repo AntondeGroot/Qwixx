@@ -1,4 +1,4 @@
-import { afterEveryRender, Component, computed, DestroyRef, ElementRef, inject, OnInit, signal } from '@angular/core';
+import { afterEveryRender, Component, computed, DestroyRef, ElementRef, inject, OnInit, signal, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../environments/environment';
 import { firstValueFrom, of } from 'rxjs';
@@ -11,6 +11,7 @@ import { ScoreCard } from '../../generated/model/scoreCard';
 import { GameState } from '../../generated/model/gameState';
 import { RowState } from '../../generated/model/rowState';
 import { RowComponent } from '../row/row.component';
+import html2canvas from 'html2canvas';
 
 const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -118,6 +119,8 @@ export class ScoreComponent implements OnInit {
   private readonly fast = new URLSearchParams(window.location.search).has('fast');
   private ms(normal: number): number { return this.fast ? 1 : normal; }
 
+  @ViewChild('scoreCapture') private scoreCaptureRef!: ElementRef<HTMLElement>;
+
   sessionId = '';
   playerId  = '';
 
@@ -188,6 +191,8 @@ export class ScoreComponent implements OnInit {
   allDone      = signal(false);
   showModal    = signal(false);
   showActionBar = signal(false); // true after the winner modal is dismissed via "View Scores"
+  sharing      = signal(false);
+  readonly canNativeShare = navigator.maxTouchPoints > 0;
 
   winner = computed(() => this.playerRows().find(r => r.rank === 0));
 
@@ -196,6 +201,32 @@ export class ScoreComponent implements OnInit {
   }
 
   topPx(p: PlayerRow): number { return p.rank * this.rowH; }
+
+  async shareScores(): Promise<void> {
+    if (this.sharing()) return;
+    this.sharing.set(true);
+    try {
+      const canvas = await html2canvas(this.scoreCaptureRef.nativeElement, {
+        backgroundColor: '#12122a',
+        scale: window.devicePixelRatio || 2,
+      });
+      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) return;
+      const file = new File([blob], 'qwixx-scores.png', { type: 'image/png' });
+      if (this.canNativeShare && navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Qwixx Scores' });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'qwixx-scores.png';
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } finally {
+      this.sharing.set(false);
+    }
+  }
 
   ngOnInit() {
     this.sessionId = this.route.snapshot.paramMap.get('sessionId') ?? '';

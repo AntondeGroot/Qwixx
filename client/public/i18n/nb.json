@@ -40,7 +40,9 @@
     "newGame": "Nytt spill",
     "leaveGame": "Forlat spillet",
     "viewScores": "Se sluttresultat",
-    "yourCard": "Ditt kort"
+    "yourCard": "Ditt kort",
+    "share": "Del resultater",
+    "download": "Last ned resultater"
   },
   "rowClosure": {
     "wantsToCloseThe": "vil lukke",

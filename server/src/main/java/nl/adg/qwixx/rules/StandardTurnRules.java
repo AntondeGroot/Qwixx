@@ -289,10 +289,14 @@ public class StandardTurnRules implements TurnRules {
 
         // Special case: active player reverts their EndTurn while passives are still acting
         // (or after being re-added to the passive queue for a final-look notification).
-        // Just flip back to ACTIVE_MOVE — the undo buffer, activeTurnState, and pending declarations
-        // are all still intact, so the player can continue from where they left off.
+        // Restore the snapshot so the pending cross is fully cleared — the player should be
+        // able to redo their move from scratch without having to undo the cross manually.
         if (isActive && turn.phase() == TurnPhase.PASSIVE_MOVE) {
             turn.passivePlayerQueue().remove(playerId); // in case they were re-added for final look
+            restoreToSnapshot(state, turn, playerId);
+            cancelPlayerClosingIntents(state, playerId);
+            turn.undoBuffer().remove(playerId);
+            if (turn.activeTurnState() != null) turn.activeTurnState().reset();
             turn.setPhase(TurnPhase.ACTIVE_MOVE);
             return;
         }

@@ -194,10 +194,22 @@ export class ScoreComponent implements OnInit {
   sharing      = signal(false);
   readonly canNativeShare = navigator.maxTouchPoints > 0;
 
-  winner = computed(() => this.playerRows().find(r => r.rank === 0));
+  winner  = computed(() => this.playerRows().find(r => r.rank === 0));
+  winners = computed(() => {
+    const rows = this.playerRows();
+    if (rows.length === 0) return [];
+    const top = rows.reduce((max, r) => Math.max(max, this.displayedTotal(r)), -Infinity);
+    return rows.filter(r => this.displayedTotal(r) === top);
+  });
+  isTie       = computed(() => this.winners().length > 1);
+  winnerNames = computed(() => this.winners().map(w => w.name).join(' & '));
 
   displayedTotal(p: PlayerRow): number {
     return Object.values(p.displayed).reduce((s, v) => s + v, 0) + p.displayedPunishment;
+  }
+
+  isWinner(p: PlayerRow): boolean {
+    return this.allDone() && this.winners().some(w => w.id === p.id);
   }
 
   topPx(p: PlayerRow): number { return p.rank * this.rowH; }

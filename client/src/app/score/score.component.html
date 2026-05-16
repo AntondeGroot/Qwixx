@@ -54,7 +54,7 @@
         @for (player of playerRows(); track player.id) {
           <div class="player-row"
                [class.lifting]="player.lifting"
-               [class.winner]="allDone() && player.rank === 0"
+               [class.winner]="isWinner(player)"
                [style.top.px]="topPx(player)"
                [style.height.px]="playerRowHeight">
 
@@ -75,7 +75,7 @@
 
             <!-- Running total grows with each column -->
             <div class="total-cell total-value"
-                 [class.winner-total]="allDone() && player.rank === 0">
+                 [class.winner-total]="isWinner(player)">
               {{ displayedTotal(player) }}
             </div>
 
@@ -125,9 +125,20 @@
   @if (showModal()) {
     <div class="modal-overlay">
       <div class="winner-modal">
-        <div class="trophy">🏆</div>
-        <h2 class="winner-name">{{ winner()?.name }}</h2>
-        <p class="winner-sub">{{ 'score.winner' | translate }}</p>
+        @if (isTie()) {
+          @if (playerRows().length === 2) {
+            <h2 class="winner-name">{{ winnerNames() }}</h2>
+            <p class="winner-sub">{{ 'score.tied' | translate }}</p>
+          } @else {
+            <div class="trophy">🏆</div>
+            <p class="winner-sub">{{ 'score.winners' | translate }}</p>
+            <h2 class="winner-name">{{ winnerNames() }}</h2>
+          }
+        } @else {
+          <div class="trophy">🏆</div>
+          <h2 class="winner-name">{{ winner()?.name }}</h2>
+          <p class="winner-sub">{{ 'score.winner' | translate }}</p>
+        }
         <div class="modal-actions">
           <button class="btn btn-ghost" (click)="viewScores()">
             {{ 'score.viewScores' | translate }}

@@ -42,7 +42,9 @@
     "viewScores": "Endstand anzeigen",
     "yourCard": "Deine Karte",
     "share": "Ergebnis teilen",
-    "download": "Ergebnis herunterladen"
+    "download": "Ergebnis herunterladen",
+    "tied": "unentschieden!",
+    "winners": "Gewinner"
   },
   "rowClosure": {
     "wantsToCloseThe": "möchte die",

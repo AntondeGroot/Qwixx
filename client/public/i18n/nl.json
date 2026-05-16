@@ -2,7 +2,7 @@
   "crosses": "Kruisjes",
   "points": "Punten",
   "punishment": "Strafpunten",
-  "yourTurn": "Jouw Beurt",
+  "yourTurn": "Jouw beurt",
   "playerTurn": "{{ name }} is aan de beurt",
   "confirm": "Bevestigen",
   "roll": "Rol",
@@ -42,7 +42,9 @@
     "viewScores": "Eindstand bekijken",
     "yourCard": "Jouw kaart",
     "share": "Scores delen",
-    "download": "Scores downloaden"
+    "download": "Scores downloaden",
+    "tied": "gelijkspel!",
+    "winners": "Winnaars"
   },
   "rowClosure": {
     "wantsToCloseThe": "wil de",

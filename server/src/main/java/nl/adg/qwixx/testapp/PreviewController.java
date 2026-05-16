@@ -401,7 +401,7 @@ public class PreviewController {
 
     // 8 — 2-player · near game end; RED+YELLOW almost full for both players
     private PreviewResult scenario08() {
-        GameSetup g = startGame(2, GameSettings.builder().build());
+        GameSetup g = startGame(2, GameSettings.builder().base(BaseVariant.LONGO).build());
         setCrosses(g, g.players().get(0), 0, 9); // RED: 9/12
         setCrosses(g, g.players().get(0), 1, 8); // YELLOW: 8/12
         setCrosses(g, g.players().get(0), 2, 4);
@@ -410,9 +410,9 @@ public class PreviewController {
         setCrosses(g, g.players().get(1), 1, 7);
         setCrosses(g, g.players().get(1), 2, 5);
         setCrosses(g, g.players().get(1), 3, 4);
-        UUID you = rollAndSet(g, 5, 6);
+        UUID you = rollAndSet(g, 7, 8);
         return new PreviewResult(
-                "2-player · near game end (player0: 9 in RED, 8 in YELLOW) · dice=5+6",
+                "✅ LONGO 2-player · near game end (player0: 9 in RED, 8 in YELLOW) · dice=7+8",
                 gameUrl(g.sessionId(), you),
                 otherGameUrls(g, you));
     }

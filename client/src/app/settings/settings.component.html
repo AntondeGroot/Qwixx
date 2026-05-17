@@ -1,7 +1,10 @@
-@if (isRestartMode && lobbyPlayers().length > 0) {
+@if (isRestartMode) {
   <div class="lobby-players">
     @for (p of lobbyPlayers(); track p.id) {
       <span class="lobby-player">{{ p.name }}</span>
+    }
+    @for (i of botSlots(); track i) {
+      <span class="lobby-player lobby-player--bot">{{ 'Computer ' + i }}</span>
     }
   </div>
 }
@@ -21,7 +24,8 @@
           }
         </select>
       } @else if (opt.type === TypeEnum.INTEGER) {
-        <input [id]="opt.key" type="number" [formControlName]="opt.key" />
+        <input [id]="opt.key" type="number" [formControlName]="opt.key"
+               [min]="opt.minValue ?? null" [max]="effectiveMax(opt)" />
       }
     </div>
   }

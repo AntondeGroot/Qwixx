@@ -1,5 +1,5 @@
 package nl.adg.qwixx.game;
 
 public enum OptionType {
-    BOOLEAN, ENUM
+    BOOLEAN, INTEGER, ENUM
 }

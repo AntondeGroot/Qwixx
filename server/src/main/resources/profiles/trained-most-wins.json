@@ -1,0 +1,9 @@
+{
+  "skipPenalty":       6.351070,
+  "rarityBonus":       10.410383,
+  "lockBonus":         14.079652,
+  "punishmentLoss":    2.567108,
+  "passiveThreshold":  8.054744,
+  "maxPunishments":    2,
+  "nearLockRemaining": 2
+}

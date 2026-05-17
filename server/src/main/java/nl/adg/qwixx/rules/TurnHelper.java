@@ -12,8 +12,10 @@ class TurnHelper {
     private TurnHelper() {}
 
     static boolean isPassiveInQueue(TurnState turn, UUID playerId) {
-        return !playerId.equals(turn.activePlayerId())
-                && turn.passivePlayerQueue().contains(playerId);
+        // The active player can be re-queued for a final look at another player's row closure;
+        // queue membership is the only gate needed (the active player is never in the queue
+        // at roll-time since applyRoll removes them explicitly).
+        return turn.passivePlayerQueue().contains(playerId);
     }
 
     static boolean hasPendingCross(TurnState turn, UUID playerId) {

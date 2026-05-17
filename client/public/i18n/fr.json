@@ -24,13 +24,21 @@
     "extraRowDescription": "Ajouter une rangée bonus de cellules formant une vague sur quatre rangées.",
     "connectedCells": "Cellules connectées",
     "connectedCellsDescription": "Relie les cellules entre rangées adjacentes : cocher une cellule coche automatiquement la cellule connectée dans la rangée suivante.",
+    "botCount": "Adversaires ordinateur",
+    "botCountDescription": "Nombre de joueurs contrôlés par l'ordinateur.",
+    "botStrategy": "Stratégie du bot",
+    "botStrategyDescription": "Style de jeu pour tous les adversaires ordinateur.",
     "choice": {
       "STANDARD": "Standard",
       "LONGO": "Longo",
       "ONLINE": "En ligne",
       "OFFLINE": "Hors ligne",
       "DETERMINISTIC": "la même carte",
-      "PROBABILISTIC": "une carte unique"
+      "PROBABILISTIC": "une carte unique",
+      "UNTRAINED": "Non entraîné",
+      "MOST_POINTS": "Maximum de points",
+      "MOST_WINS": "Maximum de victoires",
+      "BALANCED": "Équilibré"
     }
   },
   "score": {

@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import nl.adg.qwixx.game.QwixxGameOptions;
+
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,7 +29,7 @@ import java.util.Map;
 @RequestMapping("/games")
 public class LobbyController {
 
-    record LobbyState(List<PlayerEntry> players, Map<String, Object> proposedOptions) {}
+    record LobbyState(List<PlayerEntry> players, Map<String, Object> proposedOptions, int maxPlayers) {}
     record PlayerEntry(String id, String name) {}
 
     @Autowired
@@ -73,10 +76,13 @@ public class LobbyController {
     }
 
     private LobbyState buildLobbyState(GameSession session) {
-        List<PlayerEntry> players = session.players().stream()
+        List<PlayerEntry> players = session.humanPlayers().stream()
                 .map(p -> new PlayerEntry(p.id().toString(), p.name()))
                 .toList();
-        return new LobbyState(players, session.proposedOptions());
+        // Current settings act as the baseline; proposed options override individual keys.
+        Map<String, Object> effectiveOptions = new LinkedHashMap<>(QwixxGameOptions.toMap(session.settings()));
+        effectiveOptions.putAll(session.proposedOptions());
+        return new LobbyState(players, effectiveOptions, session.maxPlayers());
     }
 
     private GameSession require(String sessionId) {

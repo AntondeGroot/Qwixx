@@ -46,7 +46,8 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
         Map<Integer, UUID> closedBefore = new HashMap<>(
                 session.currentState().boardState().closedRows());
 
-        GameState newState = session.applyAction(action);
+        GameState newState = session.applyAction(action,
+                intermediate -> sseRegistry.emit(sessionId, intermediate, session));
         sseRegistry.emit(sessionId, newState, session);
 
         MoveResult result = newState.gameOver() ? MoveResult.GAME_OVER : MoveResult.ACCEPTED;

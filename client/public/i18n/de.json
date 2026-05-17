@@ -24,13 +24,21 @@
     "extraRowDescription": "Fügen Sie eine Bonusreihe von Zellen hinzu, die eine Welle über vier Reihen bildet.",
     "connectedCells": "Verbundene Zellen",
     "connectedCellsDescription": "Verknüpft Zellen zwischen benachbarten Reihen: das Ankreuzen einer Zelle kreuzt automatisch die verbundene Zelle in der nächsten Reihe.",
+    "botCount": "Computergegner",
+    "botCountDescription": "Anzahl der computergesteuerten Spieler.",
+    "botStrategy": "Bot-Strategie",
+    "botStrategyDescription": "Spielstil für alle Computergegner.",
     "choice": {
       "STANDARD": "Standard",
       "LONGO": "Longo",
       "ONLINE": "Online",
       "OFFLINE": "Offline",
       "DETERMINISTIC": "dieselbe Karte",
-      "PROBABILISTIC": "eine eigene Karte"
+      "PROBABILISTIC": "eine eigene Karte",
+      "UNTRAINED": "Untrainiert",
+      "MOST_POINTS": "Meiste Punkte",
+      "MOST_WINS": "Meiste Siege",
+      "BALANCED": "Ausgewogen"
     }
   },
   "score": {

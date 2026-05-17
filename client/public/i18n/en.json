@@ -24,13 +24,21 @@
     "extraRowDescription": "Add a bonus row of cells forming a wave across the four rows.",
     "connectedCells": "Connected cells",
     "connectedCellsDescription": "Link cells between adjacent rows: crossing one auto-crosses the connected cell in the next row.",
+    "botCount": "Computer opponents",
+    "botCountDescription": "Number of computer-controlled players to add.",
+    "botStrategy": "Bot strategy",
+    "botStrategyDescription": "Playing style for all computer opponents.",
     "choice": {
       "STANDARD": "Standard",
       "LONGO": "Longo",
       "ONLINE": "Online",
       "OFFLINE": "Offline",
       "DETERMINISTIC": "the same card",
-      "PROBABILISTIC": "a unique card"
+      "PROBABILISTIC": "a unique card",
+      "UNTRAINED": "Untrained",
+      "MOST_POINTS": "Most points",
+      "MOST_WINS": "Most wins",
+      "BALANCED": "Balanced"
     }
   },
   "score": {

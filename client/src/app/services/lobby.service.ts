@@ -6,6 +6,7 @@ import { BASE_PATH } from '../../generated/variables';
 export interface LobbyState {
   players:         { id: string; name: string }[];
   proposedOptions: { [key: string]: any };
+  maxPlayers:      number;
 }
 
 @Injectable({ providedIn: 'root' })

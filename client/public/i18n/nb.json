@@ -24,13 +24,21 @@
     "extraRowDescription": "Legg til en bonusrad med celler som danner en bølge over fire rader.",
     "connectedCells": "Forbundne celler",
     "connectedCellsDescription": "Kobler celler mellom tilstøtende rader: å krysse én celle krysser automatisk den forbundne cellen i neste rad.",
+    "botCount": "Datamotstandere",
+    "botCountDescription": "Antall datakontrollerte spillere.",
+    "botStrategy": "Bot-strategi",
+    "botStrategyDescription": "Spillestil for alle datamotstandere.",
     "choice": {
       "STANDARD": "Standard",
       "LONGO": "Longo",
       "ONLINE": "Online",
       "OFFLINE": "Offline",
       "DETERMINISTIC": "samme kort",
-      "PROBABILISTIC": "unike kort"
+      "PROBABILISTIC": "unike kort",
+      "UNTRAINED": "Utrenet",
+      "MOST_POINTS": "Flest poeng",
+      "MOST_WINS": "Flest seire",
+      "BALANCED": "Balansert"
     }
   },
   "score": {

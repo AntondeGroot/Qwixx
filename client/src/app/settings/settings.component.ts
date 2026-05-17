@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../environments/environment';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -42,9 +42,15 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   gameOptions    = signal<GameOption[]>([]);
   lobbyPlayers   = signal<{id:string,name:string}[]>([]);
+  maxPlayers     = signal<number>(99);
   previewLayout  = signal<SheetLayout | null>(null);
   error          = signal<string | null>(null);
   loading        = signal(false);
+
+  botCount  = signal<number>(0);
+  botSlots  = computed(() => Array.from({ length: this.botCount() }, (_, i) => i + 1));
+  // Cap bots so total players (humans + bots) stays within a sensible Qwixx limit of 5.
+  maxBotCount = computed(() => Math.max(0, 5 - this.lobbyPlayers().length));
 
   // Suppress lobby → form updates while the player is actively editing
   private suppressLobbySync = false;
@@ -78,6 +84,11 @@ export class SettingsComponent implements OnInit, OnDestroy {
       }
       this.gameOptions.set(opts);
       this.fetchPreview();
+
+      // Keep botCount signal in sync with the form for all modes
+      this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(v => this.botCount.set(Number(v['botCount'] ?? 0)));
+      this.botCount.set(Number(this.form.get('botCount')?.value ?? 0));
 
       if (this.isRestartMode) {
         this.startLobbySync();
@@ -113,6 +124,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
     es.onmessage = (event: MessageEvent) => {
       const lobby = JSON.parse(event.data);
       this.lobbyPlayers.set(lobby.players);
+      if (lobby.maxPlayers) this.maxPlayers.set(lobby.maxPlayers);
       this.applyLobbyOptions(lobby.proposedOptions);
     };
   }
@@ -181,7 +193,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
         });
       });
     } else {
-      // Standalone / offline mode: create a fresh single-player game.
+      // Standalone / offline mode: 1 human slot; bots are added on top at start time.
       this.gamesService.createNewGame({ roomName: 'Offline', maxPlayers: 1, gameOptions })
         .subscribe({
           next: res => {
@@ -213,5 +225,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   getGameOptionLabel(key: string): string {
     return this.translate.instant(`gameOption.${key}`);
+  }
+
+  effectiveMax(opt: GameOption): number | null {
+    if (opt.key === 'botCount' && this.isRestartMode) return this.maxBotCount();
+    return opt.maxValue ?? null;
   }
 }

@@ -24,13 +24,21 @@
     "extraRowDescription": "Voeg een bonusrij cellen toe die een golf over vier rijen vormt.",
     "connectedCells": "Verbonden cellen",
     "connectedCellsDescription": "Verbindt cellen tussen aangrenzende rijen: het aankruisen van één cel kruist automatisch de verbonden cel in de volgende rij.",
+    "botCount": "Computertegenstanders",
+    "botCountDescription": "Aantal door de computer bestuurde spelers.",
+    "botStrategy": "Bot-strategie",
+    "botStrategyDescription": "Speelstijl voor alle computertegenstanders.",
     "choice": {
       "STANDARD": "Standaard",
       "LONGO": "Longo",
       "ONLINE": "Online",
       "OFFLINE": "Offline",
       "DETERMINISTIC": "dezelfde kaart",
-      "PROBABILISTIC": "een unieke kaart"
+      "PROBABILISTIC": "een unieke kaart",
+      "UNTRAINED": "Ongetraind",
+      "MOST_POINTS": "Meeste punten",
+      "MOST_WINS": "Meeste overwinningen",
+      "BALANCED": "Gebalanceerd"
     }
   },
   "score": {

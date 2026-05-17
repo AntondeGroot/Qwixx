@@ -1477,6 +1477,27 @@ class StandardTurnRulesTest {
     }
 
     @Test
+    void requeuededActivePlayer_hasValidActions() {
+        // Regression: isPassiveInQueue used to exclude the active player by ID, so
+        // getValidActions() returned empty for a re-queued active player — deadlocking bots.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        crossEnoughForLockWithoutClosingCell(state, p1, 0);
+        crossEnoughForLock(state, p2, 0);
+
+        rules.apply(state, firstCrossAction(state, p1));
+        rules.apply(state, new EndTurnAction(p1));
+        rules.apply(state, new DeclareLockIntentAction(p2, 0));
+        rules.apply(state, new EndTurnAction(p2));
+
+        // p1 (active) is now re-queued to the passive queue for a final look.
+        List<GameAction> actions = rules.getValidActions(state, p1);
+        assertFalse(actions.isEmpty(),
+                "Re-queued active player must have valid actions (was deadlocked before fix)");
+        assertTrue(actions.stream().anyMatch(a -> a instanceof EndTurnAction),
+                "Re-queued active player must be able to EndTurn from the passive queue");
+    }
+
+    @Test
     void activePlayerProceedsWithoutReverts_passTriggersEvaluate() {
         // When the active player is re-queued for a final look and sends PASS (without reverting),
         // evaluate must run and close the row normally.

@@ -11,7 +11,6 @@ import { ScoreCard } from '../../generated/model/scoreCard';
 import { GameState } from '../../generated/model/gameState';
 import { RowState } from '../../generated/model/rowState';
 import { RowComponent } from '../row/row.component';
-import html2canvas from 'html2canvas';
 
 const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -218,6 +217,7 @@ export class ScoreComponent implements OnInit {
     if (this.sharing()) return;
     this.sharing.set(true);
     try {
+      const { default: html2canvas } = await import('html2canvas');
       const canvas = await html2canvas(this.scoreCaptureRef.nativeElement, {
         backgroundColor: '#12122a',
         scale: window.devicePixelRatio || 2,

@@ -42,7 +42,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
     @BeforeEach
     void createGame() {
         sessionId = api.createGame(2);
-        playerIds = api.getPlayerIds(sessionId);
+        playerIds = api.getOrderedPlayerIds(sessionId);
     }
 
     @AfterEach
@@ -170,8 +170,9 @@ public class LockMechanismIT extends BaseIntegrationTest {
 
         waitUntilModalVisible(driver1, 8);
         String modalText = getModalText(driver1);
-        assertTrue(modalText.contains("player0"),
-                "Modal should contain the declaring player's name 'player0'. Actual text: " + modalText);
+        String declarantName = api.getPlayerName(sessionId, playerIds.get(0));
+        assertTrue(modalText.contains(declarantName),
+                "Modal should contain the declaring player's name '" + declarantName + "'. Actual text: " + modalText);
     }
 
     @Test
@@ -214,7 +215,8 @@ public class LockMechanismIT extends BaseIntegrationTest {
                 "Player 0 (declarer) should NOT see the modal");
         assertTrue(isModalVisible(driver1),
                 "Player 1 (passive) SHOULD see the modal");
-        assertTrue(getModalText(driver1).contains("player0"),
+        String p0Name = api.getPlayerName(sessionId, playerIds.get(0));
+        assertTrue(getModalText(driver1).contains(p0Name),
                 "Modal should name player 0 as the one who declared intent");
         assertTrue(modalHasColorCell(driver1, "BLUE"),
                 "Modal should show the BLUE color indicator");
@@ -225,7 +227,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
     @Test
     void threePlayersAccumulateLockIntentRequestsInSingleModal() {
         String sid3 = api.createGame(3);
-        List<String> pids = api.getPlayerIds(sid3);
+        List<String> pids = api.getOrderedPlayerIds(sid3);
 
         api.setCrosses(sid3, pids.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
         api.roll(sid3, pids.get(0));
@@ -258,10 +260,12 @@ public class LockMechanismIT extends BaseIntegrationTest {
         assertTrue(modalHasColorCell(driver1, "RED"),
                 "Modal should display the RED color indicator for player1's intent");
         String modalText = getModalText(driver1);
-        assertTrue(modalText.contains("player0"),
-                "Modal text should mention player0. Actual: " + modalText);
-        assertTrue(modalText.contains("player1"),
-                "Modal text should mention player1. Actual: " + modalText);
+        String pid0Name = api.getPlayerName(sid3, pids.get(0));
+        String pid1Name = api.getPlayerName(sid3, pids.get(1));
+        assertTrue(modalText.contains(pid0Name),
+                "Modal text should mention " + pid0Name + ". Actual: " + modalText);
+        assertTrue(modalText.contains(pid1Name),
+                "Modal text should mention " + pid1Name + ". Actual: " + modalText);
     }
 
     // ── Longo: self-close yes/no modal ───────────────────────────────────────
@@ -273,7 +277,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
     @Test
     void longoYesOnSelfCloseModal_showsLockCrossPendingThenFiresWhenLastCrossed() {
         String sid = api.createGame(1, java.util.Map.of("base", "LONGO"));
-        String pid = api.getPlayerIds(sid).get(0);
+        String pid = api.getOrderedPlayerIds(sid).get(0);
 
         api.setCrosses(sid, pid, BLUE_ROW_INDEX, 6);
         api.roll(sid, pid);
@@ -320,7 +324,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
     @Test
     void longoYesOnSelfCloseModal_passivePlayerSeesModalImmediately() {
         String sid = api.createGame(2, java.util.Map.of("base", "LONGO"));
-        List<String> pids = api.getPlayerIds(sid);
+        List<String> pids = api.getOrderedPlayerIds(sid);
 
         api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, 6);
         api.roll(sid, pids.get(0));
@@ -352,7 +356,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // Setup: both players have 6 crosses in BLUE. white+white=3 → "3" (second-to-last
         // closing cell) is reachable. Active declares first; passive follows.
         String sid = api.createGame(2, java.util.Map.of("base", "LONGO"));
-        List<String> pids = api.getPlayerIds(sid);
+        List<String> pids = api.getOrderedPlayerIds(sid);
 
         api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, 6);
         api.setCrosses(sid, pids.get(1), BLUE_ROW_INDEX, 6);
@@ -415,7 +419,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
     @Test
     void passive_crossesClosingCell_lockCrossStaysVisible_afterEndTurn() {
         String sid = api.createGame(2);
-        List<String> pids = api.getPlayerIds(sid);
+        List<String> pids = api.getOrderedPlayerIds(sid);
 
         api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
         api.setCrosses(sid, pids.get(1), RED_ROW_INDEX, 5);
@@ -452,7 +456,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // Player0 declares BLUE. Player1 crosses RED "12" → auto-declares RED.
         // Both rows in pendingClosures → EVALUATE → both close → game over.
         String sid = api.createGame(2);
-        List<String> pids = api.getPlayerIds(sid);
+        List<String> pids = api.getOrderedPlayerIds(sid);
 
         api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
         api.setCrosses(sid, pids.get(1), RED_ROW_INDEX, 5);
@@ -509,7 +513,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // 3-player: player0 declares BLUE, player1 crosses RED "12" (auto-declares RED).
         // Both rows in pendingClosures → EVALUATE closes both → player2 doesn't need to see RED modal.
         String sid = api.createGame(3);
-        List<String> pids = api.getPlayerIds(sid);
+        List<String> pids = api.getOrderedPlayerIds(sid);
         WebDriver driver2 = null;
         try {
             api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
@@ -572,7 +576,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
     void singlePlayerLockIntentClosesRowAfterEndTurn() {
         // In a 1-player game: declareLockIntent records the intent; EndTurn triggers EVALUATE.
         String sid = api.createGame(1);
-        String pid = api.getPlayerIds(sid).get(0);
+        String pid = api.getOrderedPlayerIds(sid).get(0);
 
         api.setCrosses(sid, pid, BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
         api.roll(sid, pid);
@@ -592,7 +596,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
     @Test
     void singlePlayerCrossingClosingCellClosesRowInBrowser() {
         String sid = api.createGame(1);
-        String pid = api.getPlayerIds(sid).get(0);
+        String pid = api.getOrderedPlayerIds(sid).get(0);
 
         api.setCrosses(sid, pid, BLUE_ROW_INDEX, 5);
         api.roll(sid, pid);
@@ -706,8 +710,9 @@ public class LockMechanismIT extends BaseIntegrationTest {
                 "Active player must see notification modal when passive declares lock intent");
         assertTrue(modalHasColorCell(driver0, "BLUE"),
                 "Modal must show BLUE indicator for player1's intent");
-        assertTrue(getModalText(driver0).contains("player1"),
-                "Modal must name the passive declarant (player1)");
+        String declarantName = api.getPlayerName(sessionId, playerIds.get(1));
+        assertTrue(getModalText(driver0).contains(declarantName),
+                "Modal must name the passive declarant (" + declarantName + ")");
 
         // Player1 (declarant) must NOT see their own declaration as a modal
         assertFalse(isModalVisible(driver1),
@@ -908,7 +913,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // Player0 clicks Change → reverts to ACTIVE_MOVE → crosses YELLOW "16" too →
         // EndTurns → EVALUATE → both rows close → player0 gets lock crosses for both.
         String sid = api.createGame(3, Map.of("base", "LONGO"));
-        List<String> pids3 = api.getPlayerIds(sid);
+        List<String> pids3 = api.getOrderedPlayerIds(sid);
         String p0 = pids3.get(0);
         String p1 = pids3.get(1);
         String p2 = pids3.get(2);
@@ -1012,7 +1017,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // Player0 already qualifies for YELLOW via "15" (has 14 crosses including position 13="15"),
         // so they get lockCrossed for YELLOW automatically at EVALUATE even without reverting.
         String sid = api.createGame(3, Map.of("base", "LONGO"));
-        List<String> pids3 = api.getPlayerIds(sid);
+        List<String> pids3 = api.getOrderedPlayerIds(sid);
         String p0 = pids3.get(0);
         String p1 = pids3.get(1);
         String p2 = pids3.get(2);
@@ -1074,7 +1079,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // Player0 then also crosses YELLOW "16" (color die) and EndTurns properly.
         // At EVALUATE both RED and YELLOW close and player0 has lock crosses for both.
         String sid = api.createGame(3, Map.of("base", "LONGO"));
-        List<String> pids3 = api.getPlayerIds(sid);
+        List<String> pids3 = api.getOrderedPlayerIds(sid);
         String p0 = pids3.get(0);
         String p1 = pids3.get(1);
         String p2 = pids3.get(2);
@@ -1182,7 +1187,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // Player0 can then also cross YELLOW "16" with the yellow color die.
         // At EVALUATE both RED and YELLOW close; player0 gets lock crosses for both.
         String sid = api.createGame(3, Map.of("base", "LONGO"));
-        List<String> pids3 = api.getPlayerIds(sid);
+        List<String> pids3 = api.getOrderedPlayerIds(sid);
         String p0 = pids3.get(0);
         String p1 = pids3.get(1);
         String p2 = pids3.get(2);
@@ -1280,7 +1285,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // reverts their EndTurn. Player1 is put back in the passive queue so they can
         // also cross YELLOW "16" and get the lock cross bonus.
         String sid = api.createGame(3, Map.of("base", "LONGO"));
-        List<String> pids3 = api.getPlayerIds(sid);
+        List<String> pids3 = api.getOrderedPlayerIds(sid);
         String p0 = pids3.get(0);
         String p1 = pids3.get(1);
         String p2 = pids3.get(2);

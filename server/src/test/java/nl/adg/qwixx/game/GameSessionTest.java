@@ -63,15 +63,17 @@ class GameSessionTest {
     // --- initial state ---
 
     @Test
-    void initialStateHasCorrectPlayerOrder() {
+    void initialStateContainsBothPlayers() {
         GameSession s = session(4);
         Player alice = Player.of("Alice");
         Player bob   = Player.of("Bob");
         s.addPlayer(alice);
         s.addPlayer(bob);
         s.start();
-        assertEquals(alice.id(), s.currentState().players().get(0));
-        assertEquals(bob.id(),   s.currentState().players().get(1));
+        var players = s.currentState().players();
+        assertTrue(players.contains(alice.id()), "Alice should be in the player list");
+        assertTrue(players.contains(bob.id()),   "Bob should be in the player list");
+        assertEquals(2, players.size());
     }
 
     @Test

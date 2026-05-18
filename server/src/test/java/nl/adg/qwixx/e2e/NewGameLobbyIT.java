@@ -8,6 +8,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -43,15 +44,21 @@ public class NewGameLobbyIT extends BaseIntegrationTest {
 
     private WebDriver d0, d1, d2, d3;
     private String sessionId;
-    private List<String> playerIds;
+    // Maps player name → UUID; stable regardless of shuffle order after game start.
+    private Map<String, String> playerIdByName;
 
     @BeforeEach
     void setupFinishedGame() {
         sessionId = api.createGame(4);
-        playerIds = api.getPlayerIds(sessionId);
+
+        playerIdByName = new HashMap<>();
+        for (int i = 0; i < 4; i++) {
+            String name = "player" + i;
+            playerIdByName.put(name, api.getPlayerIdByName(sessionId, name));
+        }
 
         // Give player0 enough crosses to be the winner so the modal appears quickly.
-        api.setCrosses(sessionId, playerIds.get(0), RED_ROW_INDEX, 5);
+        api.setCrosses(sessionId, playerIdByName.get("player0"), RED_ROW_INDEX, 5);
         api.forceFinish(sessionId);
     }
 
@@ -69,16 +76,17 @@ public class NewGameLobbyIT extends BaseIntegrationTest {
 
     /** Open a score page; playerId is passed as a query param so no root navigation is needed. */
     private WebDriver openScoreAsPlayer(int playerIndex) {
+        String pid = playerIdByName.get("player" + playerIndex);
         WebDriver driver = createDriver();
-        driver.get(BASE + "/score/" + sessionId + "?fast=1&pid=" + playerIds.get(playerIndex));
+        driver.get(BASE + "/score/" + sessionId + "?fast=1&pid=" + pid);
         return driver;
     }
 
     /** Open a settings page; sessionId and playerId are passed as query params. */
     private WebDriver openSettingsAsPlayer(int playerIndex) {
+        String pid = playerIdByName.get("player" + playerIndex);
         WebDriver driver = createDriver();
-        driver.get(BASE + "/settings?sessionId=" + sessionId
-                + "&playerId=" + playerIds.get(playerIndex));
+        driver.get(BASE + "/settings?sessionId=" + sessionId + "&playerId=" + pid);
         return driver;
     }
 
@@ -220,7 +228,7 @@ public class NewGameLobbyIT extends BaseIntegrationTest {
         List<String> newPlayerIds = api.getPlayerIds(sessionId);
         assertEquals(3, newPlayerIds.size(),
                 "Restarted game must have 3 players. Got: " + newPlayerIds.size());
-        assertFalse(newPlayerIds.contains(playerIds.get(3)),
+        assertFalse(newPlayerIds.contains(playerIdByName.get("player3")),
                 "player3 must not be in the restarted game");
     }
 }

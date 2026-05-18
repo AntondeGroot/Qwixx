@@ -63,9 +63,10 @@ class GameStateMapperTest {
     }
 
     @Test
-    void toDtoTurnStateActivePlayerIdIsAlice() {
+    void toDtoTurnStateActivePlayerIdIsSet() {
         var dto = toDto();
-        assertEquals(alice.id().toString(), dto.getTurnState().getActivePlayerId());
+        var activeId = GameRegistry.getGame(sessionId).currentState().turnState().activePlayerId();
+        assertEquals(activeId.toString(), dto.getTurnState().getActivePlayerId());
     }
 
     @Test
@@ -128,29 +129,27 @@ class GameStateMapperTest {
 
     @Test
     void toDtoPendingCrossesPopulatedAfterCross() {
-        GameState state = GameRegistry.getGame(sessionId).currentState();
-        // Simulate a roll and cross via action
+        var activeId = GameRegistry.getGame(sessionId).currentState().turnState().activePlayerId();
         GameRegistry.getGame(sessionId).applyAction(
-                new nl.adg.qwixx.action.RollAction(alice.id()));
+                new nl.adg.qwixx.action.RollAction(activeId));
 
-        // Find a reachable cell and cross it
         var roll = GameRegistry.getGame(sessionId).currentState().turnState().currentRoll();
         int target = roll.white1() + roll.white2();
-        var layout = GameRegistry.getGame(sessionId).currentState().sheetLayouts().get(alice.id());
+        var layout = GameRegistry.getGame(sessionId).currentState().sheetLayouts().get(activeId);
         for (var row : layout.rows()) {
             for (var cell : row.cells()) {
                 if (cell.displayValue().equals(String.valueOf(target))) {
                     GameRegistry.getGame(sessionId).applyAction(
                             new nl.adg.qwixx.action.CrossCellAction(
-                                    alice.id(),
+                                    activeId,
                                     layout.rows().indexOf(row),
                                     cell.id(),
                                     nl.adg.qwixx.action.DiceCombination.WHITE_WHITE));
                     var dto = toDto();
                     var pending = dto.getTurnState().getPendingCrosses();
                     assertNotNull(pending);
-                    assertTrue(pending.containsKey(alice.id().toString()));
-                    assertTrue(pending.get(alice.id().toString()).contains(cell.id()));
+                    assertTrue(pending.containsKey(activeId.toString()));
+                    assertTrue(pending.get(activeId.toString()).contains(cell.id()));
                     return;
                 }
             }

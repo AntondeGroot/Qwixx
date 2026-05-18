@@ -44,20 +44,22 @@ public class ScoreScreenIT extends BaseIntegrationTest {
 
     private WebDriver driver;
     private String    sessionId;
-    private List<String> playerIds;
 
     @BeforeEach
     void setupGame() {
         sessionId = api.createGame(2);
-        playerIds = api.getPlayerIds(sessionId);
+
+        // Look up by name — shuffle may reorder the player list after game start.
+        String player0Id = api.getPlayerIdByName(sessionId, "player0");
+        String player1Id = api.getPlayerIdByName(sessionId, "player1");
 
         // player0: RED 4 crosses (10 pts) + BLUE 6 crosses (21 pts) = 31 total
-        api.setCrosses(sessionId, playerIds.get(0), RED_ROW_INDEX,  4);
-        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, 6);
+        api.setCrosses(sessionId, player0Id, RED_ROW_INDEX,  4);
+        api.setCrosses(sessionId, player0Id, BLUE_ROW_INDEX, 6);
 
         // player1: RED 5 crosses (15 pts) + BLUE 3 crosses (6 pts) = 21 total
-        api.setCrosses(sessionId, playerIds.get(1), RED_ROW_INDEX,  5);
-        api.setCrosses(sessionId, playerIds.get(1), BLUE_ROW_INDEX, 3);
+        api.setCrosses(sessionId, player1Id, RED_ROW_INDEX,  5);
+        api.setCrosses(sessionId, player1Id, BLUE_ROW_INDEX, 3);
 
         // End the game so /scores returns 200 instead of 409
         api.forceFinish(sessionId);

@@ -50,11 +50,48 @@ public class ApiHelper {
         return sessionId;
     }
 
+    /** Returns player IDs in join order (lobby order). */
     public List<String> getPlayerIds(String sessionId) {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> players =
                 http.getForObject(BASE_URL + "/games/" + sessionId + "/players", List.class);
         return players.stream().map(p -> (String) p.get("id")).toList();
+    }
+
+    /**
+     * Returns player IDs in game-state order (i.e. the shuffled turn order).
+     * Index 0 is the first active player, index 1 the next, and so on.
+     * Use this instead of {@link #getPlayerIds} whenever tests depend on turn order.
+     */
+    @SuppressWarnings("unchecked")
+    public List<String> getOrderedPlayerIds(String sessionId) {
+        Map<String, Object> state = getGameState(sessionId);
+        List<Map<String, Object>> players = (List<Map<String, Object>>) state.get("players");
+        return players.stream().map(p -> (String) p.get("id")).toList();
+    }
+
+    /** Returns the display name of the player with the given ID. */
+    @SuppressWarnings("unchecked")
+    public String getPlayerName(String sessionId, String playerId) {
+        Map<String, Object> state = getGameState(sessionId);
+        List<Map<String, Object>> players = (List<Map<String, Object>>) state.get("players");
+        return players.stream()
+                .filter(p -> playerId.equals(p.get("id")))
+                .map(p -> (String) p.get("name"))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Player not found: " + playerId));
+    }
+
+    /** Returns the player ID (UUID) for the player with the given display name. */
+    @SuppressWarnings("unchecked")
+    public String getPlayerIdByName(String sessionId, String name) {
+        Map<String, Object> state = getGameState(sessionId);
+        List<Map<String, Object>> players = (List<Map<String, Object>>) state.get("players");
+        return players.stream()
+                .filter(p -> name.equals(p.get("name")))
+                .map(p -> (String) p.get("id"))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("No player named: " + name));
     }
 
     // ---------- MOVES ----------

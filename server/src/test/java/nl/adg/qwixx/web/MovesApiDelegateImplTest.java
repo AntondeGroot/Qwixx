@@ -245,10 +245,12 @@ class MovesApiDelegateImplTest {
     void simultaneousTurn_passivePlayerCanPassDuringActiveMovePhase() throws Exception {
         Player bob = Player.of("Bob");
         String sid = twoPlayerSession(alice, bob);
-        roll(sid, alice.id());
+        UUID active  = activePlayerId(sid);
+        UUID passive = passivePlayerId(sid, active);
+        roll(sid, active);
 
         // Passive player passes (EndTurn) while active player hasn't finished yet
-        move(sid, bob.id(), """
+        move(sid, passive, """
                 {"moveType":"PASS"}
                 """)
                 .andExpect(status().isOk())
@@ -259,17 +261,19 @@ class MovesApiDelegateImplTest {
     void simultaneousTurn_passivePlayerCanCrossAndConfirmDuringActiveMovePhase() throws Exception {
         Player bob = Player.of("Bob");
         String sid = twoPlayerSession(alice, bob);
-        roll(sid, alice.id());
+        UUID active  = activePlayerId(sid);
+        UUID passive = passivePlayerId(sid, active);
+        roll(sid, active);
 
-        CellTarget target = findWhiteWhiteCell(sid, bob.id());
+        CellTarget target = findWhiteWhiteCell(sid, passive);
 
-        move(sid, bob.id(), """
+        move(sid, passive, """
                 {"moveType":"CROSS_WHITE_WHITE","rowId":"%s","cellId":"%s"}
                 """.formatted(target.rowId(), target.cellId()))
                 .andExpect(status().isOk());
 
         // Confirm the cross with PASS — equivalent of "End Turn" for passive player
-        move(sid, bob.id(), """
+        move(sid, passive, """
                 {"moveType":"PASS"}
                 """)
                 .andExpect(status().isOk())
@@ -280,21 +284,23 @@ class MovesApiDelegateImplTest {
     void simultaneousTurn_activePlayerEndTurnAfterCrossGoesToNextTurnWhenPassiveDone() throws Exception {
         Player bob = Player.of("Bob");
         String sid = twoPlayerSession(alice, bob);
-        roll(sid, alice.id());
+        UUID active  = activePlayerId(sid);
+        UUID passive = passivePlayerId(sid, active);
+        roll(sid, active);
 
-        // Bob finishes first (passive)
-        move(sid, bob.id(), """
+        // Passive player finishes first
+        move(sid, passive, """
                 {"moveType":"PASS"}
                 """).andExpect(status().isOk());
 
-        // Alice crosses with color die and ends turn — queue already empty → evaluate
-        CellTarget target = findColorDieCell(sid, alice.id());
-        move(sid, alice.id(), """
+        // Active player crosses with color die and ends turn — queue already empty → evaluate
+        CellTarget target = findColorDieCell(sid, active);
+        move(sid, active, """
                 {"moveType":"CROSS_COLOR_DIE","rowId":"%s","cellId":"%s"}
                 """.formatted(target.rowId(), target.cellId()))
                 .andExpect(status().isOk());
 
-        move(sid, alice.id(), """
+        move(sid, active, """
                 {"moveType":"PASS"}
                 """)
                 .andExpect(status().isOk())
@@ -305,9 +311,10 @@ class MovesApiDelegateImplTest {
     void activePlayerCannotEndTurnBeforeMakingAnyMove() throws Exception {
         Player bob = Player.of("Bob");
         String sid = twoPlayerSession(alice, bob);
-        roll(sid, alice.id());
+        UUID active = activePlayerId(sid);
+        roll(sid, active);
 
-        move(sid, alice.id(), """
+        move(sid, active, """
                 {"moveType":"PASS"}
                 """)
                 .andExpect(status().isBadRequest());
@@ -324,7 +331,9 @@ class MovesApiDelegateImplTest {
     void simultaneousTurn_passivePlayerCannotCrossMoreThanOnce() throws Exception {
         Player bob = Player.of("Bob");
         String sid = twoPlayerSession(alice, bob);
-        roll(sid, alice.id());
+        UUID active  = activePlayerId(sid);
+        UUID passive = passivePlayerId(sid, active);
+        roll(sid, active);
 
         // Force dice so white+white = 6; both RED (position 4) and YELLOW (position 4)
         // have a reachable "6" cell — giving us two distinct targets to attempt.
@@ -332,17 +341,17 @@ class MovesApiDelegateImplTest {
         var current = s.turnState().currentRoll();
         s.turnState().setCurrentRoll(new nl.adg.qwixx.data.RollResult(2, 4, current.coloredDice()));
 
-        CellTarget red6    = findWhiteWhiteCell(sid, bob.id());   // first reachable "6"
-        CellTarget yellow6 = findSecondWhiteWhiteCell(sid, bob.id(), red6.rowId()); // "6" in a different row
+        CellTarget red6    = findWhiteWhiteCell(sid, passive);
+        CellTarget yellow6 = findSecondWhiteWhiteCell(sid, passive, red6.rowId());
 
         // First cross: must be accepted
-        move(sid, bob.id(), """
+        move(sid, passive, """
                 {"moveType":"CROSS_WHITE_WHITE","rowId":"%s","cellId":"%s"}
                 """.formatted(red6.rowId(), red6.cellId()))
                 .andExpect(status().isOk());
 
-        // Second cross in a different row: must be rejected (currently returns 200 — BUG)
-        move(sid, bob.id(), """
+        // Second cross in a different row: must be rejected
+        move(sid, passive, """
                 {"moveType":"CROSS_WHITE_WHITE","rowId":"%s","cellId":"%s"}
                 """.formatted(yellow6.rowId(), yellow6.cellId()))
                 .andExpect(status().isBadRequest());
@@ -354,13 +363,14 @@ class MovesApiDelegateImplTest {
     void lockFlow_canDeclareLockIntentAfterCrossingClosingEligibleCell() throws Exception {
         Player bob = Player.of("Bob");
         String sid = twoPlayerSession(alice, bob);
-        setupEnoughCrossesForLock(sid, alice.id(), 0);
-        roll(sid, alice.id());
+        UUID active = activePlayerId(sid);
+        setupEnoughCrossesForLock(sid, active, 0);
+        roll(sid, active);
 
         String rowId = GameRegistry.getGame(sid).currentState()
-                .sheetLayouts().get(alice.id()).rows().get(0).id();
+                .sheetLayouts().get(active).rows().get(0).id();
 
-        move(sid, alice.id(), """
+        move(sid, active, """
                 {"moveType":"DECLARE_LOCK_INTENT","rowId":"%s"}
                 """.formatted(rowId))
                 .andExpect(status().isOk())
@@ -371,28 +381,30 @@ class MovesApiDelegateImplTest {
     void lockFlow_passivePlayerCanUndoCrossWhileLockPending() throws Exception {
         Player bob = Player.of("Bob");
         String sid = twoPlayerSession(alice, bob);
-        roll(sid, alice.id());
+        UUID active  = activePlayerId(sid);
+        UUID passive = passivePlayerId(sid, active);
+        roll(sid, active);
 
-        // Bob crosses a cell during ACTIVE_MOVE (simultaneous)
-        CellTarget target = findWhiteWhiteCell(sid, bob.id());
-        move(sid, bob.id(), """
+        // Passive player crosses a cell during ACTIVE_MOVE (simultaneous)
+        CellTarget target = findWhiteWhiteCell(sid, passive);
+        move(sid, passive, """
                 {"moveType":"CROSS_WHITE_WHITE","rowId":"%s","cellId":"%s"}
                 """.formatted(target.rowId(), target.cellId()))
                 .andExpect(status().isOk());
 
-        // Alice accumulates enough crosses to declare lock intent
-        setupEnoughCrossesForLock(sid, alice.id(), 0);
+        // Active player accumulates enough crosses to declare lock intent
+        setupEnoughCrossesForLock(sid, active, 0);
 
         String rowId = GameRegistry.getGame(sid).currentState()
-                .sheetLayouts().get(alice.id()).rows().get(0).id();
+                .sheetLayouts().get(active).rows().get(0).id();
 
-        move(sid, alice.id(), """
+        move(sid, active, """
                 {"moveType":"DECLARE_LOCK_INTENT","rowId":"%s"}
                 """.formatted(rowId))
                 .andExpect(status().isOk());
 
-        // Bob can undo his cross from the simultaneous phase
-        move(sid, bob.id(), """
+        // Passive player can undo their cross from the simultaneous phase
+        move(sid, passive, """
                 {"moveType":"UNDO_LAST_CROSS"}
                 """)
                 .andExpect(status().isOk())
@@ -430,11 +442,13 @@ class MovesApiDelegateImplTest {
     void perPlayerMode_extraRow_passivePlayerCanCrossWithOwnRowId() throws Exception {
         Player bob = Player.of("Bob");
         String sid = perPlayerSession(alice, bob, GameSettings.builder().extraRow(true).build());
-        roll(sid, alice.id());
+        UUID active  = activePlayerId(sid);
+        UUID passive = passivePlayerId(sid, active);
+        roll(sid, active);
 
-        CellTarget target = findWhiteWhiteCell(sid, bob.id());
+        CellTarget target = findWhiteWhiteCell(sid, passive);
 
-        move(sid, bob.id(), """
+        move(sid, passive, """
                 {"moveType":"CROSS_WHITE_WHITE","rowId":"%s","cellId":"%s"}
                 """.formatted(target.rowId(), target.cellId()))
                 .andExpect(status().isOk())
@@ -446,11 +460,13 @@ class MovesApiDelegateImplTest {
         Player bob = Player.of("Bob");
         String sid = perPlayerSession(alice, bob,
                 GameSettings.builder().cardMode(CardMode.PROBABILISTIC).build());
-        roll(sid, alice.id());
+        UUID active  = activePlayerId(sid);
+        UUID passive = passivePlayerId(sid, active);
+        roll(sid, active);
 
-        CellTarget target = findWhiteWhiteCell(sid, bob.id());
+        CellTarget target = findWhiteWhiteCell(sid, passive);
 
-        move(sid, bob.id(), """
+        move(sid, passive, """
                 {"moveType":"CROSS_WHITE_WHITE","rowId":"%s","cellId":"%s"}
                 """.formatted(target.rowId(), target.cellId()))
                 .andExpect(status().isOk())
@@ -461,11 +477,12 @@ class MovesApiDelegateImplTest {
     void perPlayerMode_extraRow_activePlayerCanCrossWithOwnRowId() throws Exception {
         Player bob = Player.of("Bob");
         String sid = perPlayerSession(alice, bob, GameSettings.builder().extraRow(true).build());
-        roll(sid, alice.id());
+        UUID active = activePlayerId(sid);
+        roll(sid, active);
 
-        CellTarget target = findWhiteWhiteCell(sid, alice.id());
+        CellTarget target = findWhiteWhiteCell(sid, active);
 
-        move(sid, alice.id(), """
+        move(sid, active, """
                 {"moveType":"CROSS_WHITE_WHITE","rowId":"%s","cellId":"%s"}
                 """.formatted(target.rowId(), target.cellId()))
                 .andExpect(status().isOk())
@@ -475,6 +492,17 @@ class MovesApiDelegateImplTest {
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private record CellTarget(String rowId, String cellId) {}
+
+    private UUID activePlayerId(String sid) {
+        return GameRegistry.getGame(sid).currentState().turnState().activePlayerId();
+    }
+
+    private UUID passivePlayerId(String sid, UUID activeId) {
+        return GameRegistry.getGame(sid).currentState().players().stream()
+                .filter(id -> !id.equals(activeId))
+                .findFirst()
+                .orElseThrow();
+    }
 
     private void roll(String sid, UUID pid) throws Exception {
         move(sid, pid, """
@@ -669,8 +697,10 @@ class MovesApiDelegateImplTest {
             progress.updateRowState(3, new RowState(blueCrosses, false));
         }
 
-        // Roll the dice: white1=1, white2=1 (total=2)
-        mvc.perform(post("/moves/{sid}/{pid}", testSessionId, player0.id())
+        UUID firstActive = activePlayerId(testSessionId);
+
+        // Roll the dice
+        mvc.perform(post("/moves/{sid}/{pid}", testSessionId, firstActive)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"moveType":"ROLL"}
@@ -681,16 +711,12 @@ class MovesApiDelegateImplTest {
         var afterRoll = GameRegistry.getGame(testSessionId).currentState();
         assertNotNull(afterRoll.turnState().currentRoll(), "Dice should be rolled");
 
-        // Verify player0 is active
-        assertEquals(player0.id().toString(), afterRoll.turnState().activePlayerId().toString());
-
         // Verify both players have 5 crosses in BLUE
         for (Player p : new Player[]{player0, player1}) {
             var blueState = afterRoll.boardState().sheetProgress().get(p.id()).rowStates().get(3);
             assertEquals(5, blueState.crossedCells().size(), p.name() + " should have 5 crosses in BLUE");
         }
 
-        // Print info for manual use
         var roll = afterRoll.turnState().currentRoll();
         System.out.println("\n✓✓✓ TEST GAME SETUP COMPLETE ✓✓✓");
         System.out.println("sessionId: " + testSessionId);
@@ -698,7 +724,7 @@ class MovesApiDelegateImplTest {
         System.out.println("player1: " + player1.id());
         System.out.println("White dice rolled: " + roll.white1() + " + " + roll.white2() + " = " + (roll.white1() + roll.white2()));
         System.out.println("Both players: 5 crosses in BLUE row");
-        System.out.println("Active player: player0");
+        System.out.println("Active player: " + firstActive);
         System.out.println("✓✓✓\n");
     }
 

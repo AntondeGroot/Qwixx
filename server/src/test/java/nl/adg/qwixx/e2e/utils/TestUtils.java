@@ -76,6 +76,8 @@ public class TestUtils {
         options.addArguments("--headless=new");
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
+        options.addArguments("--disable-gpu");
+        options.addArguments("--disable-extensions");
         options.addArguments("--window-size=" + windowSize);
         options.addArguments("--mute-audio");
         // unique profile dir prevents cross-instance conflicts in parallel tests
@@ -85,14 +87,23 @@ public class TestUtils {
 
     public static void waitUntilBoardLoaded(WebDriver driver) {
         // Chrome startup + Angular bundle load + API call can take 10–15 s in a cold test run
-        new WebDriverWait(driver, Duration.ofSeconds(20)).until(d -> {
-            try {
-                return d.findElements(By.className("row")).stream()
-                        .anyMatch(WebElement::isDisplayed);
-            } catch (StaleElementReferenceException e) {
-                return false;
-            }
-        });
+        try {
+            new WebDriverWait(driver, Duration.ofSeconds(20)).until(d -> {
+                try {
+                    return d.findElements(By.className("row")).stream()
+                            .anyMatch(WebElement::isDisplayed);
+                } catch (StaleElementReferenceException e) {
+                    return false;
+                }
+            });
+        } catch (org.openqa.selenium.TimeoutException e) {
+            throw new AssertionError(".row not found on game board after 20 s. URL: "
+                    + safeGetUrl(driver), e);
+        }
+    }
+
+    private static String safeGetUrl(WebDriver driver) {
+        try { return driver.getCurrentUrl(); } catch (WebDriverException e) { return "(unavailable)"; }
     }
 
     public static void clickById(WebDriver driver, String id) {

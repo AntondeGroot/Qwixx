@@ -1,5 +1,7 @@
 package nl.adg.qwixx.game;
 
+import static java.util.Collections.shuffle;
+
 import nl.adg.qwixx.action.GameAction;
 import nl.adg.qwixx.action.RollAction;
 import nl.adg.qwixx.bot.BotDecider;
@@ -99,6 +101,8 @@ public class GameSession {
             botProfiles.put(bot.id(), settings.profileForBot(i));
         }
 
+        shuffle(players);
+
         GameStyleFactory factory = new ConfigurableGameStyleFactory(settings);
         List<UUID> playerIds = players.stream().map(Player::id).toList();
 
@@ -191,6 +195,8 @@ public class GameSession {
             botPlayerIds.add(bot.id());
             botProfiles.put(bot.id(), newSettings.profileForBot(i));
         }
+
+        shuffle(players);
 
         GameStyleFactory factory = new ConfigurableGameStyleFactory(newSettings);
         List<UUID> playerIds = players.stream().map(Player::id).toList();

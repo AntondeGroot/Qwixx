@@ -2,9 +2,11 @@ package nl.adg.qwixx.e2e;
 
 import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
 import nl.adg.qwixx.e2e.utils.TestUtils;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -12,7 +14,6 @@ import java.time.Duration;
 import java.util.List;
 
 import static nl.adg.qwixx.e2e.helpers.BoardInteractionHelper.*;
-import static nl.adg.qwixx.e2e.utils.TestUtils.waitUntilBoardLoaded;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -35,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *   4. player0 EndTurns → phase = PASSIVE_MOVE.
  *   5. player1 confirms the combined modal (EndTurn) → EVALUATE → both rows close → game ends.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DoubleRowCloseIT extends BaseIntegrationTest {
 
     private static final int RED_ROW_INDEX    = 0; // ascending 2→12
@@ -44,6 +46,18 @@ public class DoubleRowCloseIT extends BaseIntegrationTest {
     private WebDriver driver1;
     private String    sessionId;
     private List<String> pids;
+
+    @BeforeAll
+    void openDrivers() {
+        driver0 = TestUtils.createDriver();
+        driver1 = TestUtils.createDriver();
+    }
+
+    @AfterAll
+    void closeDrivers() {
+        if (driver0 != null) { driver0.quit(); driver0 = null; }
+        if (driver1 != null) { driver1.quit(); driver1 = null; }
+    }
 
     @BeforeEach
     void setup() {
@@ -59,20 +73,12 @@ public class DoubleRowCloseIT extends BaseIntegrationTest {
         api.setColoredDie(sessionId, "YELLOW", 6); // white+yellow = 12 → YELLOW "12"
     }
 
-    @AfterEach
-    void tearDown() {
-        if (driver0 != null) { driver0.quit(); driver0 = null; }
-        if (driver1 != null) { driver1.quit(); driver1 = null; }
-    }
-
     // ── Test 1: clicking RED "12" auto-crosses the RED lock ──────────────────────
 
     @Test
     void clickingRed12AutoCrossesRedLock() {
-        driver0 = TestUtils.getDriver(sessionId, pids.get(0));
-        driver1 = TestUtils.getDriver(sessionId, pids.get(1));
-        waitUntilBoardLoaded(driver0);
-        waitUntilBoardLoaded(driver1);
+        TestUtils.navigateTo(driver0, sessionId, pids.get(0));
+        TestUtils.navigateTo(driver1, sessionId, pids.get(1));
 
         assertFalse(isLockButtonCrossed(driver0, "RED"),
                 "RED lock must not be crossed before clicking RED-12");
@@ -107,8 +113,7 @@ public class DoubleRowCloseIT extends BaseIntegrationTest {
 
     @Test
     void yellow12IsClickableAndCrossesSecondLockAfterRed12IsCrossed() {
-        driver0 = TestUtils.getDriver(sessionId, pids.get(0));
-        waitUntilBoardLoaded(driver0);
+        TestUtils.navigateTo(driver0, sessionId, pids.get(0));
 
         clickCellByValue(driver0, "RED", "12");
         new WebDriverWait(driver0, Duration.ofSeconds(5))
@@ -133,8 +138,7 @@ public class DoubleRowCloseIT extends BaseIntegrationTest {
 
     @Test
     void clickingYellow12AfterRed12AlsoCrossesYellowLock() {
-        driver0 = TestUtils.getDriver(sessionId, pids.get(0));
-        waitUntilBoardLoaded(driver0);
+        TestUtils.navigateTo(driver0, sessionId, pids.get(0));
 
         // Click RED "12" — RED lock cross appears (lock intent declared)
         clickCellByValue(driver0, "RED", "12");
@@ -168,10 +172,8 @@ public class DoubleRowCloseIT extends BaseIntegrationTest {
      */
     @Test
     void clickingBothClosingCellsAndConfirmingEndsGame() {
-        driver0 = TestUtils.getDriver(sessionId, pids.get(0));
-        driver1 = TestUtils.getDriver(sessionId, pids.get(1));
-        waitUntilBoardLoaded(driver0);
-        waitUntilBoardLoaded(driver1);
+        TestUtils.navigateTo(driver0, sessionId, pids.get(0));
+        TestUtils.navigateTo(driver1, sessionId, pids.get(1));
 
         // player0 crosses RED "12" (white+white) then YELLOW "12" (white+yellow).
         // Both lock intents are auto-declared by the client.

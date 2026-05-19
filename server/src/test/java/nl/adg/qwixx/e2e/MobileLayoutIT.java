@@ -2,9 +2,11 @@ package nl.adg.qwixx.e2e;
 
 import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
 import nl.adg.qwixx.e2e.utils.TestUtils;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -16,9 +18,6 @@ import java.util.Map;
 
 import static nl.adg.qwixx.e2e.helpers.BoardInteractionHelper.*;
 import static nl.adg.qwixx.e2e.helpers.ScoreInteractionHelper.*;
-import static nl.adg.qwixx.e2e.utils.TestUtils.getPortraitDriver;
-import static nl.adg.qwixx.e2e.utils.TestUtils.waitUntilBoardLoaded;
-import static nl.adg.qwixx.e2e.utils.TestUtils.waitUntilScoreLoaded;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -39,27 +38,36 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * Window size: 390 × 844  (portrait — triggers @media (orientation: portrait))
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class MobileLayoutIT extends BaseIntegrationTest {
 
     private static final int BLUE_ROW_INDEX    = 3;
     private static final int BLUE_ROW_ALL_CELLS = 11;
     private static final int RED_ROW_INDEX     = 0;
 
-    private WebDriver driver0;
-    private WebDriver driver1;
+    /** Portrait (390×844) driver for mobile board and score-screen tests. */
+    private WebDriver portraitDriver;
+    /** Desktop (1280×800) driver for the Longo self-close modal tests. */
+    private WebDriver desktopDriver;
     private String sessionId;
     private List<String> playerIds;
+
+    @BeforeAll
+    void openDrivers() {
+        portraitDriver = TestUtils.createPortraitDriver();
+        desktopDriver  = TestUtils.createDriver();
+    }
+
+    @AfterAll
+    void closeDrivers() {
+        if (portraitDriver != null) { portraitDriver.quit(); portraitDriver = null; }
+        if (desktopDriver  != null) { desktopDriver.quit();  desktopDriver  = null; }
+    }
 
     @BeforeEach
     void createGame() {
         sessionId = api.createGame(2);
         playerIds = api.getPlayerIds(sessionId);
-    }
-
-    @AfterEach
-    void tearDown() {
-        if (driver0 != null) { driver0.quit(); driver0 = null; }
-        if (driver1 != null) { driver1.quit(); driver1 = null; }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -73,10 +81,9 @@ public class MobileLayoutIT extends BaseIntegrationTest {
     @Test
     void boardHostIsRotated90DegreesInPortraitViewport() {
         api.roll(sessionId, playerIds.get(0));
-        driver0 = getPortraitDriver(sessionId, playerIds.get(0));
-        waitUntilBoardLoaded(driver0);
+        TestUtils.navigateTo(portraitDriver, sessionId, playerIds.get(0));
 
-        assertTrue(isBoardHostRotated(driver0),
+        assertTrue(isBoardHostRotated(portraitDriver),
                 "Board :host must have transform: rotate(90deg) in portrait mode");
     }
 
@@ -90,15 +97,14 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         api.roll(sessionId, playerIds.get(0));
         api.setDice(sessionId, 1, 1);
 
-        driver1 = getPortraitDriver(sessionId, playerIds.get(1));
-        waitUntilBoardLoaded(driver1);
+        TestUtils.navigateTo(portraitDriver, sessionId, playerIds.get(1));
 
         String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
         api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
 
-        waitUntilModalVisible(driver1, 8);
+        waitUntilModalVisible(portraitDriver, 8);
 
-        assertTrue(isModalVisible(driver1),
+        assertTrue(isModalVisible(portraitDriver),
                 "Lock-intent modal must be visible in a portrait (mobile) viewport");
     }
 
@@ -114,15 +120,14 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         api.roll(sessionId, playerIds.get(0));
         api.setDice(sessionId, 1, 1);
 
-        driver1 = getPortraitDriver(sessionId, playerIds.get(1));
-        waitUntilBoardLoaded(driver1);
+        TestUtils.navigateTo(portraitDriver, sessionId, playerIds.get(1));
 
         String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
         api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
 
-        waitUntilModalVisible(driver1, 8);
+        waitUntilModalVisible(portraitDriver, 8);
 
-        assertTrue(isModalOverlayWithinViewport(driver1),
+        assertTrue(isModalOverlayWithinViewport(portraitDriver),
                 "Modal overlay must be fully within the viewport on mobile — " +
                 "position:fixed inside a CSS transform breaks this");
     }
@@ -138,58 +143,17 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         api.roll(sessionId, playerIds.get(0));
         api.setDice(sessionId, 1, 1);
 
-        driver1 = getPortraitDriver(sessionId, playerIds.get(1));
-        waitUntilBoardLoaded(driver1);
+        TestUtils.navigateTo(portraitDriver, sessionId, playerIds.get(1));
 
         String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
         api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
 
-        waitUntilModalVisible(driver1, 8);
+        waitUntilModalVisible(portraitDriver, 8);
 
         // This click must NOT throw — if the button is off-screen it will
-        assertDoesNotThrow(() -> clickModalConfirmButton(driver1),
+        assertDoesNotThrow(() -> clickModalConfirmButton(portraitDriver),
                 "Confirm button must be interactable in a portrait (mobile) viewport");
     }
-
-    /**
-     * Full lock flow on mobile: player0 declares intent (desktop), player1 sees
-     * modal in portrait, clicks Confirm, row closes for both players.
-     */
-//    @Test
-//    void fullLockFlow_mobilePassiveConfirms_rowCloses() {
-//        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
-//        api.roll(sessionId, playerIds.get(0));
-//        api.setDice(sessionId, 1, 1);
-//
-//        // Player 0 on desktop, player 1 on mobile portrait
-//        driver0 = TestUtils.getDriver(sessionId, playerIds.get(0));
-//        driver1 = TestUtils.getPortraitDriver(sessionId, playerIds.get(1));
-//        TestUtils.waitUntilBoardLoaded(driver0);
-//        TestUtils.waitUntilBoardLoaded(driver1);
-//
-//        // Active player declares lock via the desktop browser
-//        BoardInteractionHelper.clickLockButton(driver0, "BLUE");
-//
-//        // Passive player on mobile must see the modal and be able to confirm it
-//        BoardInteractionHelper.waitUntilModalVisible(driver1, 8);
-//        assertTrue(BoardInteractionHelper.isModalOverlayWithinViewport(driver1),
-//                "Modal must be within viewport on mobile before confirming");
-//
-//        BoardInteractionHelper.clickModalConfirmButton(driver1);
-//
-//        // Both players must see the BLUE row close
-//        new WebDriverWait(driver0, Duration.ofSeconds(8))
-//                .until(d -> BoardInteractionHelper.isRowClosed(d, "BLUE"));
-//        new WebDriverWait(driver1, Duration.ofSeconds(8))
-//                .until(d -> BoardInteractionHelper.isRowClosed(d, "BLUE"));
-//
-//        assertTrue(BoardInteractionHelper.isRowClosed(driver0, "BLUE"),
-//                "BLUE row must be closed in player0's desktop browser");
-//        assertTrue(BoardInteractionHelper.isRowClosed(driver1, "BLUE"),
-//                "BLUE row must be closed in player1's mobile browser");
-//        assertFalse(BoardInteractionHelper.isModalVisible(driver1),
-//                "Modal must disappear after confirming on mobile");
-//    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Score screen winner modal on mobile
@@ -204,10 +168,9 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         api.setCrosses(sessionId, playerIds.get(0), RED_ROW_INDEX, 4);
         api.forceFinish(sessionId);
 
-        driver0 = TestUtils.getPortraitScoreDriver(sessionId);
-        waitUntilScoreLoaded(driver0);
+        TestUtils.navigateToScore(portraitDriver, sessionId);
 
-        assertFalse(isRotated90Degrees(driver0),
+        assertFalse(isRotated90Degrees(portraitDriver),
                 "Score screen :host must NOT be rotated in portrait mode");
     }
 
@@ -219,12 +182,11 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         api.setCrosses(sessionId, playerIds.get(0), RED_ROW_INDEX, 4);
         api.forceFinish(sessionId);
 
-        driver0 = TestUtils.getPortraitScoreDriver(sessionId);
-        waitUntilScoreLoaded(driver0);
+        TestUtils.navigateToScore(portraitDriver, sessionId);
 
-        waitUntilWinnerModalVisible(driver0, 25);
+        waitUntilWinnerModalVisible(portraitDriver, 25);
 
-        assertTrue(isWinnerModalVisible(driver0),
+        assertTrue(isWinnerModalVisible(portraitDriver),
                 "Winner modal must appear on the score screen in portrait (mobile) viewport");
     }
 
@@ -239,12 +201,11 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         api.setCrosses(sessionId, playerIds.get(0), RED_ROW_INDEX, 4);
         api.forceFinish(sessionId);
 
-        driver0 = TestUtils.getPortraitScoreDriver(sessionId);
-        waitUntilScoreLoaded(driver0);
+        TestUtils.navigateToScore(portraitDriver, sessionId);
 
-        waitUntilWinnerModalVisible(driver0, 25);
+        waitUntilWinnerModalVisible(portraitDriver, 25);
 
-        assertTrue(isWinnerModalWithinViewport(driver0),
+        assertTrue(isWinnerModalWithinViewport(portraitDriver),
                 "Winner modal overlay must be fully within the viewport on mobile");
     }
 
@@ -258,19 +219,18 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         api.setCrosses(sessionId, playerIds.get(0), RED_ROW_INDEX, 4);
         api.forceFinish(sessionId);
 
-        driver0 = TestUtils.getPortraitScoreDriver(sessionId);
-        waitUntilScoreLoaded(driver0);
+        TestUtils.navigateToScore(portraitDriver, sessionId);
 
-        waitUntilWinnerModalVisible(driver0, 25);
+        waitUntilWinnerModalVisible(portraitDriver, 25);
 
         // This must NOT throw — if the button is off-screen Selenium throws
-        assertDoesNotThrow(() -> clickViewScoresButton(driver0),
+        assertDoesNotThrow(() -> clickViewScoresButton(portraitDriver),
                 "View Scores button must be clickable in portrait (mobile) viewport");
 
         // After clicking, modal must dismiss and action bar must appear
-        assertFalse(isWinnerModalVisible(driver0),
+        assertFalse(isWinnerModalVisible(portraitDriver),
                 "Winner modal must close after clicking View Scores on mobile");
-        assertTrue(isActionBarVisible(driver0),
+        assertTrue(isActionBarVisible(portraitDriver),
                 "Action bar must appear after dismissing the winner modal on mobile");
     }
 
@@ -280,43 +240,32 @@ public class MobileLayoutIT extends BaseIntegrationTest {
 
     /**
      * Verifies that the Longo-specific sheet elements are all rendered and visible
-     * in a portrait (mobile) viewport:
-     *
-     *  - Right column as a whole (layout container for the sheet and HUD)
-     *  - Bonus track with bonus chips (the "extra numbers" unique to Longo)
-     *  - Lock icon for every color row
-     *  - Punishment boxes (all four)
-     *
-     * Uses a single-player Longo game so no dice roll is needed — the bonus numbers
-     * are assigned at game creation and are present in the very first game state.
+     * in a portrait (mobile) viewport.
      */
     @Test
     void longoSheetElementsAreRenderedOnMobile() {
         String sid = api.createGame(1, Map.of("base", "LONGO"));
         String pid = api.getPlayerIds(sid).get(0);
 
-        driver0 = getPortraitDriver(sid, pid);
-        waitUntilBoardLoaded(driver0);
+        TestUtils.navigateTo(portraitDriver, sid, pid);
 
         // Force --mobile-scale so all elements fit within the host's 844px clip boundary.
-        // The component's _scaleEffect computes this asynchronously after each render;
-        // we apply it directly here to make the visibility assertions deterministic.
-        ((org.openqa.selenium.JavascriptExecutor) driver0).executeScript(
+        ((org.openqa.selenium.JavascriptExecutor) portraitDriver).executeScript(
                 "document.querySelector('app-board').style.setProperty('--mobile-scale','0.6')");
         TestUtils.wait(150); // let the browser apply the zoom recalculation
 
         // Right column must be present and have a non-zero height.
-        WebElement rightCol = driver0.findElement(By.className("right-column"));
+        WebElement rightCol = portraitDriver.findElement(By.className("right-column"));
         assertTrue(rightCol.isDisplayed(),
                 "Right column must be displayed on mobile");
         assertTrue(rightCol.getSize().height > 0,
                 "Right column must have positive height on mobile");
 
         // Longo-specific: bonus track with at least one visible bonus chip.
-        WebElement bonusTrack = driver0.findElement(By.className("bonus-track"));
+        WebElement bonusTrack = portraitDriver.findElement(By.className("bonus-track"));
         assertTrue(bonusTrack.isDisplayed(),
                 "Bonus track must be displayed on mobile for a Longo game");
-        List<WebElement> bonusChips = driver0.findElements(By.className("bonus-chip"));
+        List<WebElement> bonusChips = portraitDriver.findElements(By.className("bonus-chip"));
         assertFalse(bonusChips.isEmpty(),
                 "Bonus chips must be present in the bonus track for a Longo game");
         assertTrue(bonusChips.stream().allMatch(WebElement::isDisplayed),
@@ -324,7 +273,7 @@ public class MobileLayoutIT extends BaseIntegrationTest {
 
         // Lock icon: every color row must have a rendered, visible lock cell.
         for (String color : List.of("RED", "YELLOW", "GREEN", "BLUE")) {
-            WebElement lockCell = driver0.findElement(By.xpath(
+            WebElement lockCell = portraitDriver.findElement(By.xpath(
                     "//section[contains(@class,'current-player')]" +
                     "//div[@data-color='" + color + "' and contains(@class,'lock-cell')]"));
             assertTrue(lockCell.isDisplayed(),
@@ -332,7 +281,7 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         }
 
         // Punishment track: all four boxes must be rendered.
-        List<WebElement> punishBoxes = driver0.findElements(By.className("punishment-box"));
+        List<WebElement> punishBoxes = portraitDriver.findElements(By.className("punishment-box"));
         assertEquals(4, punishBoxes.size(),
                 "Must have exactly 4 punishment boxes");
         assertTrue(punishBoxes.stream().allMatch(WebElement::isDisplayed),
@@ -341,37 +290,35 @@ public class MobileLayoutIT extends BaseIntegrationTest {
 
     /**
      * Verifies that every Longo-specific element (rows, bonus track, punishment track)
-     * is fully contained within the {@code .current-player} section — i.e. nothing
-     * overflows the sheet boundary.
+     * is fully contained within the {@code .current-player} section.
      */
     @Test
     void longoVariantIsFullyWithinCurrentPlayerElement() {
         String sid = api.createGame(1, Map.of("base", "LONGO"));
         String pid = api.getPlayerIds(sid).get(0);
 
-        driver0 = getPortraitDriver(sid, pid);
-        waitUntilBoardLoaded(driver0);
+        TestUtils.navigateTo(portraitDriver, sid, pid);
 
-        ((org.openqa.selenium.JavascriptExecutor) driver0).executeScript(
+        ((org.openqa.selenium.JavascriptExecutor) portraitDriver).executeScript(
                 "document.querySelector('app-board').style.setProperty('--mobile-scale','0.6')");
         TestUtils.wait(150);
 
-        WebElement currentPlayer = driver0.findElement(By.cssSelector("section.current-player"));
+        WebElement currentPlayer = portraitDriver.findElement(By.cssSelector("section.current-player"));
 
         for (String color : List.of("RED", "YELLOW", "GREEN", "BLUE")) {
-            WebElement row = driver0.findElement(By.xpath(
+            WebElement row = portraitDriver.findElement(By.xpath(
                     "//section[contains(@class,'current-player')]" +
                     "//div[@data-color='" + color + "' and contains(@class,'row')]"));
-            assertTrue(isElementWithinElement(driver0, row, currentPlayer),
+            assertTrue(isElementWithinElement(portraitDriver, row, currentPlayer),
                     color + " row must be fully within the current-player section");
         }
 
-        WebElement bonusTrack = driver0.findElement(By.className("bonus-track"));
-        assertTrue(isElementWithinElement(driver0, bonusTrack, currentPlayer),
+        WebElement bonusTrack = portraitDriver.findElement(By.className("bonus-track"));
+        assertTrue(isElementWithinElement(portraitDriver, bonusTrack, currentPlayer),
                 "Bonus track must be fully within the current-player section");
 
-        WebElement punishmentTrack = driver0.findElement(By.className("punishment-track"));
-        assertTrue(isElementWithinElement(driver0, punishmentTrack, currentPlayer),
+        WebElement punishmentTrack = portraitDriver.findElement(By.className("punishment-track"));
+        assertTrue(isElementWithinElement(portraitDriver, punishmentTrack, currentPlayer),
                 "Punishment track must be fully within the current-player section");
     }
 
@@ -393,18 +340,17 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         api.roll(sid, pids.get(0));
         api.setDice(sid, 1, 2); // white+white = 3 → "3" reachable
 
-        driver0 = TestUtils.getDriver(sid, pids.get(0));
-        waitUntilBoardLoaded(driver0);
+        TestUtils.navigateTo(desktopDriver, sid, pids.get(0));
 
-        assertFalse(isModalVisible(driver0),
+        assertFalse(isModalVisible(desktopDriver),
                 "No modal should be visible before clicking the second-to-last cell");
 
-        clickCellByValue(driver0, "BLUE", "3");
+        clickCellByValue(desktopDriver, "BLUE", "3");
 
-        new WebDriverWait(driver0, Duration.ofSeconds(5))
+        new WebDriverWait(desktopDriver, Duration.ofSeconds(5))
                 .until(d -> isModalVisible(d));
 
-        assertTrue(isModalVisible(driver0),
+        assertTrue(isModalVisible(desktopDriver),
                 "Yes/No modal must appear after clicking the second-to-last closing cell in Longo");
     }
 
@@ -417,22 +363,21 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         api.roll(sid, pids.get(0));
         api.setDice(sid, 1, 2);
 
-        driver0 = TestUtils.getDriver(sid, pids.get(0));
-        waitUntilBoardLoaded(driver0);
+        TestUtils.navigateTo(desktopDriver, sid, pids.get(0));
 
-        clickCellByValue(driver0, "BLUE", "3");
-        waitUntilModalVisible(driver0, 5);
-        clickModalYesButton(driver0);
+        clickCellByValue(desktopDriver, "BLUE", "3");
+        waitUntilModalVisible(desktopDriver, 5);
+        clickModalYesButton(desktopDriver);
 
         // Modal must close and "3" must be crossed (7 crosses total).
-        new WebDriverWait(driver0, Duration.ofSeconds(5))
+        new WebDriverWait(desktopDriver, Duration.ofSeconds(5))
                 .until(d -> !isModalVisible(d));
 
-        assertFalse(isModalVisible(driver0),
+        assertFalse(isModalVisible(desktopDriver),
                 "Modal must close after clicking Yes");
-        new WebDriverWait(driver0, Duration.ofSeconds(5))
+        new WebDriverWait(desktopDriver, Duration.ofSeconds(5))
                 .until(d -> getCrossedCellCount(d, "BLUE") >= 7);
-        assertTrue(getCrossedCellCount(driver0, "BLUE") >= 7,
+        assertTrue(getCrossedCellCount(desktopDriver, "BLUE") >= 7,
                 "BLUE row must have at least 7 crosses after confirming with Yes");
     }
 
@@ -447,37 +392,30 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         api.roll(sid, pids.get(0));
         api.setDice(sid, 1, 2);
 
-        driver0 = TestUtils.getDriver(sid, pids.get(0));
-        waitUntilBoardLoaded(driver0);
+        TestUtils.navigateTo(desktopDriver, sid, pids.get(0));
 
-        int crossesBefore = getCrossedCellCount(driver0, "BLUE");
+        int crossesBefore = getCrossedCellCount(desktopDriver, "BLUE");
 
-        clickCellByValue(driver0, "BLUE", "3");
-        waitUntilModalVisible(driver0, 5);
-        clickModalNoButton(driver0);
+        clickCellByValue(desktopDriver, "BLUE", "3");
+        waitUntilModalVisible(desktopDriver, 5);
+        clickModalNoButton(desktopDriver);
 
-        new WebDriverWait(driver0, Duration.ofSeconds(5))
+        new WebDriverWait(desktopDriver, Duration.ofSeconds(5))
                 .until(d -> !isModalVisible(d));
 
-        assertFalse(isModalVisible(driver0),
+        assertFalse(isModalVisible(desktopDriver),
                 "Modal must close after clicking No");
-        new WebDriverWait(driver0, Duration.ofSeconds(5))
+        new WebDriverWait(desktopDriver, Duration.ofSeconds(5))
                 .until(d -> getCrossedCellCount(d, "BLUE") >= crossesBefore + 1);
-        assertEquals(crossesBefore + 1, getCrossedCellCount(driver0, "BLUE"),
+        assertEquals(crossesBefore + 1, getCrossedCellCount(desktopDriver, "BLUE"),
                 "Clicking No must still cross the cell — only the lock intent is declined, not the cross");
-        assertFalse(isLockButtonCrossed(driver0, "BLUE"),
+        assertFalse(isLockButtonCrossed(desktopDriver, "BLUE"),
                 "Lock cross must NOT appear after clicking No (lock intent declined)");
     }
 
     /**
      * Regression test for the translation bug where the yes/no modal showed raw
-     * i18n keys ("rowClosure.selfClose", "rowClosure.yes", "rowClosure.no") instead
-     * of translated text.
-     *
-     * Root cause: TranslationService called use() for all 5 languages concurrently,
-     * causing ngx-translate's loadingTranslations observable to be overwritten on
-     * each call.  When a non-English language loaded first, pending dropped to false
-     * before English was in the store, so the translate pipe cached the key string.
+     * i18n keys instead of translated text.
      */
     @Test
     void longoSelfCloseModalShowsTranslatedTextNotRawKeys() {
@@ -488,15 +426,14 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         api.roll(sid, pids.get(0));
         api.setDice(sid, 1, 2);
 
-        driver0 = TestUtils.getDriver(sid, pids.get(0));
-        waitUntilBoardLoaded(driver0);
+        TestUtils.navigateTo(desktopDriver, sid, pids.get(0));
 
-        clickCellByValue(driver0, "BLUE", "3");
-        waitUntilModalVisible(driver0, 5);
+        clickCellByValue(desktopDriver, "BLUE", "3");
+        waitUntilModalVisible(desktopDriver, 5);
 
-        String bodyText = getModalText(driver0);
-        String yesText  = driver0.findElement(By.xpath("//button[contains(@class,'btn-primary')]")).getText();
-        String noText   = driver0.findElement(By.xpath("//button[contains(@class,'btn-secondary')]")).getText();
+        String bodyText = getModalText(desktopDriver);
+        String yesText  = desktopDriver.findElement(By.xpath("//button[contains(@class,'btn-primary')]")).getText();
+        String noText   = desktopDriver.findElement(By.xpath("//button[contains(@class,'btn-secondary')]")).getText();
 
         assertFalse(bodyText.contains("rowClosure."),
                 "Modal question must not show a raw translation key — got: " + bodyText);

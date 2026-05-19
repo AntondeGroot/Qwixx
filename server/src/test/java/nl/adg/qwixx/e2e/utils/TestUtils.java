@@ -1,6 +1,7 @@
 package nl.adg.qwixx.e2e.utils;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.Cookie;
 import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
@@ -21,25 +22,66 @@ public class TestUtils {
     private static final String BASE_URL = "http://127.0.0.1:4200";
 
     public static WebDriver getDriver(String sessionId, String playerId) {
-        WebDriver driver = new ChromeDriver(buildOptions("1920,1080"));
+        WebDriver driver = new ChromeDriver(buildOptions("1280,800"));
+        primeRulesCookie(driver);
         driver.get(BASE_URL + "/?sessionid=" + sessionId + "&playerid=" + playerId);
+        return driver;
+    }
+
+    /**
+     * Opens the board and blocks until it is fully loaded before returning.
+     * Always prefer this over {@link #getDriver} + {@link #waitUntilBoardLoaded}
+     * when opening multiple drivers sequentially, to prevent Chrome DevTools
+     * disconnects caused by two browser instances loading simultaneously.
+     */
+    public static WebDriver getDriverAndWait(String sessionId, String playerId) {
+        WebDriver driver = getDriver(sessionId, playerId);
+        waitUntilBoardLoaded(driver);
         return driver;
     }
 
     /** Opens the board with a portrait (phone) viewport so mobile-rotation CSS fires. */
     public static WebDriver getPortraitDriver(String sessionId, String playerId) {
         WebDriver driver = new ChromeDriver(buildOptions("390,844")); // iPhone 14 Pro portrait
+        primeRulesCookie(driver);
         driver.get(BASE_URL + "/?sessionid=" + sessionId + "&playerid=" + playerId);
         return driver;
     }
 
-    /** Creates a desktop driver without navigating anywhere (useful for sessionStorage setup). */
+    /** Creates a desktop driver and primes the rules-seen cookie so the first-time redirect never fires. */
     public static WebDriver createDriver() {
-        return new ChromeDriver(buildOptions("1920,1080"));
+        WebDriver driver = new ChromeDriver(buildOptions("1280,800"));
+        primeRulesCookie(driver);
+        return driver;
+    }
+
+    /** Creates a portrait driver and primes the rules-seen cookie so the first-time redirect never fires. */
+    public static WebDriver createPortraitDriver() {
+        WebDriver driver = new ChromeDriver(buildOptions("390,844"));
+        primeRulesCookie(driver);
+        return driver;
+    }
+
+    /**
+     * Navigates an existing driver to a game board URL and waits until the board is loaded.
+     * Use this instead of {@link #getDriverAndWait} when reusing a driver across tests.
+     */
+    public static void navigateTo(WebDriver driver, String sessionId, String playerId) {
+        driver.get(BASE_URL + "/?sessionid=" + sessionId + "&playerid=" + playerId);
+        waitUntilBoardLoaded(driver);
+    }
+
+    /**
+     * Navigates an existing driver to the score screen and waits until it is loaded.
+     * Use this instead of {@link #getScoreDriver} when reusing a driver across tests.
+     */
+    public static void navigateToScore(WebDriver driver, String sessionId) {
+        driver.get(BASE_URL + "/score/" + sessionId + "?fast=1");
+        waitUntilScoreLoaded(driver);
     }
 
     public static WebDriver getScoreDriver(String sessionId) {
-        WebDriver driver = new ChromeDriver(buildOptions("1920,1080"));
+        WebDriver driver = new ChromeDriver(buildOptions("1280,800"));
         driver.get(BASE_URL + "/score/" + sessionId + "?fast=1");
         return driver;
     }
@@ -143,5 +185,16 @@ public class TestUtils {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    /**
+     * Navigates to the /rules page to establish the app domain, then sets the
+     * qwixx_rules_seen_v1 cookie.  Without this, a fresh Chrome instance has no
+     * cookie and the Angular app redirects any /game/* navigation to /rules,
+     * causing waitUntilBoardLoaded to time out.
+     */
+    private static void primeRulesCookie(WebDriver driver) {
+        driver.get(BASE_URL + "/rules");
+        driver.manage().addCookie(new Cookie("qwixx_rules_seen_v1", "1"));
     }
 }

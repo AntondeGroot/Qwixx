@@ -21,6 +21,7 @@ import { PlayerListComponent } from '../player-list/player-list.component';
 import { RowComponent } from '../row/row.component';
 import { RowClosureRequest } from '../row-closure-modal/row-closure-modal.component';
 import { RowClosureModalService } from '../services/row-closure-modal.service';
+import { AudioService } from '../services/audio.service';
 
 @Component({
   selector: 'app-board',
@@ -35,6 +36,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly movesService       = inject(MovesService);
   private readonly host               = inject(ElementRef<HTMLElement>);
   private readonly rowClosureModal    = inject(RowClosureModalService);
+  private readonly audio              = inject(AudioService);
 
   sessionId   = signal('');
   playerId    = signal('');
@@ -79,6 +81,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     if (suppress) {
       this.rowClosureModal.clear();
     } else {
+      const wasHidden = untracked(() => this.rowClosureModal.requests().length === 0);
       this.rowClosureModal.show(
         requests,
         () => this.onConfirmRowClosure(),
@@ -86,6 +89,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
         this.hasPendingPassiveCross() || this.hasPendingActiveCross() || this.hasRevertableEndTurn() || this.hasRevertablePassiveEndTurn(),
         this.hasPendingPassiveCross()  // passive: Confirm = EndTurn; active/revert: OK = dismiss
       );
+      if (wasHidden) this.audio.play(AudioService.ROW_CLOSURE_BELL);
     }
   });
   private rollStartTime = 0;
@@ -482,11 +486,13 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   onCellClicked(rowId: string, cellId: string, ownerPid?: string) {
     if (this.isOffline()) {
       const pid = ownerPid ?? this.playerId();
+      this.audio.play(AudioService.CROSS);
       this.sendMoveAs(pid, { moveType: MoveType.CROSS_WHITE_WHITE, rowId, cellId });
       return;
     }
 
     if (this.pendingCellIds().has(cellId)) {
+      this.audio.play(AudioService.UNDO_CROSS);
       this.sendMove({ moveType: MoveType.RESET_TURN });
       return;
     }
@@ -517,11 +523,13 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
               // YES: cross the cell and queue DECLARE_LOCK_INTENT to fire once cross is applied.
               this.rowClosureModal.clearLockConfirm();
               this.pendingAutoLock.set({ rowId: row!.id, autoLock: true, cellId: cellId });
+              this.audio.play(AudioService.CROSS);
               this.sendMove(req);
             },
             () => {
               // NO: just cross the cell, no closing intent.
               this.rowClosureModal.clearLockConfirm();
+              this.audio.play(AudioService.CROSS);
               this.sendMove(req);
             }
           );
@@ -537,6 +545,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Passive players may only use white+white — skip move-type computation entirely.
     if (this.isInPassiveQueue()) {
+      this.audio.play(AudioService.CROSS);
       this.sendMove({ moveType: MoveType.CROSS_WHITE_WHITE, rowId, cellId });
       return;
     }
@@ -545,10 +554,12 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const req = this.buildCrossMoveRequest(row, cell, rowId, cellId);
     if (req) {
+      this.audio.play(AudioService.CROSS);
       this.sendMove(req);
     } else if (this.clickableCellIds().has(cellId)) {
       // Cell is valid (e.g. Longo bonus cross) but its display value doesn't match
       // any dice combination directly — treat it as a white+white cross.
+      this.audio.play(AudioService.CROSS);
       this.sendMove({ moveType: MoveType.CROSS_WHITE_WHITE, rowId, cellId });
     }
   }
@@ -764,6 +775,13 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const curr = this.gameState()?.version;
     if (curr !== undefined && s.version !== undefined && s.version < curr) return;
 
+    const prev = this.gameState();
+    if (prev) {
+      const prevPunishments = Object.values(prev.sheetProgress ?? {}).reduce((n, p) => n + (p.punishments ?? 0), 0);
+      const newPunishments  = Object.values(s.sheetProgress   ?? {}).reduce((n, p) => n + (p.punishments ?? 0), 0);
+      if (newPunishments > prevPunishments) this.audio.play(AudioService.PUNISHMENT);
+    }
+
     const remaining = Math.max(0, this.ROLL_ANIM_MIN_MS - (Date.now() - this.rollStartTime));
     if (this.rollingDice() && this.isMyTurn()) {
       // Active player who rolled: delay showing the result until the animation finishes.
@@ -771,6 +789,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
         if ((s.version ?? 0) >= (this.gameState()?.version ?? -1)) {
           this.gameState.set(s);
         }
+        this.audio.play(AudioService.DICE);
         this.rollingDice.set(false);
       }, remaining);
     } else {
@@ -779,7 +798,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       this.checkPendingAutoLock(s);
       // If a roll animation is in progress (passive player watching), clear it after the window.
       if (this.rollingDice()) {
-        setTimeout(() => this.rollingDice.set(false), remaining);
+        setTimeout(() => { this.audio.play(AudioService.DICE); this.rollingDice.set(false); }, remaining);
       }
     }
   }

@@ -2,6 +2,7 @@ package nl.adg.qwixx.e2e.utils;
 
 import nl.adg.qwixx.QwixxApplication;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.web.context.WebServerApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.io.File;
@@ -10,6 +11,7 @@ import java.nio.file.Path;
 public class SpringAppTestHelper {
 
     private static ConfigurableApplicationContext context;
+    private static int port = -1;
 
     public static synchronized void startApp() {
         if (context != null) return;
@@ -21,11 +23,17 @@ public class SpringAppTestHelper {
         SpringApplication app = new SpringApplication(QwixxApplication.class);
         // "e2e" profile: enables TestController, disables demo-game auto-setup
         app.setAdditionalProfiles("e2e");
-        // Command-line args override application.properties (which defaults to port 4300)
+        // port=0 lets the OS pick a free port, avoiding conflicts with any running servers
         context = app.run(
-                "--server.port=4200",
+                "--server.port=0",
                 "--spring.web.resources.static-locations=file:" + clientDist + "/"
         );
+        port = ((WebServerApplicationContext) context).getWebServer().getPort();
+    }
+
+    public static synchronized int getPort() {
+        if (port < 0) throw new IllegalStateException("App not started yet");
+        return port;
     }
 
     public static synchronized void stopApp() {

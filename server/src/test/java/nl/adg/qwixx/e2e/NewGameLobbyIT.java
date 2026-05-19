@@ -1,6 +1,7 @@
 package nl.adg.qwixx.e2e;
 
 import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
+import nl.adg.qwixx.e2e.utils.SpringAppTestHelper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -72,13 +73,13 @@ public class NewGameLobbyIT extends BaseIntegrationTest {
 
     // ── helpers ──────────────────────────────────────────────────────────────
 
-    private static final String BASE = "http://127.0.0.1:4200";
+    private static String baseUrl() { return "http://127.0.0.1:" + SpringAppTestHelper.getPort(); }
 
     /** Open a score page; playerId is passed as a query param so no root navigation is needed. */
     private WebDriver openScoreAsPlayer(int playerIndex) {
         String pid = playerIdByName.get("player" + playerIndex);
         WebDriver driver = createDriver();
-        driver.get(BASE + "/score/" + sessionId + "?fast=1&pid=" + pid);
+        driver.get(baseUrl() + "/score/" + sessionId + "?fast=1&pid=" + pid);
         return driver;
     }
 
@@ -86,7 +87,7 @@ public class NewGameLobbyIT extends BaseIntegrationTest {
     private WebDriver openSettingsAsPlayer(int playerIndex) {
         String pid = playerIdByName.get("player" + playerIndex);
         WebDriver driver = createDriver();
-        driver.get(BASE + "/settings?sessionId=" + sessionId + "&playerId=" + pid);
+        driver.get(baseUrl() + "/settings?sessionId=" + sessionId + "&playerId=" + pid);
         return driver;
     }
 

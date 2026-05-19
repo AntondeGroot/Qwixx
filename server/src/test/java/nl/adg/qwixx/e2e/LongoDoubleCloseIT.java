@@ -1,9 +1,12 @@
 package nl.adg.qwixx.e2e;
 
 import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
-import org.junit.jupiter.api.AfterEach;
+import nl.adg.qwixx.e2e.utils.TestUtils;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -12,8 +15,6 @@ import java.util.List;
 import java.util.Map;
 
 import static nl.adg.qwixx.e2e.helpers.BoardInteractionHelper.*;
-import static nl.adg.qwixx.e2e.utils.TestUtils.getDriver;
-import static nl.adg.qwixx.e2e.utils.TestUtils.waitUntilBoardLoaded;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -31,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *   - white1 = 8, white2 = 8  →  white+white = 16  →  hits RED "16"
  *   - yellow die = 8           →  white+yellow = 16  →  hits YELLOW "16"
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class LongoDoubleCloseIT extends BaseIntegrationTest {
 
     private static final int RED_ROW_INDEX    = 0; // ascending 2→16
@@ -42,6 +44,20 @@ public class LongoDoubleCloseIT extends BaseIntegrationTest {
     private WebDriver driver2;
     private String    sessionId;
     private List<String> pids;
+
+    @BeforeAll
+    void openDrivers() {
+        driver0 = TestUtils.createDriver();
+        driver1 = TestUtils.createDriver();
+        driver2 = TestUtils.createDriver();
+    }
+
+    @AfterAll
+    void closeDrivers() {
+        if (driver0 != null) { driver0.quit(); driver0 = null; }
+        if (driver1 != null) { driver1.quit(); driver1 = null; }
+        if (driver2 != null) { driver2.quit(); driver2 = null; }
+    }
 
     @BeforeEach
     void setup() {
@@ -58,13 +74,6 @@ public class LongoDoubleCloseIT extends BaseIntegrationTest {
         api.setColoredDie(sessionId, "YELLOW", 8); // white+yellow = 16 → YELLOW "16"
     }
 
-    @AfterEach
-    void tearDown() {
-        if (driver0 != null) { driver0.quit(); driver0 = null; }
-        if (driver1 != null) { driver1.quit(); driver1 = null; }
-        if (driver2 != null) { driver2.quit(); driver2 = null; }
-    }
-
     // ── Test 1: clicking RED "16" auto-crosses the RED lock ──────────────────────
     //
     // "16" is the last closing cell — no YES/NO modal.
@@ -73,12 +82,9 @@ public class LongoDoubleCloseIT extends BaseIntegrationTest {
 
     @Test
     void clickingRed16AutoCrossesRedLockAndClosesRow() {
-        driver0 = getDriver(sessionId, pids.get(0));
-        driver1 = getDriver(sessionId, pids.get(1));
-        driver2 = getDriver(sessionId, pids.get(2));
-        waitUntilBoardLoaded(driver0);
-        waitUntilBoardLoaded(driver1);
-        waitUntilBoardLoaded(driver2);
+        TestUtils.navigateTo(driver0, sessionId, pids.get(0));
+        TestUtils.navigateTo(driver1, sessionId, pids.get(1));
+        TestUtils.navigateTo(driver2, sessionId, pids.get(2));
 
         assertFalse(isLockButtonCrossed(driver0, "RED"),
                 "RED lock must not be crossed before clicking RED-16");
@@ -128,8 +134,7 @@ public class LongoDoubleCloseIT extends BaseIntegrationTest {
 
     @Test
     void yellow16IsClickableAndCrossesSecondLockAfterRed16IsCrossed() {
-        driver0 = getDriver(sessionId, pids.get(0));
-        waitUntilBoardLoaded(driver0);
+        TestUtils.navigateTo(driver0, sessionId, pids.get(0));
 
         // Click RED "16" — no YES/NO modal, auto-declares, lock cross appears
         clickCellByValue(driver0, "RED", "16");
@@ -155,8 +160,7 @@ public class LongoDoubleCloseIT extends BaseIntegrationTest {
 
     @Test
     void clickingYellow16AfterRed16AlsoCrossesYellowLock() {
-        driver0 = getDriver(sessionId, pids.get(0));
-        waitUntilBoardLoaded(driver0);
+        TestUtils.navigateTo(driver0, sessionId, pids.get(0));
 
         // Step 1: click RED "16" — no modal, auto-declares, lock cross appears
         clickCellByValue(driver0, "RED", "16");
@@ -202,12 +206,9 @@ public class LongoDoubleCloseIT extends BaseIntegrationTest {
 
     @Test
     void eachPassiveModalClosesIndependentlyOnConfirm() {
-        driver0 = getDriver(sessionId, pids.get(0));
-        driver1 = getDriver(sessionId, pids.get(1));
-        driver2 = getDriver(sessionId, pids.get(2));
-        waitUntilBoardLoaded(driver0);
-        waitUntilBoardLoaded(driver1);
-        waitUntilBoardLoaded(driver2);
+        TestUtils.navigateTo(driver0, sessionId, pids.get(0));
+        TestUtils.navigateTo(driver1, sessionId, pids.get(1));
+        TestUtils.navigateTo(driver2, sessionId, pids.get(2));
 
         // player0 clicks RED "16" — no modal, auto-declares
         clickCellByValue(driver0, "RED", "16");
@@ -268,12 +269,9 @@ public class LongoDoubleCloseIT extends BaseIntegrationTest {
 
     @Test
     void closingBothRowsEndsGameAndShowsScoreScreen() {
-        driver0 = getDriver(sessionId, pids.get(0));
-        driver1 = getDriver(sessionId, pids.get(1));
-        driver2 = getDriver(sessionId, pids.get(2));
-        waitUntilBoardLoaded(driver0);
-        waitUntilBoardLoaded(driver1);
-        waitUntilBoardLoaded(driver2);
+        TestUtils.navigateTo(driver0, sessionId, pids.get(0));
+        TestUtils.navigateTo(driver1, sessionId, pids.get(1));
+        TestUtils.navigateTo(driver2, sessionId, pids.get(2));
 
         // === Part 1: player0 closes RED via the UI ===
         // "16" — no modal, auto-declares, passives see the closure modal
@@ -380,80 +378,73 @@ public class LongoDoubleCloseIT extends BaseIntegrationTest {
         // Override dice: white+white=3 so player2 can cross BLUE "3" (second-to-last, value=3)
         api.setDice(sid, 1, 2);
 
-        WebDriver d1 = getDriver(sid, pids3.get(1));
-        WebDriver d2 = getDriver(sid, pids3.get(2));
-        waitUntilBoardLoaded(d1);
-        waitUntilBoardLoaded(d2);
+        TestUtils.navigateTo(driver1, sid, pids3.get(1));
+        TestUtils.navigateTo(driver2, sid, pids3.get(2));
 
-        try {
-            // Both passives see the notification modal (player0 declared RED and BLUE).
-            waitUntilModalVisible(d1, 20);
-            waitUntilModalVisible(d2, 20);
+        // Both passives see the notification modal (player0 declared RED and BLUE).
+        waitUntilModalVisible(driver1, 20);
+        waitUntilModalVisible(driver2, 20);
 
-            // player1 dismisses and EndTurns immediately
-            clickModalConfirmButton(d1);
-            waitUntilPassButtonVisible(d1, 5);
-            clickPassButton(d1);
+        // player1 dismisses and EndTurns immediately
+        clickModalConfirmButton(driver1);
+        waitUntilPassButtonVisible(driver1, 5);
+        clickPassButton(driver1);
 
-            // player2 dismisses notification so the board is accessible
-            clickModalConfirmButton(d2);
+        // player2 dismisses notification so the board is accessible
+        clickModalConfirmButton(driver2);
 
-            // player2 clicks BLUE "3" (second-to-last closing cell) → YES/NO modal → YES
-            // The server will reject DECLARE_LOCK_INTENT (BLUE already declared by player0),
-            // but player2 still qualifies for the lock cross as a co-locker.
-            clickCellByValue(d2, "BLUE", "3");
-            waitUntilModalVisible(d2, 5);
-            clickModalYesButton(d2);
+        // player2 clicks BLUE "3" (second-to-last closing cell) → YES/NO modal → YES
+        // The server will reject DECLARE_LOCK_INTENT (BLUE already declared by player0),
+        // but player2 still qualifies for the lock cross as a co-locker.
+        clickCellByValue(driver2, "BLUE", "3");
+        waitUntilModalVisible(driver2, 5);
+        clickModalYesButton(driver2);
 
-            // Lock cross must appear (via pendingAutoLock) even though DECLARE_LOCK_INTENT is rejected
-            new WebDriverWait(d2, Duration.ofSeconds(5))
-                    .until(d -> isLockButtonCrossed(d, "BLUE"));
-            assertTrue(isLockButtonCrossed(d2, "BLUE"),
-                    "player2 must see BLUE lock cross after clicking YES on '3'");
+        // Lock cross must appear (via pendingAutoLock) even though DECLARE_LOCK_INTENT is rejected
+        new WebDriverWait(driver2, Duration.ofSeconds(5))
+                .until(d -> isLockButtonCrossed(d, "BLUE"));
+        assertTrue(isLockButtonCrossed(driver2, "BLUE"),
+                "player2 must see BLUE lock cross after clicking YES on '3'");
 
-            // player2 EndTurns → EVALUATE: RED and BLUE both close → 2 rows → game over.
-            // Fix: undo buffer cleared AFTER evaluate → canCrossLock sees "3" → lockCrossed=true.
-            // Bug: undo buffer cleared BEFORE evaluate → lockCrossed=false → cross disappears.
-            waitUntilPassButtonVisible(d2, 5);
-            clickPassButton(d2);
+        // player2 EndTurns → EVALUATE: RED and BLUE both close → 2 rows → game over.
+        // Fix: undo buffer cleared AFTER evaluate → canCrossLock sees "3" → lockCrossed=true.
+        // Bug: undo buffer cleared BEFORE evaluate → lockCrossed=false → cross disappears.
+        waitUntilPassButtonVisible(driver2, 5);
+        clickPassButton(driver2);
 
-            // After game-over state arrives the 1500 ms navigation timer fires.
-            // During that window the lock cross must remain visible via rowState.lockCrossed=true
-            // (not just via the now-cleared pendingAutoLock).
-            new WebDriverWait(d2, Duration.ofSeconds(8))
-                    .until(d -> isLockButtonCrossed(d, "BLUE")
-                             || d.getCurrentUrl().contains("/score"));
-            if (!d2.getCurrentUrl().contains("/score")) {
-                assertTrue(isLockButtonCrossed(d2, "BLUE"),
-                        "BLUE lock cross must remain visible in the game-over board state " +
-                        "before the score screen appears");
-            }
-
-            // All browsers navigate to score screen
-            new WebDriverWait(d2, Duration.ofSeconds(10))
-                    .until(d -> d.getCurrentUrl().contains("/score"));
-            new WebDriverWait(d1, Duration.ofSeconds(10))
-                    .until(d -> d.getCurrentUrl().contains("/score"));
-            assertTrue(d2.getCurrentUrl().contains("/score"), "player2 must reach score screen");
-
-            // Server-side confirmation: lockCrossed=true for player2's BLUE row in final state.
-            // This is the root assertion — without it the visual cross would disappear.
-            Map<String, Object> state3     = api.getGameState(sid);
-            Map<String, Object> progMap    = (Map<String, Object>) state3.get("sheetProgress");
-            Map<String, Object> p2prog     = (Map<String, Object>) progMap.get(pids3.get(2));
-            Map<String, Object> rowStates  = (Map<String, Object>) p2prog.get("rowStates");
-            Map<String, Object> layouts    = (Map<String, Object>) state3.get("sheetLayouts");
-            Map<String, Object> p2layout   = (Map<String, Object>) layouts.get(pids3.get(2));
-            List<Map<String, Object>> rows = (List<Map<String, Object>>) p2layout.get("rows");
-            String blueRowId2              = (String) rows.get(BLUE_ROW_INDEX).get("id");
-            Map<String, Object> blueState  = (Map<String, Object>) rowStates.get(blueRowId2);
-            assertTrue(blueState != null && Boolean.TRUE.equals(blueState.get("lockCrossed")),
-                    "player2 must have lockCrossed=true for BLUE in the final game state — " +
-                    "without this the lock cross disappears before the score screen");
-        } finally {
-            d1.quit();
-            d2.quit();
+        // After game-over state arrives the 1500 ms navigation timer fires.
+        // During that window the lock cross must remain visible via rowState.lockCrossed=true
+        // (not just via the now-cleared pendingAutoLock).
+        new WebDriverWait(driver2, Duration.ofSeconds(8))
+                .until(d -> isLockButtonCrossed(d, "BLUE")
+                         || d.getCurrentUrl().contains("/score"));
+        if (!driver2.getCurrentUrl().contains("/score")) {
+            assertTrue(isLockButtonCrossed(driver2, "BLUE"),
+                    "BLUE lock cross must remain visible in the game-over board state " +
+                    "before the score screen appears");
         }
+
+        // All browsers navigate to score screen
+        new WebDriverWait(driver2, Duration.ofSeconds(10))
+                .until(d -> d.getCurrentUrl().contains("/score"));
+        new WebDriverWait(driver1, Duration.ofSeconds(10))
+                .until(d -> d.getCurrentUrl().contains("/score"));
+        assertTrue(driver2.getCurrentUrl().contains("/score"), "player2 must reach score screen");
+
+        // Server-side confirmation: lockCrossed=true for player2's BLUE row in final state.
+        // This is the root assertion — without it the visual cross would disappear.
+        Map<String, Object> state3     = api.getGameState(sid);
+        Map<String, Object> progMap    = (Map<String, Object>) state3.get("sheetProgress");
+        Map<String, Object> p2prog     = (Map<String, Object>) progMap.get(pids3.get(2));
+        Map<String, Object> rowStates  = (Map<String, Object>) p2prog.get("rowStates");
+        Map<String, Object> layouts    = (Map<String, Object>) state3.get("sheetLayouts");
+        Map<String, Object> p2layout   = (Map<String, Object>) layouts.get(pids3.get(2));
+        List<Map<String, Object>> rows = (List<Map<String, Object>>) p2layout.get("rows");
+        String blueRowId2              = (String) rows.get(BLUE_ROW_INDEX).get("id");
+        Map<String, Object> blueState  = (Map<String, Object>) rowStates.get(blueRowId2);
+        assertTrue(blueState != null && Boolean.TRUE.equals(blueState.get("lockCrossed")),
+                "player2 must have lockCrossed=true for BLUE in the final game state — " +
+                "without this the lock cross disappears before the score screen");
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────────

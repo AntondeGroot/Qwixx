@@ -2,9 +2,12 @@ package nl.adg.qwixx.e2e;
 
 import nl.adg.qwixx.e2e.helpers.ScoreInteractionHelper;
 import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
-import org.junit.jupiter.api.AfterEach;
+import nl.adg.qwixx.e2e.utils.TestUtils;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -13,9 +16,6 @@ import java.time.Duration;
 import java.util.List;
 
 import static nl.adg.qwixx.e2e.helpers.ScoreInteractionHelper.*;
-import static nl.adg.qwixx.e2e.utils.TestUtils.getPortraitScoreDriver;
-import static nl.adg.qwixx.e2e.utils.TestUtils.getScoreDriver;
-import static nl.adg.qwixx.e2e.utils.TestUtils.waitUntilScoreLoaded;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -37,13 +37,29 @@ import static org.junit.jupiter.api.Assertions.*;
  * TOTAL ANIMATION TIME ≈ 17–19 s (four colour columns + punishment + modal delay).
  * All waits use explicit timeouts sized to cover the full animation safely.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ScoreScreenIT extends BaseIntegrationTest {
 
     private static final int RED_ROW_INDEX  = 0;
     private static final int BLUE_ROW_INDEX = 3;
 
+    /** Desktop (1280×800) driver for standard score-screen tests. */
     private WebDriver driver;
+    /** Portrait (390×844) driver for mobile layout tests. */
+    private WebDriver portraitDriver;
     private String    sessionId;
+
+    @BeforeAll
+    void openDrivers() {
+        driver         = TestUtils.createDriver();
+        portraitDriver = TestUtils.createPortraitDriver();
+    }
+
+    @AfterAll
+    void closeDrivers() {
+        if (driver         != null) { driver.quit();         driver         = null; }
+        if (portraitDriver != null) { portraitDriver.quit(); portraitDriver = null; }
+    }
 
     @BeforeEach
     void setupGame() {
@@ -65,17 +81,11 @@ public class ScoreScreenIT extends BaseIntegrationTest {
         api.forceFinish(sessionId);
     }
 
-    @AfterEach
-    void tearDown() {
-        if (driver != null) { driver.quit(); driver = null; }
-    }
-
     // ── Basic loading ──────────────────────────────────────────────────────────
 
     @Test
     void scoreScreenLoadsAndShowsAllPlayers() {
-        driver = getScoreDriver(sessionId);
-        waitUntilScoreLoaded(driver);
+        TestUtils.navigateToScore(driver, sessionId);
 
         List<String> names = getVisiblePlayerNames(driver);
         assertTrue(names.contains("player0"),
@@ -88,8 +98,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
 
     @Test
     void winnerModalAppearsWithCorrectWinner() {
-        driver = getScoreDriver(sessionId);
-        waitUntilScoreLoaded(driver);
+        TestUtils.navigateToScore(driver, sessionId);
 
         // Wait for the full animation + modal to appear (up to 35 s)
         waitUntilWinnerModalVisible(driver, 10);
@@ -101,8 +110,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
 
     @Test
     void winnerIsAtTopOfRankingAfterAnimation() {
-        driver = getScoreDriver(sessionId);
-        waitUntilScoreLoaded(driver);
+        TestUtils.navigateToScore(driver, sessionId);
 
         waitUntilWinnerModalVisible(driver, 10);
 
@@ -114,8 +122,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
 
     @Test
     void winnerRowReceivesGoldenWinnerClass() {
-        driver = getScoreDriver(sessionId);
-        waitUntilScoreLoaded(driver);
+        TestUtils.navigateToScore(driver, sessionId);
 
         waitUntilWinnerModalVisible(driver, 10);
 
@@ -127,8 +134,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
 
     @Test
     void finalDisplayedTotalsMatchExpectedScores() {
-        driver = getScoreDriver(sessionId);
-        waitUntilScoreLoaded(driver);
+        TestUtils.navigateToScore(driver, sessionId);
 
         waitUntilWinnerModalVisible(driver, 10);
 
@@ -142,8 +148,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
 
     @Test
     void winnerModalHasAllThreeButtons() {
-        driver = getScoreDriver(sessionId);
-        waitUntilScoreLoaded(driver);
+        TestUtils.navigateToScore(driver, sessionId);
         waitUntilWinnerModalVisible(driver, 10);
 
         assertEquals(3, getModalButtonCount(driver),
@@ -154,8 +159,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
 
     @Test
     void viewScoresButtonDismissesModal() {
-        driver = getScoreDriver(sessionId);
-        waitUntilScoreLoaded(driver);
+        TestUtils.navigateToScore(driver, sessionId);
         waitUntilWinnerModalVisible(driver, 10);
 
         assertTrue(isWinnerModalVisible(driver),
@@ -169,8 +173,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
 
     @Test
     void viewScoresButtonRevealsActionBar() {
-        driver = getScoreDriver(sessionId);
-        waitUntilScoreLoaded(driver);
+        TestUtils.navigateToScore(driver, sessionId);
         waitUntilWinnerModalVisible(driver, 10);
 
         assertFalse(isActionBarVisible(driver),
@@ -184,8 +187,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
 
     @Test
     void actionBarHasTwoButtonsAfterViewScores() {
-        driver = getScoreDriver(sessionId);
-        waitUntilScoreLoaded(driver);
+        TestUtils.navigateToScore(driver, sessionId);
         waitUntilWinnerModalVisible(driver, 10);
         clickViewScoresButton(driver);
 
@@ -195,8 +197,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
 
     @Test
     void scoreTableRemainsVisibleAfterViewScores() {
-        driver = getScoreDriver(sessionId);
-        waitUntilScoreLoaded(driver);
+        TestUtils.navigateToScore(driver, sessionId);
         waitUntilWinnerModalVisible(driver, 10);
         clickViewScoresButton(driver);
 
@@ -211,8 +212,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
 
     @Test
     void newGameButtonNavigatesToSettings() {
-        driver = getScoreDriver(sessionId);
-        waitUntilScoreLoaded(driver);
+        TestUtils.navigateToScore(driver, sessionId);
         waitUntilWinnerModalVisible(driver, 10);
 
        clickNewGameButton(driver);
@@ -226,8 +226,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
 
     @Test
     void leaveGameButtonNavigatesToLobby() {
-        driver = getScoreDriver(sessionId);
-        waitUntilScoreLoaded(driver);
+        TestUtils.navigateToScore(driver, sessionId);
         waitUntilWinnerModalVisible(driver, 10);
 
         clickLeaveGameButton(driver);
@@ -246,10 +245,9 @@ public class ScoreScreenIT extends BaseIntegrationTest {
      */
     @Test
     void scoreScreenIsNotRotatedInPortraitMode() {
-        driver = getPortraitScoreDriver(sessionId);
-        waitUntilScoreLoaded(driver);
+        TestUtils.navigateToScore(portraitDriver, sessionId);
 
-        assertFalse(isRotated90Degrees(driver),
+        assertFalse(isRotated90Degrees(portraitDriver),
                 "app-score must NOT have rotate(90deg) in portrait mode — "
                 + "the score screen is now a normal portrait layout");
     }
@@ -265,10 +263,9 @@ public class ScoreScreenIT extends BaseIntegrationTest {
      */
     @Test
     void scoreScreenIsNotZoomedInPortraitMode() {
-        driver = getPortraitScoreDriver(sessionId);
-        waitUntilScoreLoaded(driver);
+        TestUtils.navigateToScore(portraitDriver, sessionId);
 
-        String zoom = (String) ((JavascriptExecutor) driver).executeScript(
+        String zoom = (String) ((JavascriptExecutor) portraitDriver).executeScript(
                 "const el = document.querySelector('.score-screen');" +
                 "if (!el) return 'not-found';" +
                 "return window.getComputedStyle(el).zoom;");
@@ -286,10 +283,9 @@ public class ScoreScreenIT extends BaseIntegrationTest {
      */
     @Test
     void scoreTableCoversEnoughOfPortraitViewport() {
-        driver = getPortraitScoreDriver(sessionId);
-        waitUntilScoreLoaded(driver);
+        TestUtils.navigateToScore(portraitDriver, sessionId);
 
-        boolean coversViewport = (boolean) ((JavascriptExecutor) driver).executeScript(
+        boolean coversViewport = (boolean) ((JavascriptExecutor) portraitDriver).executeScript(
                 "const table = document.querySelector('.score-table');" +
                 "if (!table) return false;" +
                 "const rect = table.getBoundingClientRect();" +
@@ -306,20 +302,19 @@ public class ScoreScreenIT extends BaseIntegrationTest {
      */
     @Test
     void winnerModalIsVisibleInPortraitMode() {
-        driver = getPortraitScoreDriver(sessionId);
-        waitUntilScoreLoaded(driver);
-        waitUntilWinnerModalVisible(driver, 10);
+        TestUtils.navigateToScore(portraitDriver, sessionId);
+        waitUntilWinnerModalVisible(portraitDriver, 10);
 
-        assertTrue(isWinnerModalVisible(driver),
+        assertTrue(isWinnerModalVisible(portraitDriver),
                 "Winner modal must be visible in portrait mode");
-        assertEquals(3, getModalButtonCount(driver),
+        assertEquals(3, getModalButtonCount(portraitDriver),
                 "Winner modal must still show all 3 buttons in portrait mode");
 
         // Verify the modal is interactive: clicking View Scores works in portrait too
-        clickViewScoresButton(driver);
-        assertFalse(isWinnerModalVisible(driver),
+        clickViewScoresButton(portraitDriver);
+        assertFalse(isWinnerModalVisible(portraitDriver),
                 "View Scores must dismiss the modal in portrait mode");
-        assertTrue(isActionBarVisible(driver),
+        assertTrue(isActionBarVisible(portraitDriver),
                 "Action bar must appear in portrait mode after dismissing modal");
     }
 
@@ -332,12 +327,11 @@ public class ScoreScreenIT extends BaseIntegrationTest {
      */
     @Test
     void scoreScreenPortrait_playerNamesAreVisible() {
-        driver = getPortraitScoreDriver(sessionId);
-        waitUntilScoreLoaded(driver);
-        waitUntilWinnerModalVisible(driver, 10);
-        clickViewScoresButton(driver);
+        TestUtils.navigateToScore(portraitDriver, sessionId);
+        waitUntilWinnerModalVisible(portraitDriver, 10);
+        clickViewScoresButton(portraitDriver);
 
-        boolean namesVisible = (boolean) ((JavascriptExecutor) driver).executeScript(
+        boolean namesVisible = (boolean) ((JavascriptExecutor) portraitDriver).executeScript(
                 "const names = document.querySelectorAll('.player-name');" +
                 "if (!names.length) return false;" +
                 "for (const el of names) {" +
@@ -359,12 +353,11 @@ public class ScoreScreenIT extends BaseIntegrationTest {
      */
     @Test
     void scoreScreenPortrait_totalColumnIsWithinViewport() {
-        driver = getPortraitScoreDriver(sessionId);
-        waitUntilScoreLoaded(driver);
-        waitUntilWinnerModalVisible(driver, 10);
-        clickViewScoresButton(driver);
+        TestUtils.navigateToScore(portraitDriver, sessionId);
+        waitUntilWinnerModalVisible(portraitDriver, 10);
+        clickViewScoresButton(portraitDriver);
 
-        boolean totalsVisible = (boolean) ((JavascriptExecutor) driver).executeScript(
+        boolean totalsVisible = (boolean) ((JavascriptExecutor) portraitDriver).executeScript(
                 "const totals = document.querySelectorAll('.total-value');" +
                 "if (!totals.length) return false;" +
                 "for (const el of totals) {" +
@@ -386,10 +379,9 @@ public class ScoreScreenIT extends BaseIntegrationTest {
      */
     @Test
     void scoreScreenPortrait_noHorizontalOverflow() {
-        driver = getPortraitScoreDriver(sessionId);
-        waitUntilScoreLoaded(driver);
+        TestUtils.navigateToScore(portraitDriver, sessionId);
 
-        boolean noOverflow = (boolean) ((JavascriptExecutor) driver).executeScript(
+        boolean noOverflow = (boolean) ((JavascriptExecutor) portraitDriver).executeScript(
                 // document.documentElement.scrollWidth > window.innerWidth means horizontal scrollbar
                 "return document.documentElement.scrollWidth <= window.innerWidth + 1;");
 

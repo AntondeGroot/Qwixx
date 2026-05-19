@@ -1,9 +1,12 @@
 package nl.adg.qwixx.e2e;
 
 import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
-import org.junit.jupiter.api.AfterEach;
+import nl.adg.qwixx.e2e.utils.TestUtils;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -13,8 +16,6 @@ import java.util.Map;
 
 import static nl.adg.qwixx.e2e.helpers.BoardInteractionHelper.clickCellByValue;
 import static nl.adg.qwixx.e2e.helpers.BoardInteractionHelper.getCrossedCellCount;
-import static nl.adg.qwixx.e2e.utils.TestUtils.getDriver;
-import static nl.adg.qwixx.e2e.utils.TestUtils.waitUntilBoardLoaded;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -30,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * RED row (index 0) is ascending: 2, 3, 4 … 12.
  * Dice white1=1, white2=1 → white+white = 2 → RED "2" is always reachable.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TurnFlowIT extends BaseIntegrationTest {
 
     private static final int RED_ROW_INDEX = 0;
@@ -38,16 +40,21 @@ public class TurnFlowIT extends BaseIntegrationTest {
     private String sessionId;
     private List<String> playerIds;
 
+    @BeforeAll
+    void openDriver() {
+        driver1 = TestUtils.createDriver();
+    }
+
+    @AfterAll
+    void closeDriver() {
+        if (driver1 != null) { driver1.quit(); driver1 = null; }
+    }
+
     @BeforeEach
     void createGame() {
         sessionId = api.createGame(2);
         playerIds = api.getPlayerIds(sessionId);
         // player0 is the first active player; player1 is initially passive
-    }
-
-    @AfterEach
-    void tearDown() {
-        if (driver1 != null) { driver1.quit(); driver1 = null; }
     }
 
     // ── (a) Passive player can cross during ACTIVE_MOVE ───────────────────────
@@ -82,8 +89,7 @@ public class TurnFlowIT extends BaseIntegrationTest {
         api.roll(sessionId, playerIds.get(0));
         api.setDice(sessionId, 1, 1); // white+white = 2 → RED "2" reachable
 
-        driver1 = getDriver(sessionId, playerIds.get(1));
-        waitUntilBoardLoaded(driver1);
+        TestUtils.navigateTo(driver1, sessionId, playerIds.get(1));
 
         clickCellByValue(driver1, "RED", "2");
 
@@ -143,9 +149,6 @@ public class TurnFlowIT extends BaseIntegrationTest {
     @Test
     void newActivePlayerCanRollAndCross_inBrowser() {
         // Advance turn fully to player1's ACTIVE_MOVE via API before opening the browser.
-        // This avoids the rolling-dice animation: when the browser opens with currentRoll
-        // already set in the initial state, Angular skips the animation (gameState was null)
-        // and cells are immediately clickable.
         api.roll(sessionId, playerIds.get(0));
         api.setDice(sessionId, 1, 1);
 
@@ -159,10 +162,7 @@ public class TurnFlowIT extends BaseIntegrationTest {
         api.roll(sessionId, playerIds.get(1));
         api.setDice(sessionId, 1, 1); // white+white = 2 → RED "2" reachable
 
-        // Open player1's board — initial state already has phase=ACTIVE_MOVE + currentRoll,
-        // so no dice animation fires and cells are clickable as soon as the board loads.
-        driver1 = getDriver(sessionId, playerIds.get(1));
-        waitUntilBoardLoaded(driver1);
+        TestUtils.navigateTo(driver1, sessionId, playerIds.get(1));
 
         clickCellByValue(driver1, "RED", "2");
 
@@ -216,9 +216,7 @@ public class TurnFlowIT extends BaseIntegrationTest {
         api.crossCell(sessionId, playerIds.get(0), p0RowId, p0CellId, false);
         api.pass(sessionId, playerIds.get(0)); // → PASSIVE_MOVE
 
-        // Open player1's board with state already at PASSIVE_MOVE (no animation)
-        driver1 = getDriver(sessionId, playerIds.get(1));
-        waitUntilBoardLoaded(driver1);
+        TestUtils.navigateTo(driver1, sessionId, playerIds.get(1));
 
         clickCellByValue(driver1, "RED", "2");
 

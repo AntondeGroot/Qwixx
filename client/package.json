@@ -4,7 +4,8 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "validate-i18n": "node -e \"require('fs').readdirSync('public/i18n').forEach(f=>{try{JSON.parse(require('fs').readFileSync('public/i18n/'+f,'utf8'));console.log(f+': OK')}catch(e){console.error(f+': '+e.message);process.exit(1)}})\"",
+    "build": "npm run validate-i18n && ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "generate": "openapi-generator-cli generate",

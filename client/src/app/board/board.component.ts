@@ -378,9 +378,8 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     return result;
   });
 
-  // Subset of clickableCellIds: cells reachable specifically by the white+white combination.
-  // Used to show 🎲 on those cells so the player knows to use both white dice.
-  // All other clickable cells (color die) show the row's colored circle emoji instead.
+  // Subset of clickableCellIds: cells reachable by the white+white combination.
+  // These receive the golden glow; all other clickable cells receive the pulsating purple glow.
   whiteWhiteClickableCellIds = computed((): Set<string> => {
     if (this.rollingDice()) return this.emptySet;
     const state = this.gameState();

@@ -5,14 +5,12 @@
      [class.extra-bucket]="hasTag()(TagEnum.EXTRA_BUCKET)"
      [class.auto-cross]="hasTag()(TagEnum.AUTO_CROSS)"
      [class.clickable]="showClickable() ?? clickable()"
+     [class.ww]="showDieHint()"
      [attr.data-color]="cell().color"
      (click)="(clickable() || pending()) && clicked.emit()"
       [attr.translate]="'no'">
   <span class="cell-value">{{ cell().displayValue }}</span>
   @if (crossed() || pending()) {
     <span class="cell-cross">✕</span>
-  }
-  @if (showDieHint()) {
-    <span class="die-hint">🎲</span>
   }
 </div>

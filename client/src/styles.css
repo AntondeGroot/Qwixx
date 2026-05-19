@@ -10,3 +10,10 @@ body {
   background: #f0f0f0;
   color: #222;
 }
+
+/* Shared lock-zone border — used by the game row and the rules page demo. */
+.lock-zone {
+  border: 3px dashed rgba(0, 0, 0, 0.65);
+  border-radius: 10px;
+  padding: 4px;
+}

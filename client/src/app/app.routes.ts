@@ -24,5 +24,9 @@ export const routes: Routes = [
       return `/settings${localeParam}`;
     }
   },
+  {
+    path: 'rules',
+    loadComponent: () => import('./rules/rules.component').then(m => m.RulesComponent)
+  },
   { path: '**', redirectTo: 'settings' }
 ];

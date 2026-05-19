@@ -65,24 +65,27 @@
   pointer-events: none;
 }
 
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 3px var(--glow-full); }
+  50%       { box-shadow: 0 0 0 6px var(--glow-dim), 0 0 18px 2px var(--glow-mid); }
+}
+
+/* All clickable cells share one animation; colour is set per-type via custom properties */
 .cell.clickable {
   cursor: pointer;
-  outline: 3px solid rgb(186 66 255 / 0.9);
-  /*outline-offset: 1px;*/
+  --glow-full: rgba(186, 66, 255, 0.95);
+  --glow-dim:  rgba(186, 66, 255, 0.35);
+  --glow-mid:  rgba(186, 66, 255, 0.55);
+  animation: pulse-glow 1.4s ease-in-out infinite;
+}
+
+/* White+white cells: swap the glow colour to cyan, keep the same animation */
+.cell.clickable.ww {
+  --glow-full: rgba(0, 229, 255, 0.95);
+  --glow-dim:  rgba(0, 229, 255, 0.50);
+  --glow-mid:  rgba(0, 229, 255, 0.75);
 }
 
 .cell.clickable:hover {
-  brightness: 1.15;
   filter: brightness(1.2);
-}
-
-.die-hint {
-  position: absolute;
-  top: -3px;
-  right: -3px;
-  font-size: 15px;
-  line-height: 1;
-  pointer-events: none;
-  user-select: none;
-  z-index: 400;
 }

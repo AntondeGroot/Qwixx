@@ -1,0 +1,100 @@
+{
+  "crosses": "Croci",
+  "points": "Punti",
+  "punishment": "Punti Penalità",
+  "yourTurn": "Il tuo turno",
+  "playerTurn": "È il turno di {{ name }}",
+  "confirm": "Conferma",
+  "roll": "Lancia",
+  "pass": "Passa",
+  "endTurn": "Fine Turno",
+  "changeLanguage": "Cambia lingua",
+  "startGame": "Inizia partita",
+  "starting": "Avvio in corso…",
+  "gameOption": {
+    "base": "Variante",
+    "baseDescription": "STANDARD usa celle 2–12 per riga. LONGO usa celle 2–16 con numeri bonus.",
+    "gameMode": "Modalità di gioco",
+    "gameModeDescription": "ONLINE applica l'ordine dei turni e le regole dei dadi sul server. OFFLINE lascia ai giocatori l'uso dei dadi veri.",
+    "cardMode": "Tutti i giocatori ricevono",
+    "cardModeDescription": "Alcune opzioni (come Riga extra) generano sempre un layout unico per giocatore, ignorando questa impostazione.",
+    "randomOrder": "Ordine casuale",
+    "randomOrderDescription": "Mescola i valori visualizzati in ogni riga.",
+    "extraRow": "Riga extra",
+    "extraRowDescription": "Aggiungi una riga bonus di celle che forma un'onda su quattro righe.",
+    "connectedCells": "Celle collegate",
+    "connectedCellsDescription": "Collega celle tra righe adiacenti: segnare una cella segna automaticamente la cella collegata nella riga successiva.",
+    "botCount": "Avversari computer",
+    "botCountDescription": "Numero di giocatori controllati dal computer.",
+    "botStrategy": "Strategia bot",
+    "botStrategyDescription": "Stile di gioco per tutti gli avversari computer.",
+    "choice": {
+      "STANDARD": "Standard",
+      "LONGO": "Longo",
+      "ONLINE": "Online",
+      "OFFLINE": "Offline",
+      "DETERMINISTIC": "la stessa carta",
+      "PROBABILISTIC": "una carta unica",
+      "UNTRAINED": "Non addestrato",
+      "MOST_POINTS": "Massimo punti",
+      "MOST_WINS": "Massimo vittorie",
+      "BALANCED": "Equilibrato"
+    }
+  },
+  "score": {
+    "finalScores": "Punteggio finale",
+    "total": "Totale",
+    "winner": "vince!",
+    "newGame": "Nuova partita",
+    "leaveGame": "Lascia il gioco",
+    "viewScores": "Vedi punteggio finale",
+    "yourCard": "La tua carta",
+    "share": "Condividi punteggi",
+    "download": "Scarica punteggi",
+    "tied": "pareggio!",
+    "winners": "Vincitori"
+  },
+  "rules": {
+    "title": "Come si gioca a Qwixx",
+    "back": "Indietro",
+    "goToGame": "Vai al gioco",
+    "endOfGame": {
+      "heading": "Fine del gioco",
+      "li1": "<strong>due righe sono state chiuse</strong>",
+      "or": "oppure",
+      "li2": "un giocatore ha preso <strong>quattro penalità</strong>",
+      "p2": "Il giocatore con il punteggio più alto vince."
+    },
+    "turns": {
+      "heading": "Come funzionano i turni",
+      "li1": "Il lanciatore può segnare una casella con la <strong class='ww'>somma bianco+bianco</strong>, la <strong class='wc'>somma bianco+colore</strong>, o <strong>entrambe</strong> — ma la casella <strong class='ww'>bianco+bianco</strong> deve essere segnata sempre per prima.",
+      "li2": "Tutti gli altri giocatori possono segnare solo una casella con la <strong class='ww'>somma bianco+bianco</strong>.",
+      "p3": "Dopo ogni lancio, <strong>ogni giocatore deve confermare la propria scelta</strong> — segnare un numero o saltare il turno. Nessuno può restare in silenzio. Se salti il turno quando tocca a te lanciare, prendi una <strong>penalità</strong>."
+    },
+    "closing": {
+      "heading": "Chiudere una riga",
+      "p1": "Puoi chiudere una riga segnando l'ultima casella — ma solo se hai già almeno <strong>5 croci</strong> in quella riga (o <strong>6</strong> in modalità Longo).",
+      "longoTip": "<strong>Longo:</strong> una riga può essere chiusa anche alla <em>penultima</em> casella. A quella casella puoi scegliere se chiudere o meno."
+    },
+    "lockCross": {
+      "heading": "La croce del lucchetto (importante!)",
+      "p1": "Quando chiudi una riga, appare una croce sull'icona del lucchetto alla fine di quella riga. <strong>Quella croce sul lucchetto conta come una croce extra</strong> nel punteggio finale.",
+      "example": "La tua prima croce vale <strong>1 punto</strong>, la tua 10ª croce vale <strong>10 punti</strong>!"
+    },
+    "punishments": {
+      "heading": "Penalità",
+      "p1": "Ricevi una penalità quando salti il turno mentre sei il lanciatore. Ogni penalità costa <strong>5 punti</strong> dal punteggio finale. Quattro penalità terminano immediatamente la partita."
+    }
+  },
+  "rowClosure": {
+    "wantsToCloseThe": "vuole chiudere la",
+    "row": "riga",
+    "confirmQuestion": "Vuoi modificare la tua ultima selezione?",
+    "confirmButton": "Conferma ultima selezione",
+    "changeButton": "Modifica ultima selezione",
+    "okButton": "OK",
+    "selfClose": "Vuoi chiudere questa riga?",
+    "yes": "Sì",
+    "no": "No"
+  }
+}

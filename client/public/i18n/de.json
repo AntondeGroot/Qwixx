@@ -54,6 +54,38 @@
     "tied": "unentschieden!",
     "winners": "Gewinner"
   },
+  "rules": {
+    "title": "Qwixx – Spielregeln",
+    "back": "Zurück",
+    "goToGame": "Zum Spiel",
+    "endOfGame": {
+      "heading": "Spielende",
+      "li1": "<strong>zwei Reihen gesperrt</strong> wurden",
+      "or": "oder",
+      "li2": "ein Spieler <strong>vier Fehlwürfe</strong> erhalten hat",
+      "p2": "Der Spieler mit der höchsten Punktzahl gewinnt."
+    },
+    "turns": {
+      "heading": "Wie Züge funktionieren",
+      "li1": "Der Würfler darf ein Feld mit der <strong class='ww'>Weiß+Weiß-Summe</strong>, der <strong class='wc'>Weiß+Farbe-Summe</strong> oder <strong>beiden</strong> ankreuzen — das <strong class='ww'>Weiß+Weiß</strong>-Feld muss jedoch immer zuerst kommen.",
+      "li2": "Alle anderen Spieler dürfen nur ein Feld mit der <strong class='ww'>Weiß+Weiß-Summe</strong> ankreuzen.",
+      "p3": "Nach jedem Wurf muss <strong>jeder Spieler seine Wahl bestätigen</strong> — entweder eine Zahl ankreuzen oder die Runde passen. Niemand darf schweigen. Wenn du die Runde passt, obwohl du am Würfeln bist, erhältst du einen <strong>Fehlwurf</strong>."
+    },
+    "closing": {
+      "heading": "Sperren einer Reihe",
+      "p1": "Du kannst eine Reihe sperren, indem du das letzte Feld ankreuzt — aber nur, wenn du bereits mindestens <strong>5 Kreuze</strong> in dieser Reihe hast (oder <strong>6</strong> im Longo-Modus).",
+      "longoTip": "<strong>Longo:</strong> Eine Reihe kann auch beim <em>vorletzten</em> Feld gesperrt werden. Bei diesem Feld kannst du selbst entscheiden, ob du sperren möchtest oder nicht."
+    },
+    "lockCross": {
+      "heading": "Das Schloss-Kreuz (wichtig!)",
+      "p1": "Wenn du eine Reihe sperrst, erscheint ein Kreuz auf dem Schloss-Symbol am Ende der Reihe. <strong>Dieses Kreuz auf dem Schloss zählt als ein zusätzliches Kreuz</strong> in deiner Endwertung.",
+      "example": "Dein erstes Kreuz ist <strong>1 Punkt</strong> wert, dein 10. Kreuz ist <strong>10 Punkte</strong> wert!"
+    },
+    "punishments": {
+      "heading": "Fehlwürfe",
+      "p1": "Du erhältst einen Fehlwurf, wenn du die Runde passt, obwohl du am Würfeln bist. Jeder Fehlwurf kostet <strong>5 Punkte</strong> von deiner Endpunktzahl. Vier Fehlwürfe beenden das Spiel sofort."
+    }
+  },
   "rowClosure": {
     "wantsToCloseThe": "möchte die",
     "row": "Reihe schließen",

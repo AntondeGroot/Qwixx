@@ -19,12 +19,12 @@ import java.time.Duration;
  */
 public class TestUtils {
 
-    private static final String BASE_URL = "http://127.0.0.1:4200";
+    private static String baseUrl() { return "http://127.0.0.1:" + SpringAppTestHelper.getPort(); }
 
     public static WebDriver getDriver(String sessionId, String playerId) {
         WebDriver driver = new ChromeDriver(buildOptions("1280,800"));
         primeRulesCookie(driver);
-        driver.get(BASE_URL + "/?sessionid=" + sessionId + "&playerid=" + playerId);
+        driver.get(baseUrl() + "/?sessionid=" + sessionId + "&playerid=" + playerId);
         return driver;
     }
 
@@ -44,7 +44,7 @@ public class TestUtils {
     public static WebDriver getPortraitDriver(String sessionId, String playerId) {
         WebDriver driver = new ChromeDriver(buildOptions("390,844")); // iPhone 14 Pro portrait
         primeRulesCookie(driver);
-        driver.get(BASE_URL + "/?sessionid=" + sessionId + "&playerid=" + playerId);
+        driver.get(baseUrl() + "/?sessionid=" + sessionId + "&playerid=" + playerId);
         return driver;
     }
 
@@ -67,7 +67,7 @@ public class TestUtils {
      * Use this instead of {@link #getDriverAndWait} when reusing a driver across tests.
      */
     public static void navigateTo(WebDriver driver, String sessionId, String playerId) {
-        driver.get(BASE_URL + "/?sessionid=" + sessionId + "&playerid=" + playerId);
+        driver.get(baseUrl() + "/?sessionid=" + sessionId + "&playerid=" + playerId);
         waitUntilBoardLoaded(driver);
     }
 
@@ -76,20 +76,20 @@ public class TestUtils {
      * Use this instead of {@link #getScoreDriver} when reusing a driver across tests.
      */
     public static void navigateToScore(WebDriver driver, String sessionId) {
-        driver.get(BASE_URL + "/score/" + sessionId + "?fast=1");
+        driver.get(baseUrl() + "/score/" + sessionId + "?fast=1");
         waitUntilScoreLoaded(driver);
     }
 
     public static WebDriver getScoreDriver(String sessionId) {
         WebDriver driver = new ChromeDriver(buildOptions("1280,800"));
-        driver.get(BASE_URL + "/score/" + sessionId + "?fast=1");
+        driver.get(baseUrl() + "/score/" + sessionId + "?fast=1");
         return driver;
     }
 
     /** Opens the score screen with a portrait (phone) viewport so mobile-rotation CSS fires. */
     public static WebDriver getPortraitScoreDriver(String sessionId) {
         WebDriver driver = new ChromeDriver(buildOptions("390,844"));
-        driver.get(BASE_URL + "/score/" + sessionId + "?fast=1");
+        driver.get(baseUrl() + "/score/" + sessionId + "?fast=1");
         return driver;
     }
 
@@ -194,7 +194,7 @@ public class TestUtils {
      * causing waitUntilBoardLoaded to time out.
      */
     private static void primeRulesCookie(WebDriver driver) {
-        driver.get(BASE_URL + "/rules");
+        driver.get(baseUrl() + "/rules");
         driver.manage().addCookie(new Cookie("qwixx_rules_seen_v1", "1"));
     }
 }

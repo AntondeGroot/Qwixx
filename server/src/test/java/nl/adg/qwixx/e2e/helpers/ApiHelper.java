@@ -1,5 +1,6 @@
 package nl.adg.qwixx.e2e.helpers;
 
+import nl.adg.qwixx.e2e.utils.SpringAppTestHelper;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -10,7 +11,7 @@ import java.util.Map;
 
 public class ApiHelper {
 
-    private static final String BASE_URL = "http://127.0.0.1:4200";
+    private static String baseUrl() { return "http://127.0.0.1:" + SpringAppTestHelper.getPort(); }
     private final RestTemplate http = new RestTemplate();
 
     // ---------- GAME LIFECYCLE ----------
@@ -54,7 +55,7 @@ public class ApiHelper {
     public List<String> getPlayerIds(String sessionId) {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> players =
-                http.getForObject(BASE_URL + "/games/" + sessionId + "/players", List.class);
+                http.getForObject(baseUrl() + "/games/" + sessionId + "/players", List.class);
         return players.stream().map(p -> (String) p.get("id")).toList();
     }
 
@@ -140,7 +141,7 @@ public class ApiHelper {
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> getGameState(String sessionId) {
-        return http.getForObject(BASE_URL + "/gamestates/" + sessionId, Map.class);
+        return http.getForObject(baseUrl() + "/gamestates/" + sessionId, Map.class);
     }
 
     /** Returns the server-assigned UUID for the row at {@code rowIndex} in the given player's sheet layout. */
@@ -186,7 +187,7 @@ public class ApiHelper {
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> getLobby(String sessionId) {
-        return http.getForObject(BASE_URL + "/games/" + sessionId + "/lobby", Map.class);
+        return http.getForObject(baseUrl() + "/games/" + sessionId + "/lobby", Map.class);
     }
 
     @SuppressWarnings("unchecked")
@@ -206,7 +207,7 @@ public class ApiHelper {
     }
 
     public void leaveGame(String sessionId, String playerId) {
-        http.delete(BASE_URL + "/games/" + sessionId + "/players/" + playerId);
+        http.delete(baseUrl() + "/games/" + sessionId + "/players/" + playerId);
     }
 
     public void restartGame(String sessionId) {
@@ -222,12 +223,12 @@ public class ApiHelper {
     private <T> T post(String path, Object body, Class<T> responseType) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        return http.postForObject(BASE_URL + path, new HttpEntity<>(body, headers), responseType);
+        return http.postForObject(baseUrl() + path, new HttpEntity<>(body, headers), responseType);
     }
 
     private void put(String path, Object body) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        http.put(BASE_URL + path, new HttpEntity<>(body, headers));
+        http.put(baseUrl() + path, new HttpEntity<>(body, headers));
     }
 }

@@ -66,7 +66,8 @@
             },
             "development": {
               "buildTarget": "client:build:development",
-              "proxyConfig": "proxy.conf.json"
+              "proxyConfig": "proxy.conf.json",
+              "port": 5300
             }
           },
           "defaultConfiguration": "development"

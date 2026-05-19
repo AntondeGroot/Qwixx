@@ -54,6 +54,38 @@
     "tied": "gelijkspel!",
     "winners": "Winnaars"
   },
+  "rules": {
+    "title": "Spelregels van Qwixx",
+    "back": "Terug",
+    "goToGame": "Naar het spel",
+    "endOfGame": {
+      "heading": "Einde van het spel",
+      "li1": "<strong>twee rijen zijn afgesloten</strong>",
+      "or": "of",
+      "li2": "een speler <strong>vier straffen</strong> heeft ontvangen",
+      "p2": "De speler met de hoogste score wint."
+    },
+    "turns": {
+      "heading": "Hoe beurten werken",
+      "li1": "De gooier mag een vakje aankruisen met de <strong class='ww'>wit+wit-som</strong>, de <strong class='wc'>wit+kleur-som</strong>, of <strong>allebei</strong> — maar het <strong class='ww'>wit+wit</strong> vakje moet altijd als eerste.",
+      "li2": "Alle andere spelers mogen alleen een vakje aankruisen met de <strong class='ww'>wit+wit-som</strong>.",
+      "p3": "Na elke worp moet <strong>elke speler zijn keuze bevestigen</strong> — een vakje aankruisen of de ronde overslaan. Niemand kan zwijgen. Als je de ronde overslaat wanneer jij aan de beurt bent om te gooien, neem je een <strong>straf</strong>."
+    },
+    "closing": {
+      "heading": "Een rij afsluiten",
+      "p1": "Je kunt een rij afsluiten door het laatste vakje aan te kruisen — maar alleen als je al ten minste <strong>5 kruisjes</strong> in die rij hebt (of <strong>6</strong> in Longo-modus).",
+      "longoTip": "<strong>Longo:</strong> een rij kan ook worden afgesloten bij het <em>op één na laatste</em> vakje. Bij dat vakje kun je zelf kiezen of je de rij afsluit of niet."
+    },
+    "lockCross": {
+      "heading": "Het slotkruisje (belangrijk!)",
+      "p1": "Wanneer je een rij afsluit, verschijnt er een kruisje op het slotpictogram aan het einde van die rij. <strong>Dat kruisje op het slot telt als een extra kruisje</strong> in je eindscore.",
+      "example": "Je eerste kruisje is <strong>1 punt</strong> waard, je 10e kruisje is <strong>10 punten</strong> waard!"
+    },
+    "punishments": {
+      "heading": "Straffen",
+      "p1": "Je krijgt een straf wanneer je de ronde overslaat als degene die gooit. Elke straf kost <strong>5 punten</strong> van je eindscore. Vier straffen beëindigt het spel direct."
+    }
+  },
   "rowClosure": {
     "wantsToCloseThe": "wil de",
     "row": "rij sluiten",

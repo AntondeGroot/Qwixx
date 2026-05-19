@@ -54,6 +54,38 @@
     "tied": "tied the game!",
     "winners": "Winners"
   },
+  "rules": {
+    "title": "How to play Qwixx",
+    "back": "Back",
+    "goToGame": "Go to game",
+    "endOfGame": {
+      "heading": "End of game",
+      "li1": "<strong>two rows have been closed</strong>",
+      "or": "or",
+      "li2": "any player has taken <strong>four punishments</strong>",
+      "p2": "The player with the highest score wins."
+    },
+    "turns": {
+      "heading": "How turns work",
+      "li1": "The dice roller may cross a <strong class='ww'>white+white sum</strong> cell, a <strong class='wc'>white+color sum</strong> cell, or <strong>both</strong> — but the <strong class='ww'>white+white</strong> cell must always be crossed first.",
+      "li2": "All other players may only cross a <strong class='ww'>white+white sum</strong> cell.",
+      "p3": "After each roll, <strong>every player must confirm their choice</strong> — either crossing a number or skipping the round. No one can stay silent. If you skip the round when it is your turn to roll, you take a <strong>punishment</strong>."
+    },
+    "closing": {
+      "heading": "Closing a row",
+      "p1": "You can close a row by crossing the last cell — but only if you already have at least <strong>5 crosses</strong> in that row (or <strong>6</strong> in Longo mode).",
+      "longoTip": "<strong>Longo:</strong> a row can also be closed at the <em>second-to-last</em> cell. At that cell you can choose whether to close or not."
+    },
+    "lockCross": {
+      "heading": "The lock cross (important!)",
+      "p1": "When you close a row, a cross appears on the lock icon at the end of that row. <strong>That cross on the lock counts as one extra cross</strong> in your final score.",
+      "example": "Your first cross is worth <strong>1 point</strong>, your 10th cross is worth <strong>10 points</strong>!"
+    },
+    "punishments": {
+      "heading": "Punishments",
+      "p1": "You receive a punishment when you skip the round as the dice roller. Each punishment costs <strong>5 points</strong> from your final score. Four punishments ends the game immediately."
+    }
+  },
   "rowClosure": {
     "wantsToCloseThe": "wants to close the",
     "row": "row",

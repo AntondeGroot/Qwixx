@@ -54,6 +54,38 @@
     "tied": "uavgjort!",
     "winners": "Vinnere"
   },
+  "rules": {
+    "title": "Slik spiller du Qwixx",
+    "back": "Tilbake",
+    "goToGame": "Til spillet",
+    "endOfGame": {
+      "heading": "Slutt på spillet",
+      "li1": "<strong>to rader er låst</strong>",
+      "or": "eller",
+      "li2": "en spiller har fått <strong>fire straffer</strong>",
+      "p2": "Spilleren med høyest poengsum vinner."
+    },
+    "turns": {
+      "heading": "Slik fungerer runder",
+      "li1": "Kasteren kan krysse av en rute med <strong class='ww'>hvit+hvit-summen</strong>, <strong class='wc'>hvit+farge-summen</strong>, eller <strong>begge</strong> — men <strong class='ww'>hvit+hvit</strong> må alltid krysses av først.",
+      "li2": "Alle andre spillere kan kun krysse av en rute med <strong class='ww'>hvit+hvit-summen</strong>.",
+      "p3": "Etter hvert kast må <strong>alle spillere bekrefte valget sitt</strong> — enten krysse av et tall eller hoppe over runden. Ingen kan være stille. Hvis du hopper over runden når det er din tur til å kaste, tar du en <strong>straff</strong>."
+    },
+    "closing": {
+      "heading": "Låse en rad",
+      "p1": "Du kan låse en rad ved å krysse av den siste ruten — men bare hvis du allerede har minst <strong>5 kryss</strong> i den raden (eller <strong>6</strong> i Longo-modus).",
+      "longoTip": "<strong>Longo:</strong> en rad kan også låses ved den <em>nest siste</em> ruten. Ved den ruten kan du velge om du vil låse eller ikke."
+    },
+    "lockCross": {
+      "heading": "Låse-krysset (viktig!)",
+      "p1": "Når du låser en rad, vises et kryss på låseikonet på slutten av raden. <strong>Det krysset på låsen teller som ett ekstra kryss</strong> i sluttscoren din.",
+      "example": "Ditt første kryss er verdt <strong>1 poeng</strong>, ditt 10. kryss er verdt <strong>10 poeng</strong>!"
+    },
+    "punishments": {
+      "heading": "Straffer",
+      "p1": "Du får en straff når du hopper over runden når det er din tur til å kaste. Hver straff koster <strong>5 poeng</strong> fra sluttsummen din. Fire straffer avslutter spillet umiddelbart."
+    }
+  },
   "rowClosure": {
     "wantsToCloseThe": "vil lukke",
     "row": "raden",

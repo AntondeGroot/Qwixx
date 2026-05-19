@@ -54,6 +54,38 @@
     "tied": "match nul !",
     "winners": "Gagnants"
   },
+  "rules": {
+    "title": "Comment jouer à Qwixx",
+    "back": "Retour",
+    "goToGame": "Aller au jeu",
+    "endOfGame": {
+      "heading": "Fin de la partie",
+      "li1": "<strong>deux rangées ont été fermées</strong>",
+      "or": "ou",
+      "li2": "un joueur a pris <strong>quatre pénalités</strong>",
+      "p2": "Le joueur avec le score le plus élevé gagne."
+    },
+    "turns": {
+      "heading": "Comment se déroulent les tours",
+      "li1": "Le lanceur peut rayer une case avec la <strong class='ww'>somme blanc+blanc</strong>, la <strong class='wc'>somme blanc+couleur</strong>, ou <strong>les deux</strong> — mais la case <strong class='ww'>blanc+blanc</strong> doit toujours être rayée en premier.",
+      "li2": "Tous les autres joueurs peuvent uniquement rayer une case avec la <strong class='ww'>somme blanc+blanc</strong>.",
+      "p3": "Après chaque lancer, <strong>chaque joueur doit confirmer son choix</strong> — soit rayer un chiffre, soit passer le tour. Personne ne peut rester silencieux. Si vous passez le tour quand c'est à vous de lancer, vous prenez une <strong>pénalité</strong>."
+    },
+    "closing": {
+      "heading": "Fermer une rangée",
+      "p1": "Vous pouvez fermer une rangée en rayant la dernière case — mais seulement si vous avez déjà au moins <strong>5 croix</strong> dans cette rangée (ou <strong>6</strong> en mode Longo).",
+      "longoTip": "<strong>Longo :</strong> une rangée peut aussi être fermée à l'<em>avant-dernière</em> case. À cette case, vous pouvez choisir de fermer ou non."
+    },
+    "lockCross": {
+      "heading": "La croix verrou (important !)",
+      "p1": "Quand vous fermez une rangée, une croix apparaît sur l'icône verrou au bout de cette rangée. <strong>Cette croix sur le verrou compte comme une croix supplémentaire</strong> dans votre score final.",
+      "example": "Votre première croix vaut <strong>1 point</strong>, votre 10e croix vaut <strong>10 points</strong> !"
+    },
+    "punishments": {
+      "heading": "Pénalités",
+      "p1": "Vous recevez une pénalité lorsque vous passez le tour quand c'est à vous de lancer les dés. Chaque pénalité coûte <strong>5 points</strong> de votre score final. Quatre pénalités terminent la partie immédiatement."
+    }
+  },
   "rowClosure": {
     "wantsToCloseThe": "veut fermer la",
     "row": "ligne",

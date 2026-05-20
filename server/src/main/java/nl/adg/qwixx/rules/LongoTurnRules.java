@@ -60,7 +60,7 @@ public class LongoTurnRules extends StandardTurnRules {
     protected boolean canCrossLock(GameState state, UUID playerId, int rowIndex) {
         if (rowIsNotLockable(state, playerId, rowIndex)) return false;
 
-        LockCell lock     = state.sheetLayouts().get(playerId).rows().get(rowIndex).lock();
+        LockCell lock = getLock(state, playerId, rowIndex);
 
         Set<String> allCrosses  = allCrossesForPlayer(state, playerId, rowIndex);
         Set<String> pendingInRow = pendingCrossesInRow(state, playerId, rowIndex);
@@ -69,8 +69,8 @@ public class LongoTurnRules extends StandardTurnRules {
         // cross counts toward the threshold needed to qualify for closing.
         if (allCrosses.size() < lock.minCrosses()) return false;
 
-        List<String> closing    = lock.closingCells();
-        String lastClosing      = closing.get(closing.size() - 1);
+        List<String> closing = lock.closingCells();
+        String lastClosing   = closing.getLast();
 
         // Last closing cell always enables locking (permanent or pending).
         if (allCrosses.contains(lastClosing)) return true;
@@ -98,15 +98,15 @@ public class LongoTurnRules extends StandardTurnRules {
         int whiteSum = state.turnState().currentRoll().white1() + state.turnState().currentRoll().white2();
         if (!playerBonuses.contains(whiteSum)) return;
 
-        SheetLayout layout            = state.sheetLayouts().get(playerId);
-        SheetProgress progress        = state.boardState().sheetProgress().get(playerId);
+        SheetLayout layout            = getLayout(state, playerId);
+        SheetProgress progress        = getProgress(state, playerId);
         Map<Integer, UUID> closedRows = state.boardState().closedRows();
 
         // Find the minimum cross count across all non-closed rows.
         int fewest = Integer.MAX_VALUE;
         for (int i = 0; i < layout.rows().size(); i++) {
             if (closedRows.containsKey(i)) continue;
-            int crosses = rowStateOf(progress, i).crossedCells().size();
+            int crosses = getRowState(progress, i).crossedCells().size();
             if (crosses < fewest) fewest = crosses;
         }
         if (fewest == Integer.MAX_VALUE) return;
@@ -116,11 +116,11 @@ public class LongoTurnRules extends StandardTurnRules {
         final int minCrosses = fewest;
         for (int i = 0; i < layout.rows().size(); i++) {
             if (closedRows.containsKey(i)) continue;
-            if (rowStateOf(progress, i).crossedCells().size() != minCrosses) continue;
+            if (getRowState(progress, i).crossedCells().size() != minCrosses) continue;
 
             final int targetRow = i;
             Row      row        = layout.rows().get(targetRow);
-            RowState rowState   = rowStateOf(progress, targetRow);
+            RowState rowState   = getRowState(progress, targetRow);
             int      rightmost  = rightmostCrossedPosition(row, rowState);
 
             row.cells().stream()

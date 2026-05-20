@@ -60,7 +60,7 @@ public class StandardTurnRules implements TurnRules {
             case ROLL -> isActive ? List.of(new RollAction(playerId)) : List.of();
 
             case ACTIVE_MOVE -> isActive
-                    ? activeMoveActions(state, playerId, turn)
+                    ? activeActions(state, playerId, turn)
                     : passiveActions(state, playerId, turn);
 
             case PASSIVE_MOVE -> passiveActions(state, playerId, turn);
@@ -69,14 +69,13 @@ public class StandardTurnRules implements TurnRules {
         };
     }
 
-    private List<GameAction> activeMoveActions(GameState state, UUID playerId, TurnState turn) {
+    private List<GameAction> activeActions(GameState state, UUID playerId, TurnState turn) {
         List<GameAction> actions = new ArrayList<>();
         addReachableCells(state, playerId, actions, true);
         addClosingIntents(state, playerId, actions);
         actions.add(new GiveUpAction(playerId));
         actions.add(new ResetTurnAction(playerId));
-        ActiveTurnState ats = turn.activeTurnState();
-        if (ats.whiteWhiteUsed() || ats.colorDieUsed() || state.pendingClosures().containsValue(playerId)) {
+        if (activePlayerHasActed(turn.activeTurnState(), state, playerId)) {
             actions.add(new EndTurnAction(playerId));
         }
         return actions;
@@ -117,7 +116,7 @@ public class StandardTurnRules implements TurnRules {
     public boolean isGameOver(GameState state) {
         if (state.boardState().closedRows().size() >= 2) return true;
         return state.boardState().sheetProgress().values().stream()
-                .anyMatch(p -> p.punishments() >= MAX_PUNISHMENTS);
+                .anyMatch(this::hasMaxPunishments);
     }
 
     private void applyRoll(GameState state, RollAction action) {
@@ -135,7 +134,7 @@ public class StandardTurnRules implements TurnRules {
 
         Map<UUID, SheetProgress> snap = new HashMap<>();
         for (UUID pid : state.players()) {
-            snap.put(pid, deepCopy(state.boardState().sheetProgress().get(pid)));
+            snap.put(pid, deepCopy(getProgress(state, pid)));
         }
         turn.setMoveStartProgress(snap);
         turn.setUndoBuffer(new HashMap<>());
@@ -221,7 +220,7 @@ public class StandardTurnRules implements TurnRules {
         // Capture before adding so we can tell whether this is the turn's first declaration.
         boolean isFirstDeclaration = state.rowClosureRequests().isEmpty();
 
-        Color rowColor = state.sheetLayouts().get(declarerId).rows().get(rowIndex).lock().color();
+        Color rowColor = getLock(state, declarerId, rowIndex).color();
         state.rowClosureRequests().add(new RowClosureRequest(declarerId, rowColor));
 
         if (isActive) {
@@ -231,12 +230,7 @@ public class StandardTurnRules implements TurnRules {
             // isFirstDeclaration = false — preventing players who have fully acted from being
             // forced to act a second time.
             if (isFirstDeclaration) {
-                UUID activeId = turn.activePlayerId();
-                for (UUID pid : state.players()) {
-                    if (!pid.equals(activeId) && !turn.passivePlayerQueue().contains(pid)) {
-                        turn.passivePlayerQueue().add(pid);
-                    }
-                }
+                reQueueEjectedPassivePlayers(state, turn);
             }
         } else {
             turn.passivesActed().add(declarerId);
@@ -258,10 +252,10 @@ public class StandardTurnRules implements TurnRules {
             return;
         }
 
-        SheetProgress progress = state.boardState().sheetProgress().get(playerId);
+        SheetProgress progress = getProgress(state, playerId);
         for (var entry : lastCross.entrySet()) {
             int idx = entry.getKey();
-            RowState current = rowStateOf(progress, idx);
+            RowState current = getRowState(progress, idx);
             Set<String> updated = new HashSet<>(current.crossedCells());
             updated.removeAll(entry.getValue());
             progress.updateRowState(idx, new RowState(updated, current.lockCrossed()));
@@ -287,7 +281,7 @@ public class StandardTurnRules implements TurnRules {
         UUID playerId = action.playerId();
         restoreToSnapshot(state, turn, playerId);
         cancelPlayerClosingIntents(state, playerId);
-        state.boardState().sheetProgress().get(playerId).addPunishment();
+        getProgress(state, playerId).addPunishment();
 
         List<UUID> pendingPassives = new ArrayList<>(turn.passivePlayerQueue());
 
@@ -308,7 +302,7 @@ public class StandardTurnRules implements TurnRules {
         // (or after being re-added to the passive queue for a final-look notification).
         // Restore the snapshot so the pending cross is fully cleared — the player should be
         // able to redo their move from scratch without having to undo the cross manually.
-        if (isActive && turn.phase() == TurnPhase.PASSIVE_MOVE) {
+        if (activePlayerRevertingToMove(isActive, turn)) {
             turn.passivePlayerQueue().remove(playerId); // in case they were re-added for final look
             restoreToSnapshot(state, turn, playerId);
             cancelPlayerClosingIntents(state, playerId);
@@ -322,9 +316,7 @@ public class StandardTurnRules implements TurnRules {
         // Passives may EndTurn during ACTIVE_MOVE (before the active player passes) or during
         // PASSIVE_MOVE; in both cases they leave the queue. Restore from the turn-start snapshot
         // (the undo buffer was cleared on EndTurn) and put them back in the passive queue.
-        if (!isActive
-                && (turn.phase() == TurnPhase.ACTIVE_MOVE || turn.phase() == TurnPhase.PASSIVE_MOVE)
-                && !turn.passivePlayerQueue().contains(playerId)) {
+        if (passivePlayerRevertingAfterEarlyEndTurn(isActive, turn, playerId)) {
             restoreToSnapshot(state, turn, playerId);
             cancelPlayerClosingIntents(state, playerId);
             turn.undoBuffer().remove(playerId);
@@ -364,8 +356,7 @@ public class StandardTurnRules implements TurnRules {
 
     private void endTurnInActiveMove(GameState state, TurnState turn, UUID playerId, boolean isActive) {
         if (isActive) {
-            ActiveTurnState ats = turn.activeTurnState();
-            if (!ats.whiteWhiteUsed() && !ats.colorDieUsed() && !state.pendingClosures().containsValue(playerId))
+            if (!activePlayerHasActed(turn.activeTurnState(), state, playerId))
                 throw new IllegalMoveException("must make at least one move before ending turn");
             autoDetectClosingIntent(state, turn, playerId);
             if (turn.passivePlayerQueue().isEmpty()) {
@@ -397,19 +388,12 @@ public class StandardTurnRules implements TurnRules {
                 // The active player was re-queued for a final look and is now passing.
                 // Run evaluate directly — no further re-check.
                 evaluate(state);
+            } else if (activePlayerCouldClaimAnyPendingRow(state, activeId)) {
+                // Before evaluating, give the active player a last look so they can
+                // revert (RESET_TURN) or proceed (PASS) on the newly declared rows.
+                turn.passivePlayerQueue().add(activeId);
             } else {
-                // Before evaluating, check whether the active player could still claim any of the
-                // newly declared rows (not yet crossed the closing cell, but enough crosses to qualify).
-                // If so, re-add them to the passive queue so they can revert (RESET_TURN) or proceed (PASS).
-                boolean activeCouldLock = state.pendingClosures().entrySet().stream()
-                        .anyMatch(e -> !e.getValue().equals(activeId)
-                                       && couldActivePlayerLockRow(state, activeId, e.getKey()));
-                if (activeCouldLock) {
-                    turn.passivePlayerQueue().add(activeId);
-                    // Don't evaluate yet — active player must respond to the notification first.
-                } else {
-                    evaluate(state);
-                }
+                evaluate(state);
             }
         }
         // Clear after evaluate so that canCrossLock can still read this player's pending
@@ -427,7 +411,7 @@ public class StandardTurnRules implements TurnRules {
         if (rowIsNotLockable(state, activeId, rowIndex)) return false;
         // Don't re-queue if the active player already declared this row themselves.
         if (activeId.equals(state.pendingClosures().get(rowIndex))) return false;
-        LockCell lock = state.sheetLayouts().get(activeId).rows().get(rowIndex).lock();
+        LockCell lock = getLock(state, activeId, rowIndex);
         Set<String> allCrosses = allCrossesForPlayer(state, activeId, rowIndex);
         // If the player already has the LAST closing cell crossed they already qualify at
         // evaluate — re-queuing would interrupt the game without benefit.
@@ -445,7 +429,7 @@ public class StandardTurnRules implements TurnRules {
         Map<Integer, Set<String>> playerBuffer = turn.undoBuffer().get(playerId);
         if (playerBuffer == null) return;
 
-        SheetLayout layout = state.sheetLayouts().get(playerId);
+        SheetLayout layout = getLayout(state, playerId);
         for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
             if (state.boardState().closedRows().containsKey(rowIndex)) continue;
             if (state.pendingClosures().containsKey(rowIndex)) continue;
@@ -467,22 +451,8 @@ public class StandardTurnRules implements TurnRules {
     }
 
     private void evaluate(GameState state) {
-        // Apply all pending row closures: mark lock ✓ for declarant (and any other qualifier),
-        // close row globally, and remove the colored die.
         for (var entry : new HashMap<>(state.pendingClosures()).entrySet()) {
-            int rowIndex   = entry.getKey();
-            UUID declarant = entry.getValue();
-            if (state.boardState().closedRows().containsKey(rowIndex)) continue;
-
-            markLockCrossed(state, declarant, rowIndex);
-            for (UUID pid : state.players()) {
-                if (!pid.equals(declarant)
-                        && !rowStateOf(state.boardState().sheetProgress().get(pid), rowIndex).lockCrossed()
-                        && canCrossLock(state, pid, rowIndex)) {
-                    markLockCrossed(state, pid, rowIndex);
-                }
-            }
-            closeRowGlobally(state, declarant, rowIndex);
+            applyRowClosure(state, entry.getKey(), entry.getValue());
         }
 
         state.pendingClosures().clear();
@@ -513,7 +483,7 @@ public class StandardTurnRules implements TurnRules {
     // 2. Player just crossed the second-to-last closing cell this turn (Longo YES/NO modal).
     // The last closing cell crossed THIS turn is auto-detected at EndTurn — no explicit intent needed.
     private void addClosingIntents(GameState state, UUID playerId, List<GameAction> actions) {
-        SheetLayout layout        = state.sheetLayouts().get(playerId);
+        SheetLayout layout        = getLayout(state, playerId);
         Map<Integer, UUID> closed = state.boardState().closedRows();
 
         for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
@@ -531,8 +501,8 @@ public class StandardTurnRules implements TurnRules {
     // by auto-detection at EndTurn.
     protected boolean canDeclareViaPermanentLastCell(GameState state, UUID playerId, int rowIndex) {
         if (rowIsNotLockable(state, playerId, rowIndex)) return false;
-        LockCell lock = state.sheetLayouts().get(playerId).rows().get(rowIndex).lock();
-        RowState rowState = rowStateOf(state.boardState().sheetProgress().get(playerId), rowIndex);
+        LockCell lock = getLock(state, playerId, rowIndex);
+        RowState rowState = getRowState(getProgress(state, playerId), rowIndex);
         if (rowState.crossedCells().size() < lock.minCrosses()) return false;
         String lastClosing = lock.closingCells().get(lock.closingCells().size() - 1);
         return rowState.crossedCells().contains(lastClosing);
@@ -542,7 +512,7 @@ public class StandardTurnRules implements TurnRules {
     // This is the Longo "15"/"3" explicit YES scenario.
     protected boolean canDeclareViaSecondToLastCell(GameState state, UUID playerId, int rowIndex) {
         if (rowIsNotLockable(state, playerId, rowIndex)) return false;
-        LockCell lock = state.sheetLayouts().get(playerId).rows().get(rowIndex).lock();
+        LockCell lock = getLock(state, playerId, rowIndex);
         List<String> closing = lock.closingCells();
         if (closing.size() < 2) return false;
 
@@ -558,23 +528,23 @@ public class StandardTurnRules implements TurnRules {
 
     protected boolean canCrossLock(GameState state, UUID playerId, int rowIndex) {
         if (rowIsNotLockable(state, playerId, rowIndex)) return false;
-        LockCell lock     = state.sheetLayouts().get(playerId).rows().get(rowIndex).lock();
+        LockCell lock = getLock(state, playerId, rowIndex);
         Set<String> allCrosses = allCrossesForPlayer(state, playerId, rowIndex);
-        return lock.closingCells().stream().anyMatch(allCrosses::contains);
+        return playerHasCrossedAClosingCell(lock, allCrosses);
     }
 
     /** Returns true when the row has no lock, is already locked, or is already closed. */
     protected boolean rowIsNotLockable(GameState state, UUID playerId, int rowIndex) {
-        Row row = state.sheetLayouts().get(playerId).rows().get(rowIndex);
+        Row row = getRow(state, playerId, rowIndex);
         if (row.lock() == null) return true;
-        RowState rowState = rowStateOf(state.boardState().sheetProgress().get(playerId), rowIndex);
+        RowState rowState = getRowState(getProgress(state, playerId), rowIndex);
         if (rowState.lockCrossed()) return true;
         return state.boardState().closedRows().containsKey(rowIndex);
     }
 
     /** Permanent crosses in a row plus any pending cross from the current turn's undo buffer. */
     protected Set<String> allCrossesForPlayer(GameState state, UUID playerId, int rowIndex) {
-        RowState rowState = rowStateOf(state.boardState().sheetProgress().get(playerId), rowIndex);
+        RowState rowState = getRowState(getProgress(state, playerId), rowIndex);
         Set<String> all = new HashSet<>(rowState.crossedCells());
         TurnState turn = state.turnState();
         if (turn != null && turn.undoBuffer().containsKey(playerId)) {
@@ -584,8 +554,8 @@ public class StandardTurnRules implements TurnRules {
     }
 
     protected void markLockCrossed(GameState state, UUID playerId, int rowIndex) {
-        SheetProgress prog = state.boardState().sheetProgress().get(playerId);
-        RowState current   = rowStateOf(prog, rowIndex);
+        SheetProgress prog = getProgress(state, playerId);
+        RowState current   = getRowState(prog, rowIndex);
         prog.updateRowState(rowIndex, new RowState(current.crossedCells(), true));
     }
 
@@ -593,7 +563,7 @@ public class StandardTurnRules implements TurnRules {
         BoardState board    = state.boardState();
         board.closedRows().put(rowIndex, playerId);
 
-        SheetLayout layout  = state.sheetLayouts().get(playerId);
+        SheetLayout layout  = getLayout(state, playerId);
         Color lockColor     = layout.rows().get(rowIndex).lock().color();
         board.activeDice().removeIf(d -> d.color() == lockColor);
     }
@@ -617,8 +587,24 @@ public class StandardTurnRules implements TurnRules {
         return new SheetProgress(copy, p.punishments());
     }
 
-    protected RowState rowStateOf(SheetProgress progress, int rowIndex) {
+    protected SheetLayout getLayout(GameState state, UUID playerId) {
+        return state.sheetLayouts().get(playerId);
+    }
+
+    protected SheetProgress getProgress(GameState state, UUID playerId) {
+        return state.boardState().sheetProgress().get(playerId);
+    }
+
+    protected RowState getRowState(SheetProgress progress, int rowIndex) {
         return progress.rowStates().getOrDefault(rowIndex, new RowState(new HashSet<>(), false));
+    }
+
+    protected Row getRow(GameState state, UUID playerId, int rowIndex) {
+        return getLayout(state, playerId).rows().get(rowIndex);
+    }
+
+    protected LockCell getLock(GameState state, UUID playerId, int rowIndex) {
+        return getRow(state, playerId, rowIndex).lock();
     }
 
     protected int rightmostCrossedPosition(Row row, RowState rowState) {
@@ -633,5 +619,63 @@ public class StandardTurnRules implements TurnRules {
     private void requireActivePlayer(TurnState turn, UUID playerId) {
         if (!playerId.equals(turn.activePlayerId()))
             throw new IllegalMoveException("player " + playerId + " is not the active player");
+    }
+
+    // ── Named predicates ──────────────────────────────────────────────────────
+
+    private boolean hasMaxPunishments(SheetProgress progress) {
+        return progress.punishments() >= MAX_PUNISHMENTS;
+    }
+
+    private boolean activePlayerHasActed(ActiveTurnState ats, GameState state, UUID playerId) {
+        return ats.whiteWhiteUsed() || ats.colorDieUsed() || state.pendingClosures().containsValue(playerId);
+    }
+
+    private boolean activePlayerCouldClaimAnyPendingRow(GameState state, UUID activeId) {
+        return state.pendingClosures().entrySet().stream()
+                .anyMatch(e -> !e.getValue().equals(activeId)
+                               && couldActivePlayerLockRow(state, activeId, e.getKey()));
+    }
+
+    private boolean playerHasCrossedAClosingCell(LockCell lock, Set<String> allCrosses) {
+        return lock.closingCells().stream().anyMatch(allCrosses::contains);
+    }
+
+    private boolean activePlayerRevertingToMove(boolean isActive, TurnState turn) {
+        return isActive && turn.phase() == TurnPhase.PASSIVE_MOVE;
+    }
+
+    private boolean passivePlayerRevertingAfterEarlyEndTurn(boolean isActive, TurnState turn, UUID playerId) {
+        return !isActive
+                && (turn.phase() == TurnPhase.ACTIVE_MOVE || turn.phase() == TurnPhase.PASSIVE_MOVE)
+                && !turn.passivePlayerQueue().contains(playerId);
+    }
+
+    // ── Named operations ──────────────────────────────────────────────────────
+
+    private void reQueueEjectedPassivePlayers(GameState state, TurnState turn) {
+        UUID activeId = turn.activePlayerId();
+        for (UUID pid : state.players()) {
+            if (!pid.equals(activeId) && !turn.passivePlayerQueue().contains(pid)) {
+                turn.passivePlayerQueue().add(pid);
+            }
+        }
+    }
+
+    private void applyRowClosure(GameState state, int rowIndex, UUID declarant) {
+        if (state.boardState().closedRows().containsKey(rowIndex)) return;
+        markLockCrossed(state, declarant, rowIndex);
+        for (UUID pid : state.players()) {
+            if (otherPlayerAlsoQualifiesForLockCross(state, pid, declarant, rowIndex)) {
+                markLockCrossed(state, pid, rowIndex);
+            }
+        }
+        closeRowGlobally(state, declarant, rowIndex);
+    }
+
+    private boolean otherPlayerAlsoQualifiesForLockCross(GameState state, UUID pid, UUID declarant, int rowIndex) {
+        return !pid.equals(declarant)
+                && !getRowState(getProgress(state, pid), rowIndex).lockCrossed()
+                && canCrossLock(state, pid, rowIndex);
     }
 }

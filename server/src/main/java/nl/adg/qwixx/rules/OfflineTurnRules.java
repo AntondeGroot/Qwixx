@@ -31,7 +31,7 @@ public class OfflineTurnRules extends StandardTurnRules {
 
         for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
             Row row           = layout.rows().get(rowIndex);
-            RowState rowState = rowStateOf(progress, rowIndex);
+            RowState rowState = getRowState(progress, rowIndex);
 
             if (!closedRows.containsKey(rowIndex)) {
                 int rightmost = rightmostCrossedPosition(row, rowState);
@@ -96,7 +96,7 @@ public class OfflineTurnRules extends StandardTurnRules {
 
         if (row.lock() == null) return false;
         LockCell lock     = row.lock();
-        RowState rowState = rowStateOf(prog, rowIndex);
+        RowState rowState = getRowState(prog, rowIndex);
         if (rowState.lockCrossed()) return false;
         if (rowState.crossedCells().size() < lock.minCrosses()) return false;
         return lock.closingCells().stream().anyMatch(id -> rowState.crossedCells().contains(id));

@@ -75,7 +75,8 @@ public class StandardTurnRules implements TurnRules {
         addClosingIntents(state, playerId, actions);
         actions.add(new GiveUpAction(playerId));
         actions.add(new ResetTurnAction(playerId));
-        if (activePlayerHasActed(turn.activeTurnState(), state, playerId)) {
+        ActiveTurnState activePlayer = turn.activeTurnState();
+        if (activePlayer.hasActed()) {
             actions.add(new EndTurnAction(playerId));
         }
         return actions;
@@ -356,7 +357,8 @@ public class StandardTurnRules implements TurnRules {
 
     private void endTurnInActiveMove(GameState state, TurnState turn, UUID playerId, boolean isActive) {
         if (isActive) {
-            if (!activePlayerHasActed(turn.activeTurnState(), state, playerId))
+            ActiveTurnState activePlayer = turn.activeTurnState();
+            if (!activePlayer.hasActed())
                 throw new IllegalMoveException("must make at least one move before ending turn");
             autoDetectClosingIntent(state, turn, playerId);
             if (turn.passivePlayerQueue().isEmpty()) {
@@ -650,9 +652,6 @@ public class StandardTurnRules implements TurnRules {
         return progress.punishments() >= MAX_PUNISHMENTS;
     }
 
-    private boolean activePlayerHasActed(ActiveTurnState ats, GameState state, UUID playerId) {
-        return ats.whiteWhiteUsed() || ats.colorDieUsed() || state.pendingClosures().containsValue(playerId);
-    }
 
     private boolean activePlayerCouldClaimAnyPendingRow(GameState state, UUID activeId) {
         return state.pendingClosures().entrySet().stream()

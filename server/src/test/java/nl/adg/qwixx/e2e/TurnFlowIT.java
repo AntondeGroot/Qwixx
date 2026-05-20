@@ -52,6 +52,7 @@ public class TurnFlowIT extends BaseIntegrationTest {
 
     @BeforeEach
     void createGame() {
+        driver1   = TestUtils.ensureAlive(driver1);
         sessionId = api.createGame(2);
         playerIds = api.getPlayerIds(sessionId);
         // player0 is the first active player; player1 is initially passive

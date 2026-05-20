@@ -63,6 +63,8 @@ public class ScoreScreenIT extends BaseIntegrationTest {
 
     @BeforeEach
     void setupGame() {
+        driver        = TestUtils.ensureAlive(driver);
+        portraitDriver = TestUtils.ensureAlivePortrait(portraitDriver);
         sessionId = api.createGame(2);
 
         // Look up by name — shuffle may reorder the player list after game start.

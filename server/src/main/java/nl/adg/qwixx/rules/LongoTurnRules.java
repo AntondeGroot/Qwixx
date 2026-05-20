@@ -37,8 +37,8 @@ public class LongoTurnRules extends StandardTurnRules {
         List<GameAction> actions = new ArrayList<>(super.getValidActions(state, playerId));
         if (state.turnState().phase() == TurnPhase.ACTIVE_MOVE
                 && playerId.equals(state.turnState().activePlayerId())) {
-            ActiveTurnState ats = state.turnState().activeTurnState();
-            if (!ats.whiteWhiteUsed() && !ats.colorDieUsed()) {
+            ActiveTurnState activePlayer = state.turnState().activeTurnState();
+            if (!activePlayer.hasActed()) {
                 addBonusCellAction(state, playerId, actions);
             }
         }

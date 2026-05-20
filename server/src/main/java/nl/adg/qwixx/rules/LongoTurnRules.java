@@ -4,7 +4,6 @@ import nl.adg.qwixx.action.CrossCellAction;
 import nl.adg.qwixx.action.DiceCombination;
 import nl.adg.qwixx.action.GameAction;
 import nl.adg.qwixx.data.Cell;
-import nl.adg.qwixx.data.LockCell;
 import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.game.LongoVariantData;
 import nl.adg.qwixx.state.ActiveTurnState;
@@ -33,6 +32,11 @@ public class LongoTurnRules extends StandardTurnRules {
     }
 
     @Override
+    protected int getMinCrossesRequired() {
+        return 6;
+    }
+
+    @Override
     public List<GameAction> getValidActions(GameState state, UUID playerId) {
         List<GameAction> actions = new ArrayList<>(super.getValidActions(state, playerId));
         if (state.turnState().phase() == TurnPhase.ACTIVE_MOVE
@@ -58,16 +62,16 @@ public class LongoTurnRules extends StandardTurnRules {
     protected boolean canCrossLock(GameState state, UUID playerId, int rowIndex) {
         if (rowIsNotLockable(state, playerId, rowIndex)) return false;
 
-        LockCell lock = getLock(state, playerId, rowIndex);
-
         Set<String> allCrosses  = allCrossesForPlayer(state, playerId, rowIndex);
         Set<String> pendingInRow = getPendingCrossesInRow(state, playerId, rowIndex);
 
-        // MinCrosses check uses ALL crosses (permanent + pending) so that the last pending
-        // cross counts toward the threshold needed to qualify for closing.
-        if (allCrosses.size() < lock.minCrosses()) return false;
+        // Count only non-closing crosses: the threshold is the number of regular cells
+        // required before any closing cell may be crossed.
+        List<String> closingCellIds = getClosingCells(state, playerId, rowIndex);
+        long nonClosing = allCrosses.stream().filter(id -> !closingCellIds.contains(id)).count();
+        if (nonClosing < getMinCrossesRequired()) return false;
 
-        List<String> closing = lock.closingCells();
+        List<String> closing = getClosingCells(state, playerId, rowIndex);
         String lastClosing   = closing.getLast();
 
         // Last closing cell always enables locking (permanent or pending).

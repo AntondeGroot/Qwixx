@@ -319,21 +319,12 @@ class StandardTurnRulesTest {
 
     // ── Closing-eligible cell reachability ────────────────────────────────────
     //
-    // A closing-eligible cell (the last cell in standard, the last two in Longo) may
-    // only be crossed when doing so — combined with crossing any remaining required cells
-    // — would eventually bring the row to the minimum-cross threshold for locking.
+    // A closing-eligible cell may only be crossed once the player already has
+    // getMinCrossesRequired() non-closing crosses in the row.
     //
-    // Standard (minCrosses=6, 1 required cell = closing cell):
-    //   • allowed when existingCrosses >= 5  (5 existing + closing = 6 = minCrosses)
-    //   • blocked  when existingCrosses <  5  (4 existing + closing = 5 < 6)
-
-    // ── Closing-eligible cell reachability ────────────────────────────────────
-    //
-    // Standard (minCrosses=6, 1 required cell = closing cell):
-    //   Rule: the closing cell may only be crossed when minCrosses cells are ALREADY
-    //         present in the row (not counting the closing cell itself).
-    //   • blocked when existingCrosses < 5   (e.g. 3 or 4 existing → total would be < 6)
-    //   • allowed when existingCrosses >= 5  (e.g. 5 existing → then closing = 6th = minCrosses)
+    // Standard (minCrosses=5 non-closing crosses required before the lock cell):
+    //   • blocked when nonClosingCrosses < 5  (e.g. 3 or 4 existing)
+    //   • allowed when nonClosingCrosses >= 5 (e.g. 5 existing)
 
     @Test
     void closingCellNotOfferedWhenFewerThanMinCrossesPresent_threeCrosses() {
@@ -353,7 +344,7 @@ class StandardTurnRulesTest {
         assertFalse(
                 rules.getValidActions(state, p1).stream()
                         .anyMatch(a -> a instanceof CrossCellAction c && c.cellId().equals(closingId)),
-                "Closing cell must not be offered with only 3 existing crosses (need 5 existing, minCrosses=6)");
+                "Closing cell must not be offered with only 3 non-closing crosses (need 5, minCrosses=5)");
     }
 
     @Test
@@ -373,7 +364,7 @@ class StandardTurnRulesTest {
         assertFalse(
                 rules.getValidActions(state, p1).stream()
                         .anyMatch(a -> a instanceof CrossCellAction c && c.cellId().equals(closingId)),
-                "Closing cell must not be offered with only 4 existing crosses (need 5 existing, 4+1=5 < 6=minCrosses)");
+                "Closing cell must not be offered with only 4 non-closing crosses (need 5, minCrosses=5)");
     }
 
     @Test
@@ -392,7 +383,7 @@ class StandardTurnRulesTest {
         assertTrue(
                 rules.getValidActions(state, p1).stream()
                         .anyMatch(a -> a instanceof CrossCellAction c && c.cellId().equals(closingId)),
-                "Closing cell must be offered when 5 existing crosses are present (5+1=6=minCrosses)");
+                "Closing cell must be offered when 5 non-closing crosses are present (5 >= minCrosses=5)");
     }
 
     @Test
@@ -411,7 +402,7 @@ class StandardTurnRulesTest {
         assertFalse(
                 rules.getValidActions(state, p2).stream()
                         .anyMatch(a -> a instanceof CrossCellAction c && c.cellId().equals(closingId)),
-                "Passive player must also be blocked with 4 crosses (4+1=5 < 6=minCrosses)");
+                "Passive player must also be blocked with 4 non-closing crosses (4 < 5=minCrosses)");
     }
 
     @Test

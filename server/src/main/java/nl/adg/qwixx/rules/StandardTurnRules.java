@@ -221,12 +221,12 @@ public class StandardTurnRules implements TurnRules {
         // Capture before adding so we can tell whether this is the turn's first declaration.
         boolean isFirstDeclaration = state.rowClosureRequests().isEmpty();
 
-        Color rowColor = getLock(state, declarerId, rowIndex).color();
+        Color rowColor = getLockColor(state, declarerId, rowIndex);
         state.rowClosureRequests().add(new RowClosureRequest(declarerId, rowColor));
 
         if (isActive) {
             // Re-queue passive players who already left the queue, but ONLY on the first
-            // declaration of the turn. After a RESET_TURN the prior request from the cancelled
+            // declaration of the turn. After a RESET_TURN the prior request from the canceled
             // declaration is cleared but later declarations (from other players) remain, so
             // isFirstDeclaration = false — preventing players who have fully acted from being
             // forced to act a second time.
@@ -413,16 +413,16 @@ public class StandardTurnRules implements TurnRules {
         if (rowIsNotLockable(state, activeId, rowIndex)) return false;
         // Don't re-queue if the active player already declared this row themselves.
         if (activeId.equals(state.pendingClosures().get(rowIndex))) return false;
-        LockCell lock = getLock(state, activeId, rowIndex);
         Set<String> allCrosses = allCrossesForPlayer(state, activeId, rowIndex);
         // If the player already has the LAST closing cell crossed they already qualify at
         // evaluate — re-queuing would interrupt the game without benefit.
         // (Earlier closing cells like Longo "15" may be crossed from a prior turn; in that
         // case the player might still want to also cross "16" this turn, so we allow re-queue.)
-        String lastClosingCell = lock.closingCells().get(lock.closingCells().size() - 1);
-        if (allCrosses.contains(lastClosingCell)) return false;
-        // Re-queue if crossing the last closing cell would give them enough crosses to qualify.
-        return allCrosses.size() + 1 >= lock.minCrosses();
+        if (allCrosses.contains(getLastClosingCell(state, activeId, rowIndex))) return false;
+        // Re-queue if the player already has enough non-closing crosses to qualify.
+        List<String> closingCells = getClosingCells(state, activeId, rowIndex);
+        long nonClosing = allCrosses.stream().filter(id -> !closingCells.contains(id)).count();
+        return nonClosing >= getMinCrossesRequired();
     }
 
     // Auto-detect closing intent for a player who crossed the LAST closing cell this turn.
@@ -437,16 +437,15 @@ public class StandardTurnRules implements TurnRules {
 
             Row row = layout.rows().get(rowIndex);
             if (row.lock() == null) continue;
-            LockCell lock = row.lock();
 
-            String lastClosingCell = lock.closingCells().get(lock.closingCells().size() - 1);
+            String lastClosingCell = getLastClosingCell(state, playerId, rowIndex);
             Set<String> pendingInRow = getPendingCrossesInRow(turn, playerId, rowIndex);
             if (!pendingInRow.contains(lastClosingCell)) continue;
 
             if (!canCrossLock(state, playerId, rowIndex)) continue;
 
             state.pendingClosures().put(rowIndex, playerId);
-            Color rowColor = row.lock().color();
+            Color rowColor = getLockColor(state, playerId, rowIndex);
             state.rowClosureRequests().add(new RowClosureRequest(playerId, rowColor));
         }
     }
@@ -476,7 +475,7 @@ public class StandardTurnRules implements TurnRules {
     }
 
     private void addReachableCells(GameState state, UUID playerId, List<GameAction> actions, boolean isActive) {
-        cellCrosser.addReachableCells(state, playerId, actions, isActive);
+        cellCrosser.addReachableCells(state, playerId, actions, isActive, getMinCrossesRequired());
     }
 
     // Offer DECLARE_LOCK_INTENT when the player can explicitly declare closing intent:
@@ -502,19 +501,18 @@ public class StandardTurnRules implements TurnRules {
     // by auto-detection at EndTurn.
     protected boolean canDeclareViaPermanentLastCell(GameState state, UUID playerId, int rowIndex) {
         if (rowIsNotLockable(state, playerId, rowIndex)) return false;
-        LockCell lock = getLock(state, playerId, rowIndex);
         RowState rowState = getRowState(getProgress(state, playerId), rowIndex);
-        if (rowState.crossedCells().size() < lock.minCrosses()) return false;
-        String lastClosing = lock.closingCells().get(lock.closingCells().size() - 1);
-        return rowState.crossedCells().contains(lastClosing);
+        List<String> closingCells = getClosingCells(state, playerId, rowIndex);
+        long nonClosing = rowState.crossedCells().stream().filter(id -> !closingCells.contains(id)).count();
+        if (nonClosing < getMinCrossesRequired()) return false;
+        return rowState.crossedCells().contains(getLastClosingCell(state, playerId, rowIndex));
     }
 
     // True when the second-to-last closing cell is a pending cross this turn AND the player qualifies.
     // This is the Longo "15"/"3" explicit YES scenario.
     protected boolean canDeclareViaSecondToLastCell(GameState state, UUID playerId, int rowIndex) {
         if (rowIsNotLockable(state, playerId, rowIndex)) return false;
-        LockCell lock = getLock(state, playerId, rowIndex);
-        List<String> closing = lock.closingCells();
+        List<String> closing = getClosingCells(state, playerId, rowIndex);
         if (closing.size() < 2) return false;
 
         String secondToLast = closing.get(closing.size() - 2);
@@ -528,9 +526,8 @@ public class StandardTurnRules implements TurnRules {
 
     protected boolean canCrossLock(GameState state, UUID playerId, int rowIndex) {
         if (rowIsNotLockable(state, playerId, rowIndex)) return false;
-        LockCell lock = getLock(state, playerId, rowIndex);
         Set<String> allCrosses = allCrossesForPlayer(state, playerId, rowIndex);
-        return playerHasCrossedAClosingCell(lock, allCrosses);
+        return playerHasCrossedAClosingCell(getClosingCells(state, playerId, rowIndex), allCrosses);
     }
 
     /** Returns true when the row has no lock, is already locked, or is already closed. */
@@ -557,12 +554,9 @@ public class StandardTurnRules implements TurnRules {
     }
 
     protected void closeRowGlobally(GameState state, UUID playerId, int rowIndex) {
-        BoardState board    = state.boardState();
+        BoardState board = state.boardState();
         board.closedRows().put(rowIndex, playerId);
-
-        SheetLayout layout  = getLayout(state, playerId);
-        Color lockColor     = layout.rows().get(rowIndex).lock().color();
-        board.activeDice().removeIf(d -> d.color() == lockColor);
+        board.activeDice().removeIf(d -> d.color() == getLockColor(state, playerId, rowIndex));
     }
 
     protected Map<Integer, Set<String>> crossCellWithAutoTags(GameState state, UUID playerId, int rowIndex, String cellId) {
@@ -602,6 +596,22 @@ public class StandardTurnRules implements TurnRules {
 
     protected LockCell getLock(GameState state, UUID playerId, int rowIndex) {
         return getRow(state, playerId, rowIndex).lock();
+    }
+
+    protected Color getLockColor(GameState state, UUID playerId, int rowIndex) {
+        return getLock(state, playerId, rowIndex).color();
+    }
+
+    protected List<String> getClosingCells(GameState state, UUID playerId, int rowIndex) {
+        return getLock(state, playerId, rowIndex).closingCells();
+    }
+
+    protected String getLastClosingCell(GameState state, UUID playerId, int rowIndex) {
+        return getLock(state, playerId, rowIndex).closingCells().getLast();
+    }
+
+    protected int getMinCrossesRequired() {
+        return 5;
     }
 
     protected int rightmostCrossedPosition(Row row, RowState rowState) {
@@ -659,8 +669,8 @@ public class StandardTurnRules implements TurnRules {
                                && couldActivePlayerLockRow(state, activeId, e.getKey()));
     }
 
-    private boolean playerHasCrossedAClosingCell(LockCell lock, Set<String> allCrosses) {
-        return lock.closingCells().stream().anyMatch(allCrosses::contains);
+    private boolean playerHasCrossedAClosingCell(List<String> closingCells, Set<String> allCrosses) {
+        return closingCells.stream().anyMatch(allCrosses::contains);
     }
 
     private boolean activePlayerRevertingToMove(boolean isActive, TurnState turn) {

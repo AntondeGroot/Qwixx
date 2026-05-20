@@ -158,7 +158,7 @@ public class StandardTurnRules implements TurnRules {
         }
 
         Map<Integer, Set<String>> crossed = crossCellWithAutoTags(state, playerId, action.rowIndex(), action.cellId());
-        turn.undoBuffer().put(playerId, crossed);
+        savePendingCrosses(turn, playerId, crossed);
 
         if (isActive) {
             recordActiveDiceUsage(turn.activeTurnState(), action.combination());
@@ -243,7 +243,7 @@ public class StandardTurnRules implements TurnRules {
             throw new IllegalMoveException("UndoLastCrossAction not valid in phase " + turn.phase());
 
         UUID playerId = action.playerId();
-        Map<Integer, Set<String>> lastCross = turn.undoBuffer().get(playerId);
+        Map<Integer, Set<String>> lastCross = getPendingCrosses(turn, playerId);
         if (lastCross == null) throw new IllegalMoveException("no cross to undo");
 
         // For the active player, undo = full reset so dice usage flags are also cleared.
@@ -268,7 +268,7 @@ public class StandardTurnRules implements TurnRules {
             }
         }
 
-        turn.undoBuffer().remove(playerId);
+        clearPendingCrosses(turn, playerId);
         turn.passivesActed().remove(playerId);
     }
 
@@ -306,7 +306,7 @@ public class StandardTurnRules implements TurnRules {
             turn.passivePlayerQueue().remove(playerId); // in case they were re-added for final look
             restoreToSnapshot(state, turn, playerId);
             cancelPlayerClosingIntents(state, playerId);
-            turn.undoBuffer().remove(playerId);
+            clearPendingCrosses(turn, playerId);
             if (turn.activeTurnState() != null) turn.activeTurnState().reset();
             turn.setPhase(TurnPhase.ACTIVE_MOVE);
             return;
@@ -319,7 +319,7 @@ public class StandardTurnRules implements TurnRules {
         if (passivePlayerRevertingAfterEarlyEndTurn(isActive, turn, playerId)) {
             restoreToSnapshot(state, turn, playerId);
             cancelPlayerClosingIntents(state, playerId);
-            turn.undoBuffer().remove(playerId);
+            clearPendingCrosses(turn, playerId);
             turn.passivesActed().remove(playerId);
             turn.passivePlayerQueue().add(playerId);
             return;
@@ -328,7 +328,7 @@ public class StandardTurnRules implements TurnRules {
         restoreToSnapshot(state, turn, playerId);
         cancelPlayerClosingIntents(state, playerId);
 
-        turn.undoBuffer().remove(playerId);
+        clearPendingCrosses(turn, playerId);
         turn.passivesActed().remove(playerId);
 
         if (isActive) {
@@ -363,7 +363,7 @@ public class StandardTurnRules implements TurnRules {
                 evaluate(state);
                 // Clear after evaluate so canCrossLock can still see this player's pending
                 // crosses when deciding whether non-declarant players qualify for the lock cross.
-                turn.undoBuffer().remove(playerId);
+                clearPendingCrosses(turn, playerId);
             } else {
                 // Don't clear: evaluate runs later (last passive's endTurn), at which point
                 // evaluate() replaces the whole TurnState — naturally discarding all buffers.
@@ -398,7 +398,7 @@ public class StandardTurnRules implements TurnRules {
         }
         // Clear after evaluate so that canCrossLock can still read this player's pending
         // crosses when deciding whether non-declarant players qualify for the lock cross.
-        turn.undoBuffer().remove(playerId);
+        clearPendingCrosses(turn, playerId);
     }
 
     /**
@@ -426,8 +426,7 @@ public class StandardTurnRules implements TurnRules {
     // Auto-detect closing intent for a player who crossed the LAST closing cell this turn.
     // The second-to-last closing cell (Longo "15"/"3") requires an explicit YES from the client.
     private void autoDetectClosingIntent(GameState state, TurnState turn, UUID playerId) {
-        Map<Integer, Set<String>> playerBuffer = turn.undoBuffer().get(playerId);
-        if (playerBuffer == null) return;
+        if (!hasPendingCrosses(turn, playerId)) return;
 
         SheetLayout layout = getLayout(state, playerId);
         for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
@@ -439,7 +438,7 @@ public class StandardTurnRules implements TurnRules {
             LockCell lock = row.lock();
 
             String lastClosingCell = lock.closingCells().get(lock.closingCells().size() - 1);
-            Set<String> pendingInRow = playerBuffer.getOrDefault(rowIndex, Set.of());
+            Set<String> pendingInRow = getPendingCrossesInRow(turn, playerId, rowIndex);
             if (!pendingInRow.contains(lastClosingCell)) continue;
 
             if (!canCrossLock(state, playerId, rowIndex)) continue;
@@ -519,9 +518,8 @@ public class StandardTurnRules implements TurnRules {
         String secondToLast = closing.get(closing.size() - 2);
         TurnState turn = state.turnState();
         if (turn == null) return false;
-        Map<Integer, Set<String>> playerBuffer = turn.undoBuffer().get(playerId);
-        if (playerBuffer == null) return false;
-        if (!playerBuffer.getOrDefault(rowIndex, Set.of()).contains(secondToLast)) return false;
+        if (!hasPendingCrosses(turn, playerId)) return false;
+        if (!getPendingCrossesInRow(turn, playerId, rowIndex).contains(secondToLast)) return false;
 
         return canCrossLock(state, playerId, rowIndex);
     }
@@ -546,10 +544,7 @@ public class StandardTurnRules implements TurnRules {
     protected Set<String> allCrossesForPlayer(GameState state, UUID playerId, int rowIndex) {
         RowState rowState = getRowState(getProgress(state, playerId), rowIndex);
         Set<String> all = new HashSet<>(rowState.crossedCells());
-        TurnState turn = state.turnState();
-        if (turn != null && turn.undoBuffer().containsKey(playerId)) {
-            all.addAll(turn.undoBuffer().get(playerId).getOrDefault(rowIndex, new HashSet<>()));
-        }
+        all.addAll(getPendingCrossesInRow(state, playerId, rowIndex));
         return all;
     }
 
@@ -619,6 +614,34 @@ public class StandardTurnRules implements TurnRules {
     private void requireActivePlayer(TurnState turn, UUID playerId) {
         if (!playerId.equals(turn.activePlayerId()))
             throw new IllegalMoveException("player " + playerId + " is not the active player");
+    }
+
+    // ── Undo buffer accessors ─────────────────────────────────────────────────
+
+    protected void savePendingCrosses(TurnState turn, UUID playerId, Map<Integer, Set<String>> crosses) {
+        turn.undoBuffer().put(playerId, crosses);
+    }
+
+    protected void clearPendingCrosses(TurnState turn, UUID playerId) {
+        turn.undoBuffer().remove(playerId);
+    }
+
+    protected boolean hasPendingCrosses(TurnState turn, UUID playerId) {
+        return turn.undoBuffer().containsKey(playerId);
+    }
+
+    protected Map<Integer, Set<String>> getPendingCrosses(TurnState turn, UUID playerId) {
+        return turn.undoBuffer().get(playerId);
+    }
+
+    protected Set<String> getPendingCrossesInRow(TurnState turn, UUID playerId, int rowIndex) {
+        Map<Integer, Set<String>> buffer = turn.undoBuffer().get(playerId);
+        return buffer != null ? buffer.getOrDefault(rowIndex, new HashSet<>()) : new HashSet<>();
+    }
+
+    protected Set<String> getPendingCrossesInRow(GameState state, UUID playerId, int rowIndex) {
+        TurnState turn = state.turnState();
+        return turn != null ? getPendingCrossesInRow(turn, playerId, rowIndex) : new HashSet<>();
     }
 
     // ── Named predicates ──────────────────────────────────────────────────────

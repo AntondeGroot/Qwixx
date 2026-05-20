@@ -40,25 +40,31 @@ public class BoardInteractionHelper {
      * physically dispatches the event through the browser's input pipeline.
      */
     public static void clickCellByValue(WebDriver driver, String rowColor, String displayValue) {
-        WebElement cell = (WebElement) ((JavascriptExecutor) driver).executeScript(
-                "const section = document.querySelector('section.current-player');" +
-                "if (!section) return null;" +
-                "for (const span of section.querySelectorAll('.cell-value')) {" +
-                "  if (span.textContent.trim() !== arguments[1]) continue;" +
-                "  let cell = span.parentElement;" +
-                "  while (cell && !(cell.classList && cell.classList.contains('cell'))) cell = cell.parentElement;" +
-                "  if (!cell) continue;" +
-                "  let row = cell.parentElement;" +
-                "  while (row && !(row.classList && row.classList.contains('row'))) row = row.parentElement;" +
-                "  if (!row || row.getAttribute('data-color') !== arguments[0]) continue;" +
-                "  return cell;" +
-                "}" +
-                "return null;",
-                rowColor, displayValue);
-        if (cell == null)
+        try {
+            new WebDriverWait(driver, Duration.ofSeconds(5)).until(d -> {
+                WebElement cell = (WebElement) ((JavascriptExecutor) d).executeScript(
+                        "const section = document.querySelector('section.current-player');" +
+                        "if (!section) return null;" +
+                        "for (const span of section.querySelectorAll('.cell-value')) {" +
+                        "  if (span.textContent.trim() !== arguments[1]) continue;" +
+                        "  let cell = span.parentElement;" +
+                        "  while (cell && !(cell.classList && cell.classList.contains('cell'))) cell = cell.parentElement;" +
+                        "  if (!cell) continue;" +
+                        "  let row = cell.parentElement;" +
+                        "  while (row && !(row.classList && row.classList.contains('row'))) row = row.parentElement;" +
+                        "  if (!row || row.getAttribute('data-color') !== arguments[0]) continue;" +
+                        "  return cell;" +
+                        "}" +
+                        "return null;",
+                        rowColor, displayValue);
+                if (cell == null) return false;
+                cell.click();
+                return true;
+            });
+        } catch (org.openqa.selenium.TimeoutException e) {
             throw new NoSuchElementException(
                     "No " + rowColor + " cell with value '" + displayValue + "' found");
-        cell.click();
+        }
     }
 
     /**

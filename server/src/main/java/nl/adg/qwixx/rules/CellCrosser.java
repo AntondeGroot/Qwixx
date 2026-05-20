@@ -5,7 +5,6 @@ import nl.adg.qwixx.action.DiceCombination;
 import nl.adg.qwixx.action.GameAction;
 import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.CellTag;
-import nl.adg.qwixx.data.LockCell;
 import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.state.ActiveTurnState;
 import nl.adg.qwixx.state.GameState;
@@ -35,7 +34,7 @@ class CellCrosser {
         return crossed;
     }
 
-    void addReachableCells(GameState state, UUID playerId, List<GameAction> actions, boolean isActive) {
+    void addReachableCells(GameState state, UUID playerId, List<GameAction> actions, boolean isActive, int minCrosses) {
         TurnState turn             = state.turnState();
         var roll                   = turn.currentRoll();
         ActiveTurnState ats        = isActive ? turn.activeTurnState() : null;
@@ -54,12 +53,11 @@ class CellCrosser {
                 if (rowState.crossedCells().contains(cell.id())) continue;
 
                 if (cell.isClosingEligible() && row.lock() != null) {
-                    LockCell lock = row.lock();
-                    long alreadyCrossedRequired = lock.closingCells().stream()
+                    long alreadyCrossedRequired = row.lock().closingCells().stream()
                             .filter(id -> rowState.crossedCells().contains(id))
                             .count();
                     long normalCrossed = rowState.crossedCells().size() - alreadyCrossedRequired;
-                    if (normalCrossed + 1 < lock.minCrosses()) continue;
+                    if (normalCrossed < minCrosses) continue;
                 }
 
                 DiceCombination combo = isActive

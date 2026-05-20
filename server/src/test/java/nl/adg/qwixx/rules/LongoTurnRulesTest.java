@@ -567,8 +567,8 @@ class LongoTurnRulesTest {
     // ── Closing-eligible cell reachability ────────────────────────────────────
     //
     // Longo has TWO closing cells per row (second-to-last and last; both required).
-    // minCrosses=7. Need 6 normal (non-closing-eligible) crosses before any closing cell.
-    // Condition: normalCrossed + 1 >= 7, where normalCrossed = crossed - already-crossed required.
+    // minCrosses=6 (non-closing crosses required before any closing cell).
+    // Condition: normalCrossed >= 6, where normalCrossed = crossed - already-crossed required.
     //
     // Ascending RED row: closing cells "15" (pos 13) and "16" (pos 14).
     // Descending BLUE row: closing cells "3"  (pos 13) and "2"  (pos 14).
@@ -591,7 +591,7 @@ class LongoTurnRulesTest {
         assertFalse(
                 rules.getValidActions(state, p1).stream()
                         .anyMatch(a -> a instanceof CrossCellAction c && c.cellId().equals(cell3.id())),
-                "Longo '3': 5 normal, 5+1=6 < 7 → must not be offered");
+                "Longo '3': 5 normal, 5 < 6 (minCrosses) → must not be offered");
     }
 
     @Test
@@ -610,7 +610,7 @@ class LongoTurnRulesTest {
         assertTrue(
                 rules.getValidActions(state, p1).stream()
                         .anyMatch(a -> a instanceof CrossCellAction c && c.cellId().equals(cell3.id())),
-                "Longo '3': 6 normal, 6+1=7 = minCrosses → must be offered");
+                "Longo '3': 6 normal, 6 >= 6 (minCrosses) → must be offered");
     }
 
     @Test
@@ -632,7 +632,7 @@ class LongoTurnRulesTest {
         assertFalse(
                 rules.getValidActions(state, p1).stream()
                         .anyMatch(a -> a instanceof CrossCellAction c && c.cellId().equals(cell2.id())),
-                "Longo '2': 5 normal + '3' already crossed, normalCrossed=5, 5+1=6 < 7 → must not be offered");
+                "Longo '2': 5 normal + '3' already crossed, normalCrossed=5, 5 < 6 (minCrosses) → must not be offered");
     }
 
     @Test
@@ -652,7 +652,7 @@ class LongoTurnRulesTest {
         assertTrue(
                 rules.getValidActions(state, p1).stream()
                         .anyMatch(a -> a instanceof CrossCellAction c && c.cellId().equals(cell2.id())),
-                "Longo '2': 6 normal + '3' already crossed, normalCrossed=6, 6+1=7 = minCrosses → must be offered");
+                "Longo '2': 6 normal + '3' already crossed, normalCrossed=6, 6 >= 6 (minCrosses) → must be offered");
     }
 
     @Test
@@ -673,7 +673,7 @@ class LongoTurnRulesTest {
         assertFalse(
                 rules.getValidActions(state, p1).stream()
                         .anyMatch(a -> a instanceof CrossCellAction c && c.cellId().equals(cell15.id())),
-                "Longo '15': 5 normal, 5+1=6 < 7 → must not be offered");
+                "Longo '15': 5 normal, 5 < 6 (minCrosses) → must not be offered");
     }
 
     @Test
@@ -692,7 +692,7 @@ class LongoTurnRulesTest {
         assertTrue(
                 rules.getValidActions(state, p1).stream()
                         .anyMatch(a -> a instanceof CrossCellAction c && c.cellId().equals(cell15.id())),
-                "Longo '15': 6 normal, 6+1=7 = minCrosses → must be offered");
+                "Longo '15': 6 normal, 6 >= 6 (minCrosses) → must be offered");
     }
 
     // ── Passive declares lock intent for a LONGO row ─────────────────────────

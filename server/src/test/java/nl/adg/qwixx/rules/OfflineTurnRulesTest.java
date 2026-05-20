@@ -269,7 +269,7 @@ class OfflineTurnRulesTest {
         }
         Cell last = cells.get(10);
         last.setClosingEligible(true);
-        row.addLock(new LockCell(UUID.randomUUID().toString(), color, 5, List.of(last.id())));
+        row.addLock(new LockCell(UUID.randomUUID().toString(), color, 6, List.of(last.id())));
         return row;
     }
 
@@ -286,7 +286,7 @@ class OfflineTurnRulesTest {
         }
         Cell last = cells.get(10);
         last.setClosingEligible(true);
-        row.addLock(new LockCell(UUID.randomUUID().toString(), color, 5, List.of(last.id())));
+        row.addLock(new LockCell(UUID.randomUUID().toString(), color, 6, List.of(last.id())));
         return row;
     }
 

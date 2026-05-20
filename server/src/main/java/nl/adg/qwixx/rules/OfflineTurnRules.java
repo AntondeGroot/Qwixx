@@ -6,7 +6,6 @@ import nl.adg.qwixx.action.DiceCombination;
 import nl.adg.qwixx.action.GameAction;
 import nl.adg.qwixx.action.TakePunishmentAction;
 import nl.adg.qwixx.data.Cell;
-import nl.adg.qwixx.data.LockCell;
 import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.state.GameState;
 import nl.adg.qwixx.state.RowState;
@@ -86,6 +85,11 @@ public class OfflineTurnRules extends StandardTurnRules {
         if (isGameOver(state)) state.setGameOver(true);
     }
 
+    @Override
+    protected int getMinCrossesRequired() {
+        return 5;
+    }
+
     // No closedRows check: a player qualifies to lock based only on their own progress.
     // Any ONE closing cell is sufficient (same semantics as online mode).
     @Override
@@ -95,10 +99,11 @@ public class OfflineTurnRules extends StandardTurnRules {
         Row row            = layout.rows().get(rowIndex);
 
         if (row.lock() == null) return false;
-        LockCell lock     = row.lock();
         RowState rowState = getRowState(prog, rowIndex);
         if (rowState.lockCrossed()) return false;
-        if (rowState.crossedCells().size() < lock.minCrosses()) return false;
-        return lock.closingCells().stream().anyMatch(id -> rowState.crossedCells().contains(id));
+        List<String> closingIds = row.lock().closingCells();
+        long nonClosing = rowState.crossedCells().stream().filter(id -> !closingIds.contains(id)).count();
+        if (nonClosing < getMinCrossesRequired()) return false;
+        return closingIds.stream().anyMatch(id -> rowState.crossedCells().contains(id));
     }
 }

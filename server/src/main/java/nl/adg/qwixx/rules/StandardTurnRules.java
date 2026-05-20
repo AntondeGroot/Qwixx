@@ -218,10 +218,27 @@ public class StandardTurnRules implements TurnRules {
 
         state.pendingClosures().put(rowIndex, declarerId);
 
+        // Capture before adding so we can tell whether this is the turn's first declaration.
+        boolean isFirstDeclaration = state.rowClosureRequests().isEmpty();
+
         Color rowColor = state.sheetLayouts().get(declarerId).rows().get(rowIndex).lock().color();
         state.rowClosureRequests().add(new RowClosureRequest(declarerId, rowColor));
 
-        if (!isActive) {
+        if (isActive) {
+            // Re-queue passive players who already left the queue, but ONLY on the first
+            // declaration of the turn. After a RESET_TURN the prior request from the cancelled
+            // declaration is cleared but later declarations (from other players) remain, so
+            // isFirstDeclaration = false — preventing players who have fully acted from being
+            // forced to act a second time.
+            if (isFirstDeclaration) {
+                UUID activeId = turn.activePlayerId();
+                for (UUID pid : state.players()) {
+                    if (!pid.equals(activeId) && !turn.passivePlayerQueue().contains(pid)) {
+                        turn.passivePlayerQueue().add(pid);
+                    }
+                }
+            }
+        } else {
             turn.passivesActed().add(declarerId);
         }
     }

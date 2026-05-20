@@ -66,6 +66,8 @@ public class MobileLayoutIT extends BaseIntegrationTest {
 
     @BeforeEach
     void createGame() {
+        portraitDriver = TestUtils.ensureAlivePortrait(portraitDriver);
+        desktopDriver  = TestUtils.ensureAlive(desktopDriver);
         sessionId = api.createGame(2);
         playerIds = api.getPlayerIds(sessionId);
     }

@@ -48,6 +48,31 @@ public class TestUtils {
         return driver;
     }
 
+    /**
+     * Returns the driver as-is if its session is still alive, otherwise quietly
+     * recreates it. Call this in {@code @BeforeEach} to prevent a single Chrome
+     * crash from cascading NoSuchSessionExceptions into every subsequent test.
+     */
+    public static WebDriver ensureAlive(WebDriver driver) {
+        return ensureAlive(driver, TestUtils::createDriver);
+    }
+
+    /** Portrait-driver variant — recreates with {@link #createPortraitDriver()} on session death. */
+    public static WebDriver ensureAlivePortrait(WebDriver driver) {
+        return ensureAlive(driver, TestUtils::createPortraitDriver);
+    }
+
+    private static WebDriver ensureAlive(WebDriver driver, java.util.function.Supplier<WebDriver> factory) {
+        if (driver == null) return factory.get();
+        try {
+            driver.getCurrentUrl(); // throws if the session is dead
+            return driver;
+        } catch (WebDriverException e) {
+            try { driver.quit(); } catch (Exception ignored) {}
+            return factory.get();
+        }
+    }
+
     /** Creates a desktop driver and primes the rules-seen cookie so the first-time redirect never fires. */
     public static WebDriver createDriver() {
         WebDriver driver = new ChromeDriver(buildOptions("1280,800"));

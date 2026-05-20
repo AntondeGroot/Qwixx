@@ -61,6 +61,9 @@ public class LongoDoubleCloseIT extends BaseIntegrationTest {
 
     @BeforeEach
     void setup() {
+        driver0 = TestUtils.ensureAlive(driver0);
+        driver1 = TestUtils.ensureAlive(driver1);
+        driver2 = TestUtils.ensureAlive(driver2);
         sessionId = api.createGame(3, Map.of("base", "LONGO"));
         pids      = api.getPlayerIds(sessionId);
 

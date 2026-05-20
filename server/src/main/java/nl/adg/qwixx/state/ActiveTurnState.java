@@ -17,4 +17,6 @@ public class ActiveTurnState {
   public boolean whiteWhiteUsed() { return whiteWhiteUsed; }
 
   public boolean colorDieUsed()   { return colorDieUsed; }
+
+  public boolean hasActed()       { return whiteWhiteUsed || colorDieUsed; }
 }

@@ -61,6 +61,8 @@ public class DoubleRowCloseIT extends BaseIntegrationTest {
 
     @BeforeEach
     void setup() {
+        driver0 = TestUtils.ensureAlive(driver0);
+        driver1 = TestUtils.ensureAlive(driver1);
         sessionId = api.createGame(2);
         pids      = api.getPlayerIds(sessionId);
 

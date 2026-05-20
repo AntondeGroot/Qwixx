@@ -76,7 +76,13 @@ public class TestUtils {
      * Use this instead of {@link #getScoreDriver} when reusing a driver across tests.
      */
     public static void navigateToScore(WebDriver driver, String sessionId) {
-        driver.get(baseUrl() + "/score/" + sessionId + "?fast=1");
+        String url = baseUrl() + "/score/" + sessionId + "?fast=1";
+        driver.get(url);
+        // Angular's route guard occasionally redirects back to the game URL on first load
+        // (race between the guard's HTTP check and the navigation). Retry once if so.
+        if (!driver.getCurrentUrl().contains("/score/")) {
+            driver.get(url);
+        }
         waitUntilScoreLoaded(driver);
     }
 

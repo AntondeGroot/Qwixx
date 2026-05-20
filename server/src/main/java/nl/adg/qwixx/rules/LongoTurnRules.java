@@ -13,11 +13,9 @@ import nl.adg.qwixx.state.RowState;
 import nl.adg.qwixx.state.SheetLayout;
 import nl.adg.qwixx.state.SheetProgress;
 import nl.adg.qwixx.state.TurnPhase;
-import nl.adg.qwixx.state.TurnState;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -63,7 +61,7 @@ public class LongoTurnRules extends StandardTurnRules {
         LockCell lock = getLock(state, playerId, rowIndex);
 
         Set<String> allCrosses  = allCrossesForPlayer(state, playerId, rowIndex);
-        Set<String> pendingInRow = pendingCrossesInRow(state, playerId, rowIndex);
+        Set<String> pendingInRow = getPendingCrossesInRow(state, playerId, rowIndex);
 
         // MinCrosses check uses ALL crosses (permanent + pending) so that the last pending
         // cross counts toward the threshold needed to qualify for closing.
@@ -82,12 +80,6 @@ public class LongoTurnRules extends StandardTurnRules {
             return pendingInRow.contains(secondLast);
         }
         return false;
-    }
-
-    private Set<String> pendingCrossesInRow(GameState state, UUID playerId, int rowIndex) {
-        TurnState turn = state.turnState();
-        if (turn == null || !turn.undoBuffer().containsKey(playerId)) return new HashSet<>();
-        return turn.undoBuffer().get(playerId).getOrDefault(rowIndex, new HashSet<>());
     }
 
     private void addBonusCellAction(GameState state, UUID playerId, List<GameAction> actions) {

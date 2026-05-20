@@ -90,11 +90,11 @@ public class LockMechanismIT extends BaseIntegrationTest {
         assertTrue(isLockButtonCrossed(driver0, "BLUE"),
                 "Lock cross must appear on player0's board as soon as '2' is pending");
 
-        // Player1 sees the notification modal and dismisses it (OK = notification only, not EndTurn)
+        // Player1 sees the notification modal; OK = dismiss, then passes via board button.
         waitUntilModalVisible(driver1, 8);
-        clickModalConfirmButton(driver1);  // dismiss notification
+        clickModalConfirmButton(driver1);
         waitUntilPassButtonVisible(driver1, 5);
-        clickPassButton(driver1);  // player1 EndTurns via board pass button
+        clickPassButton(driver1);
 
         // Player0 EndTurns → passive queue empty → EVALUATE → row closes
         waitUntilPassButtonVisible(driver0, 5);
@@ -378,7 +378,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
         assertTrue(isLockButtonCrossed(driver0, "BLUE"),
                 "player0 must see BLUE lock cross after clicking YES");
 
-        // player1 (passive) sees the notification modal and dismisses it (OK = notification only)
+        // player1 (passive, fresh) dismisses the notification (OK = dismiss, 1-button layout).
         waitUntilModalVisible(driver1, 8);
         clickModalConfirmButton(driver1);
 
@@ -433,11 +433,11 @@ public class LockMechanismIT extends BaseIntegrationTest {
         String blueRowId = api.getRowId(sid, pids.get(0), BLUE_ROW_INDEX);
         api.declareLockIntent(sid, pids.get(0), blueRowId);
 
-        // Player1 sees the BLUE modal and dismisses it (OK = notification, not EndTurn)
+        // Player1 sees the BLUE modal; OK = dismiss, then passes via board button.
         waitUntilModalVisible(driver1, 8);
-        clickModalConfirmButton(driver1); // dismiss notification
+        clickModalConfirmButton(driver1);
         waitUntilPassButtonVisible(driver1, 5);
-        clickPassButton(driver1); // player1 EndTurns via board pass button
+        clickPassButton(driver1);
 
         // Player0 EndTurns → passive queue empty → EVALUATE → BLUE closes
         waitUntilPassButtonVisible(driver0, 5);
@@ -468,9 +468,9 @@ public class LockMechanismIT extends BaseIntegrationTest {
         String blueRowId = api.getRowId(sid, pids.get(0), BLUE_ROW_INDEX);
         api.declareLockIntent(sid, pids.get(0), blueRowId);
 
-        // Player1 sees BLUE modal; dismisses it (OK = notification only) so they can cross RED "12"
+        // Player1 (fresh passive) dismisses the BLUE notification (OK = dismiss, 1-button layout).
         waitUntilModalVisible(driver1, 8);
-        clickModalConfirmButton(driver1); // dismiss notification
+        clickModalConfirmButton(driver1);
 
         // Player1 can cross while still in passive queue (modal no longer blocking)
         clickCellByValue(driver1, "RED", "12");
@@ -526,8 +526,8 @@ public class LockMechanismIT extends BaseIntegrationTest {
         waitUntilModalVisible(driver1, 8);
         waitUntilModalVisible(driver2, 8);
 
-        // Player1 dismisses the BLUE modal (OK = notification only) to cross RED "12"
-        clickModalConfirmButton(driver1); // dismiss notification
+        // Player1 (fresh passive) dismisses BLUE notification (OK = dismiss, 1-button layout).
+        clickModalConfirmButton(driver1);
 
         // Player1 crosses RED "12" (modal no longer blocking)
         clickCellByValue(driver1, "RED", "12");
@@ -538,10 +538,10 @@ public class LockMechanismIT extends BaseIntegrationTest {
         waitUntilModalVisible(driver1, 8);
         clickModalConfirmButton(driver1); // player1 EndTurns (hasPendingCross=true)
 
-        // Player2 dismisses their notification modal, then EndTurns via pass button
-        clickModalConfirmButton(driver2); // dismiss notification
+        // Player2 sees notification; OK = dismiss, then passes via board button.
+        clickModalConfirmButton(driver2);
         waitUntilPassButtonVisible(driver2, 5);
-        clickPassButton(driver2); // player2 EndTurns
+        clickPassButton(driver2);
 
         // Player0 sees notification about player1's RED declaration; dismiss it first
         waitUntilModalVisible(driver0, 8);
@@ -917,7 +917,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
         waitUntilPassButtonVisible(driver0, 5);
         clickPassButton(driver0); // EndTurn → PASSIVE_MOVE
 
-        // Player1 sees RED notification, dismisses, EndTurns without crossing anything
+        // Player1 sees RED notification; OK = dismiss, then passes via board button.
         waitUntilModalVisible(driver1, 8);
         clickModalConfirmButton(driver1);
         waitUntilPassButtonVisible(driver1, 5);
@@ -1010,7 +1010,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
         waitUntilPassButtonVisible(driver0, 5);
         clickPassButton(driver0);
 
-        // Player1 sees RED notification, dismisses, passes
+        // Player1 sees RED notification; OK = dismiss, then passes via board button.
         waitUntilModalVisible(driver1, 8);
         clickModalConfirmButton(driver1);
         waitUntilPassButtonVisible(driver1, 5);
@@ -1116,7 +1116,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // Player1 EndTurns via API
         api.pass(sid, p1);
 
-        // Player2 dismisses notification and EndTurns
+        // Player2 sees notification; OK = dismiss, then passes via board button.
         waitUntilModalVisible(driver2, 8);
         clickModalConfirmButton(driver2);
         waitUntilPassButtonVisible(driver2, 5);
@@ -1206,10 +1206,9 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // Player1 EndTurns via API (they have a pending YELLOW cross from the API call above)
         api.pass(sid, p1);
 
-        // Player2 sees notifications (player0's RED + player1's YELLOW); dismiss them first
+        // Player2 sees notifications; OK = dismiss, then passes via board button → EVALUATE.
         waitUntilModalVisible(driver2, 8);
         clickModalConfirmButton(driver2);
-        // Player2 EndTurns (no cross) → passive queue drained → EVALUATE
         waitUntilPassButtonVisible(driver2, 5);
         clickPassButton(driver2);
 
@@ -1325,11 +1324,11 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // Active crosses "2" (auto-declares intent)
         clickCellByValue(driver0, "BLUE", "2");
 
-        // Passive sees notification modal, dismisses it (OK = notification only, not EndTurn)
+        // Passive sees notification; OK = dismiss, then passes via board button.
         waitUntilModalVisible(driver1, 8);
         clickModalConfirmButton(driver1);
         waitUntilPassButtonVisible(driver1, 5);
-        clickPassButton(driver1);  // player1 EndTurns via board pass button
+        clickPassButton(driver1);
 
         // Active EndTurns → passive queue empty → EVALUATE → row closes
         waitUntilPassButtonVisible(driver0, 5);
@@ -1346,6 +1345,110 @@ public class LockMechanismIT extends BaseIntegrationTest {
                 "BLUE row must be closed in player1's browser");
         assertFalse(isModalVisible(driver1),
                 "Lock-intent modal must be gone after the row closes");
+    }
+
+    /**
+     * Regression test for the bug where all passives had already passed BEFORE
+     * the active player declared lock intent, leaving the passive queue empty.
+     * The active player's subsequent EndTurn triggered EVALUATE immediately,
+     * cutting off passive players who had the notification modal open.
+     *
+     * Expected (fixed) behaviour: the declaration atomically re-queues every passive
+     * who had already left. The active player's EndTurn then enters PASSIVE_MOVE;
+     * passive must EndTurn again before EVALUATE fires.
+     */
+    @Test
+    void passive_passesFirst_thenActiveDeclaresLock_passiveIsRequeued_rowClosesAfterBothAct() {
+        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.roll(sessionId, playerIds.get(0));
+        api.setDice(sessionId, 1, 1);
+
+        TestUtils.navigateTo(driver0, sessionId, playerIds.get(0));
+        TestUtils.navigateTo(driver1, sessionId, playerIds.get(1));
+
+        // Player1 (passive) passes BEFORE any declaration has been made.
+        waitUntilPassButtonVisible(driver1, 5);
+        clickPassButton(driver1);
+
+        // Active now declares lock intent (via API — passive queue was empty at this point).
+        String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
+        api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
+
+        // Player1 must be re-queued and see the notification modal.
+        waitUntilModalVisible(driver1, 8);
+        assertTrue(isModalVisible(driver1),
+                "Player1 must see the notification after being re-queued by the declaration");
+
+        // Player1 sees notification (re-queued); OK = dismiss, then passes via board button.
+        clickModalConfirmButton(driver1);
+        waitUntilPassButtonVisible(driver1, 5);
+        clickPassButton(driver1);
+
+        // Active EndTurns → passive queue now empty → EVALUATE → BLUE closes.
+        waitUntilPassButtonVisible(driver0, 5);
+        clickPassButton(driver0);
+
+        new WebDriverWait(driver0, Duration.ofSeconds(8))
+                .until(d -> isRowClosed(d, "BLUE"));
+        assertTrue(isRowClosed(driver0, "BLUE"),
+                "BLUE must close after both players have EndTurned");
+        new WebDriverWait(driver1, Duration.ofSeconds(8))
+                .until(d -> isRowClosed(d, "BLUE"));
+        assertTrue(isRowClosed(driver1, "BLUE"),
+                "BLUE must also be closed in player1's browser");
+    }
+
+    /**
+     * A passive player who is still in the queue (fresh — never acted this turn) must see
+     * a single-button modal (OK only, no Change). The Change button only appears when the
+     * player has already acted or been re-queued mid-turn.
+     */
+    @Test
+    void freshPassive_seesOneButtonModal_noChangeButton() {
+        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.roll(sessionId, playerIds.get(0));
+        api.setDice(sessionId, 1, 1);
+
+        TestUtils.navigateTo(driver1, sessionId, playerIds.get(1));
+
+        // Player0 declares while player1 is still fresh in the passive queue (never acted).
+        String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
+        api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
+
+        waitUntilModalVisible(driver1, 8);
+        assertTrue(isModalVisible(driver1),
+                "Player1 must see the notification modal");
+        assertFalse(isModalChangeButtonVisible(driver1),
+                "Fresh passive must NOT see the Change button — 1-button layout only");
+    }
+
+    /**
+     * A passive player who already passed before the active declared (and was therefore
+     * re-queued) must see the two-button layout (Change + OK). Change lets them undo any
+     * prior move and reconsider; OK simply dismisses so they can click PASS on the board.
+     */
+    @Test
+    void reQueuedPassive_seesTwoButtonModal_changeButtonVisible() {
+        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.roll(sessionId, playerIds.get(0));
+        api.setDice(sessionId, 1, 1);
+
+        TestUtils.navigateTo(driver1, sessionId, playerIds.get(1));
+
+        // Player1 passes BEFORE any declaration (they are now outside the passive queue).
+        waitUntilPassButtonVisible(driver1, 5);
+        clickPassButton(driver1);
+
+        // Active declares → player1 is re-queued mid-turn.
+        String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
+        api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
+
+        // Player1 must see the two-button layout: Change (undo/reconsider) and OK (dismiss).
+        waitUntilModalVisible(driver1, 8);
+        assertTrue(isModalVisible(driver1),
+                "Player1 must see the notification after being re-queued");
+        assertTrue(isModalChangeButtonVisible(driver1),
+                "Re-queued passive must see the Change button — 2-button layout");
     }
 
     // ── Full 2-player lock flow ending in score screen ─────────────────────────
@@ -1392,15 +1495,15 @@ public class LockMechanismIT extends BaseIntegrationTest {
         String blueRowId = api.getRowId(sessionId, p0, BLUE_ROW_INDEX);
         api.declareLockIntent(sessionId, p0, blueRowId);
 
-        // Player1 sees notification modal and dismisses it (OK = notification only)
+        // Player1 sees notification modal; OK = dismiss, then passes via board button.
         waitUntilModalVisible(driver1, 8);
         clickModalConfirmButton(driver1);
         new WebDriverWait(driver1, Duration.ofSeconds(5))
                 .until(d -> !isModalVisible(d));
         assertFalse(isModalVisible(driver1),
-                "Modal must be gone after player1 dismisses");
+                "Modal must be gone after player1 clicks OK");
         waitUntilPassButtonVisible(driver1, 5);
-        clickPassButton(driver1);  // player1 EndTurns via board pass button
+        clickPassButton(driver1);
 
         // Player0 EndTurns → passive queue empty → EVALUATE → BLUE closes → 2 rows → game over
         waitUntilPassButtonVisible(driver0, 5);

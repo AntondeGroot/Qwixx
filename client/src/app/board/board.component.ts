@@ -46,6 +46,9 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   // True while the player dismissed the lock-intent modal to pick a new cell.
   // Suppresses the modal until they cross something (pendingCellIds becomes non-empty).
   private readonly suppressModal = signal(false);
+  // True when this player was re-queued mid-turn (not via the normal roll-start).
+  // Used to show the two-button modal so they know they can undo (Change) or just pass (OK+board).
+  private readonly reQueuedThisTurn = signal(false);
 
   private eventSource?: EventSource;
   private moveSub?: Subscription;
@@ -86,8 +89,12 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
         requests,
         () => this.onConfirmRowClosure(),
         () => this.onChangeRowClosure(),
-        this.hasPendingPassiveCross() || this.hasPendingActiveCross() || this.hasRevertableEndTurn() || this.hasRevertablePassiveEndTurn(),
-        this.hasPendingPassiveCross()  // passive: Confirm = EndTurn; active/revert: OK = dismiss
+        // Show the two-button layout when there is something actionable.
+        // The reQueuedThisTurn flag covers passives who were re-queued mid-turn (e.g. after
+        // already having passed): they see [Change = RESET_TURN][OK = dismiss].
+        // Fresh passives who haven't acted yet see only [OK = dismiss].
+        this.hasPendingPassiveCross() || this.hasPendingActiveCross() || this.hasRevertableEndTurn() || this.hasRevertablePassiveEndTurn() || (this.canPassPassive() && this.reQueuedThisTurn()),
+        this.hasPendingPassiveCross()  // confirmEndsRound: show "Confirm last selection" label
       );
       if (wasHidden) this.audio.play(AudioService.ROW_CLOSURE_BELL);
     }
@@ -782,6 +789,20 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       if (newPunishments > prevPunishments) this.audio.play(AudioService.PUNISHMENT);
     }
 
+    // Track whether this player was re-queued mid-turn (e.g. active declared a lock intent
+    // after the player had already passed). Excludes the normal ROLL→ACTIVE_MOVE join and
+    // the initial page load (prev === null).
+    const myId = this.playerId();
+    const prevPhase = prev?.turnState?.phase;
+    const wasInQueue = (prev?.turnState?.passivePlayerQueue ?? []).includes(myId);
+    const isNowInQueue = (s.turnState?.passivePlayerQueue ?? []).includes(myId);
+    if (prev !== null && !wasInQueue && isNowInQueue && prevPhase !== TurnPhase.ROLL) {
+      this.reQueuedThisTurn.set(true);
+    }
+    if (s.turnState?.phase === TurnPhase.ROLL || s.gameOver) {
+      this.reQueuedThisTurn.set(false);
+    }
+
     const remaining = Math.max(0, this.ROLL_ANIM_MIN_MS - (Date.now() - this.rollStartTime));
     if (this.rollingDice() && this.isMyTurn()) {
       // Active player who rolled: delay showing the result until the animation finishes.
@@ -869,7 +890,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       this.suppressModal.set(true);
       this.passPassive();
     } else {
-      // Notification-only dismiss (no pending cross).
+      // Notification-only dismiss — player clicks the board PASS button or a cell when ready.
       this.suppressModal.set(true);
       this.rowClosureModal.clear();
     }
@@ -891,9 +912,13 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       // Server restores the player's state and puts them back in the appropriate phase/queue.
       this.suppressModal.set(true);
       this.sendMove({ moveType: MoveType.RESET_TURN });
+    } else if (this.canPassPassive() && this.reQueuedThisTurn()) {
+      // Re-queued passive (already passed earlier this turn): Change = RESET_TURN so snapshot
+      // is restored and they can make a fresh decision. Modal auto-unsuppresses on next cross.
+      this.suppressModal.set(true);
+      this.sendMove({ moveType: MoveType.RESET_TURN });
     } else {
-      // No pending cross — dismiss the modal so the player can click a cell on the board.
-      // The modal re-appears automatically once they make a cross (pendingCellIds > 0).
+      // Notification-only dismiss — player decides what to do on the board.
       this.suppressModal.set(true);
       this.rowClosureModal.clear();
     }

@@ -190,6 +190,11 @@ public class BoardInteractionHelper {
         driver.findElement(By.xpath("//button[contains(@class,'btn-notification-change')]")).click();
     }
 
+    /** Returns true when the Change button on the notification modal is currently in the DOM. */
+    public static boolean isModalChangeButtonVisible(WebDriver driver) {
+        return !driver.findElements(By.xpath("//button[contains(@class,'btn-notification-change')]")).isEmpty();
+    }
+
     /** Clicks the "Yes" button in the self-close yes/no modal. */
     public static void clickModalYesButton(WebDriver driver) {
         driver.findElement(By.xpath("//button[contains(@class,'btn-lock-yes')]")).click();

@@ -711,19 +711,64 @@ class StandardTurnRulesTest {
     }
 
     @Test
-    void declarant_noReinvitation_passiveWhoEndTurnedBeforeDeclaration_declarationClosesWithout() {
-        // p2 EndTurns BEFORE p1 declares. p2 is NOT reinvited.
-        // p1 declares, then crosses + EndTurns → no remaining passives → EVALUATE → row closes.
+    void active_declaration_reinvites_passiveWhoAlreadyEndTurned() {
+        // p2 EndTurns BEFORE p1 (active) declares. The declaration must re-queue p2 so
+        // they always get a chance to respond — "when there is a lock intent, everyone moves."
+        // p1 declares → p2 is re-queued; p1 crosses + EndTurns → PASSIVE_MOVE; p2 EndTurns → EVALUATE.
         GameState state = stateAfterRoll(p1, p1, p2);
         crossEnoughForLock(state, p1, 0);
         rules.apply(state, new EndTurnAction(p2)); // p2 leaves queue
         rules.apply(state, new DeclareLockIntentAction(p1, 0));
-        assertFalse(state.turnState().passivePlayerQueue().contains(p2),
-                "p2 must NOT be reinvited after already EndTurning before declaration");
+        assertTrue(state.turnState().passivePlayerQueue().contains(p2),
+                "p2 must be re-queued by active's declaration so they can respond");
         rules.apply(state, firstCrossAction(state, p1)); // must cross something to EndTurn
-        rules.apply(state, new EndTurnAction(p1)); // active EndTurns → queue empty → EVALUATE
+        rules.apply(state, new EndTurnAction(p1)); // PASSIVE_MOVE (p2 still in queue)
+        assertFalse(state.boardState().closedRows().containsKey(0),
+                "Row must NOT close yet — p2 still needs to act");
+        rules.apply(state, new EndTurnAction(p2)); // p2 passes → EVALUATE
         assertTrue(state.boardState().closedRows().containsKey(0),
-                "Row must close at EVALUATE even though p2 was not reinvited");
+                "Row must close at EVALUATE after p2 also EndTurns");
+    }
+
+    @Test
+    void active_declaration_reinvites_all_passives_threePlayer() {
+        // 3-player: both p2 and p3 pass before p1 declares. Both must be re-queued.
+        // p1 EndTurns → PASSIVE_MOVE; p2 EndTurns; p3 EndTurns → EVALUATE.
+        GameState state = stateAfterRoll(p1, p1, p2, p3);
+        crossEnoughForLock(state, p1, 0);
+        rules.apply(state, new EndTurnAction(p2)); // p2 passes early
+        rules.apply(state, new EndTurnAction(p3)); // p3 passes early — queue now empty
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+        assertTrue(state.turnState().passivePlayerQueue().contains(p2),
+                "p2 must be re-queued by active declaration");
+        assertTrue(state.turnState().passivePlayerQueue().contains(p3),
+                "p3 must be re-queued by active declaration");
+        rules.apply(state, firstCrossAction(state, p1));
+        rules.apply(state, new EndTurnAction(p1)); // → PASSIVE_MOVE
+        assertFalse(state.boardState().closedRows().containsKey(0),
+                "Row must not close yet — p2 and p3 still need to act");
+        rules.apply(state, new EndTurnAction(p2));
+        assertFalse(state.boardState().closedRows().containsKey(0),
+                "Row must not close yet — p3 still needs to act");
+        rules.apply(state, new EndTurnAction(p3)); // EVALUATE
+        assertTrue(state.boardState().closedRows().containsKey(0),
+                "Row must close at EVALUATE after all players EndTurn");
+    }
+
+    @Test
+    void active_declaration_only_requeues_passed_passive_not_already_queued_one() {
+        // 3-player: p2 passes early; p3 is still in the queue. Declaration must re-queue p2
+        // but must not duplicate p3 (who was never removed).
+        GameState state = stateAfterRoll(p1, p1, p2, p3);
+        crossEnoughForLock(state, p1, 0);
+        rules.apply(state, new EndTurnAction(p2)); // p2 leaves queue; p3 still in it
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+        assertTrue(state.turnState().passivePlayerQueue().contains(p2),
+                "p2 must be re-queued");
+        assertTrue(state.turnState().passivePlayerQueue().contains(p3),
+                "p3 must still be in the queue");
+        assertEquals(2, state.turnState().passivePlayerQueue().size(),
+                "Queue must have exactly 2 entries — p3 must not be duplicated");
     }
 
     @Test

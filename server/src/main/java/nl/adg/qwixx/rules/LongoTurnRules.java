@@ -65,11 +65,7 @@ public class LongoTurnRules extends StandardTurnRules {
         Set<String> allCrosses  = allCrossesForPlayer(state, playerId, rowIndex);
         Set<String> pendingInRow = getPendingCrossesInRow(state, playerId, rowIndex);
 
-        // Count only non-closing crosses: the threshold is the number of regular cells
-        // required before any closing cell may be crossed.
-        List<String> closingCellIds = getClosingCells(state, playerId, rowIndex);
-        long nonClosing = allCrosses.stream().filter(id -> !closingCellIds.contains(id)).count();
-        if (nonClosing < getMinCrossesRequired()) return false;
+        if (!hasEnoughNonClosingCrosses(state, playerId, rowIndex, allCrosses)) return false;
 
         List<String> closing = getClosingCells(state, playerId, rowIndex);
         String lastClosing   = closing.getLast();

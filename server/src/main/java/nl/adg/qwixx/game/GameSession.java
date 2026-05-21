@@ -32,7 +32,7 @@ import java.util.logging.Logger;
 public class GameSession {
 
     /** How long to pause after a bot rolls dice so the client animation can play. */
-    private static final long BOT_ROLL_DELAY_MS = 1_500;
+    private static final long BOT_ROLL_DELAY_MS = 3_000;
 
     private static final Logger log = Logger.getLogger(GameSession.class.getName());
 

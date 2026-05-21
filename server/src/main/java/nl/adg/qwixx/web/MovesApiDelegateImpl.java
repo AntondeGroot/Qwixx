@@ -46,13 +46,16 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
         Map<Integer, UUID> closedBefore = new HashMap<>(
                 session.currentState().boardState().closedRows());
 
-        GameState newState = session.applyAction(action,
-                intermediate -> sseRegistry.emit(sessionId, intermediate, session));
+        boolean[] botRolled = {false};
+        GameState newState = session.applyAction(action, intermediate -> {
+            botRolled[0] = true;
+            sseRegistry.emit(sessionId, intermediate, session);
+        });
         sseRegistry.emit(sessionId, newState, session);
 
         MoveResult result = newState.gameOver() ? MoveResult.GAME_OVER : MoveResult.ACCEPTED;
 
-        MoveResponse response = new MoveResponse().result(result);
+        MoveResponse response = new MoveResponse().result(result).botRolled(botRolled[0]);
 
         if (action instanceof CrossCellAction cross) {
             response.crossedCellId(cross.cellId());

@@ -1,5 +1,7 @@
 package nl.adg.qwixx.rules;
 
+import static nl.adg.qwixx.rules.CellCrosser.isReachableCell;
+
 import nl.adg.qwixx.action.CrossCellAction;
 import nl.adg.qwixx.action.DeclareLockIntentAction;
 import nl.adg.qwixx.action.DiceCombination;
@@ -34,7 +36,7 @@ public class OfflineTurnRules extends StandardTurnRules {
             if (!state.isRowClosed(rowIndex)) {
                 int rightmost = rightmostCrossedPosition(row, rowState);
                 for (Cell cell : row.cells()) {
-                    if (cell.position() > rightmost && !rowState.crossedCells().contains(cell.id())) {
+                    if (isReachableCell(cell, rightmost, rowState.crossedCells())) {
                         actions.add(new CrossCellAction(playerId, rowIndex, cell.id(), DiceCombination.WHITE_WHITE));
                     }
                 }

@@ -36,10 +36,10 @@ class DiceRoller {
         return new RollResult(whites[0], whites[1], colored);
     }
 
-    static DiceCombination resolveActiveCombo(RollResult roll, Cell cell, ActiveTurnState ats, List<Die> activeDice) {
-        if (ats.colorDieUsed()) return null;
+    static DiceCombination resolveActiveCombo(RollResult roll, Cell cell, ActiveTurnState activePlayer, List<Die> activeDice) {
+        if (activePlayer.colorDieUsed()) return null;
 
-        if (!ats.whiteWhiteUsed() && matchesWhiteWhite(roll, cell)) {
+        if (!activePlayer.whiteWhiteUsed() && matchesWhiteWhite(roll, cell)) {
             return DiceCombination.WHITE_WHITE;
         }
 

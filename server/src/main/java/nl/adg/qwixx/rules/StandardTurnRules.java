@@ -177,17 +177,17 @@ public class StandardTurnRules implements TurnRules {
             throw new IllegalMoveException("passive player already made a white+white cross this turn");
     }
 
-    private void recordActiveDiceUsage(ActiveTurnState ats, DiceCombination combination) {
+    private void recordActiveDiceUsage(ActiveTurnState activePlayer, DiceCombination combination) {
         if (combination == DiceCombination.WHITE_WHITE) {
-            if (ats.colorDieUsed())
+            if (activePlayer.colorDieUsed())
                 throw new IllegalMoveException("white+white is not allowed after the color die has been used");
-            if (ats.whiteWhiteUsed())
+            if (activePlayer.whiteWhiteUsed())
                 throw new IllegalMoveException("white+white already used this turn");
-            ats.setWhiteWhiteUsed();
+            activePlayer.setWhiteWhiteUsed();
         } else {
-            if (ats.colorDieUsed())
+            if (activePlayer.colorDieUsed())
                 throw new IllegalMoveException("color die already used this turn");
-            ats.setColorDieUsed();
+            activePlayer.setColorDieUsed();
         }
     }
 

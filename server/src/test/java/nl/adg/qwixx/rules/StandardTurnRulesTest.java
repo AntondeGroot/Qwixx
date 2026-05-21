@@ -1296,8 +1296,8 @@ class StandardTurnRulesTest {
     void resetTurnResetsActiveTurnState() {
         GameState state = stateAfterRoll(p1, p1, p2);
         rules.apply(state, firstCrossAction(state, p1));
-        ActiveTurnState ats = state.turnState().activeTurnState();
-        assertTrue(ats.whiteWhiteUsed() || ats.colorDieUsed());
+        ActiveTurnState activePlayer = state.turnState().activeTurnState();
+        assertTrue(activePlayer.whiteWhiteUsed() || activePlayer.colorDieUsed());
         rules.apply(state, new ResetTurnAction(p1));
         assertFalse(state.turnState().activeTurnState().whiteWhiteUsed());
         assertFalse(state.turnState().activeTurnState().colorDieUsed());
@@ -1450,9 +1450,9 @@ class StandardTurnRulesTest {
         var rowState = state.boardState().sheetProgress().get(p1).rowStates().get(0);
         assertFalse(rowState != null && rowState.crossedCells().contains(closingCellId),
                 "Closing cell must be uncrossed after RESET_TURN from PASSIVE_MOVE");
-        ActiveTurnState ats = state.turnState().activeTurnState();
-        assertFalse(ats.whiteWhiteUsed(),  "whiteWhiteUsed must be reset");
-        assertFalse(ats.colorDieUsed(),    "colorDieUsed must be reset");
+        ActiveTurnState activePlayer = state.turnState().activeTurnState();
+        assertFalse(activePlayer.whiteWhiteUsed(),  "whiteWhiteUsed must be reset");
+        assertFalse(activePlayer.colorDieUsed(),    "colorDieUsed must be reset");
     }
 
     @Test

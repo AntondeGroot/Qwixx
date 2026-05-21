@@ -474,6 +474,9 @@ components:
         lockedRowId:
           type: string
           description: The ID of the row that was locked, if any.
+        botRolled:
+          type: boolean
+          description: True when a bot rolled the dice during processing of this move.
 
     MoveResult:
       type: string

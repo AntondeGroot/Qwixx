@@ -768,7 +768,15 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     this.moveSub = this.movesService.makeMove(this.sessionId(), this.playerId(), req)
       .subscribe({
-        next: () => this.fetchState(),
+        next: (response) => {
+          if (response?.botRolled) {
+            this.rollingDice.set(true);
+            this.rollStartTime = Date.now();
+            setTimeout(() => this.fetchState(), this.ROLL_ANIM_MIN_MS);
+          } else {
+            this.fetchState();
+          }
+        },
         error: e => {
           this.rollingDice.set(false);
           console.error('Move rejected:', e);

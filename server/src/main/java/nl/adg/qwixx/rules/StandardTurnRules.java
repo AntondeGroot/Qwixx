@@ -649,14 +649,12 @@ public class StandardTurnRules implements TurnRules {
         return turn.undoBuffer().get(playerId);
     }
 
-    protected Set<String> getPendingCrossesInRow(TurnState turn, UUID playerId, int rowIndex) {
-        Map<Integer, Set<String>> buffer = turn.undoBuffer().get(playerId);
-        return buffer != null ? buffer.getOrDefault(rowIndex, Set.of()) : Set.of();
-    }
-
     protected Set<String> getPendingCrossesInRow(GameState state, UUID playerId, int rowIndex) {
         TurnState turn = state.turnState();
-        return turn != null ? getPendingCrossesInRow(turn, playerId, rowIndex) : Set.of();
+        if (turn == null) return Set.of();
+        Map<Integer, Set<String>> buffer = turn.undoBuffer().get(playerId);
+        if (buffer == null) return Set.of();
+        return buffer.getOrDefault(rowIndex, Set.of());
     }
 
     // ── Named predicates ──────────────────────────────────────────────────────

@@ -62,8 +62,7 @@ public class LongoTurnRules extends StandardTurnRules {
     protected boolean canCrossLock(GameState state, UUID playerId, int rowIndex) {
         if (rowIsNotLockable(state, playerId, rowIndex)) return false;
 
-        Set<String> allCrosses  = allCrossesForPlayer(state, playerId, rowIndex);
-        Set<String> pendingInRow = getPendingCrossesInRow(state, playerId, rowIndex);
+        Set<String> allCrosses = allCrossesForPlayer(state, playerId, rowIndex);
 
         if (!hasEnoughNonClosingCrosses(state, playerId, rowIndex, allCrosses)) return false;
 
@@ -77,7 +76,7 @@ public class LongoTurnRules extends StandardTurnRules {
         // cross (crossed this turn).  Once the turn ends the window closes.
         if (closing.size() > 1) {
             String secondLast = closing.get(closing.size() - 2);
-            return pendingInRow.contains(secondLast);
+            return crossedThisTurn(state, playerId, rowIndex, secondLast);
         }
         return false;
     }

@@ -43,7 +43,7 @@ public class LongoTurnRules extends StandardTurnRules {
     public List<GameAction> getValidActions(GameState state, UUID playerId) {
         List<GameAction> actions = new ArrayList<>(super.getValidActions(state, playerId));
         if (activePlayerHasNotActed(state, playerId)) {
-            addBonusCellAction(state, playerId, actions);
+            actions.addAll(bonusCellActions(state, playerId, actions));
         }
         return actions;
     }
@@ -54,27 +54,28 @@ public class LongoTurnRules extends StandardTurnRules {
                 && !state.turnState().activeTurnState().hasActed();
     }
 
-    private void addBonusCellAction(GameState state, UUID playerId, List<GameAction> actions) {
-        if (!whiteSumMatchesBonusNumber(state, playerId)) return;
+    private List<GameAction> bonusCellActions(GameState state, UUID playerId, List<GameAction> existing) {
+        if (!whiteSumMatchesBonusNumber(state, playerId)) return List.of();
 
-        SheetLayout layout   = getLayout(state, playerId);
+        SheetLayout layout     = getLayout(state, playerId);
         SheetProgress progress = getProgress(state, playerId);
 
         OptionalInt fewest = IntStream.range(0, layout.rows().size())
                 .filter(i -> !state.isRowClosed(i))
                 .map(i -> getRowState(progress, i).crossedCells().size())
                 .min();
-        if (fewest.isEmpty()) return;
+        if (fewest.isEmpty()) return List.of();
         int minCrosses = fewest.getAsInt();
 
-        // Offer the leftmost available cell for every row tied at the minimum count.
+        List<GameAction> actions = new ArrayList<>();
         for (int i = 0; i < layout.rows().size(); i++) {
             if (state.isRowClosed(i)) continue;
             if (getRowState(progress, i).crossedCells().size() != minCrosses) continue;
             leftmostBonusCellAction(playerId, i, layout.rows().get(i), getRowState(progress, i))
-                    .filter(bonus -> !actions.contains(bonus))
+                    .filter(bonus -> !existing.contains(bonus))
                     .ifPresent(actions::add);
         }
+        return actions;
     }
 
     private boolean whiteSumMatchesBonusNumber(GameState state, UUID playerId) {

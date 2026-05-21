@@ -73,12 +73,11 @@ public class StandardTurnRules implements TurnRules {
 
     private List<GameAction> activeActions(GameState state, UUID playerId, TurnState turn) {
         List<GameAction> actions = new ArrayList<>();
-        addReachableCells(state, playerId, actions, true);
-        addDeclareLockIntentActions(state, playerId, actions);
+        actions.addAll(crossCellActions(state, playerId, true));
+        actions.addAll(declareLockIntentActions(state, playerId));
         actions.add(new GiveUpAction(playerId));
         actions.add(new ResetTurnAction(playerId));
-        ActiveTurnState activePlayer = turn.activeTurnState();
-        if (activePlayer.hasActed()) {
+        if (turn.activeTurnState().hasActed()) {
             actions.add(new EndTurnAction(playerId));
         }
         return actions;
@@ -88,12 +87,12 @@ public class StandardTurnRules implements TurnRules {
         if (!TurnHelper.isPassiveInQueue(turn, playerId)) return List.of();
         List<GameAction> actions = new ArrayList<>();
         if (!TurnHelper.hasAlreadyActed(turn, playerId)) {
-            addReachableCells(state, playerId, actions, false);
+            actions.addAll(crossCellActions(state, playerId, false));
         } else {
             // Already acted (cross, declaration, or both): can reset but not cross again.
             actions.add(new ResetTurnAction(playerId));
         }
-        addDeclareLockIntentActions(state, playerId, actions);
+        actions.addAll(declareLockIntentActions(state, playerId));
         actions.add(new EndTurnAction(playerId));
         return actions;
     }
@@ -452,20 +451,22 @@ public class StandardTurnRules implements TurnRules {
         state.setTurnState(nextTurn);
     }
 
-    private void addReachableCells(GameState state, UUID playerId, List<GameAction> actions, boolean isActive) {
-        cellCrosser.addReachableCells(state, playerId, actions, isActive, getMinCrossesRequired());
+    private List<GameAction> crossCellActions(GameState state, UUID playerId, boolean isActive) {
+        return cellCrosser.crossCellActions(state, playerId, isActive, getMinCrossesRequired());
     }
 
     // Offers DECLARE_LOCK_INTENT to any player who crossed a non-final closing cell this turn,
     // giving them an explicit YES/NO choice before their turn ends (Longo "15"/"3" modal).
     // Crossing the last closing cell is handled silently by auto-detection at EndTurn.
-    private void addDeclareLockIntentActions(GameState state, UUID playerId, List<GameAction> actions) {
+    private List<GameAction> declareLockIntentActions(GameState state, UUID playerId) {
+        List<GameAction> actions = new ArrayList<>();
         SheetLayout layout = getLayout(state, playerId);
         for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
             if (canOfferLockDeclaration(state, playerId, rowIndex)) {
                 actions.add(new DeclareLockIntentAction(playerId, rowIndex));
             }
         }
+        return actions;
     }
 
     private boolean canOfferLockDeclaration(GameState state, UUID playerId, int rowIndex) {

@@ -18,7 +18,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.UUID;
 
 public class LongoTurnRules extends StandardTurnRules {
@@ -47,36 +46,6 @@ public class LongoTurnRules extends StandardTurnRules {
             }
         }
         return actions;
-    }
-
-    // Longo lock eligibility:
-    //
-    //  • The LAST required cell (e.g. "16" ascending / "2" descending) always enables
-    //    locking — whether it is already a permanent cross or the current pending cross.
-    //
-    //  • The SECOND-TO-LAST required cell (e.g. "15" / "3") enables locking ONLY when it
-    //    was crossed in the CURRENT turn (i.e. it is in the undo buffer / pending crosses).
-    //    Once the turn ends without a lock declaration the cell becomes a permanent cross and
-    //    loses its locking power; from that point only the last cell can trigger a lock.
-    @Override
-    protected boolean canCrossLock(GameState state, UUID playerId, int rowIndex) {
-        if (rowIsNotLockable(state, playerId, rowIndex)) return false;
-        Set<String> allCrosses = allCrossesForPlayer(state, playerId, rowIndex);
-        if (!hasEnoughNonClosingCrosses(state, playerId, rowIndex, allCrosses)) return false;
-
-        List<String> closing = getClosingCells(state, playerId, rowIndex);
-        String lastClosing   = closing.getLast();
-
-        // Last closing cell always enables locking (permanent or pending).
-        if (allCrosses.contains(lastClosing)) return true;
-
-        // Second-to-last closing cell enables locking only while it is still a pending
-        // cross (crossed this turn).  Once the turn ends the window closes.
-        if (closing.size() > 1) {
-            String secondLast = closing.get(closing.size() - 2);
-            return crossedThisTurn(state, playerId, rowIndex, secondLast);
-        }
-        return false;
     }
 
     private void addBonusCellAction(GameState state, UUID playerId, List<GameAction> actions) {

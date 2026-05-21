@@ -13,6 +13,7 @@ import nl.adg.qwixx.state.SheetLayout;
 import nl.adg.qwixx.state.SheetProgress;
 import nl.adg.qwixx.state.TurnState;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -35,7 +36,8 @@ class CellCrosser {
         return crossed;
     }
 
-    void addReachableCells(GameState state, UUID playerId, List<GameAction> actions, boolean isActive, int minCrosses) {
+    List<GameAction> crossCellActions(GameState state, UUID playerId, boolean isActive, int minCrosses) {
+        List<GameAction> actions   = new ArrayList<>();
         TurnState turn             = state.turnState();
         var roll                   = turn.currentRoll();
         ActiveTurnState ats        = isActive ? turn.activeTurnState() : null;
@@ -67,6 +69,7 @@ class CellCrosser {
                 }
             }
         }
+        return actions;
     }
 
     static boolean isReachableCell(Cell cell, int rightmost, Set<String> crossedCells) {

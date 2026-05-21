@@ -97,6 +97,6 @@ public class OfflineTurnRules extends StandardTurnRules {
         RowState rowState = getRowState(prog, rowIndex);
         if (rowState.lockCrossed()) return false;
         if (!hasEnoughNonClosingCrosses(state, playerId, rowIndex, rowState.crossedCells())) return false;
-        return row.lock().closingCells().stream().anyMatch(id -> rowState.crossedCells().contains(id));
+        return playerHasCrossedAClosingCell(state, playerId, rowIndex, rowState.crossedCells());
     }
 }

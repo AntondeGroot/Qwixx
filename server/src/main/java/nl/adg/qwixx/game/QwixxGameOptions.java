@@ -11,38 +11,46 @@ import java.util.logging.Logger;
 public class QwixxGameOptions {
 
     private static final Logger log = Logger.getLogger(QwixxGameOptions.class.getName());
+    private static final String BASE = "base";
+    private static final String BOT_COUNT = "botCount";
+    private static final String BOT_STRATEGY = "botStrategy";
+    private static final String CARD_MODE = "cardMode";
+    private static final String CONNECTED_CELLS = "connectedCells";
+    private static final String EXTRA_ROW = "extraRow";
+    private static final String GAME_MODE = "gameMode";
+    private static final String RANDOM_ORDER = "randomOrder";
 
     private QwixxGameOptions() {}
 
     public static List<GameOption> all() {
         return List.of(
-            GameOption.enumOption("base", "gameOption.base", "gameOption.baseDescription",
+            GameOption.enumOption(BASE, "gameOption.base", "gameOption.baseDescription",
                 "STANDARD", List.of("STANDARD", "LONGO")),
-            GameOption.enumOption("gameMode", "gameOption.gameMode", "gameOption.gameModeDescription",
+            GameOption.enumOption(GAME_MODE, "gameOption.gameMode", "gameOption.gameModeDescription",
                 "ONLINE", List.of("ONLINE", "OFFLINE")),
-            GameOption.enumOption("cardMode", "gameOption.cardMode", "gameOption.cardModeDescription",
+            GameOption.enumOption(CARD_MODE, "gameOption.cardMode", "gameOption.cardModeDescription",
                 "DETERMINISTIC", List.of("DETERMINISTIC", "PROBABILISTIC")),
-            GameOption.boolOption("randomOrder", "gameOption.randomOrder", "gameOption.randomOrderDescription"),
-            GameOption.boolOption("extraRow", "gameOption.extraRow", "gameOption.extraRowDescription"),
-            GameOption.boolOption("connectedCells", "gameOption.connectedCells", "gameOption.connectedCellsDescription"),
-            GameOption.intOption("botCount", "gameOption.botCount", "gameOption.botCountDescription",
+            GameOption.boolOption(RANDOM_ORDER, "gameOption.randomOrder", "gameOption.randomOrderDescription"),
+            GameOption.boolOption(EXTRA_ROW, "gameOption.extraRow", "gameOption.extraRowDescription"),
+            GameOption.boolOption(CONNECTED_CELLS, "gameOption.connectedCells", "gameOption.connectedCellsDescription"),
+            GameOption.intOption(BOT_COUNT, "gameOption.botCount", "gameOption.botCountDescription",
                 "0", 0, 3),
-            GameOption.enumOption("botStrategy", "gameOption.botStrategy", "gameOption.botStrategyDescription",
+            GameOption.enumOption(BOT_STRATEGY, "gameOption.botStrategy", "gameOption.botStrategyDescription",
                 "BALANCED", List.of("UNTRAINED", "MOST_POINTS", "MOST_WINS", "BALANCED"))
         );
     }
 
-    /** Serialises the current settings back to the same key/value format used by the API. */
+    /** Serializes the current settings back to the same key/value format used by the API. */
     public static Map<String, Object> toMap(GameSettings s) {
         Map<String, Object> map = new LinkedHashMap<>();
-        map.put("base",           s.base().name());
-        map.put("gameMode",       s.gameMode().name());
-        map.put("cardMode",       s.cardMode().name());
-        map.put("randomOrder",    s.randomOrder());
-        map.put("extraRow",       s.extraRow());
-        map.put("connectedCells", s.connectedCells());
-        map.put("botCount",       s.botCount());
-        map.put("botStrategy",    s.botStrategy() != null ? s.botStrategy().name()
+        map.put(BASE,            s.base().name());
+        map.put(GAME_MODE,       s.gameMode().name());
+        map.put(CARD_MODE,       s.cardMode().name());
+        map.put(RANDOM_ORDER,    s.randomOrder());
+        map.put(EXTRA_ROW,       s.extraRow());
+        map.put(CONNECTED_CELLS, s.connectedCells());
+        map.put(BOT_COUNT,       s.botCount());
+        map.put(BOT_STRATEGY,    s.botStrategy() != null ? s.botStrategy().name()
                                                            : BotStrategy.BALANCED.name());
         return map;
     }
@@ -51,15 +59,15 @@ public class QwixxGameOptions {
         if (options == null) return;
         for (var entry : options.entrySet()) {
             switch (entry.getKey()) {
-                case "base"        -> builder.base(BaseVariant.valueOf(str(entry.getValue())));
-                case "gameMode"    -> builder.gameMode(GameMode.valueOf(str(entry.getValue())));
-                case "cardMode"    -> builder.cardMode(CardMode.valueOf(str(entry.getValue())));
-                case "randomOrder"    -> builder.randomOrder(bool(entry.getValue()));
-                case "extraRow"       -> builder.extraRow(bool(entry.getValue()));
-                case "connectedCells" -> builder.connectedCells(bool(entry.getValue()));
-                case "botCount"       -> builder.botCount(integer(entry.getValue()));
-                case "botStrategy"    -> builder.botStrategy(BotStrategy.valueOf(str(entry.getValue())));
-                default               -> log.warning("unknown game option '" + entry.getKey() + "', ignoring");
+                case BASE            -> builder.base(BaseVariant.valueOf(str(entry.getValue())));
+                case GAME_MODE       -> builder.gameMode(GameMode.valueOf(str(entry.getValue())));
+                case CARD_MODE       -> builder.cardMode(CardMode.valueOf(str(entry.getValue())));
+                case RANDOM_ORDER    -> builder.randomOrder(bool(entry.getValue()));
+                case EXTRA_ROW       -> builder.extraRow(bool(entry.getValue()));
+                case CONNECTED_CELLS -> builder.connectedCells(bool(entry.getValue()));
+                case BOT_COUNT       -> builder.botCount(integer(entry.getValue()));
+                case BOT_STRATEGY    -> builder.botStrategy(BotStrategy.valueOf(str(entry.getValue())));
+                default              -> log.warning("unknown game option '" + entry.getKey() + "', ignoring");
             }
         }
     }

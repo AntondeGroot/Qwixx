@@ -720,7 +720,7 @@ class LongoTurnRulesTest {
         // p2 EndTurns → EVALUATE → row closes
         rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p2));
 
-        assertTrue(state.boardState().closedRows().containsKey(0),
+        assertTrue(state.isRowClosed(0),
                 "LONGO row must close once all passives have EndTurned (EVALUATE)");
         assertEquals(TurnPhase.ROLL, state.turnState().phase(),
                 "turn must advance to ROLL after the LONGO lock closes");
@@ -749,7 +749,7 @@ class LongoTurnRulesTest {
                         new nl.adg.qwixx.state.RowState(Set.of(), false));
         assertTrue(rs.crossedCells().contains(cross.cellId()),
                 "active player's cross must be preserved after the LONGO lock closes");
-        assertTrue(state.boardState().closedRows().containsKey(0),
+        assertTrue(state.isRowClosed(0),
                 "LONGO row must close after the active player EndTurns and p2 EndTurns (EVALUATE)");
     }
 
@@ -883,7 +883,7 @@ class LongoTurnRulesTest {
                 "p2 must have lockCrossed=true: crossed second-to-last cell this turn " +
                 "even though undo buffer is cleared in endTurnInPassiveMove");
 
-        assertTrue(state.boardState().closedRows().containsKey(rowIndex),
+        assertTrue(state.isRowClosed(rowIndex),
                 "BLUE row must be closed after EVALUATE");
     }
 
@@ -940,7 +940,7 @@ class LongoTurnRulesTest {
 
         // p2 EndTurns → EVALUATE → row 0 closes → Turn 2: p2 is active
         rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p2));
-        assertTrue(state.boardState().closedRows().containsKey(0), "row 0 must close after EVALUATE");
+        assertTrue(state.isRowClosed(0), "row 0 must close after EVALUATE");
         assertEquals(TurnPhase.ROLL, state.turnState().phase(), "Turn 2 must start with ROLL");
         assertEquals(p2, state.turnState().activePlayerId(), "p2 must be active for Turn 2");
 
@@ -955,7 +955,7 @@ class LongoTurnRulesTest {
 
         // p1 EndTurns → EVALUATE → row 1 closes → game over
         rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p1));
-        assertTrue(state.boardState().closedRows().containsKey(1), "row 1 must close after p1 EndTurns");
+        assertTrue(state.isRowClosed(1), "row 1 must close after p1 EndTurns");
         assertTrue(state.gameOver(), "game must be over after 2 rows close");
     }
 

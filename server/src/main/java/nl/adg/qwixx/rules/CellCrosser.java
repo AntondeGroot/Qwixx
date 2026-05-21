@@ -40,10 +40,8 @@ class CellCrosser {
         ActiveTurnState ats        = isActive ? turn.activeTurnState() : null;
         SheetLayout layout         = state.sheetLayouts().get(playerId);
         var progress               = state.boardState().sheetProgress().get(playerId);
-        Map<Integer, UUID> closed  = state.boardState().closedRows();
-
         for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
-            if (closed.containsKey(rowIndex)) continue;
+            if (state.isRowClosed(rowIndex)) continue;
             Row row           = layout.rows().get(rowIndex);
             RowState rowState = rowStateOf(progress, rowIndex);
             int rightmost     = rightmostCrossedPosition(row, rowState);

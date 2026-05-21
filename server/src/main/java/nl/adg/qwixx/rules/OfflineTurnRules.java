@@ -25,14 +25,13 @@ public class OfflineTurnRules extends StandardTurnRules {
 
         SheetLayout layout            = state.sheetLayouts().get(playerId);
         SheetProgress progress        = state.boardState().sheetProgress().get(playerId);
-        Map<Integer, UUID> closedRows = state.boardState().closedRows();
-        List<GameAction> actions      = new ArrayList<>();
+        List<GameAction> actions = new ArrayList<>();
 
         for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
             Row row           = layout.rows().get(rowIndex);
             RowState rowState = getRowState(progress, rowIndex);
 
-            if (!closedRows.containsKey(rowIndex)) {
+            if (!state.isRowClosed(rowIndex)) {
                 int rightmost = rightmostCrossedPosition(row, rowState);
                 for (Cell cell : row.cells()) {
                     if (cell.position() > rightmost && !rowState.crossedCells().contains(cell.id())) {
@@ -65,7 +64,7 @@ public class OfflineTurnRules extends StandardTurnRules {
 
     // Cell crossing without phase check; closed rows still block crossing (dice are gone).
     private void applyOfflineCrossCell(GameState state, CrossCellAction action) {
-        if (state.boardState().closedRows().containsKey(action.rowIndex()))
+        if (state.isRowClosed(action.rowIndex()))
             throw new IllegalMoveException("cannot cross a cell in a globally closed row");
         crossCellWithAutoTags(state, action.playerId(), action.rowIndex(), action.cellId());
     }

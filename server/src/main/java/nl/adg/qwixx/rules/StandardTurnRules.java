@@ -115,7 +115,7 @@ public class StandardTurnRules implements TurnRules {
 
     @Override
     public boolean isGameOver(GameState state) {
-        if (state.boardState().closedRows().size() >= 2) return true;
+        if (state.closedRows().size() >= 2) return true;
         return state.boardState().sheetProgress().values().stream()
                 .anyMatch(this::hasMaxPunishments);
     }
@@ -148,7 +148,7 @@ public class StandardTurnRules implements TurnRules {
         UUID playerId  = action.playerId();
         boolean isActive = playerId.equals(turn.activePlayerId());
 
-        if (state.boardState().closedRows().containsKey(action.rowIndex()))
+        if (state.isRowClosed(action.rowIndex()))
             throw new IllegalMoveException("row is closed");
 
         if (isActive) {
@@ -436,7 +436,7 @@ public class StandardTurnRules implements TurnRules {
     }
 
     private boolean qualifiesForAutoClose(GameState state, UUID playerId, int rowIndex) {
-        if (state.boardState().closedRows().containsKey(rowIndex)) return false;
+        if (state.isRowClosed(rowIndex)) return false;
         if (rowHasPendingClosure(state, rowIndex)) return false;
         if (getRow(state, playerId, rowIndex).lock() == null) return false;
         if (!crossedThisTurn(state, playerId, rowIndex, getLastClosingCell(state, playerId, rowIndex))) return false;
@@ -477,10 +477,8 @@ public class StandardTurnRules implements TurnRules {
     // The last closing cell crossed THIS turn is auto-detected at EndTurn — no explicit intent needed.
     private void addClosingIntents(GameState state, UUID playerId, List<GameAction> actions) {
         SheetLayout layout        = getLayout(state, playerId);
-        Map<Integer, UUID> closed = state.boardState().closedRows();
-
         for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
-            if (closed.containsKey(rowIndex)) continue;
+            if (state.isRowClosed(rowIndex)) continue;
             if (rowHasPendingClosure(state, rowIndex)) continue;
             if (canDeclareViaPermanentLastCell(state, playerId, rowIndex)
                     || canDeclareViaSecondToLastCell(state, playerId, rowIndex)) {
@@ -545,7 +543,7 @@ public class StandardTurnRules implements TurnRules {
         if (row.lock() == null) return true;
         RowState rowState = getRowState(getProgress(state, playerId), rowIndex);
         if (rowState.lockCrossed()) return true;
-        return state.boardState().closedRows().containsKey(rowIndex);
+        return state.isRowClosed(rowIndex);
     }
 
     /** Permanent crosses in a row plus any pending cross from the current turn's undo buffer. */
@@ -717,7 +715,7 @@ private boolean activePlayerRevertingToMove(boolean isActive, TurnState turn) {
     }
 
     private void applyRowClosure(GameState state, int rowIndex, UUID declarant) {
-        if (state.boardState().closedRows().containsKey(rowIndex)) return;
+        if (state.isRowClosed(rowIndex)) return;
         markLockCrossed(state, declarant, rowIndex);
         for (UUID pid : state.players()) {
             if (otherPlayerAlsoQualifiesForLockCross(state, pid, declarant, rowIndex)) {

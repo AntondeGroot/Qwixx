@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,57 +34,32 @@ public class SseEmitterRegistry {
 
     /** Emits any serialisable object (e.g. LobbyState) to all subscribers of the given key. */
     public void emitObject(String key, Object payload) {
-        List<SseEmitter> list = sessions.get(key);
-        if (list == null || list.isEmpty()) return;
-
-        SseEmitter.SseEventBuilder event = SseEmitter.event()
-                .data(payload, MediaType.APPLICATION_JSON);
-
-        List<SseEmitter> dead = new ArrayList<>();
-        for (SseEmitter emitter : list) {
-            try {
-                emitter.send(event);
-            } catch (Exception e) {
-                dead.add(emitter);
-            }
-        }
-        list.removeAll(dead);
+        broadcast(key, SseEmitter.event().data(payload, MediaType.APPLICATION_JSON));
     }
 
     void emit(String sessionId, nl.adg.qwixx.generated.model.GameState dto) {
-        List<SseEmitter> list = sessions.get(sessionId);
-        if (list == null || list.isEmpty()) return;
-
-        SseEmitter.SseEventBuilder event = SseEmitter.event()
-                .data(dto, MediaType.APPLICATION_JSON);
-
-        List<SseEmitter> dead = new ArrayList<>();
-        for (SseEmitter emitter : list) {
-            try {
-                emitter.send(event);
-            } catch (Exception e) {
-                dead.add(emitter);
-            }
-        }
-        list.removeAll(dead);
+        broadcast(sessionId, SseEmitter.event().data(dto, MediaType.APPLICATION_JSON));
     }
 
     /** Sends a comment every 30 s to prevent nginx/proxies from closing idle connections. */
     @Scheduled(fixedDelay = 30_000)
     public void heartbeat() {
         SseEmitter.SseEventBuilder ping = SseEmitter.event().comment("ping");
+        sessions.keySet().forEach(key -> broadcast(key, ping));
+    }
+
+    private void broadcast(String key, SseEmitter.SseEventBuilder event) {
+        List<SseEmitter> list = sessions.get(key);
+        if (list == null || list.isEmpty()) return;
         List<SseEmitter> dead = new ArrayList<>();
-        sessions.values().stream()
-                .flatMap(Collection::stream)
-                .forEach(emitter -> {
-                    try {
-                        emitter.send(ping);
-                    } catch (Exception e) {
-                        dead.add(emitter);
-                    }
-                });
-        dead.forEach(emitter ->
-                sessions.values().forEach(list -> list.remove(emitter)));
+        for (SseEmitter emitter : list) {
+            try {
+                emitter.send(event);
+            } catch (Exception e) {
+                dead.add(emitter);
+            }
+        }
+        list.removeAll(dead);
     }
 
     private void remove(String sessionId, SseEmitter emitter) {

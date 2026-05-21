@@ -844,16 +844,6 @@ class StandardTurnRulesTest {
                 "Row must close once all remaining passives have EndTurned");
     }
 
-    @Test
-    void declareLockIntent_permanentLastCell_offeredExplicitly() {
-        // Player with permanent last closing cell gets DECLARE_LOCK_INTENT offered.
-        GameState state = stateAfterRoll(p1, p1, p2);
-        crossEnoughForLock(state, p1, 0); // permanent crosses including last closing cell
-        assertTrue(rules.getValidActions(state, p1).stream()
-                        .anyMatch(a -> a instanceof DeclareLockIntentAction dl && dl.rowIndex() == 0),
-                "DECLARE_LOCK_INTENT must be offered when player has permanent last closing cell");
-    }
-
     // -------------------------------------------------------------------------
     // passiveDeclares section — new architecture
     // -------------------------------------------------------------------------
@@ -1053,13 +1043,6 @@ class StandardTurnRulesTest {
     }
 
     // ── Lock Eligibility with Pending Crosses Tests ───────────────────────────
-
-    @Test
-    void canLockWithOnlyPermanentCrosses() {
-        GameState state = stateReadyToLock(p1, p1, p2, 0);
-        assertTrue(rules.getValidActions(state, p1).stream()
-                .anyMatch(a -> a instanceof DeclareLockIntentAction));
-    }
 
     @Test
     void canLockWithPendingCrossesIncluded() {

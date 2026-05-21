@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -81,6 +82,15 @@ class CellCrosser {
                 .orElse(-1);
     }
 
+    static Optional<Map.Entry<Integer, Cell>> findCellById(SheetLayout layout, String cellId) {
+        for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
+            for (Cell cell : layout.rows().get(rowIndex).cells()) {
+                if (cell.id().equals(cellId)) return Optional.of(Map.entry(rowIndex, cell));
+            }
+        }
+        return Optional.empty();
+    }
+
     static RowState getRowState(SheetProgress progress, int rowIndex) {
         return progress.rowStates().getOrDefault(rowIndex, new RowState(Set.of(), false));
     }
@@ -92,7 +102,7 @@ class CellCrosser {
         Row row             = layout.rows().get(rowIndex);
         RowState rowState   = getRowState(prog, rowIndex);
 
-        Cell cell = row.cells().stream().filter(c -> c.id().equals(cellId)).findFirst().orElse(null);
+        Cell cell = findCellById(layout, cellId).map(Map.Entry::getValue).orElse(null);
         if (cell == null) return;
         if (rowState.crossedCells().contains(cellId)) return;
 
@@ -117,13 +127,7 @@ class CellCrosser {
     private void findAndCrossAutoTarget(GameState state, UUID playerId, String targetCellId,
                                         Map<Integer, Set<String>> crossed) {
         SheetLayout layout = state.sheetLayouts().get(playerId);
-        for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
-            for (Cell cell : layout.rows().get(rowIndex).cells()) {
-                if (cell.id().equals(targetCellId)) {
-                    crossRecursive(state, playerId, rowIndex, targetCellId, crossed, true);
-                    return;
-                }
-            }
-        }
+        findCellById(layout, targetCellId).ifPresent(e ->
+                crossRecursive(state, playerId, e.getKey(), targetCellId, crossed, true));
     }
 }

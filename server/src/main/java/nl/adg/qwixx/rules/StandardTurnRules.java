@@ -332,9 +332,7 @@ public class StandardTurnRules implements TurnRules {
         clearPendingCrosses(turn, playerId);
         turn.passivesActed().remove(playerId);
 
-        if (isActive) {
-            if (turn.activeTurnState() != null) turn.activeTurnState().reset();
-        }
+        if (isActive && turn.activeTurnState() != null) turn.activeTurnState().reset();
     }
 
     /** Removes all pending closures and notifications declared by this player this turn. */

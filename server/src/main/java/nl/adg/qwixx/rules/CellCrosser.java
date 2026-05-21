@@ -82,7 +82,7 @@ class CellCrosser {
     }
 
     static RowState getRowState(SheetProgress progress, int rowIndex) {
-        return progress.rowStates().getOrDefault(rowIndex, new RowState(new HashSet<>(), false));
+        return progress.rowStates().getOrDefault(rowIndex, new RowState(Set.of(), false));
     }
 
     private void crossRecursive(GameState state, UUID playerId, int rowIndex, String cellId,

@@ -198,11 +198,29 @@ public class StandardTurnRules implements TurnRules {
     // For the second-to-last closing cell (Longo "15"/"3"): explicit YES action from client.
     // For the last closing cell ("16"/"2", standard "12"): auto-detected at each player's EndTurn.
     private void applyDeclareLockIntent(GameState state, DeclareLockIntentAction action) {
-        TurnState turn = state.turnState();
-        UUID declarerId = action.playerId();
-        int rowIndex    = action.rowIndex();
+        TurnState turn   = state.turnState();
+        UUID declarerId  = action.playerId();
+        int rowIndex     = action.rowIndex();
         boolean isActive = declarerId.equals(turn.activePlayerId());
 
+        requireMayDeclareIntent(state, turn, declarerId, rowIndex, isActive);
+
+        boolean isFirstDeclaration = state.rowClosureRequests().isEmpty();
+        recordClosureIntent(state, declarerId, rowIndex);
+
+        if (isActive && isFirstDeclaration) {
+            // Re-queue passive players who already left the queue, but ONLY on the first
+            // declaration of the turn. After a RESET_TURN the prior request from the canceled
+            // declaration is cleared but later declarations (from other players) remain, so
+            // isFirstDeclaration = false — preventing players who have fully acted from being
+            // forced to act a second time.
+            reQueueEjectedPassivePlayers(state, turn);
+        } else if (!isActive) {
+            turn.passivesActed().add(declarerId);
+        }
+    }
+
+    private void requireMayDeclareIntent(GameState state, TurnState turn, UUID declarerId, int rowIndex, boolean isActive) {
         if (isActive) {
             if (turn.phase() != TurnPhase.ACTIVE_MOVE)
                 throw new IllegalMoveException("active can only declare closing intent in ACTIVE_MOVE");
@@ -212,32 +230,15 @@ public class StandardTurnRules implements TurnRules {
             if (!turn.passivePlayerQueue().contains(declarerId))
                 throw new IllegalMoveException("player not in passive queue");
         }
-
         if (!canCrossLock(state, declarerId, rowIndex))
             throw new IllegalMoveException("lock pre-conditions not met");
         if (rowHasPendingClosure(state, rowIndex))
             throw new IllegalMoveException("row is already declared for closure this turn");
+    }
 
+    private void recordClosureIntent(GameState state, UUID declarerId, int rowIndex) {
         state.pendingClosures().put(rowIndex, declarerId);
-
-        // Capture before adding so we can tell whether this is the turn's first declaration.
-        boolean isFirstDeclaration = state.rowClosureRequests().isEmpty();
-
-        Color rowColor = getLockColor(state, declarerId, rowIndex);
-        state.rowClosureRequests().add(new RowClosureRequest(declarerId, rowColor));
-
-        if (isActive) {
-            // Re-queue passive players who already left the queue, but ONLY on the first
-            // declaration of the turn. After a RESET_TURN the prior request from the canceled
-            // declaration is cleared but later declarations (from other players) remain, so
-            // isFirstDeclaration = false — preventing players who have fully acted from being
-            // forced to act a second time.
-            if (isFirstDeclaration) {
-                reQueueEjectedPassivePlayers(state, turn);
-            }
-        } else {
-            turn.passivesActed().add(declarerId);
-        }
+        state.rowClosureRequests().add(new RowClosureRequest(declarerId, getLockColor(state, declarerId, rowIndex)));
     }
 
     private void applyUndoLastCross(GameState state, UndoLastCrossAction action) {

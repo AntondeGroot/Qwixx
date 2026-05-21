@@ -1,5 +1,7 @@
 package nl.adg.qwixx.rules;
 
+import static nl.adg.qwixx.rules.CellCrosser.isReachableCell;
+
 import nl.adg.qwixx.action.CrossCellAction;
 import nl.adg.qwixx.action.DiceCombination;
 import nl.adg.qwixx.action.GameAction;
@@ -85,7 +87,7 @@ public class LongoTurnRules extends StandardTurnRules {
     private Optional<CrossCellAction> leftmostBonusCellAction(UUID playerId, int rowIndex, Row row, RowState rowState) {
         int rightmost = rightmostCrossedPosition(row, rowState);
         return row.cells().stream()
-                .filter(c -> c.position() > rightmost && !rowState.crossedCells().contains(c.id()))
+                .filter(c -> isReachableCell(c, rightmost, rowState.crossedCells()))
                 .min(Comparator.comparingInt(Cell::position))
                 .map(cell -> new CrossCellAction(playerId, rowIndex, cell.id(), DiceCombination.WHITE_WHITE));
     }

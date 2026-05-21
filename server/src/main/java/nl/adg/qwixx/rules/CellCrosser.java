@@ -47,8 +47,7 @@ class CellCrosser {
             int rightmost     = rightmostCrossedPosition(row, rowState);
 
             for (Cell cell : row.cells()) {
-                if (cell.position() <= rightmost) continue;
-                if (rowState.crossedCells().contains(cell.id())) continue;
+                if (!isReachableCell(cell, rightmost, rowState.crossedCells())) continue;
 
                 if (cell.isClosingEligible() && row.lock() != null) {
                     long alreadyCrossedRequired = row.lock().closingCells().stream()
@@ -67,6 +66,10 @@ class CellCrosser {
                 }
             }
         }
+    }
+
+    static boolean isReachableCell(Cell cell, int rightmost, Set<String> crossedCells) {
+        return cell.position() > rightmost && !crossedCells.contains(cell.id());
     }
 
     static int rightmostCrossedPosition(Row row, RowState rowState) {

@@ -74,7 +74,7 @@ public class StandardTurnRules implements TurnRules {
     private List<GameAction> activeActions(GameState state, UUID playerId, TurnState turn) {
         List<GameAction> actions = new ArrayList<>();
         addReachableCells(state, playerId, actions, true);
-        addClosingIntents(state, playerId, actions);
+        addDeclareLockIntentActions(state, playerId, actions);
         actions.add(new GiveUpAction(playerId));
         actions.add(new ResetTurnAction(playerId));
         ActiveTurnState activePlayer = turn.activeTurnState();
@@ -89,12 +89,11 @@ public class StandardTurnRules implements TurnRules {
         List<GameAction> actions = new ArrayList<>();
         if (!TurnHelper.hasAlreadyActed(turn, playerId)) {
             addReachableCells(state, playerId, actions, false);
-            addClosingIntents(state, playerId, actions);
         } else {
-            // Already acted (cross, declaration, or both): can declare more intents, then reset or pass.
-            addClosingIntents(state, playerId, actions);
+            // Already acted (cross, declaration, or both): can reset but not cross again.
             actions.add(new ResetTurnAction(playerId));
         }
+        addDeclareLockIntentActions(state, playerId, actions);
         actions.add(new EndTurnAction(playerId));
         return actions;
     }
@@ -457,39 +456,31 @@ public class StandardTurnRules implements TurnRules {
         cellCrosser.addReachableCells(state, playerId, actions, isActive, getMinCrossesRequired());
     }
 
-    // Offer DECLARE_LOCK_INTENT when the player can explicitly declare closing intent:
-    // 1. Player already qualifies via a PERMANENT last closing cell (crossed in a previous turn).
-    // 2. Player just crossed the second-to-last closing cell this turn (Longo YES/NO modal).
-    // The last closing cell crossed THIS turn is auto-detected at EndTurn — no explicit intent needed.
-    private void addClosingIntents(GameState state, UUID playerId, List<GameAction> actions) {
-        SheetLayout layout        = getLayout(state, playerId);
+    // Offers DECLARE_LOCK_INTENT to any player who crossed a non-final closing cell this turn,
+    // giving them an explicit YES/NO choice before their turn ends (Longo "15"/"3" modal).
+    // Crossing the last closing cell is handled silently by auto-detection at EndTurn.
+    private void addDeclareLockIntentActions(GameState state, UUID playerId, List<GameAction> actions) {
+        SheetLayout layout = getLayout(state, playerId);
         for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
-            if (state.isRowClosed(rowIndex)) continue;
-            if (rowHasPendingClosure(state, rowIndex)) continue;
-            if (canDeclareViaPermanentLastCell(state, playerId, rowIndex)
-                    || canDeclareViaSecondToLastCell(state, playerId, rowIndex)) {
+            if (canOfferLockDeclaration(state, playerId, rowIndex)) {
                 actions.add(new DeclareLockIntentAction(playerId, rowIndex));
             }
         }
     }
 
-    // True when the player qualifies to close based on a PERMANENTLY crossed last closing cell
-    // (from any previous turn). Pending crosses (undo buffer) are excluded — those are handled
-    // by auto-detection at EndTurn.
-    protected boolean canDeclareViaPermanentLastCell(GameState state, UUID playerId, int rowIndex) {
-        if (rowIsNotLockable(state, playerId, rowIndex)) return false;
-        RowState rowState = getRowState(getProgress(state, playerId), rowIndex);
-        if (!hasEnoughNonClosingCrosses(state, playerId, rowIndex, rowState.crossedCells())) return false;
-        return rowState.crossedCells().contains(getLastClosingCell(state, playerId, rowIndex));
+    private boolean canOfferLockDeclaration(GameState state, UUID playerId, int rowIndex) {
+        if (state.isRowClosed(rowIndex)) return false;
+        if (rowHasPendingClosure(state, rowIndex)) return false;
+        return canDeclareViaNonFinalClosingCell(state, playerId, rowIndex);
     }
 
-    // True when the second-to-last closing cell is a pending cross this turn AND the player qualifies.
+    // True when a non-final closing cell is a pending cross this turn AND the player qualifies.
     // This is the Longo "15"/"3" explicit YES scenario.
-    protected boolean canDeclareViaSecondToLastCell(GameState state, UUID playerId, int rowIndex) {
+    protected boolean canDeclareViaNonFinalClosingCell(GameState state, UUID playerId, int rowIndex) {
         if (rowIsNotLockable(state, playerId, rowIndex)) return false;
-        List<String> closing = getClosingCells(state, playerId, rowIndex);
-        if (closing.size() < 2) return false;
+        if (!hasMultipleClosingCells(state, playerId, rowIndex)) return false;
 
+        List<String> closing = getClosingCells(state, playerId, rowIndex);
         String secondToLast = closing.get(closing.size() - 2);
         if (!crossedThisTurn(state, playerId, rowIndex, secondToLast)) return false;
 
@@ -511,16 +502,19 @@ public class StandardTurnRules implements TurnRules {
         if (rowIsNotLockable(state, playerId, rowIndex)) return false;
         Set<String> allCrosses = allCrossesForPlayer(state, playerId, rowIndex);
         if (!hasEnoughNonClosingCrosses(state, playerId, rowIndex, allCrosses)) return false;
+        return hasEligibleClosingCellCrossed(state, playerId, rowIndex, allCrosses);
+    }
 
-        List<String> closing = getClosingCells(state, playerId, rowIndex);
-        if (allCrosses.contains(closing.getLast())) return true;
+    private boolean hasEligibleClosingCellCrossed(GameState state, UUID playerId, int rowIndex, Set<String> allCrosses) {
+        List<String> closing                = getClosingCells(state, playerId, rowIndex);
+        boolean lastCellCrossed             = allCrosses.contains(closing.getLast());
+        boolean secondToLastCrossedThisTurn = hasMultipleClosingCells(state, playerId, rowIndex)
+                && crossedThisTurn(state, playerId, rowIndex, closing.get(closing.size() - 2));
+        return lastCellCrossed || secondToLastCrossedThisTurn;
+    }
 
-        if (closing.size() > 1) {
-            // Only relevant for Longo
-            String secondLast = closing.get(closing.size() - 2);
-            return crossedThisTurn(state, playerId, rowIndex, secondLast);
-        }
-        return false;
+    private boolean hasMultipleClosingCells(GameState state, UUID playerId, int rowIndex) {
+        return getClosingCells(state, playerId, rowIndex).size() > 1;
     }
 
     /** Returns true when the row has no lock, is already locked, or is already closed. */
@@ -673,8 +667,11 @@ public class StandardTurnRules implements TurnRules {
 
     private boolean activePlayerCouldClaimAnyPendingRow(GameState state, UUID activeId) {
         return state.pendingClosures().entrySet().stream()
-                .anyMatch(e -> !e.getValue().equals(activeId)
-                               && couldActivePlayerLockRow(state, activeId, e.getKey()));
+                .anyMatch(e -> activePlayerCouldAlsoLockRow(state, activeId, e.getKey(), e.getValue()));
+    }
+
+    private boolean activePlayerCouldAlsoLockRow(GameState state, UUID activeId, int rowIndex, UUID declarant) {
+        return !declarant.equals(activeId) && couldActivePlayerLockRow(state, activeId, rowIndex);
     }
 
     private boolean activePlayerRevertingToMove(boolean isActive, TurnState turn) {

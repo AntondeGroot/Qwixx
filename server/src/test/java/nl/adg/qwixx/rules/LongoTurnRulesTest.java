@@ -916,16 +916,17 @@ class LongoTurnRulesTest {
             state.boardState().sheetProgress().get(p1).updateRowState(0, new RowState(crossed, false));
         }
 
-        // Give p2 enough crosses on row 1 (YELLOW): both closing cells + fill to 8 total.
+        // Give p2 enough non-closing crosses on row 1 (YELLOW): exactly minCrosses non-closing cells.
+        // No closing cells — p2 will cross the last closing cell this turn so auto-detection fires.
         {
             SheetLayout layout = state.sheetLayouts().get(p2);
             Row row = layout.rows().get(1);
             LockCell lock = row.lock();
             Set<String> closingCells = new HashSet<>(lock.closingCells());
-            Set<String> crossed = new HashSet<>(closingCells);
+            Set<String> crossed = new HashSet<>();
             for (Cell c : row.cells()) {
-                if (crossed.size() >= 8) break;
-                crossed.add(c.id());
+                if (crossed.size() >= lock.minCrosses()) break;
+                if (!closingCells.contains(c.id())) crossed.add(c.id());
             }
             state.boardState().sheetProgress().get(p2).updateRowState(1, new RowState(crossed, false));
         }
@@ -944,14 +945,11 @@ class LongoTurnRulesTest {
         assertEquals(TurnPhase.ROLL, state.turnState().phase(), "Turn 2 must start with ROLL");
         assertEquals(p2, state.turnState().activePlayerId(), "p2 must be active for Turn 2");
 
-        // Turn 2: p2 rolls, declares row 1, also crosses something, then EndTurns → PASSIVE_MOVE
+        // Turn 2: p2 rolls, crosses the last closing cell of row 1 → auto-detection fires at EndTurn
         rules.apply(state, new nl.adg.qwixx.action.RollAction(p2));
-        assertTrue(rules.getValidActions(state, p2).stream()
-                        .anyMatch(a -> a instanceof DeclareLockIntentAction dl && dl.rowIndex() == 1),
-                "p2 must be offered lock intent for row 1 in Turn 2");
-        rules.apply(state, new DeclareLockIntentAction(p2, 1));
-        rules.apply(state, completeCrossAction(state, p2)); // p2 must also cross to EndTurn
-        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p2));
+        String p2LastClosing = state.sheetLayouts().get(p2).rows().get(1).lock().closingCells().getLast();
+        rules.apply(state, new nl.adg.qwixx.action.CrossCellAction(p2, 1, p2LastClosing, DiceCombination.WHITE_WHITE));
+        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p2)); // auto-detection declares row 1
 
         // p1 EndTurns → EVALUATE → row 1 closes → game over
         rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p1));

@@ -512,11 +512,31 @@ public class StandardTurnRules implements TurnRules {
         return canCrossLock(state, playerId, rowIndex);
     }
 
+    // Lock eligibility:
+    //
+    //  • The LAST closing cell always enables locking — permanent or pending.
+    //
+    //  • The SECOND-TO-LAST closing cell (Longo only) enables locking ONLY when it was
+    //    crossed in the CURRENT turn (pending cross). Once the turn ends without a lock
+    //    declaration the cell becomes permanent and loses its locking power; from that
+    //    point only the last cell can trigger a lock.
+    //
+    // For standard Qwixx there is only one closing cell, so the second-to-last branch
+    // is never reached.
     protected boolean canCrossLock(GameState state, UUID playerId, int rowIndex) {
         if (rowIsNotLockable(state, playerId, rowIndex)) return false;
         Set<String> allCrosses = allCrossesForPlayer(state, playerId, rowIndex);
         if (!hasEnoughNonClosingCrosses(state, playerId, rowIndex, allCrosses)) return false;
-        return playerHasCrossedAClosingCell(state, playerId, rowIndex, allCrosses);
+
+        List<String> closing = getClosingCells(state, playerId, rowIndex);
+        if (allCrosses.contains(closing.getLast())) return true;
+
+        if (closing.size() > 1) {
+            // Only relevant for Longo
+            String secondLast = closing.get(closing.size() - 2);
+            return crossedThisTurn(state, playerId, rowIndex, secondLast);
+        }
+        return false;
     }
 
     /** Returns true when the row has no lock, is already locked, or is already closed. */

@@ -16,11 +16,13 @@ import nl.adg.qwixx.state.SheetLayout;
 import nl.adg.qwixx.state.SheetProgress;
 import nl.adg.qwixx.state.TurnPhase;
 import nl.adg.qwixx.state.TurnState;
+import nl.adg.qwixx.generated.model.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -95,7 +97,7 @@ class GameStateMapper {
         return result;
     }
 
-    private static java.util.List<nl.adg.qwixx.generated.model.Color> mapActiveDiceColors(BoardState board) {
+    private static List<nl.adg.qwixx.generated.model.Color> mapActiveDiceColors(BoardState board) {
         return board.activeDice().stream()
                 .filter(die -> die.color() != nl.adg.qwixx.data.Color.WHITE)
                 .map(die -> nl.adg.qwixx.generated.model.Color.fromValue(die.color().name()))
@@ -127,10 +129,10 @@ class GameStateMapper {
         }
 
         if (!turn.undoBuffer().isEmpty()) {
-            Map<String, List<String>> pending = new java.util.HashMap<>();
+            Map<String, List<String>> pending = new HashMap<>();
             turn.undoBuffer().forEach((pid, rowMap) -> {
                 List<String> cellIds = rowMap.values().stream()
-                        .flatMap(java.util.Set::stream)
+                        .flatMap(Set::stream)
                         .toList();
                 pending.put(pid.toString(), cellIds);
             });
@@ -167,34 +169,34 @@ class GameStateMapper {
     }
 
     private static nl.adg.qwixx.generated.model.SheetLayout mapSheetLayout(SheetLayout layout) {
-        List<nl.adg.qwixx.generated.model.SheetRow> rows = layout.rows().stream()
+        List<SheetRow> rows = layout.rows().stream()
                 .map(GameStateMapper::mapRow)
                 .toList();
         return new nl.adg.qwixx.generated.model.SheetLayout(rows);
     }
 
-    private static nl.adg.qwixx.generated.model.SheetRow mapRow(Row row) {
-        List<nl.adg.qwixx.generated.model.SheetCell> cells = row.cells().stream()
+    private static SheetRow mapRow(Row row) {
+        List<SheetCell> cells = row.cells().stream()
                 .map(GameStateMapper::mapCell)
                 .toList();
-        return new nl.adg.qwixx.generated.model.SheetRow(row.id(), cells, mapLock(row.lock()));
+        return new SheetRow(row.id(), cells, mapLock(row.lock()));
     }
 
-    private static nl.adg.qwixx.generated.model.SheetCell mapCell(Cell cell) {
+    private static SheetCell mapCell(Cell cell) {
         nl.adg.qwixx.generated.model.Color color =
                 nl.adg.qwixx.generated.model.Color.fromValue(cell.color().name());
         List<nl.adg.qwixx.generated.model.CellTag> tags = cell.tags().stream()
                 .map(GameStateMapper::mapTag)
                 .toList();
-        return new nl.adg.qwixx.generated.model.SheetCell(
+        return new SheetCell(
                 cell.id(), cell.position(), cell.displayValue(), color, cell.isClosingEligible(), tags);
     }
 
-    private static nl.adg.qwixx.generated.model.LockConfig mapLock(LockCell lock) {
+    private static LockConfig mapLock(LockCell lock) {
         if (lock == null) return null;
         nl.adg.qwixx.generated.model.Color color =
                 nl.adg.qwixx.generated.model.Color.fromValue(lock.color().name());
-        return new nl.adg.qwixx.generated.model.LockConfig(
+        return new LockConfig(
                 lock.id(), color, lock.minCrosses(), new ArrayList<>(lock.closingCells()));
     }
 
@@ -226,15 +228,15 @@ class GameStateMapper {
         return result;
     }
 
-    private static List<nl.adg.qwixx.generated.model.RowClosureRequest> mapRowClosureRequests(
+    private static List<RowClosureRequest> mapRowClosureRequests(
             GameState state, GameSession session) {
         Map<UUID, Player> playerIndex = session.players().stream()
-                .collect(Collectors.toMap(Player::id, java.util.function.Function.identity()));
+                .collect(Collectors.toMap(Player::id, Function.identity()));
         return state.rowClosureRequests().stream()
                 .map(req -> {
                     Player p = playerIndex.get(req.playerId());
                     String name = p != null ? p.name() : req.playerId().toString();
-                    return new nl.adg.qwixx.generated.model.RowClosureRequest(
+                    return new RowClosureRequest(
                             name,
                             nl.adg.qwixx.generated.model.Color.fromValue(req.rowColor().name()));
                 })

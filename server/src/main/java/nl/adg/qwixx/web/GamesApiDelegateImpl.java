@@ -8,6 +8,7 @@ import nl.adg.qwixx.game.GameSettings;
 import nl.adg.qwixx.game.Player;
 import nl.adg.qwixx.game.QwixxGameOptions;
 import nl.adg.qwixx.game.SessionNotFoundException;
+import nl.adg.qwixx.game.SessionStatus;
 import nl.adg.qwixx.generated.api.GamesApiDelegate;
 import nl.adg.qwixx.generated.model.AddPlayerToGame201Response;
 import nl.adg.qwixx.generated.model.CreateNewGame201Response;
@@ -25,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class GamesApiDelegateImpl implements GamesApiDelegate {
@@ -37,19 +39,15 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
 
     @Override
     public ResponseEntity<CreateNewGame201Response> createNewGame(NewGameRequest req) {
-        GameSettings.Builder builder = GameSettings.builder();
-        QwixxGameOptions.apply(builder, req.getGameOptions());
-        String id = GameRegistry.createGame(req.getRoomName(), req.getMaxPlayers(), builder.build());
+        String id = GameRegistry.createGame(req.getRoomName(), req.getMaxPlayers(),
+                buildSettings(req.getGameOptions()));
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new CreateNewGame201Response().sessionId(id));
     }
 
     @Override
     public ResponseEntity<List<GameInfo>> getAllGames() {
-        List<GameInfo> result = GameRegistry.getAllGames().stream()
-                .map(this::toGameInfo)
-                .toList();
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(GameRegistry.getAllGames().stream().map(this::toGameInfo).toList());
     }
 
     @Override
@@ -72,13 +70,8 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
     @Override
     public ResponseEntity<Void> restartGame(String sessionId, RestartGameRequest req) {
         GameSession session = require(sessionId);
-        Map<String, Object> gameOptions = (req != null && req.getGameOptions() != null)
-                ? new HashMap<>(req.getGameOptions())
-                : session.proposedOptions();
-        GameSettings.Builder builder = GameSettings.builder();
-        QwixxGameOptions.apply(builder, gameOptions);
         try {
-            session.restart(builder.build());
+            session.restart(buildSettings(resolveOptions(req, session)));
         } catch (IllegalStateException ex) {
             throw new GameNotFinishedException(sessionId);
         }
@@ -97,10 +90,7 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
     public ResponseEntity<AddPlayerToGame201Response> addPlayerToGame(String sessionId,
             nl.adg.qwixx.generated.model.Player req) {
         GameSession session = require(sessionId);
-        UUID playerId = req.getId() != null && !req.getId().isBlank()
-                ? UUID.fromString(req.getId())
-                : UUID.randomUUID();
-        Player player = new Player(playerId, req.getName(), req.getProfilePic());
+        Player player = playerFromRequest(req);
         try {
             session.addPlayer(player);
         } catch (IllegalStateException ex) {
@@ -114,12 +104,9 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
     @Override
     public ResponseEntity<List<nl.adg.qwixx.generated.model.Player>> getAllPlayersInGame(
             String sessionId) {
-        GameSession session = require(sessionId);
-        List<nl.adg.qwixx.generated.model.Player> players = session.players().stream()
-                .map(p -> new nl.adg.qwixx.generated.model.Player(p.id().toString(), p.name())
-                        .profilePic(p.profilePic()))
-                .toList();
-        return ResponseEntity.ok(players);
+        return ResponseEntity.ok(require(sessionId).players().stream()
+                .map(this::toPlayerDto)
+                .toList());
     }
 
     @Override
@@ -137,26 +124,53 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
     @Override
     public ResponseEntity<Map<String, ScoreCard>> getScores(String sessionId) {
         GameSession session = require(sessionId);
-        if (session.status() != nl.adg.qwixx.game.SessionStatus.FINISHED)
+        if (session.status() != SessionStatus.FINISHED)
             throw new GameNotFinishedException(sessionId);
 
         // Iterate the game-state player list (all who participated) rather than
         // session.players() which may be smaller if players left after the game ended.
-        Map<String, ScoreCard> result = new HashMap<>();
-        for (UUID playerId : session.currentState().players()) {
-            nl.adg.qwixx.rules.ScoreCard sc = session.getScore(playerId);
-            result.put(playerId.toString(), toDto(sc));
-        }
-        return ResponseEntity.ok(result);
+        Map<String, ScoreCard> scores = session.currentState().players().stream()
+                .collect(Collectors.toMap(UUID::toString, id -> toDto(session.getScore(id))));
+        return ResponseEntity.ok(scores);
+    }
+
+    // ── Converters ────────────────────────────────────────────────────────────
+
+    private static GameSettings buildSettings(Map<String, Object> options) {
+        GameSettings.Builder builder = GameSettings.builder();
+        QwixxGameOptions.apply(builder, options);
+        return builder.build();
+    }
+
+    private static Map<String, Object> resolveOptions(RestartGameRequest req, GameSession session) {
+        return (req != null && req.getGameOptions() != null)
+                ? new HashMap<>(req.getGameOptions())
+                : session.proposedOptions();
+    }
+
+    private static Player playerFromRequest(nl.adg.qwixx.generated.model.Player req) {
+        UUID id = req.getId() != null && !req.getId().isBlank()
+                ? UUID.fromString(req.getId())
+                : UUID.randomUUID();
+        return new Player(id, req.getName(), req.getProfilePic());
+    }
+
+    private nl.adg.qwixx.generated.model.Player toPlayerDto(Player p) {
+        return new nl.adg.qwixx.generated.model.Player(p.id().toString(), p.name())
+                .profilePic(p.profilePic());
     }
 
     private static ScoreCard toDto(nl.adg.qwixx.rules.ScoreCard sc) {
-        Map<String, Integer> crosses = new HashMap<>();
-        sc.crossesPerColor().forEach((c, v) -> crosses.put(c.name(), v));
-        Map<String, Integer> points = new HashMap<>();
-        sc.pointsPerColor().forEach((c, v) -> points.put(c.name(), v));
-        return new ScoreCard(crosses, points, sc.extraCrosses(), sc.extraPoints(),
+        return new ScoreCard(
+                toStringKeyedMap(sc.crossesPerColor()),
+                toStringKeyedMap(sc.pointsPerColor()),
+                sc.extraCrosses(), sc.extraPoints(),
                 sc.bonusPoints(), sc.punishmentPoints(), sc.total());
+    }
+
+    private static <K> Map<String, Integer> toStringKeyedMap(Map<K, Integer> map) {
+        return map.entrySet().stream()
+                .collect(Collectors.toMap(e -> e.getKey().toString(), Map.Entry::getValue));
     }
 
     private GameSession require(String sessionId) {

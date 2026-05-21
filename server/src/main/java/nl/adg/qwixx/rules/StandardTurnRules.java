@@ -10,6 +10,8 @@ import nl.adg.qwixx.action.ResetTurnAction;
 import nl.adg.qwixx.action.RollAction;
 import nl.adg.qwixx.action.TakePunishmentAction;
 import nl.adg.qwixx.action.UndoLastCrossAction;
+import static nl.adg.qwixx.rules.CellCrosser.getRowState;
+
 import nl.adg.qwixx.data.Color;
 import nl.adg.qwixx.data.LockCell;
 import nl.adg.qwixx.data.Row;
@@ -591,10 +593,6 @@ public class StandardTurnRules implements TurnRules {
 
     protected SheetProgress getProgress(GameState state, UUID playerId) {
         return state.boardState().sheetProgress().get(playerId);
-    }
-
-    protected RowState getRowState(SheetProgress progress, int rowIndex) {
-        return progress.rowStates().getOrDefault(rowIndex, new RowState(new HashSet<>(), false));
     }
 
     protected Row getRow(GameState state, UUID playerId, int rowIndex) {

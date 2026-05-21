@@ -61,9 +61,7 @@ public class LongoTurnRules extends StandardTurnRules {
     @Override
     protected boolean canCrossLock(GameState state, UUID playerId, int rowIndex) {
         if (rowIsNotLockable(state, playerId, rowIndex)) return false;
-
         Set<String> allCrosses = allCrossesForPlayer(state, playerId, rowIndex);
-
         if (!hasEnoughNonClosingCrosses(state, playerId, rowIndex, allCrosses)) return false;
 
         List<String> closing = getClosingCells(state, playerId, rowIndex);

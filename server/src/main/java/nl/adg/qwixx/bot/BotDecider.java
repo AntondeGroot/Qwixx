@@ -60,8 +60,8 @@ public class BotDecider {
 
         // Full-turn lookahead: active player before either die is used
         if (!isPassive) {
-            ActiveTurnState ats = state.turnState().activeTurnState();
-            if (!ats.whiteWhiteUsed() && !ats.colorDieUsed()) {
+            ActiveTurnState activePlayer = state.turnState().activeTurnState();
+            if (!activePlayer.whiteWhiteUsed() && !activePlayer.colorDieUsed()) {
                 return decideTwoMove(state, botId, usable, center, profile);
             }
         }

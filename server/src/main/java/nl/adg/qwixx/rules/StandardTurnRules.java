@@ -297,44 +297,27 @@ public class StandardTurnRules implements TurnRules {
     }
 
     private void applyResetTurn(GameState state, ResetTurnAction action) {
-        TurnState turn = state.turnState();
-        UUID playerId  = action.playerId();
+        TurnState turn   = state.turnState();
+        UUID playerId    = action.playerId();
         boolean isActive = playerId.equals(turn.activePlayerId());
 
-        // Special case: active player reverts their EndTurn while passives are still acting
-        // (or after being re-added to the passive queue for a final-look notification).
-        // Restore the snapshot so the pending cross is fully cleared — the player should be
-        // able to redo their move from scratch without having to undo the cross manually.
+        revertPlayerProgress(state, turn, playerId);
+        turn.passivesActed().remove(playerId);
+        if (isActive && turn.activeTurnState() != null) turn.activeTurnState().reset();
+
         if (activePlayerRevertingToMove(isActive, turn)) {
-            turn.passivePlayerQueue().remove(playerId); // in case they were re-added for final look
-            restoreToSnapshot(state, turn, playerId);
-            cancelPlayerClosingIntents(state, playerId);
-            clearPendingCrosses(turn, playerId);
-            if (turn.activeTurnState() != null) turn.activeTurnState().reset();
+            turn.passivePlayerQueue().remove(playerId); // in case re-added for final look
             turn.setPhase(TurnPhase.ACTIVE_MOVE);
-            return;
-        }
-
-        // Special case: passive player reverts their EndTurn while the turn is still active.
-        // Passives may EndTurn during ACTIVE_MOVE (before the active player passes) or during
-        // PASSIVE_MOVE; in both cases they leave the queue. Restore from the turn-start snapshot
-        // (the undo buffer was cleared on EndTurn) and put them back in the passive queue.
-        if (passivePlayerRevertingAfterEarlyEndTurn(isActive, turn, playerId)) {
-            restoreToSnapshot(state, turn, playerId);
-            cancelPlayerClosingIntents(state, playerId);
-            clearPendingCrosses(turn, playerId);
-            turn.passivesActed().remove(playerId);
+        } else if (passivePlayerRevertingAfterEarlyEndTurn(isActive, turn, playerId)) {
             turn.passivePlayerQueue().add(playerId);
-            return;
         }
+        // else: passive still in queue — no queue change needed
+    }
 
+    private void revertPlayerProgress(GameState state, TurnState turn, UUID playerId) {
         restoreToSnapshot(state, turn, playerId);
         cancelPlayerClosingIntents(state, playerId);
-
         clearPendingCrosses(turn, playerId);
-        turn.passivesActed().remove(playerId);
-
-        if (isActive && turn.activeTurnState() != null) turn.activeTurnState().reset();
     }
 
     /** Removes all pending closures and notifications declared by this player this turn. */
@@ -580,11 +563,13 @@ public class StandardTurnRules implements TurnRules {
     private SheetProgress deepCopy(SheetProgress p) {
         Map<Integer, RowState> copy = new HashMap<>();
         for (var entry : p.rowStates().entrySet()) {
-            copy.put(entry.getKey(),
-                    new RowState(new HashSet<>(entry.getValue().crossedCells()),
-                                 entry.getValue().lockCrossed()));
+            copy.put(entry.getKey(), copyRowState(entry.getValue()));
         }
         return new SheetProgress(copy, p.punishments());
+    }
+
+    private static RowState copyRowState(RowState source) {
+        return new RowState(new HashSet<>(source.crossedCells()), source.lockCrossed());
     }
 
     protected SheetLayout getLayout(GameState state, UUID playerId) {
@@ -691,7 +676,7 @@ public class StandardTurnRules implements TurnRules {
                                && couldActivePlayerLockRow(state, activeId, e.getKey()));
     }
 
-private boolean activePlayerRevertingToMove(boolean isActive, TurnState turn) {
+    private boolean activePlayerRevertingToMove(boolean isActive, TurnState turn) {
         return isActive && turn.phase() == TurnPhase.PASSIVE_MOVE;
     }
 

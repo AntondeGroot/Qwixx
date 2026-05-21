@@ -85,11 +85,6 @@ public class OfflineTurnRules extends StandardTurnRules {
         if (isGameOver(state)) state.setGameOver(true);
     }
 
-    @Override
-    protected int getMinCrossesRequired() {
-        return 5;
-    }
-
     // No closedRows check: a player qualifies to lock based only on their own progress.
     // Any ONE closing cell is sufficient (same semantics as online mode).
     @Override
@@ -101,9 +96,7 @@ public class OfflineTurnRules extends StandardTurnRules {
         if (row.lock() == null) return false;
         RowState rowState = getRowState(prog, rowIndex);
         if (rowState.lockCrossed()) return false;
-        List<String> closingIds = row.lock().closingCells();
-        long nonClosing = rowState.crossedCells().stream().filter(id -> !closingIds.contains(id)).count();
-        if (nonClosing < getMinCrossesRequired()) return false;
-        return closingIds.stream().anyMatch(id -> rowState.crossedCells().contains(id));
+        if (!hasEnoughNonClosingCrosses(state, playerId, rowIndex, rowState.crossedCells())) return false;
+        return row.lock().closingCells().stream().anyMatch(id -> rowState.crossedCells().contains(id));
     }
 }

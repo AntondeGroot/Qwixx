@@ -418,9 +418,7 @@ public class StandardTurnRules implements TurnRules {
         // case the player might still want to also cross "16" this turn, so we allow re-queue.)
         if (allCrosses.contains(getLastClosingCell(state, activeId, rowIndex))) return false;
         // Re-queue if the player already has enough non-closing crosses to qualify.
-        List<String> closingCells = getClosingCells(state, activeId, rowIndex);
-        long nonClosing = allCrosses.stream().filter(id -> !closingCells.contains(id)).count();
-        return nonClosing >= getMinCrossesRequired();
+        return hasEnoughNonClosingCrosses(state, activeId, rowIndex, allCrosses);
     }
 
     // Auto-detect closing intent for a player who crossed the LAST closing cell this turn.
@@ -500,9 +498,7 @@ public class StandardTurnRules implements TurnRules {
     protected boolean canDeclareViaPermanentLastCell(GameState state, UUID playerId, int rowIndex) {
         if (rowIsNotLockable(state, playerId, rowIndex)) return false;
         RowState rowState = getRowState(getProgress(state, playerId), rowIndex);
-        List<String> closingCells = getClosingCells(state, playerId, rowIndex);
-        long nonClosing = rowState.crossedCells().stream().filter(id -> !closingCells.contains(id)).count();
-        if (nonClosing < getMinCrossesRequired()) return false;
+        if (!hasEnoughNonClosingCrosses(state, playerId, rowIndex, rowState.crossedCells())) return false;
         return rowState.crossedCells().contains(getLastClosingCell(state, playerId, rowIndex));
     }
 
@@ -610,6 +606,11 @@ public class StandardTurnRules implements TurnRules {
 
     protected int getMinCrossesRequired() {
         return 5;
+    }
+
+    protected boolean hasEnoughNonClosingCrosses(GameState state, UUID playerId, int rowIndex, Set<String> crosses) {
+        List<String> closing = getClosingCells(state, playerId, rowIndex);
+        return crosses.stream().filter(id -> !closing.contains(id)).count() >= getMinCrossesRequired();
     }
 
     protected int rightmostCrossedPosition(Row row, RowState rowState) {

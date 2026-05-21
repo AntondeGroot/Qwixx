@@ -515,6 +515,7 @@ public class StandardTurnRules implements TurnRules {
     protected boolean canCrossLock(GameState state, UUID playerId, int rowIndex) {
         if (rowIsNotLockable(state, playerId, rowIndex)) return false;
         Set<String> allCrosses = allCrossesForPlayer(state, playerId, rowIndex);
+        if (!hasEnoughNonClosingCrosses(state, playerId, rowIndex, allCrosses)) return false;
         return playerHasCrossedAClosingCell(state, playerId, rowIndex, allCrosses);
     }
 

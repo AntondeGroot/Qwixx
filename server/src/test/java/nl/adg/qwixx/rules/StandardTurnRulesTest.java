@@ -661,7 +661,8 @@ class StandardTurnRulesTest {
         // p1 (active) crossed the closing cell this turn (only in undo buffer, not permanent).
         // Both must receive lockCrossed=true after EVALUATE.
         GameState state = stateAfterRoll(p1, p1, p2);
-        crossEnoughForLock(state, p2, 0);                  // p2 qualifies to declare
+        crossEnoughForLock(state, p2, 0);// p2 qualifies to declare
+        crossEnoughForLockWithoutClosingCell(state, p1, 0); // p1 has enough non-closing crosses permanently
 
         rules.apply(state, firstCrossAction(state, p1));   // p1 makes a real move (sets whiteWhiteUsed)
 

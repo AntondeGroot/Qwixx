@@ -43,7 +43,7 @@ class CellCrosser {
         for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
             if (state.isRowClosed(rowIndex)) continue;
             Row row           = layout.rows().get(rowIndex);
-            RowState rowState = rowStateOf(progress, rowIndex);
+            RowState rowState = getRowState(progress, rowIndex);
             int rightmost     = rightmostCrossedPosition(row, rowState);
 
             for (Cell cell : row.cells()) {
@@ -81,7 +81,7 @@ class CellCrosser {
                 .orElse(-1);
     }
 
-    private static RowState rowStateOf(SheetProgress progress, int rowIndex) {
+    static RowState getRowState(SheetProgress progress, int rowIndex) {
         return progress.rowStates().getOrDefault(rowIndex, new RowState(new HashSet<>(), false));
     }
 
@@ -90,7 +90,7 @@ class CellCrosser {
         SheetLayout layout  = state.sheetLayouts().get(playerId);
         SheetProgress prog  = state.boardState().sheetProgress().get(playerId);
         Row row             = layout.rows().get(rowIndex);
-        RowState rowState   = rowStateOf(prog, rowIndex);
+        RowState rowState   = getRowState(prog, rowIndex);
 
         Cell cell = row.cells().stream().filter(c -> c.id().equals(cellId)).findFirst().orElse(null);
         if (cell == null) return;

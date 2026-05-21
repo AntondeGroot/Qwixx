@@ -1,5 +1,6 @@
 package nl.adg.qwixx.rules;
 
+import static nl.adg.qwixx.rules.CellCrosser.getRowState;
 import static nl.adg.qwixx.rules.CellCrosser.isReachableCell;
 
 import nl.adg.qwixx.action.CrossCellAction;

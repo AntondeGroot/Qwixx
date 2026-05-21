@@ -7,6 +7,7 @@ import nl.adg.qwixx.game.OptionType;
 import nl.adg.qwixx.game.QwixxGameOptions;
 import nl.adg.qwixx.generated.api.GameOptionsApiDelegate;
 import nl.adg.qwixx.generated.model.GameOption;
+import nl.adg.qwixx.generated.model.SheetLayout;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -26,14 +27,14 @@ public class GameOptionsApiDelegateImpl implements GameOptionsApiDelegate {
     }
 
     @Override
-    public ResponseEntity<nl.adg.qwixx.generated.model.SheetLayout> previewLayout(Map<String, Object> requestBody) {
+    public ResponseEntity<SheetLayout> previewLayout(Map<String, Object> requestBody) {
         GameSettings.Builder builder = GameSettings.builder();
         QwixxGameOptions.apply(builder, requestBody);
         GameSettings settings = builder.build();
         ConfigurableGameStyleFactory factory = new ConfigurableGameStyleFactory(settings);
         UUID dummy = UUID.randomUUID();
         List<Row> rows = factory.buildRows(List.of(dummy)).get(dummy);
-        nl.adg.qwixx.state.SheetLayout layout = new nl.adg.qwixx.state.SheetLayout(rows);
+        var layout = new nl.adg.qwixx.state.SheetLayout(rows);
         return ResponseEntity.ok(GameStateMapper.toSheetLayoutDto(layout));
     }
 

@@ -485,7 +485,7 @@ class StandardTurnRulesTest {
         rules.apply(state, new DeclareLockIntentAction(p1, 0));
         rules.apply(state, firstCrossAction(state, p1)); // cross something to satisfy EndTurn requirement
         rules.apply(state, new EndTurnAction(p1));
-        assertTrue(state.boardState().closedRows().containsKey(0),
+        assertTrue(state.isRowClosed(0),
                 "Row must close when the only player EndTurns with pendingClosures");
         assertEquals(TurnPhase.ROLL, state.turnState().phase());
     }
@@ -500,10 +500,10 @@ class StandardTurnRulesTest {
         rules.apply(state, new EndTurnAction(p1));
         assertEquals(TurnPhase.PASSIVE_MOVE, state.turnState().phase(),
                 "After active EndTurns, must enter PASSIVE_MOVE");
-        assertFalse(state.boardState().closedRows().containsKey(0),
+        assertFalse(state.isRowClosed(0),
                 "Row must not close yet — p2 still in queue");
         rules.apply(state, new EndTurnAction(p2));
-        assertTrue(state.boardState().closedRows().containsKey(0),
+        assertTrue(state.isRowClosed(0),
                 "Row must close after last passive EndTurns (EVALUATE)");
         assertEquals(TurnPhase.ROLL, state.turnState().phase());
     }
@@ -527,7 +527,7 @@ class StandardTurnRulesTest {
         rules.apply(state, new EndTurnAction(p1)); // auto-detect fires here → pendingClosures updated
         // After active EndTurns, row closure is pending; p2 must EndTurn to trigger EVALUATE.
         rules.apply(state, new EndTurnAction(p2));
-        assertTrue(state.boardState().closedRows().containsKey(0),
+        assertTrue(state.isRowClosed(0),
                 "Row must close via auto-detect at EndTurn when last closing cell was crossed this turn");
     }
 
@@ -548,7 +548,7 @@ class StandardTurnRulesTest {
         Cell closingCell = red.cells().get(10);
         rules.apply(state, new CrossCellAction(p2, 0, closingCell.id(), DiceCombination.WHITE_WHITE));
         rules.apply(state, new EndTurnAction(p2)); // auto-detect + EVALUATE
-        assertTrue(state.boardState().closedRows().containsKey(0),
+        assertTrue(state.isRowClosed(0),
                 "Row must close via auto-detect when passive crosses last closing cell and EndTurns");
     }
 
@@ -565,7 +565,7 @@ class StandardTurnRulesTest {
         // p2 is still in passive queue
         assertTrue(state.turnState().passivePlayerQueue().contains(p2));
         rules.apply(state, new EndTurnAction(p2)); // EVALUATE fires
-        assertTrue(state.boardState().closedRows().containsKey(0),
+        assertTrue(state.isRowClosed(0),
                 "Row must close after p2 EndTurns with their closing intent in pendingClosures");
     }
 
@@ -715,10 +715,10 @@ class StandardTurnRulesTest {
                 "p2 must be re-queued by active's declaration so they can respond");
         rules.apply(state, firstCrossAction(state, p1)); // must cross something to EndTurn
         rules.apply(state, new EndTurnAction(p1)); // PASSIVE_MOVE (p2 still in queue)
-        assertFalse(state.boardState().closedRows().containsKey(0),
+        assertFalse(state.isRowClosed(0),
                 "Row must NOT close yet — p2 still needs to act");
         rules.apply(state, new EndTurnAction(p2)); // p2 passes → EVALUATE
-        assertTrue(state.boardState().closedRows().containsKey(0),
+        assertTrue(state.isRowClosed(0),
                 "Row must close at EVALUATE after p2 also EndTurns");
     }
 
@@ -737,13 +737,13 @@ class StandardTurnRulesTest {
                 "p3 must be re-queued by active declaration");
         rules.apply(state, firstCrossAction(state, p1));
         rules.apply(state, new EndTurnAction(p1)); // → PASSIVE_MOVE
-        assertFalse(state.boardState().closedRows().containsKey(0),
+        assertFalse(state.isRowClosed(0),
                 "Row must not close yet — p2 and p3 still need to act");
         rules.apply(state, new EndTurnAction(p2));
-        assertFalse(state.boardState().closedRows().containsKey(0),
+        assertFalse(state.isRowClosed(0),
                 "Row must not close yet — p3 still needs to act");
         rules.apply(state, new EndTurnAction(p3)); // EVALUATE
-        assertTrue(state.boardState().closedRows().containsKey(0),
+        assertTrue(state.isRowClosed(0),
                 "Row must close at EVALUATE after all players EndTurn");
     }
 
@@ -775,8 +775,8 @@ class StandardTurnRulesTest {
         rules.apply(state, firstCrossAction(state, p1)); // must cross to EndTurn
         rules.apply(state, new EndTurnAction(p1));
         rules.apply(state, new EndTurnAction(p2)); // EVALUATE
-        assertTrue(state.boardState().closedRows().containsKey(0), "row 0 must close");
-        assertTrue(state.boardState().closedRows().containsKey(1), "row 1 must close");
+        assertTrue(state.isRowClosed(0), "row 0 must close");
+        assertTrue(state.isRowClosed(1), "row 1 must close");
         assertTrue(state.gameOver(), "game must be over after 2 rows close");
     }
 
@@ -792,8 +792,8 @@ class StandardTurnRulesTest {
         rules.apply(state, firstCrossAction(state, p1)); // must cross to EndTurn
         rules.apply(state, new EndTurnAction(p1));
         rules.apply(state, new EndTurnAction(p2)); // EVALUATE
-        assertTrue(state.boardState().closedRows().containsKey(0), "row 0 must close");
-        assertTrue(state.boardState().closedRows().containsKey(1), "row 1 must close");
+        assertTrue(state.isRowClosed(0), "row 0 must close");
+        assertTrue(state.isRowClosed(1), "row 1 must close");
     }
 
     @Test
@@ -806,7 +806,7 @@ class StandardTurnRulesTest {
         assertFalse(state.pendingClosures().containsKey(0),
                 "pendingClosures must be cleared when active gives up");
         rules.apply(state, new EndTurnAction(p2));
-        assertFalse(state.boardState().closedRows().containsKey(0),
+        assertFalse(state.isRowClosed(0),
                 "Row must NOT close — active's closure was cancelled by give-up");
     }
 
@@ -821,7 +821,7 @@ class StandardTurnRulesTest {
         assertTrue(state.turnState().passivePlayerQueue().contains(p2),
                 "p2 must remain in passive queue after p1 gives up");
         rules.apply(state, new EndTurnAction(p2)); // EVALUATE
-        assertTrue(state.boardState().closedRows().containsKey(0),
+        assertTrue(state.isRowClosed(0),
                 "Passive's closure intent must survive active's give-up");
         assertTrue(state.boardState().sheetProgress().get(p1).punishments() > 0,
                 "Active must have taken a punishment");
@@ -837,10 +837,10 @@ class StandardTurnRulesTest {
         rules.apply(state, new GiveUpAction(p1)); // → PASSIVE_MOVE
         assertEquals(TurnPhase.PASSIVE_MOVE, state.turnState().phase());
         rules.apply(state, new EndTurnAction(p3));
-        assertFalse(state.boardState().closedRows().containsKey(0),
+        assertFalse(state.isRowClosed(0),
                 "Row must not close until all passives EndTurn");
         rules.apply(state, new EndTurnAction(p2)); // EVALUATE
-        assertTrue(state.boardState().closedRows().containsKey(0),
+        assertTrue(state.isRowClosed(0),
                 "Row must close once all remaining passives have EndTurned");
     }
 
@@ -867,7 +867,7 @@ class StandardTurnRulesTest {
         rules.apply(state, new DeclareLockIntentAction(p2, 0));
         rules.apply(state, new GiveUpAction(p1)); // p1 takes punishment, → PASSIVE_MOVE
         rules.apply(state, new EndTurnAction(p2)); // EVALUATE
-        assertTrue(state.boardState().closedRows().containsKey(0),
+        assertTrue(state.isRowClosed(0),
                 "Row must close after p2 EndTurns with their closing intent");
     }
 
@@ -882,10 +882,10 @@ class StandardTurnRulesTest {
         assertTrue(state.turnState().passivePlayerQueue().contains(p2));
         assertTrue(state.turnState().passivePlayerQueue().contains(p3));
         rules.apply(state, new EndTurnAction(p3));
-        assertFalse(state.boardState().closedRows().containsKey(0),
+        assertFalse(state.isRowClosed(0),
                 "Row must not close while p2 still in queue");
         rules.apply(state, new EndTurnAction(p2)); // EVALUATE
-        assertTrue(state.boardState().closedRows().containsKey(0),
+        assertTrue(state.isRowClosed(0),
                 "Row must close once all remaining passives EndTurn");
         assertEquals(TurnPhase.ROLL, state.turnState().phase());
     }
@@ -932,7 +932,7 @@ class StandardTurnRulesTest {
         rules.apply(state, firstCrossAction(state, p1)); // must cross to EndTurn
         rules.apply(state, new EndTurnAction(p1));
         rules.apply(state, new EndTurnAction(p2)); // EVALUATE → row 0 closes → game over
-        assertTrue(state.boardState().closedRows().containsKey(0), "row 0 must close");
+        assertTrue(state.isRowClosed(0), "row 0 must close");
         assertTrue(state.gameOver(), "game must be over when two rows have been closed");
     }
 
@@ -972,7 +972,7 @@ class StandardTurnRulesTest {
         // EndTurns and verifies closure.
         rules.apply(state, new EndTurnAction(p1));
         rules.apply(state, new EndTurnAction(p2));
-        assertTrue(state.boardState().closedRows().containsKey(0),
+        assertTrue(state.isRowClosed(0),
                 "RED row must be closed after p2 EndTurns following active crossing the closing cell");
         assertEquals(TurnPhase.ROLL, state.turnState().phase());
         assertEquals(p2, state.turnState().activePlayerId());
@@ -1002,7 +1002,7 @@ class StandardTurnRulesTest {
 
         rules.apply(state, new EndTurnAction(p1));
         rules.apply(state, new EndTurnAction(p2));
-        assertTrue(state.boardState().closedRows().containsKey(0));
+        assertTrue(state.isRowClosed(0));
     }
 
     // ── rowClosureRequests clearing ───────────────────────────────────────────
@@ -1046,7 +1046,7 @@ class StandardTurnRulesTest {
         rules.apply(state, new EndTurnAction(p2));
         rules.apply(state, new EndTurnAction(p3)); // EVALUATE → row closes
 
-        assertTrue(state.boardState().closedRows().containsKey(0), "row must be closed");
+        assertTrue(state.isRowClosed(0), "row must be closed");
         assertEquals(TurnPhase.ROLL, state.turnState().phase(), "phase must be ROLL after lock closes");
         assertEquals(p2, state.turnState().activePlayerId(), "active player must rotate to p2");
         assertDoesNotThrow(() -> rules.apply(state, new RollAction(p2)), "next player must be able to roll");
@@ -1089,7 +1089,7 @@ class StandardTurnRulesTest {
 
         // EVALUATE fires after p2 EndTurns
         rules.apply(state, new EndTurnAction(p2));
-        assertTrue(state.boardState().closedRows().containsKey(0),
+        assertTrue(state.isRowClosed(0),
                 "Row must close after EVALUATE when closing cell was pending (auto-detected)");
     }
 
@@ -1509,7 +1509,7 @@ class StandardTurnRulesTest {
         assertTrue(state.turnState().passivePlayerQueue().contains(p1),
                 "Active player (p1) must be re-added to passive queue for final look");
         // Row must NOT be closed yet (evaluate has not run)
-        assertFalse(state.boardState().closedRows().containsKey(0),
+        assertFalse(state.isRowClosed(0),
                 "Row must not be closed yet — evaluate has not run");
     }
 
@@ -1552,7 +1552,7 @@ class StandardTurnRulesTest {
 
         assertEquals(TurnPhase.ROLL, state.turnState().phase(),
                 "Phase must advance to ROLL after evaluate");
-        assertTrue(state.boardState().closedRows().containsKey(0),
+        assertTrue(state.isRowClosed(0),
                 "Row must be closed after p1 passes from final-look queue");
     }
 

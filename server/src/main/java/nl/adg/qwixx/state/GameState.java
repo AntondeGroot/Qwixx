@@ -47,6 +47,9 @@ public class GameState {
     public boolean gameOver()                         { return gameOver; }
     public long version()                             { return version; }
 
+    public Map<Integer, UUID> closedRows()           { return boardState.closedRows(); }
+    public boolean isRowClosed(int rowIndex)         { return boardState.closedRows().containsKey(rowIndex); }
+
     public void setTurnState(TurnState turnState)   { this.turnState = turnState; }
     public void setGameOver(boolean gameOver)       { this.gameOver = gameOver; }
     public void setVariantData(VariantData vd)      { this.variantData = vd; }

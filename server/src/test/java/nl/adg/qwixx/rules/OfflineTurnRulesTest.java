@@ -134,7 +134,7 @@ class OfflineTurnRulesTest {
         crossEnoughForLock(state, p1, 0);
         rules.apply(state, new DeclareLockIntentAction(p1, 0));
         assertTrue(state.boardState().sheetProgress().get(p1).rowStates().get(0).lockCrossed());
-        assertTrue(state.boardState().closedRows().containsKey(0));
+        assertTrue(state.isRowClosed(0));
     }
 
     @Test

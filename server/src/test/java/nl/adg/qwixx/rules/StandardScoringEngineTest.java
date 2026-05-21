@@ -198,6 +198,97 @@ class StandardScoringEngineTest {
         assertEquals(1, card.crossesPerColor().get(Color.RED));
     }
 
+    // --- null rowState (untouched row) ---
+
+    @Test
+    void untouchedRowContributesNothing() {
+        Row row = new Row();
+        Cell c = cell(Color.RED);
+        row.addCell(c);
+
+        SheetLayout layout = layoutOf(row);
+        // no entry for row 0 → rowState is null
+        SheetProgress progress = progressOf(Map.of(), 0);
+
+        ScoreCard card = engine.calculate(layout, progress);
+
+        assertEquals(0, card.crossesPerColor().get(Color.RED));
+        assertEquals(0, card.total());
+    }
+
+    // --- AutoCross tag ignored at score time ---
+
+    @Test
+    void autoCrossTagHasNoScoreEffect() {
+        Row row = new Row();
+        Cell c = cell(Color.RED, List.of(new CellTag.AutoCross("other-cell-id")));
+        row.addCell(c);
+
+        SheetLayout layout = layoutOf(row);
+        SheetProgress progress = progressOf(Map.of(0, new RowState(Set.of(c.id()), false)), 0);
+
+        ScoreCard card = engine.calculate(layout, progress);
+
+        // only 1 normal cross, no extra crosses or bonus points
+        assertEquals(1, card.crossesPerColor().get(Color.RED));
+        assertEquals(0, card.extraCrosses());
+        assertEquals(0, card.bonusPoints());
+        assertEquals(1, card.total()); // triangular(1) = 1
+    }
+
+    // --- multi-row layout ---
+
+    @Test
+    void crossesAcrossMultipleRowsAreAccumulated() {
+        Row row0 = new Row();
+        Cell r1 = cell(Color.RED);
+        Cell r2 = cell(Color.RED);
+        row0.addCell(r1);
+        row0.addCell(r2);
+
+        Row row1 = new Row();
+        Cell r3 = cell(Color.RED);
+        row1.addCell(r3);
+
+        SheetLayout layout = layoutOf(row0, row1);
+        SheetProgress progress = progressOf(Map.of(
+                0, new RowState(Set.of(r1.id(), r2.id()), false),
+                1, new RowState(Set.of(r3.id()), false)), 0);
+
+        ScoreCard card = engine.calculate(layout, progress);
+
+        // 3 red crosses total → triangular(3) = 6
+        assertEquals(3, card.crossesPerColor().get(Color.RED));
+        assertEquals(6, card.pointsPerColor().get(Color.RED));
+        assertEquals(6, card.total());
+    }
+
+    // --- multiple colors tallied independently ---
+
+    @Test
+    void multipleColorsTalliedIndependently() {
+        Row row = new Row();
+        Cell red  = cell(Color.RED);
+        Cell red2 = cell(Color.RED);
+        Cell blue = cell(Color.BLUE);
+        row.addCell(red);
+        row.addCell(red2);
+        row.addCell(blue);
+
+        SheetLayout layout = layoutOf(row);
+        SheetProgress progress = progressOf(
+                Map.of(0, new RowState(Set.of(red.id(), red2.id(), blue.id()), false)), 0);
+
+        ScoreCard card = engine.calculate(layout, progress);
+
+        // 2 red → triangular(2) = 3, 1 blue → triangular(1) = 1
+        assertEquals(2, card.crossesPerColor().get(Color.RED));
+        assertEquals(3, card.pointsPerColor().get(Color.RED));
+        assertEquals(1, card.crossesPerColor().get(Color.BLUE));
+        assertEquals(1, card.pointsPerColor().get(Color.BLUE));
+        assertEquals(4, card.total());
+    }
+
     // --- combined ---
 
     @Test

@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RowClosureModalComponent, RowClosureRequest } from './row-closure-modal.component';
+import { RowClosureModalComponent, ClosureNotification } from './row-closure-modal.component';
 import { TranslateModule } from '@ngx-translate/core';
 import { Color } from '../../generated/model/color';
 import { DebugElement } from '@angular/core';
@@ -29,7 +29,7 @@ describe('RowClosureModalComponent', () => {
   });
 
   it('should display modal when requests are present', () => {
-    const requests: RowClosureRequest[] = [
+    const requests: ClosureNotification[] = [
       { playerName: 'Player A', rowColor: Color.RED }
     ];
     component.requests = requests;
@@ -39,7 +39,7 @@ describe('RowClosureModalComponent', () => {
   });
 
   it('should display multiple closure requests', () => {
-    const requests: RowClosureRequest[] = [
+    const requests: ClosureNotification[] = [
       { playerName: 'Player A', rowColor: Color.RED },
       { playerName: 'Player B', rowColor: Color.YELLOW },
       { playerName: 'Player C', rowColor: Color.GREEN }
@@ -83,7 +83,7 @@ describe('RowClosureModalComponent', () => {
   });
 
   it('should display color cells with correct classes', () => {
-    const requests: RowClosureRequest[] = [
+    const requests: ClosureNotification[] = [
       { playerName: 'Player A', rowColor: Color.RED },
       { playerName: 'Player B', rowColor: Color.BLUE }
     ];
@@ -95,7 +95,7 @@ describe('RowClosureModalComponent', () => {
   });
 
   it('should display player names correctly', () => {
-    const requests: RowClosureRequest[] = [
+    const requests: ClosureNotification[] = [
       { playerName: 'Alice', rowColor: Color.RED },
       { playerName: 'Bob', rowColor: Color.YELLOW }
     ];
@@ -107,7 +107,7 @@ describe('RowClosureModalComponent', () => {
   });
 
   it('should display all four row colors', () => {
-    const requests: RowClosureRequest[] = [
+    const requests: ClosureNotification[] = [
       { playerName: 'P1', rowColor: Color.RED },
       { playerName: 'P2', rowColor: Color.YELLOW },
       { playerName: 'P3', rowColor: Color.GREEN },
@@ -125,7 +125,7 @@ describe('RowClosureModalComponent', () => {
 
 
   it('should display correct number of request items', () => {
-    const requests: RowClosureRequest[] = [
+    const requests: ClosureNotification[] = [
       { playerName: 'A', rowColor: Color.RED },
       { playerName: 'B', rowColor: Color.YELLOW },
       { playerName: 'C', rowColor: Color.GREEN },
@@ -154,7 +154,7 @@ describe('RowClosureModalComponent', () => {
   });
 
   it('should render modal with correct CSS classes', () => {
-    const requests: RowClosureRequest[] = [
+    const requests: ClosureNotification[] = [
       { playerName: 'Player A', rowColor: Color.RED }
     ];
     component.requests = requests;

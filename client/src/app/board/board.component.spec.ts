@@ -891,7 +891,7 @@ describe('BoardComponent — row-closure modal delegation', () => {
         passiveQueue: string[];
       }): GameState {
         return makeState({
-          rowClosureRequests: [{ playerName: opts.declarantName, rowColor: Color.BLUE }],
+          closureNotifications: [{ playerName: opts.declarantName, rowColor: Color.BLUE }],
           turnState: {
             activePlayerId: opts.activeId,
             phase: TurnPhase.ACTIVE_MOVE,

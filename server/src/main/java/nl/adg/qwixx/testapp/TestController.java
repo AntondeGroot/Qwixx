@@ -4,7 +4,7 @@ import nl.adg.qwixx.data.Color;
 import nl.adg.qwixx.data.RollResult;
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSession;
-import nl.adg.qwixx.state.RowClosureRequest;
+import nl.adg.qwixx.state.ClosureNotification;
 import nl.adg.qwixx.state.RowState;
 import nl.adg.qwixx.web.SseEmitterRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,7 +79,7 @@ public class TestController {
         if (session == null) return ResponseEntity.notFound().build();
 
         Color color = Color.valueOf(rowColor.toUpperCase());
-        session.currentState().rowClosureRequests().add(new RowClosureRequest(UUID.fromString(playerId), color));
+        session.currentState().closureNotifications().add(new ClosureNotification(UUID.fromString(playerId), color));
         session.currentState().incrementVersion();
         sseRegistry.emit(sessionId, session.currentState(), session);
         return ResponseEntity.ok().build();

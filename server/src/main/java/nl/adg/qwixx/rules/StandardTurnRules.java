@@ -18,7 +18,7 @@ import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.state.ActiveTurnState;
 import nl.adg.qwixx.state.BoardState;
 import nl.adg.qwixx.state.GameState;
-import nl.adg.qwixx.state.RowClosureRequest;
+import nl.adg.qwixx.state.ClosureNotification;
 import nl.adg.qwixx.state.RowState;
 import nl.adg.qwixx.state.SheetLayout;
 import nl.adg.qwixx.state.SheetProgress;
@@ -207,7 +207,7 @@ public class StandardTurnRules implements TurnRules {
 
         requireMayDeclareIntent(state, turn, declarerId, rowIndex, isActive);
 
-        boolean isFirstDeclaration = state.rowClosureRequests().isEmpty();
+        boolean isFirstDeclaration = state.pendingClosures().isEmpty();
         recordClosureIntent(state, declarerId, rowIndex);
 
         if (isActive && isFirstDeclaration) {
@@ -239,8 +239,16 @@ public class StandardTurnRules implements TurnRules {
     }
 
     private void recordClosureIntent(GameState state, UUID declarerId, int rowIndex) {
+        registerPendingClosure(state, declarerId, rowIndex);
+        queueClosureNotification(state, declarerId, rowIndex);
+    }
+
+    private void registerPendingClosure(GameState state, UUID declarerId, int rowIndex) {
         state.pendingClosures().put(rowIndex, declarerId);
-        state.rowClosureRequests().add(new RowClosureRequest(declarerId, getLockColor(state, declarerId, rowIndex)));
+    }
+
+    private void queueClosureNotification(GameState state, UUID declarerId, int rowIndex) {
+        state.closureNotifications().add(new ClosureNotification(declarerId, getLockColor(state, declarerId, rowIndex)));
     }
 
     private void applyUndoLastCross(GameState state, UndoLastCrossAction action) {
@@ -270,7 +278,7 @@ public class StandardTurnRules implements TurnRules {
             UUID declarant = state.pendingClosures().get(idx);
             if (playerId.equals(declarant)) {
                 state.pendingClosures().remove(idx);
-                state.rowClosureRequests().removeIf(r -> r.playerId().equals(playerId));
+                state.closureNotifications().removeIf(r -> r.playerId().equals(playerId));
             }
         }
 
@@ -286,7 +294,7 @@ public class StandardTurnRules implements TurnRules {
 
         UUID playerId = action.playerId();
         restoreToSnapshot(state, turn, playerId);
-        cancelPlayerClosingIntents(state, playerId);
+        cancelPlayerRowClosure(state, playerId);
         getProgress(state, playerId).addPunishment();
 
         evaluateOrTransitionToPassiveMove(state, turn);
@@ -312,14 +320,14 @@ public class StandardTurnRules implements TurnRules {
 
     private void revertPlayerProgress(GameState state, TurnState turn, UUID playerId) {
         restoreToSnapshot(state, turn, playerId);
-        cancelPlayerClosingIntents(state, playerId);
+        cancelPlayerRowClosure(state, playerId);
         clearPendingCrosses(turn, playerId);
     }
 
     /** Removes all pending closures and notifications declared by this player this turn. */
-    private void cancelPlayerClosingIntents(GameState state, UUID playerId) {
+    private void cancelPlayerRowClosure(GameState state, UUID playerId) {
         state.pendingClosures().entrySet().removeIf(e -> e.getValue().equals(playerId));
-        state.rowClosureRequests().removeIf(r -> r.playerId().equals(playerId));
+        state.closureNotifications().removeIf(r -> r.playerId().equals(playerId));
     }
 
     private void applyEndTurn(GameState state, EndTurnAction action) {
@@ -424,7 +432,7 @@ public class StandardTurnRules implements TurnRules {
         }
 
         state.pendingClosures().clear();
-        state.rowClosureRequests().clear();
+        state.closureNotifications().clear();
         state.turnState().undoBuffer().clear();
 
         if (isGameOver(state)) {

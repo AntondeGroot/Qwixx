@@ -638,22 +638,22 @@ class MovesApiDelegateImplTest {
     // ── Row Closure Request Tests ─────────────────────────────────────────────
 
     @Test
-    void rowClosureRequestsInitiallyEmpty() throws Exception {
+    void closureNotificationsInitiallyEmpty() throws Exception {
         var gameState = GameRegistry.getGame(sessionId).currentState();
-        assertNotNull(gameState.rowClosureRequests());
-        assertEquals(0, gameState.rowClosureRequests().size());
+        assertNotNull(gameState.closureNotifications());
+        assertEquals(0, gameState.closureNotifications().size());
     }
 
     @Test
-    void rowClosureRequestsClearedOnResetTurn() throws Exception {
+    void closureNotificationsClearedOnResetTurn() throws Exception {
         // Add row closure requests manually (simulating DECLARE_LOCK_INTENT)
         var state = GameRegistry.getGame(sessionId).currentState();
-        state.rowClosureRequests().add(
-            new nl.adg.qwixx.state.RowClosureRequest(alice.id(), nl.adg.qwixx.data.Color.RED)
+        state.closureNotifications().add(
+            new nl.adg.qwixx.state.ClosureNotification(alice.id(), nl.adg.qwixx.data.Color.RED)
         );
 
         // Verify requests populated
-        assertEquals(1, state.rowClosureRequests().size());
+        assertEquals(1, state.closureNotifications().size());
 
         // Reset turn should clear requests
         mvc.perform(post("/moves/{sid}/{pid}", sessionId, alice.id())
@@ -665,7 +665,7 @@ class MovesApiDelegateImplTest {
 
         // Verify cleared
         var afterReset = GameRegistry.getGame(sessionId).currentState();
-        assertEquals(0, afterReset.rowClosureRequests().size());
+        assertEquals(0, afterReset.closureNotifications().size());
     }
 
     @Test

@@ -125,6 +125,51 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.rollingDice() ? this.emptySet : this.clickableCellIds()
   );
 
+  // Cells reachable via the Longo bonus-number path only: white+white equals a bonus
+  // number so the leftmost uncrossed cell in each tied-fewest row gets offered.
+  // Tracked separately so onCellClicked can always send CROSS_WHITE_WHITE for them,
+  // even when their display value also matches a colour-die combination.
+  bonusCellIds = computed((): Set<string> => {
+    const state = this.gameState();
+    const pid   = this.playerId();
+    const turn  = this.turnState();
+    if (!state || !turn?.currentRoll || turn.whiteWhiteUsed) return this.emptySet;
+    if (!this.isMyTurn() || turn.phase !== TurnPhase.ACTIVE_MOVE) return this.emptySet;
+
+    const roll      = turn.currentRoll;
+    const whiteSum  = roll.white1 + roll.white2;
+    const bonusNums: number[] = state.bonusNumbers?.[pid] ?? [];
+    if (!bonusNums.includes(whiteSum)) return this.emptySet;
+
+    const layout    = state.sheetLayouts[pid];
+    const progress  = state.sheetProgress[pid];
+    if (!layout) return this.emptySet;
+    const closedRows = state.closedRows ?? {};
+    const result = new Set<string>();
+
+    let fewest = Infinity;
+    for (const row of layout.rows) {
+      if (closedRows[row.id]) continue;
+      const count = progress?.rowStates[row.id]?.crossedCells?.length ?? 0;
+      if (count < fewest) fewest = count;
+    }
+    if (!isFinite(fewest)) return result;
+
+    for (const row of layout.rows) {
+      if (closedRows[row.id]) continue;
+      const crossed = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
+      if (crossed.size !== fewest) continue;
+      const lastPos = crossed.size > 0
+        ? Math.max(...row.cells.filter(c => crossed.has(c.id)).map(c => c.position))
+        : -1;
+      const leftmost = row.cells
+        .filter(c => !crossed.has(c.id) && c.position > lastPos)
+        .sort((a, b) => a.position - b.position)[0];
+      if (leftmost) result.add(leftmost.id);
+    }
+    return result;
+  });
+
   pendingCellIds = computed(() => {
     const ids = this.gameState()?.turnState?.pendingCrosses?.[this.playerId()] ?? [];
     return new Set<string>(ids);
@@ -558,6 +603,15 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     if (!cell || !row) return;
+
+    // Longo bonus: white+white hit a bonus number so this cell is the leftmost in a
+    // tied-fewest row. Always send as white+white — the colour die must not be consumed
+    // even if the cell's display value also matches a white+colour combination.
+    if (this.bonusCellIds().has(cellId)) {
+      this.audio.play(AudioService.CROSS);
+      this.sendMove({ moveType: MoveType.CROSS_WHITE_WHITE, rowId, cellId });
+      return;
+    }
 
     const req = this.buildCrossMoveRequest(row, cell, rowId, cellId);
     if (req) {

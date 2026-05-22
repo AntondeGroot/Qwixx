@@ -799,6 +799,187 @@ describe('BoardComponent — Longo bonus cells for passive player', () => {
   });
 });
 
+// ── Bonus number takes priority over white+colour (active player) ─────────────
+
+describe('BoardComponent — Longo bonus number priority over colour die', () => {
+  let component: BoardComponent;
+  let mockMoves: { makeMove: ReturnType<typeof vi.fn> };
+
+  // Yellow row: positions 0..2 with values "2", "13", "14"
+  // "13" is also reachable as white(7)+yellow(6) via the colour die.
+  const YELLOW_CELLS = [
+    { id: 'y0', position: 0, displayValue: '2',  color: 'YELLOW', closingEligible: false, tags: [] },
+    { id: 'y1', position: 1, displayValue: '13', color: 'YELLOW', closingEligible: false, tags: [] },
+    { id: 'y2', position: 2, displayValue: '14', color: 'YELLOW', closingEligible: false, tags: [] },
+  ];
+  const RED_CELLS = [
+    { id: 'r0', position: 0, displayValue: '2',  color: 'RED',    closingEligible: false, tags: [] },
+    { id: 'r1', position: 1, displayValue: '13', color: 'RED',    closingEligible: false, tags: [] },
+  ];
+  const BLUE_CELLS = [
+    { id: 'b0', position: 0, displayValue: '7',  color: 'BLUE',   closingEligible: false, tags: [] },
+  ];
+
+  // Active player, white1=5, white2=7, yellow die=6, blue die=2.
+  // white+white = 12 = bonus number.
+  // yellow "13" = white(7)+yellow(6) → also a valid colour-die cross.
+  // blue "7" = white(5)+blue(2) → must remain available after bonus cross.
+  function makeActiveState(overrides: Record<string, unknown> = {}): GameState {
+    return makeState({
+      bonusNumbers: { [PLAYER_ID]: [12] },
+      sheetLayouts: {
+        [PLAYER_ID]: {
+          rows: [
+            { id: 'row-yellow', cells: YELLOW_CELLS, lock: null },
+            { id: 'row-red',    cells: RED_CELLS,    lock: null },
+            { id: 'row-blue',   cells: BLUE_CELLS,   lock: null },
+          ],
+        },
+        [OTHER_ID]: { rows: [] },
+      },
+      sheetProgress: {
+        [PLAYER_ID]: {
+          punishments: 0,
+          rowStates: {
+            'row-yellow': { crossedCells: ['y0'], lockCrossed: false }, // 1 cross
+            'row-red':    { crossedCells: ['r0'], lockCrossed: false }, // 1 cross — tied
+            'row-blue':   { crossedCells: [],     lockCrossed: false }, // 0 crosses
+          },
+        },
+        [OTHER_ID]: { punishments: 0, rowStates: {} },
+      },
+      turnState: {
+        activePlayerId: PLAYER_ID,
+        phase: TurnPhase.ACTIVE_MOVE,
+        currentRoll: { white1: 5, white2: 7, coloredDice: { YELLOW: 6, BLUE: 2 } },
+        whiteWhiteUsed: false,
+        colorDieUsed: false,
+        ...overrides,
+      },
+    } as unknown as Partial<GameState>);
+  }
+
+  beforeEach(async () => {
+    mockMoves = { makeMove: vi.fn().mockReturnValue(of({})) };
+
+    await TestBed.configureTestingModule({
+      imports: [BoardComponent],
+      providers: [
+        { provide: ActivatedRoute,    useValue: { snapshot: { paramMap: { get: () => '' } } } },
+        { provide: GamestatesService, useValue: { getGameState: () => of(makeState()) } },
+        { provide: MovesService,      useValue: mockMoves },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(BoardComponent);
+    component = fixture.componentInstance;
+    component.playerId.set(PLAYER_ID);
+    component.sessionId.set('s1');
+  });
+
+  it('bonusCellIds contains the leftmost uncrossed cell in each tied-fewest row', () => {
+    component.gameState.set(makeActiveState());
+    // blue has 0 crosses (fewest), yellow and red have 1 → only blue is bonus target
+    const ids = component.bonusCellIds();
+    expect(ids.has('b0')).toBe(true);
+    expect(ids.has('y1')).toBe(false);
+    expect(ids.has('r1')).toBe(false);
+  });
+
+  it('bonusCellIds targets all rows tied at fewest', () => {
+    // Give blue one cross so yellow and red (both 1) are now fewest.
+    component.gameState.set(makeActiveState({ }));
+    // Override: blue gets one cross too, so all three rows have 1 cross.
+    component.gameState.set(makeState({
+      bonusNumbers: { [PLAYER_ID]: [12] },
+      sheetLayouts: {
+        [PLAYER_ID]: {
+          rows: [
+            { id: 'row-yellow', cells: YELLOW_CELLS, lock: null },
+            { id: 'row-red',    cells: RED_CELLS,    lock: null },
+          ],
+        },
+        [OTHER_ID]: { rows: [] },
+      },
+      sheetProgress: {
+        [PLAYER_ID]: {
+          punishments: 0,
+          rowStates: {
+            'row-yellow': { crossedCells: ['y0'], lockCrossed: false },
+            'row-red':    { crossedCells: ['r0'], lockCrossed: false },
+          },
+        },
+        [OTHER_ID]: { punishments: 0, rowStates: {} },
+      },
+      turnState: {
+        activePlayerId: PLAYER_ID,
+        phase: TurnPhase.ACTIVE_MOVE,
+        currentRoll: { white1: 5, white2: 7, coloredDice: { YELLOW: 6, BLUE: 2 } },
+        whiteWhiteUsed: false,
+        colorDieUsed: false,
+      },
+    } as unknown as Partial<GameState>));
+    const ids = component.bonusCellIds();
+    expect(ids.has('y1')).toBe(true);  // leftmost uncrossed in yellow (tied)
+    expect(ids.has('r1')).toBe(true);  // leftmost uncrossed in red (tied)
+  });
+
+  it('bonusCellIds is empty when white sum does not match a bonus number', () => {
+    // white1=3, white2=3 → sum=6, not a bonus number
+    component.gameState.set(makeActiveState({
+      currentRoll: { white1: 3, white2: 3, coloredDice: { YELLOW: 6, BLUE: 2 } },
+    }));
+    expect(component.bonusCellIds().size).toBe(0);
+  });
+
+  it('bonusCellIds is empty when whiteWhiteUsed is true', () => {
+    component.gameState.set(makeActiveState({ whiteWhiteUsed: true }));
+    expect(component.bonusCellIds().size).toBe(0);
+  });
+
+  it('onCellClicked sends CROSS_WHITE_WHITE for a bonus cell even when it also matches a colour die', () => {
+    // white(7)+yellow(6)=13 → yellow "y1" matches colour die.
+    // With only blue at fewest crosses, only b0 is in bonusCellIds.
+    // Use the 2-row setup (yellow+red tied) so y1 is in bonusCellIds.
+    component.gameState.set(makeState({
+      bonusNumbers: { [PLAYER_ID]: [12] },
+      sheetLayouts: {
+        [PLAYER_ID]: {
+          rows: [
+            { id: 'row-yellow', cells: YELLOW_CELLS, lock: null },
+            { id: 'row-red',    cells: RED_CELLS,    lock: null },
+          ],
+        },
+        [OTHER_ID]: { rows: [] },
+      },
+      sheetProgress: {
+        [PLAYER_ID]: {
+          punishments: 0,
+          rowStates: {
+            'row-yellow': { crossedCells: ['y0'], lockCrossed: false },
+            'row-red':    { crossedCells: ['r0'], lockCrossed: false },
+          },
+        },
+        [OTHER_ID]: { punishments: 0, rowStates: {} },
+      },
+      turnState: {
+        activePlayerId: PLAYER_ID,
+        phase: TurnPhase.ACTIVE_MOVE,
+        currentRoll: { white1: 5, white2: 7, coloredDice: { YELLOW: 6, BLUE: 2 } },
+        whiteWhiteUsed: false,
+        colorDieUsed: false,
+      },
+    } as unknown as Partial<GameState>));
+
+    component.onCellClicked('row-yellow', 'y1');
+
+    expect(mockMoves.makeMove).toHaveBeenCalledWith(
+      's1', PLAYER_ID,
+      expect.objectContaining({ moveType: MoveType.CROSS_WHITE_WHITE, rowId: 'row-yellow', cellId: 'y1' }),
+    );
+  });
+});
+
 // ── Modal delegation — position:fixed / CSS transform regression ─────────────
 // Kept in a separate top-level describe so its beforeEach can call
 // configureTestingModule independently of the describe block above.

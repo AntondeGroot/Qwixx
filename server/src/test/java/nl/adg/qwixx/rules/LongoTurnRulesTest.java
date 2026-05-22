@@ -376,6 +376,66 @@ class LongoTurnRulesTest {
                 "Bonus must offer YELLOW position 3 ('5') — leftmost available in YELLOW (tied for fewest)");
     }
 
+    @Test
+    void bonusCrossDoesNotConsumeColorDieEvenWhenCellValueMatchesWhiteColorSum() {
+        // Scenario from the bug report:
+        //   white1=3, white2=4 (sum=7=bonus number), yellow die=3.
+        //   YELLOW position 4 has value "6" = white1 + yellow die (3+3).
+        //   This cell qualifies as BOTH a bonus cross (leftmost in tied-fewest row)
+        //   AND a colour-die cross (white1+yellow=6).
+        //
+        // A client that mistakes it for a colour-die cross and sends WHITE_COLOR
+        // would consume colorDieUsed, preventing cells like yellow "7" (white2+yellow=7)
+        // from being available.  The correct path is WHITE_WHITE (bonus), leaving
+        // colorDieUsed unchanged.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        state.setVariantData(new LongoVariantData(Map.of(p1, List.of(FIXED_WHITE_SUM)))); // bonus=7
+
+        SheetLayout layout = state.sheetLayouts().get(p1);
+        SheetProgress prog  = state.boardState().sheetProgress().get(p1);
+
+        // YELLOW (index 1): 4 crosses at positions 0–3; position 4 (value "6") is leftmost uncrossed.
+        Set<String> yellowCrossed = new HashSet<>();
+        for (int i = 0; i < 4; i++) yellowCrossed.add(layout.rows().get(1).cells().get(i).id());
+        prog.updateRowState(1, new RowState(yellowCrossed, false));
+
+        // RED, GREEN, BLUE: 5 crosses each so YELLOW (4) is fewest.
+        for (int rowIdx : new int[]{0, 2, 3}) {
+            Set<String> crossed = new HashSet<>();
+            for (int i = 0; i < 5; i++) crossed.add(layout.rows().get(rowIdx).cells().get(i).id());
+            prog.updateRowState(rowIdx, new RowState(crossed, false));
+        }
+
+        // Bonus cell = YELLOW position 4 (display value "6" = 4+2 = position+2 for ascending row).
+        String bonusCell  = layout.rows().get(1).cells().get(4).id();
+        // Colour-die cell still available = YELLOW position 5 (value "7" = white2+yellow = 4+3).
+        String yellowSeven = layout.rows().get(1).cells().get(5).id();
+
+        // Server must expose the bonus cell as WHITE_WHITE even though value "6" also matches
+        // WHITE_COLOR (white1+yellow = 3+3 = 6).
+        assertTrue(
+                rules.getValidActions(state, p1).stream()
+                     .anyMatch(a -> a instanceof CrossCellAction cc
+                             && cc.cellId().equals(bonusCell)
+                             && cc.combination() == DiceCombination.WHITE_WHITE),
+                "Bonus cell '6' must appear as WHITE_WHITE even though white1+yellow also equals 6");
+
+        // Apply the bonus cross via WHITE_WHITE.
+        rules.apply(state, new CrossCellAction(p1, 1, bonusCell, DiceCombination.WHITE_WHITE));
+
+        // colorDieUsed must be false — only whiteWhiteUsed was consumed.
+        assertFalse(state.turnState().activeTurnState().colorDieUsed(),
+                "Bonus cross (WHITE_WHITE) must not set colorDieUsed");
+
+        // Yellow "7" (white2+yellow=4+3) must still be available as a colour-die cross.
+        assertTrue(
+                rules.getValidActions(state, p1).stream()
+                     .anyMatch(a -> a instanceof CrossCellAction cc
+                             && cc.cellId().equals(yellowSeven)
+                             && cc.combination() == DiceCombination.WHITE_COLOR),
+                "Yellow '7' must still be available via colour die (WHITE_COLOR) after bonus cross");
+    }
+
     // --- lock config from factory ---
 
     @Test

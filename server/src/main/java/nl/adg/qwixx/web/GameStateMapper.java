@@ -56,7 +56,7 @@ class GameStateMapper {
                 .closedRows(mapClosedRows(state))
                 .activeDiceColors(mapActiveDiceColors(board))
                 .bonusNumbers(mapBonusNumbers(state))
-                .rowClosureRequests(mapRowClosureRequests(state, session))
+                .closureNotifications(mapClosureNotifications(state, session))
                 .pendingClosures(mapPendingClosures(state));
     }
 
@@ -228,15 +228,15 @@ class GameStateMapper {
         return result;
     }
 
-    private static List<RowClosureRequest> mapRowClosureRequests(
+    private static List<ClosureNotification> mapClosureNotifications(
             GameState state, GameSession session) {
         Map<UUID, Player> playerIndex = session.players().stream()
                 .collect(Collectors.toMap(Player::id, Function.identity()));
-        return state.rowClosureRequests().stream()
+        return state.closureNotifications().stream()
                 .map(req -> {
                     Player p = playerIndex.get(req.playerId());
                     String name = p != null ? p.name() : req.playerId().toString();
-                    return new RowClosureRequest(
+                    return new ClosureNotification(
                             name,
                             nl.adg.qwixx.generated.model.Color.fromValue(req.rowColor().name()));
                 })

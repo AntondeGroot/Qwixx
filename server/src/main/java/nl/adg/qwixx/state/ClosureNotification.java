@@ -4,7 +4,7 @@ import nl.adg.qwixx.data.Color;
 
 import java.util.UUID;
 
-public record RowClosureRequest(
+public record ClosureNotification(
     UUID playerId,
     Color rowColor
 ) {}

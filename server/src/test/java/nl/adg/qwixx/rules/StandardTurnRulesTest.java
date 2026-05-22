@@ -998,28 +998,28 @@ class StandardTurnRulesTest {
     // ── rowClosureRequests clearing ───────────────────────────────────────────
 
     @Test
-    void rowClosureRequestsClearedAfterEvaluate() {
-        // rowClosureRequests must be cleared when EVALUATE fires.
+    void closureNotificationsClearedAfterEvaluate() {
+        // closureNotifications must be cleared when EVALUATE fires.
         GameState state = stateAfterRoll(p1, p1, p2);
         crossEnoughForLock(state, p1, 0);
         rules.apply(state, new DeclareLockIntentAction(p1, 0));
-        assertFalse(state.rowClosureRequests().isEmpty(), "request must be present before evaluate");
+        assertFalse(state.closureNotifications().isEmpty(), "request must be present before evaluate");
         rules.apply(state, firstCrossAction(state, p1)); // must cross to EndTurn
         rules.apply(state, new EndTurnAction(p1));
         rules.apply(state, new EndTurnAction(p2)); // EVALUATE
-        assertEquals(0, state.rowClosureRequests().size(),
-                "rowClosureRequests must be cleared after EVALUATE");
+        assertEquals(0, state.closureNotifications().size(),
+                "closureNotifications must be cleared after EVALUATE");
     }
 
     @Test
-    void rowClosureRequestsClearedWhenActivePlayerResets() {
+    void closureNotificationsClearedWhenActivePlayerResets() {
         GameState state = stateAfterRoll(p1, p1, p2);
         crossEnoughForLock(state, p1, 0);
         rules.apply(state, new DeclareLockIntentAction(p1, 0));
-        assertFalse(state.rowClosureRequests().isEmpty());
+        assertFalse(state.closureNotifications().isEmpty());
         rules.apply(state, new ResetTurnAction(p1));
-        assertEquals(0, state.rowClosureRequests().size(),
-                "rowClosureRequests must be cleared when active player resets");
+        assertEquals(0, state.closureNotifications().size(),
+                "closureNotifications must be cleared when active player resets");
     }
 
     // ── Turn advancement after lock ───────────────────────────────────────────

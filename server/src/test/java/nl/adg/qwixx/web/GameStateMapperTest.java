@@ -158,60 +158,60 @@ class GameStateMapperTest {
     }
 
     @Test
-    void toDtoRowClosureRequestsIsEmptyAtStart() {
+    void toDtoClosureNotificationsIsEmptyAtStart() {
         var dto = toDto();
-        assertNotNull(dto.getRowClosureRequests());
-        assertTrue(dto.getRowClosureRequests().isEmpty());
+        assertNotNull(dto.getClosureNotifications());
+        assertTrue(dto.getClosureNotifications().isEmpty());
     }
 
     @Test
-    void toDtoRowClosureRequestsMappedCorrectly() {
+    void toDtoClosureNotificationsMappedCorrectly() {
         // Manually add row closure requests to the internal state using player UUIDs.
         // The mapper looks up the player name from the session.
         var state = GameRegistry.getGame(sessionId).currentState();
-        state.rowClosureRequests().add(
-            new nl.adg.qwixx.state.RowClosureRequest(alice.id(), nl.adg.qwixx.data.Color.RED)
+        state.closureNotifications().add(
+            new nl.adg.qwixx.state.ClosureNotification(alice.id(), nl.adg.qwixx.data.Color.RED)
         );
-        state.rowClosureRequests().add(
-            new nl.adg.qwixx.state.RowClosureRequest(bob.id(), nl.adg.qwixx.data.Color.YELLOW)
+        state.closureNotifications().add(
+            new nl.adg.qwixx.state.ClosureNotification(bob.id(), nl.adg.qwixx.data.Color.YELLOW)
         );
 
         var dto = GameStateMapper.toDto(state, GameRegistry.getGame(sessionId));
 
-        assertNotNull(dto.getRowClosureRequests());
-        assertEquals(2, dto.getRowClosureRequests().size());
+        assertNotNull(dto.getClosureNotifications());
+        assertEquals(2, dto.getClosureNotifications().size());
 
         // Check first request
-        assertEquals("Alice", dto.getRowClosureRequests().get(0).getPlayerName());
-        assertEquals(nl.adg.qwixx.generated.model.Color.RED, dto.getRowClosureRequests().get(0).getRowColor());
+        assertEquals("Alice", dto.getClosureNotifications().get(0).getPlayerName());
+        assertEquals(nl.adg.qwixx.generated.model.Color.RED, dto.getClosureNotifications().get(0).getRowColor());
 
         // Check second request
-        assertEquals("Bob", dto.getRowClosureRequests().get(1).getPlayerName());
-        assertEquals(nl.adg.qwixx.generated.model.Color.YELLOW, dto.getRowClosureRequests().get(1).getRowColor());
+        assertEquals("Bob", dto.getClosureNotifications().get(1).getPlayerName());
+        assertEquals(nl.adg.qwixx.generated.model.Color.YELLOW, dto.getClosureNotifications().get(1).getRowColor());
     }
 
     @Test
-    void toDtoRowClosureRequestsAllColorsSupported() {
+    void toDtoClosureNotificationsAllColorsSupported() {
         var state = GameRegistry.getGame(sessionId).currentState();
         // Use alice's UUID for all requests; the mapper resolves to the player's name.
-        state.rowClosureRequests().add(
-            new nl.adg.qwixx.state.RowClosureRequest(alice.id(), nl.adg.qwixx.data.Color.RED)
+        state.closureNotifications().add(
+            new nl.adg.qwixx.state.ClosureNotification(alice.id(), nl.adg.qwixx.data.Color.RED)
         );
-        state.rowClosureRequests().add(
-            new nl.adg.qwixx.state.RowClosureRequest(alice.id(), nl.adg.qwixx.data.Color.YELLOW)
+        state.closureNotifications().add(
+            new nl.adg.qwixx.state.ClosureNotification(alice.id(), nl.adg.qwixx.data.Color.YELLOW)
         );
-        state.rowClosureRequests().add(
-            new nl.adg.qwixx.state.RowClosureRequest(alice.id(), nl.adg.qwixx.data.Color.GREEN)
+        state.closureNotifications().add(
+            new nl.adg.qwixx.state.ClosureNotification(alice.id(), nl.adg.qwixx.data.Color.GREEN)
         );
-        state.rowClosureRequests().add(
-            new nl.adg.qwixx.state.RowClosureRequest(alice.id(), nl.adg.qwixx.data.Color.BLUE)
+        state.closureNotifications().add(
+            new nl.adg.qwixx.state.ClosureNotification(alice.id(), nl.adg.qwixx.data.Color.BLUE)
         );
 
         var dto = GameStateMapper.toDto(state, GameRegistry.getGame(sessionId));
 
-        assertEquals(4, dto.getRowClosureRequests().size());
-        var colors = dto.getRowClosureRequests().stream()
-            .map(nl.adg.qwixx.generated.model.RowClosureRequest::getRowColor)
+        assertEquals(4, dto.getClosureNotifications().size());
+        var colors = dto.getClosureNotifications().stream()
+            .map(nl.adg.qwixx.generated.model.ClosureNotification::getRowColor)
             .toList();
         assertTrue(colors.contains(nl.adg.qwixx.generated.model.Color.RED));
         assertTrue(colors.contains(nl.adg.qwixx.generated.model.Color.YELLOW));

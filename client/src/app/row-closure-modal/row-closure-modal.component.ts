@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { Color } from '../../generated/model/color';
 
-export interface RowClosureRequest {
+export interface ClosureNotification {
   playerName: string;
   rowColor: Color;
 }
@@ -16,7 +16,7 @@ export interface RowClosureRequest {
   styleUrl: './row-closure-modal.component.css'
 })
 export class RowClosureModalComponent {
-  @Input() requests: RowClosureRequest[] = [];
+  @Input() requests: ClosureNotification[] = [];
   @Input() hasPendingCross = false;
   // When false (active player), the confirm button just dismisses so the player can continue their turn.
   @Input() confirmEndsRound = false;

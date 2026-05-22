@@ -19,7 +19,7 @@ import { TurnPhase } from '../../generated/model/turnPhase';
 import { DiceComponent } from '../dice/dice.component';
 import { PlayerListComponent } from '../player-list/player-list.component';
 import { RowComponent } from '../row/row.component';
-import { RowClosureRequest } from '../row-closure-modal/row-closure-modal.component';
+import { ClosureNotification } from '../row-closure-modal/row-closure-modal.component';
 import { RowClosureModalService } from '../services/row-closure-modal.service';
 import { AudioService } from '../services/audio.service';
 
@@ -58,7 +58,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   // outside the board's CSS transform (which would break position:fixed on mobile).
   private readonly _modalSync = effect(() => {
     const myName = this.playerName(this.playerId());
-    const allRequests = this.gameState()?.rowClosureRequests ?? [];
+    const allRequests = this.gameState()?.closureNotifications ?? [];
     // Show requests from OTHER players only — the declarant never sees their own notification.
     // All players (active and passive) can receive notifications, not just passives.
     const requests = allRequests.filter(r => r.playerName !== myName);
@@ -281,11 +281,11 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   });
 
   // True when this player has declared a lock intent that is currently pending.
-  // Derived from rowClosureRequests so it works even when no cell was crossed this turn
+  // Derived from closureNotifications so it works even when no cell was crossed this turn
   // (e.g. the player clicked the lock button directly).
   isDeclarantInLockPending = computed(() => {
     const myName = this.playerName(this.playerId());
-    return (this.gameState()?.rowClosureRequests ?? []).some(r => r.playerName === myName);
+    return (this.gameState()?.closureNotifications ?? []).some(r => r.playerName === myName);
   });
 
   // Row IDs where this player is the pending declarant — used to show the lock ✕
@@ -297,7 +297,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const layout = state.sheetLayouts[this.playerId()];
     if (!layout) return new Set();
     const result = new Set<string>();
-    for (const req of state.rowClosureRequests ?? []) {
+    for (const req of state.closureNotifications ?? []) {
       if (req.playerName !== myName) continue;
       const row = layout.rows.find(r => r.lock?.color === req.rowColor);
       if (row) result.add(row.id);

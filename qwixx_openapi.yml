@@ -352,7 +352,7 @@ components:
         - GREEN
         - BLUE
 
-    RowClosureRequest:
+    ClosureNotification:
       type: object
       required:
         - playerName
@@ -614,10 +614,10 @@ components:
             type: array
             items:
               type: integer
-        rowClosureRequests:
+        closureNotifications:
           type: array
           items:
-            $ref: '#/components/schemas/RowClosureRequest'
+            $ref: '#/components/schemas/ClosureNotification'
           description: Pending row closure notifications for the UI.
         pendingClosures:
           type: object

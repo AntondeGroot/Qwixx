@@ -16,7 +16,7 @@ public class GameState {
     Map<UUID, SheetLayout> sheetLayouts;   // static layout per player
     BoardState             boardState;
     TurnState              turnState;
-    List<RowClosureRequest> rowClosureRequests; // pending row closure notifications (UI)
+    List<ClosureNotification> closureNotifications; // pending row closure notifications (UI)
     Map<Integer, UUID>     pendingClosures;     // rows queued to close at EVALUATE: rowIndex → declarerId
     boolean                gameOver;
     long                   version;        // increments on every applyAction
@@ -30,7 +30,7 @@ public class GameState {
         this.sheetLayouts     = sheetLayouts;
         this.boardState       = boardState;
         this.turnState        = turnState;
-        this.rowClosureRequests = new ArrayList<>();
+        this.closureNotifications = new ArrayList<>();
         this.pendingClosures  = new HashMap<>();
         this.gameOver         = false;
         this.version          = 0;
@@ -42,7 +42,7 @@ public class GameState {
     public Map<UUID, SheetLayout> sheetLayouts()      { return sheetLayouts; }
     public BoardState boardState()                    { return boardState; }
     public TurnState turnState()                      { return turnState; }
-    public List<RowClosureRequest> rowClosureRequests() { return rowClosureRequests; }
+    public List<ClosureNotification> closureNotifications() { return closureNotifications; }
     public Map<Integer, UUID> pendingClosures()       { return pendingClosures; }
     public boolean gameOver()                         { return gameOver; }
     public long version()                             { return version; }

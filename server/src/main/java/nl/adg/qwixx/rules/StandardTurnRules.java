@@ -133,14 +133,18 @@ public class StandardTurnRules implements TurnRules {
         passive.remove(action.playerId());
         turn.setPassivePlayerQueue(passive);
 
+        turn.setMoveStartProgress(snapshotProgress(state));
+        turn.setUndoBuffer(new HashMap<>());
+
+        turn.setPhase(TurnPhase.ACTIVE_MOVE);
+    }
+
+    private Map<UUID, SheetProgress> snapshotProgress(GameState state) {
         Map<UUID, SheetProgress> snap = new HashMap<>();
         for (UUID pid : state.players()) {
             snap.put(pid, deepCopy(getProgress(state, pid)));
         }
-        turn.setMoveStartProgress(snap);
-        turn.setUndoBuffer(new HashMap<>());
-
-        turn.setPhase(TurnPhase.ACTIVE_MOVE);
+        return snap;
     }
 
     private void applyCrossCell(GameState state, CrossCellAction action) {
@@ -212,7 +216,7 @@ public class StandardTurnRules implements TurnRules {
             // declaration is cleared but later declarations (from other players) remain, so
             // isFirstDeclaration = false — preventing players who have fully acted from being
             // forced to act a second time.
-            reQueueEjectedPassivePlayers(state, turn);
+            restorePassivesToQueue(state, turn);
         } else if (!isActive) {
             turn.passivesActed().add(declarerId);
         }
@@ -285,14 +289,7 @@ public class StandardTurnRules implements TurnRules {
         cancelPlayerClosingIntents(state, playerId);
         getProgress(state, playerId).addPunishment();
 
-        List<UUID> pendingPassives = new ArrayList<>(turn.passivePlayerQueue());
-
-        if (pendingPassives.isEmpty()) {
-            evaluate(state);
-        } else {
-            turn.setPassivePlayerQueue(pendingPassives);
-            turn.setPhase(TurnPhase.PASSIVE_MOVE);
-        }
+        evaluateOrTransitionToPassiveMove(state, turn);
     }
 
     private void applyResetTurn(GameState state, ResetTurnAction action) {
@@ -339,25 +336,23 @@ public class StandardTurnRules implements TurnRules {
 
     private void endTurnInActiveMove(GameState state, TurnState turn, UUID playerId, boolean isActive) {
         if (isActive) {
-            ActiveTurnState activePlayer = turn.activeTurnState();
-            if (!activePlayer.hasActed())
+            if (!turn.activeTurnState().hasActed())
                 throw new IllegalMoveException("must make at least one move before ending turn");
             autoDetectClosingIntent(state, turn, playerId);
-            if (turn.passivePlayerQueue().isEmpty()) {
-                evaluate(state);
-                // Clear after evaluate so canCrossLock can still see this player's pending
-                // crosses when deciding whether non-declarant players qualify for the lock cross.
-                clearPendingCrosses(turn, playerId);
-            } else {
-                // Don't clear: evaluate runs later (last passive's endTurn), at which point
-                // evaluate() replaces the whole TurnState — naturally discarding all buffers.
-                turn.setPhase(TurnPhase.PASSIVE_MOVE);
-            }
+            evaluateOrTransitionToPassiveMove(state, turn);
         } else {
             if (!turn.passivePlayerQueue().contains(playerId))
                 throw new IllegalMoveException("player not in passive queue");
             autoDetectClosingIntent(state, turn, playerId);
             turn.passivePlayerQueue().remove(playerId);
+        }
+    }
+
+    private void evaluateOrTransitionToPassiveMove(GameState state, TurnState turn) {
+        if (turn.passivePlayerQueue().isEmpty()) {
+            evaluate(state);
+        } else {
+            turn.setPhase(TurnPhase.PASSIVE_MOVE);
         }
     }
 
@@ -367,22 +362,19 @@ public class StandardTurnRules implements TurnRules {
         autoDetectClosingIntent(state, turn, playerId);
         turn.passivePlayerQueue().remove(playerId);
         if (turn.passivePlayerQueue().isEmpty()) {
-            UUID activeId = turn.activePlayerId();
-            if (playerId.equals(activeId)) {
-                // The active player was re-queued for a final look and is now passing.
-                // Run evaluate directly — no further re-check.
-                evaluate(state);
-            } else if (activePlayerCouldClaimAnyPendingRow(state, activeId)) {
-                // Before evaluating, give the active player a last look so they can
-                // revert (RESET_TURN) or proceed (PASS) on the newly declared rows.
-                turn.passivePlayerQueue().add(activeId);
-            } else {
-                evaluate(state);
-            }
+            handleEmptyPassiveQueue(state, turn, playerId);
         }
-        // Clear after evaluate so that canCrossLock can still read this player's pending
-        // crosses when deciding whether non-declarant players qualify for the lock cross.
         clearPendingCrosses(turn, playerId);
+    }
+
+    private void handleEmptyPassiveQueue(GameState state, TurnState turn, UUID playerId) {
+        UUID activeId = turn.activePlayerId();
+        if (!playerId.equals(activeId) && activePlayerCouldClaimAnyPendingRow(state, activeId)) {
+            // Give the active player a last look so they can revert or pass on newly declared rows.
+            turn.passivePlayerQueue().add(activeId);
+        } else {
+            evaluate(state);
+        }
     }
 
     /**
@@ -413,8 +405,7 @@ public class StandardTurnRules implements TurnRules {
         SheetLayout layout = getLayout(state, playerId);
         for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
             if (qualifiesForAutoClose(state, playerId, rowIndex)) {
-                state.pendingClosures().put(rowIndex, playerId);
-                state.rowClosureRequests().add(new RowClosureRequest(playerId, getLockColor(state, playerId, rowIndex)));
+                recordClosureIntent(state, playerId, rowIndex);
             }
         }
     }
@@ -434,16 +425,20 @@ public class StandardTurnRules implements TurnRules {
 
         state.pendingClosures().clear();
         state.rowClosureRequests().clear();
+        state.turnState().undoBuffer().clear();
 
         if (isGameOver(state)) {
             state.setGameOver(true);
             return;
         }
 
+        advanceToNextPlayer(state);
+    }
+
+    private void advanceToNextPlayer(GameState state) {
         List<UUID> players = state.players();
         UUID active = state.turnState().activePlayerId();
-        int idx = players.indexOf(active);
-        UUID next = players.get((idx + 1) % players.size());
+        UUID next = players.get((players.indexOf(active) + 1) % players.size());
 
         TurnState nextTurn = new TurnState();
         nextTurn.setActivePlayerId(next);
@@ -685,7 +680,7 @@ public class StandardTurnRules implements TurnRules {
 
     // ── Named operations ──────────────────────────────────────────────────────
 
-    private void reQueueEjectedPassivePlayers(GameState state, TurnState turn) {
+    private void restorePassivesToQueue(GameState state, TurnState turn) {
         UUID activeId = turn.activePlayerId();
         for (UUID pid : state.players()) {
             if (!pid.equals(activeId) && !turn.passivePlayerQueue().contains(pid)) {

@@ -2,6 +2,7 @@ package nl.adg.qwixx.rules;
 
 import static nl.adg.qwixx.rules.CellCrosser.getRowState;
 import static nl.adg.qwixx.rules.CellCrosser.isReachableCell;
+import static nl.adg.qwixx.rules.RowClosureEvaluator.*;
 
 import nl.adg.qwixx.action.CrossCellAction;
 import nl.adg.qwixx.action.DeclareLockIntentAction;
@@ -98,7 +99,7 @@ public class OfflineTurnRules extends StandardTurnRules {
         if (row.lock() == null) return false;
         RowState rowState = getRowState(prog, rowIndex);
         if (rowState.lockCrossed()) return false;
-        if (!hasEnoughNonClosingCrosses(state, playerId, rowIndex, rowState.crossedCells())) return false;
+        if (!hasEnoughNonClosingCrosses(state, playerId, rowIndex, rowState.crossedCells(), getMinCrossesRequired())) return false;
         return playerHasCrossedAClosingCell(state, playerId, rowIndex, rowState.crossedCells());
     }
 }

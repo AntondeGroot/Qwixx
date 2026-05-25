@@ -665,6 +665,16 @@ components:
         maxValue:
           type: integer
           description: Maximum value — only relevant for INTEGER type.
+        adminOnly:
+          type: boolean
+          description: When true, this option is hidden from regular users and only shown to administrators.
+        incompatibleWith:
+          type: array
+          items:
+            type: string
+          description: >
+            Keys of other options that cannot be active at the same time as this one.
+            The client should disable these options when this one is enabled, and vice versa.
 
     CellTag:
       type: object
@@ -673,13 +683,16 @@ components:
       properties:
         type:
           type: string
-          enum: [EXTRA_BUCKET, AUTO_CROSS, BONUS_POINTS, DOUBLE_CROSS]
+          enum: [EXTRA_BUCKET, AUTO_CROSS, BONUS_POINTS, DOUBLE_CROSS, SECONDARY_COLOR]
         target:
           type: string
           description: Target cell ID — only present for AUTO_CROSS.
         amount:
           type: integer
           description: Bonus point amount — only present for BONUS_POINTS.
+        secondaryColor:
+          type: string
+          description: Second scoring colour — only present for SECONDARY_COLOR (Big Points bonus cells).
 
     SheetCell:
       type: object
@@ -745,6 +758,23 @@ components:
             $ref: '#/components/schemas/SheetCell'
         lock:
           $ref: '#/components/schemas/LockConfig'
+        bonusRow:
+          type: boolean
+          default: false
+          description: >
+            True when this row is a scoring bonus row (e.g. Big Points) that should
+            not appear as a separate colour column in the score animation.
+            Its points are already captured in the dedicated bonusPoints field of ScoreCard.
+        upperNeighbourRowId:
+          type: string
+          description: >
+            For bonus rows only: the ID of the upper neighbouring colour row.
+            A bonus cell may only be played when its display value is crossed in at least
+            one of the two neighbouring rows.
+        lowerNeighbourRowId:
+          type: string
+          description: >
+            For bonus rows only: the ID of the lower neighbouring colour row.
 
     SheetLayout:
       type: object

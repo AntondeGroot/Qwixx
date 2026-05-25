@@ -18,6 +18,8 @@
     "gameModeDescription": "ONLINE applique l'ordre des tours et les règles de dés sur le serveur. OFFLINE permet aux joueurs d'utiliser de vrais dés.",
     "cardMode": "Tous les joueurs reçoivent",
     "cardModeDescription": "Certaines options (comme Rangée supplémentaire) génèrent toujours une disposition unique par joueur et ignorent ce réglage.",
+    "bigPoints": "Big Points",
+    "bigPointsDescription": "Ajoute deux rangées bonus. Vous pouvez cocher une case UNIQUEMENT si vous avez déjà une croix au-dessus ou en dessous. Une croix dans ces rangées compte pour les deux rangées de couleur. Le nombre maximum de croix est limité au nombre de cases dans une rangée.",
     "randomOrder": "Ordre aléatoire",
     "randomOrderDescription": "Mélanger les valeurs d'affichage dans chaque ligne.",
     "extraRow": "Rangée supplémentaire",

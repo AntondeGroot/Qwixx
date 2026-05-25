@@ -40,7 +40,11 @@ export class SettingsComponent implements OnInit, OnDestroy {
     return !!this.sessionId() && !!this.playerId();
   }
 
+  isAdmin        = signal(false);
   gameOptions    = signal<GameOption[]>([]);
+  availableGameOptions = computed(() =>
+    this.gameOptions().filter(o => !o.adminOnly || this.isAdmin())
+  );
   lobbyPlayers   = signal<{id:string,name:string}[]>([]);
   maxPlayers     = signal<number>(99);
   previewLayout  = signal<SheetLayout | null>(null);
@@ -60,6 +64,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
   readonly TypeEnum = GameOption.TypeEnum;
 
   ngOnInit() {
+    this.isAdmin.set(this.route.snapshot.queryParamMap.get('admin') === '1');
+
     // Query params are authoritative; fall back to sessionStorage written by newGame().
     this.sessionId.set(
       this.route.snapshot.queryParamMap.get('sessionId') ||
@@ -83,6 +89,16 @@ export class SettingsComponent implements OnInit, OnDestroy {
         ));
       }
       this.gameOptions.set(opts);
+      const wiredPairs = new Set<string>();
+      for (const opt of opts) {
+        for (const other of opt.incompatibleWith ?? []) {
+          const pairKey = [opt.key, other].sort().join('|');
+          if (!wiredPairs.has(pairKey)) {
+            wiredPairs.add(pairKey);
+            this.setupMutualExclusion(opt.key, other);
+          }
+        }
+      }
       this.fetchPreview();
 
       // Keep botCount signal in sync with the form for all modes
@@ -154,11 +170,51 @@ export class SettingsComponent implements OnInit, OnDestroy {
       if (ctrl && ctrl.value !== value) ctrl.setValue(value, { emitEvent: false });
     }
     this.suppressLobbySync = false;
+    // setValue above used emitEvent:false so valueChanges didn't fire — re-enforce manually.
+    this.enforceMutualExclusions();
     this.fetchPreview();
   }
 
+  private mutualExclusionPairs: [string, string][] = [];
+
+  // Registers a mutually exclusive pair and immediately enforces the current state.
+  // Also re-enforces whenever either control changes.
+  private setupMutualExclusion(keyA: string, keyB: string): void {
+    const ctrlA = this.form.get(keyA);
+    const ctrlB = this.form.get(keyB);
+    if (!ctrlA || !ctrlB) return;
+
+    this.mutualExclusionPairs.push([keyA, keyB]);
+    this.enforceMutualExclusions();
+
+    ctrlA.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.enforceMutualExclusions());
+    ctrlB.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.enforceMutualExclusions());
+  }
+
+  // Applies all registered mutual exclusions based on current control values.
+  // Must be called after any setValue({ emitEvent: false }) path (e.g. lobby sync).
+  private enforceMutualExclusions(): void {
+    for (const [keyA, keyB] of this.mutualExclusionPairs) {
+      const ctrlA = this.form.get(keyA);
+      const ctrlB = this.form.get(keyB);
+      if (!ctrlA || !ctrlB) continue;
+      if (ctrlA.value) {
+        ctrlB.setValue(false, { emitEvent: false });
+        ctrlB.disable({ emitEvent: false });
+      } else if (ctrlB.value) {
+        ctrlA.setValue(false, { emitEvent: false });
+        ctrlA.disable({ emitEvent: false });
+      } else {
+        ctrlA.enable({ emitEvent: false });
+        ctrlB.enable({ emitEvent: false });
+      }
+    }
+  }
+
   private buildGameOptions(): Record<string, unknown> {
-    const values = this.form.value;
+    const values = this.form.getRawValue();
     const opts: Record<string, unknown> = {};
     for (const opt of this.gameOptions()) {
       opts[opt.key] = values[opt.key];

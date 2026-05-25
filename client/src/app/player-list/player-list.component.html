@@ -25,16 +25,21 @@
       <div class="mini-sheet">
         @for (row of rowsFor(player.id); track row.id) {
           <div class="mini-row" [attr.data-color]="row.cells[0]?.color"
-               [class.row-closed]="isRowClosed(row.id)">
+               [class.row-closed]="isRowClosed(row.id)"
+               [style.--mini-primary]="colorHex[row.cells[0]?.color ?? '']"
+               [style.--mini-secondary]="colorHex[secondaryColorOf(row.cells[0]) ?? '']">
             @for (cell of row.cells; track cell.id) {
               <div class="mini-cell"
+                   [class.mini-cell-big-points]="row.bonusRow"
                    [class.crossed]="isCrossed(player.id, row.id, cell.id)"
                    [class.closing-eligible]="cell.closingEligible"></div>
             }
-            <div class="mini-lock">
-              <img src="lock_icon.svg" alt="" class="mini-lock-icon"
-                   [class.lock-crossed]="sheetProgress()[player.id]?.rowStates?.[row.id]?.lockCrossed" />
-            </div>
+            @if (row.lock) {
+              <div class="mini-lock">
+                <img src="lock_icon.svg" alt="" class="mini-lock-icon"
+                     [class.lock-crossed]="sheetProgress()[player.id]?.rowStates?.[row.id]?.lockCrossed" />
+              </div>
+            }
           </div>
         }
       </div>

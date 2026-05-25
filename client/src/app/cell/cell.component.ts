@@ -5,7 +5,11 @@ import { CellTag } from '../../generated/model/cellTag';
 @Component({
   selector: 'app-cell',
   templateUrl: './cell.component.html',
-  styleUrl: './cell.component.css'
+  styleUrl: './cell.component.css',
+  host: {
+    '[class.host-big-points-clickable]': '!!secondaryColor() && !!(showClickable() ?? clickable())',
+    '[class.host-ww]': '!!secondaryColor() && showDieHint()',
+  }
 })
 export class CellComponent {
   cell        = input.required<SheetCell>();
@@ -15,6 +19,8 @@ export class CellComponent {
   showClickable = input<boolean | undefined>(undefined);
   showDieHint  = input(false);
 
+  maxedColors = input<Set<string>>(new Set());
+
   clicked = output<void>();
 
   hasTag = computed(() => (type: CellTag.TypeEnum) =>
@@ -22,4 +28,14 @@ export class CellComponent {
   );
 
   readonly TagEnum = CellTag.TypeEnum;
+
+  secondaryColor = computed(() =>
+    this.cell().tags.find(t => t.type === CellTag.TypeEnum.SECONDARY_COLOR)?.secondaryColor ?? null
+  );
+
+  primaryMaxed   = computed(() => !!this.secondaryColor() && this.maxedColors().has(this.cell().color));
+  secondaryMaxed = computed(() => {
+    const sc = this.secondaryColor();
+    return sc !== null && this.maxedColors().has(sc);
+  });
 }

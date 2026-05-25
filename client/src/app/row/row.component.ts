@@ -21,6 +21,7 @@ export class RowComponent {
   isPendingAutoLock          = input(false);
 
   lockClickable = input(false);
+  maxedColors   = input<Set<string>>(new Set());
 
   cellClicked = output<string>();
   lockClicked  = output<void>();
@@ -29,9 +30,32 @@ export class RowComponent {
   // Computed by the board and passed in so the row knows which direction to draw.
   connectorOffsetsAbove = input<number[]>([]);
   connectorOffsetsBelow = input<number[]>([]);
+  // True when the row immediately above/below is a bonus row (e.g. Big Points).
+  // Used to extend the connector line through the full height of the bonus row.
+  hasBonusRowAbove = input(false);
+  hasBonusRowBelow = input(false);
 
-  regularCells         = computed(() => this.row().cells.filter(c => !c.closingEligible));
   closingEligibleCells = computed(() => this.row().cells.filter(c => c.closingEligible));
+
+  // For bonus rows (no lock), the last 1 (Standard) or 2 (Longo) cells are pulled into a
+  // visual alignment zone so they line up with the closing cells of adjacent regular rows.
+  private bonusZoneCellCount = computed(() => {
+    if (this.row().lock != null) return 0;
+    const total = this.row().cells.length;
+    return total > 12 ? 2 : 1;
+  });
+
+  regularCells = computed(() => {
+    const cells = this.row().cells.filter(c => !c.closingEligible);
+    const n = this.bonusZoneCellCount();
+    return n > 0 ? cells.slice(0, -n) : cells;
+  });
+
+  bonusZoneCells = computed(() => {
+    const n = this.bonusZoneCellCount();
+    if (n === 0) return [];
+    return this.row().cells.filter(c => !c.closingEligible).slice(-n);
+  });
 
   isCrossed(cellId: string): boolean {
     return this.rowState()?.crossedCells.includes(cellId) ?? false;

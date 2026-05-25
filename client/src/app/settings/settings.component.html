@@ -11,8 +11,8 @@
 
 <form [formGroup]="form" (ngSubmit)="startGame()" [attr.translate]="'no'">
 
-  @for (opt of gameOptions(); track opt.key) {
-    <div>
+  @for (opt of availableGameOptions(); track opt.key) {
+    <div [class.option-disabled]="form.get(opt.key)?.disabled">
       <label [for]="opt.key">{{ getGameOptionLabel(opt.key) }}</label>
 
       @if (opt.type === TypeEnum.BOOLEAN) {

@@ -421,6 +421,83 @@ class GameStateMapperTest {
         assertTrue(dto.getGameOver(), "gameOver flag must be true in the DTO");
     }
 
+    // ── BigPoints bonus row neighbour IDs ────────────────────────────────────
+
+    @Test
+    void regularRowsHaveNullNeighbourRowIds() {
+        // Standard (non-BigPoints) game: all rows are regular; neither neighbour
+        // field should be set in the DTO.
+        var dto = toDto();
+        var rows = dto.getSheetLayouts().get(alice.id().toString()).getRows();
+        for (var row : rows) {
+            assertNull(row.getUpperNeighbourRowId(),
+                    "regular row must not carry an upperNeighbourRowId");
+            assertNull(row.getLowerNeighbourRowId(),
+                    "regular row must not carry a lowerNeighbourRowId");
+        }
+    }
+
+    @Test
+    void bonusRowDtoCarriesUpperAndLowerNeighbourRowIds() {
+        // BigPoints layout: [RED(0), BONUS-RY(1), YELLOW(2), GREEN(3), BONUS-GB(4), BLUE(5)]
+        // The mapper must resolve the stored row-index integers into the actual row IDs
+        // so the client can look up crossed values in the neighbour rows without knowing indices.
+        GameRegistry.clear();
+        String sid = GameRegistry.createGame("bp", 4,
+                GameSettings.builder().bigPoints(true).build());
+        Player p = Player.of("P");
+        GameRegistry.getGame(sid).addPlayer(p);
+        GameRegistry.getGame(sid).start();
+
+        var dto = GameStateMapper.toDto(
+                GameRegistry.getGame(sid).currentState(),
+                GameRegistry.getGame(sid));
+
+        var rows     = dto.getSheetLayouts().get(p.id().toString()).getRows();
+        var bonusRY  = rows.get(1);
+        var bonusGB  = rows.get(4);
+        var redId    = rows.get(0).getId();
+        var yellowId = rows.get(2).getId();
+        var greenId  = rows.get(3).getId();
+        var blueId   = rows.get(5).getId();
+
+        assertTrue(bonusRY.getBonusRow(),  "row 1 must be a bonus row");
+        assertEquals(redId,    bonusRY.getUpperNeighbourRowId(),
+                "BONUS-RY upper neighbour must be the RED row ID");
+        assertEquals(yellowId, bonusRY.getLowerNeighbourRowId(),
+                "BONUS-RY lower neighbour must be the YELLOW row ID");
+
+        assertTrue(bonusGB.getBonusRow(),  "row 4 must be a bonus row");
+        assertEquals(greenId, bonusGB.getUpperNeighbourRowId(),
+                "BONUS-GB upper neighbour must be the GREEN row ID");
+        assertEquals(blueId,  bonusGB.getLowerNeighbourRowId(),
+                "BONUS-GB lower neighbour must be the BLUE row ID");
+    }
+
+    @Test
+    void nonBonusRowsInBigPointsLayoutHaveNullNeighbourRowIds() {
+        GameRegistry.clear();
+        String sid = GameRegistry.createGame("bp2", 4,
+                GameSettings.builder().bigPoints(true).build());
+        Player p = Player.of("P");
+        GameRegistry.getGame(sid).addPlayer(p);
+        GameRegistry.getGame(sid).start();
+
+        var dto  = GameStateMapper.toDto(
+                GameRegistry.getGame(sid).currentState(),
+                GameRegistry.getGame(sid));
+        var rows = dto.getSheetLayouts().get(p.id().toString()).getRows();
+
+        // Indices 0 (RED), 2 (YELLOW), 3 (GREEN), 5 (BLUE) are regular rows.
+        for (int i : new int[]{0, 2, 3, 5}) {
+            var row = rows.get(i);
+            assertNull(row.getUpperNeighbourRowId(),
+                    "regular row at index " + i + " must have no upper neighbour ID");
+            assertNull(row.getLowerNeighbourRowId(),
+                    "regular row at index " + i + " must have no lower neighbour ID");
+        }
+    }
+
     private nl.adg.qwixx.generated.model.GameState toDto() {
         return GameStateMapper.toDto(
                 GameRegistry.getGame(sessionId).currentState(),

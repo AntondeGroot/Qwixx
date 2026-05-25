@@ -18,6 +18,8 @@
     "gameModeDescription": "ONLINE enforces turn order and dice rules on the server. OFFLINE lets players use real dice.",
     "cardMode": "All players get",
     "cardModeDescription": "Some options (like Extra row) always generate a unique layout per player, overriding this setting.",
+    "bigPoints": "Big Points",
+    "bigPointsDescription": "Add two bonus rows. You can cross a cell ONLY when you already have a cross above or below it. A cross in these rows counts for both colored rows. The maximum number of crosses is limited to the amount of cells in a row.",
     "randomOrder": "Random order",
     "randomOrderDescription": "Shuffle the display values within each row.",
     "extraRow": "Extra row",

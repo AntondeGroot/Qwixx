@@ -96,6 +96,31 @@ class QwixxGameOptionsTest {
         assertTrue(s.randomOrder());
     }
 
+    // ── randomOrder + bigPoints mutual exclusion ──────────────────────────────
+
+    @Test
+    void buildingSettingsWithRandomOrderAndBigPointsThrows() {
+        assertThrows(IllegalArgumentException.class, () ->
+            GameSettings.builder().randomOrder(true).bigPoints(true).build());
+    }
+
+    @Test
+    void randomOrderAloneIsValid() {
+        assertDoesNotThrow(() -> GameSettings.builder().randomOrder(true).build());
+    }
+
+    @Test
+    void bigPointsAloneIsValid() {
+        assertDoesNotThrow(() -> GameSettings.builder().bigPoints(true).build());
+    }
+
+    @Test
+    void applyingBothOptionsViaMapThrows() {
+        GameSettings.Builder builder = GameSettings.builder();
+        QwixxGameOptions.apply(builder, Map.of("randomOrder", true, "bigPoints", true));
+        assertThrows(IllegalArgumentException.class, builder::build);
+    }
+
     private GameOption optionByKey(String key) {
         return QwixxGameOptions.all().stream()
                 .filter(o -> o.key().equals(key))

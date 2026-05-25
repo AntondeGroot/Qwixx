@@ -137,6 +137,12 @@
   position: relative;
 }
 
+/* Big Points bonus cells: circle with diagonal primary/secondary colour split */
+.mini-row .mini-cell.mini-cell-big-points {
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--mini-primary) 50%, var(--mini-secondary) 50%);
+}
+
 /* Closing-eligible cells get a slightly lighter shade via opacity */
 .mini-cell.closing-eligible {
   opacity: 0.75;

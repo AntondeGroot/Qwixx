@@ -1,9 +1,9 @@
-<div class="row" [class.closed]="closed()" [attr.data-color]="row().cells[0]?.color" [attr.translate]="'no'">
+<div class="row" [class.closed]="closed()" [class.bonus-row]="!row().lock" [attr.data-color]="row().cells[0]?.color" [attr.translate]="'no'">
   @for (offset of connectorOffsetsAbove(); track offset) {
-    <div class="auto-cross-line up" [style.left.px]="offset"></div>
+    <div class="auto-cross-line up" [class.through-bonus]="hasBonusRowAbove()" [style.left.px]="offset"></div>
   }
   @for (offset of connectorOffsetsBelow(); track offset) {
-    <div class="auto-cross-line down" [style.left.px]="offset"></div>
+    <div class="auto-cross-line down" [class.through-bonus]="hasBonusRowBelow()" [style.left.px]="offset"></div>
   }
   @for (cell of regularCells(); track cell.id) {
     <app-cell [cell]="cell" [crossed]="isCrossed(cell.id)"
@@ -11,25 +11,40 @@
               [clickable]="clickableCellIds().has(cell.id)"
               [showClickable]="showClickableCellIds()?.has(cell.id)"
               [showDieHint]="whiteWhiteClickableCellIds().has(cell.id)"
+              [maxedColors]="maxedColors()"
               (clicked)="cellClicked.emit(cell.id)" />
   }
-  <div class="lock-zone" [class.lock-zone-crossed]="rowState()?.lockCrossed">
-    @for (cell of closingEligibleCells(); track cell.id) {
-      <app-cell [cell]="cell" [crossed]="isCrossed(cell.id)"
-                [pending]="pendingCellIds().has(cell.id)"
-                [clickable]="clickableCellIds().has(cell.id)"
-                [showClickable]="showClickableCellIds()?.has(cell.id)"
-                [showDieHint]="whiteWhiteClickableCellIds().has(cell.id)"
-                (clicked)="cellClicked.emit(cell.id)" />
-    }
-    <div class="lock-cell"
-         [attr.data-color]="row().cells[0]?.color"
-         [class.lock-crossed]="rowState()?.lockCrossed"
-         [class.lock-closed]="closed()">
-      <img src="lock_icon.svg" alt="lock" class="lock-icon" />
-      @if (rowState()?.lockCrossed || isDeclarantLockPending() || isPendingAutoLock() || (row().lock && row().lock.closingCells.length > 0 && pendingCellIds().has(row().lock.closingCells[row().lock.closingCells.length - 1]))) {
-        <span class="cell-cross">✕</span>
+  @if (row().lock) {
+    <div class="lock-zone" [class.lock-zone-crossed]="rowState()?.lockCrossed">
+      @for (cell of closingEligibleCells(); track cell.id) {
+        <app-cell [cell]="cell" [crossed]="isCrossed(cell.id)"
+                  [pending]="pendingCellIds().has(cell.id)"
+                  [clickable]="clickableCellIds().has(cell.id)"
+                  [showClickable]="showClickableCellIds()?.has(cell.id)"
+                  [showDieHint]="whiteWhiteClickableCellIds().has(cell.id)"
+                  (clicked)="cellClicked.emit(cell.id)" />
       }
+      <div class="lock-cell"
+           [attr.data-color]="row().cells[0]?.color"
+           [class.lock-crossed]="rowState()?.lockCrossed"
+           [class.lock-closed]="closed()">
+        <img src="lock_icon.svg" alt="lock" class="lock-icon" />
+        @if (rowState()?.lockCrossed || isDeclarantLockPending() || isPendingAutoLock() || (row().lock.closingCells.length > 0 && pendingCellIds().has(row().lock.closingCells[row().lock.closingCells.length - 1]))) {
+          <span class="cell-cross">✕</span>
+        }
+      </div>
     </div>
-  </div>
+  } @else if (bonusZoneCells().length > 0) {
+    <div class="lock-zone bonus-lock-zone">
+      @for (cell of bonusZoneCells(); track cell.id) {
+        <app-cell [cell]="cell" [crossed]="isCrossed(cell.id)"
+                  [pending]="pendingCellIds().has(cell.id)"
+                  [clickable]="clickableCellIds().has(cell.id)"
+                  [showClickable]="showClickableCellIds()?.has(cell.id)"
+                  [showDieHint]="whiteWhiteClickableCellIds().has(cell.id)"
+                  (clicked)="cellClicked.emit(cell.id)" />
+      }
+      <div class="lock-cell lock-cell-placeholder" [attr.data-color]="row().cells[0]?.color"></div>
+    </div>
+  }
 </div>

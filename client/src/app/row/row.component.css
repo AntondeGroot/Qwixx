@@ -13,6 +13,18 @@
 .row[data-color="GREEN"]  { background: rgba(56, 142, 60, 0.12); }
 .row[data-color="BLUE"]   { background: rgba(21, 101, 192, 0.12); }
 
+.row.bonus-row {
+  background: transparent;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  /* Ensure bonus-row circles paint above the z-index:0 auto-cross-line that extends through them. */
+  z-index: 1;
+}
+
+.bonus-lock-zone .lock-cell-placeholder {
+  height: 32px;
+}
+
 .row.closed::after {
   content: '';
   position: absolute;
@@ -63,6 +75,15 @@
   pointer-events: none;
 }
 
+.bonus-lock-zone {
+  border: none;
+  padding: 0 0 0 7px; /* compensates for 3px border + 4px padding of the regular lock-zone */
+}
+
+.lock-cell-placeholder {
+  visibility: hidden;
+}
+
 .auto-cross-line {
   position: absolute;
   width: 0;
@@ -83,3 +104,11 @@
   top: 28px;
   bottom: -3px;
 }
+
+/*
+ * When a bonus row (36 px tall) sits between this row and the connected row,
+ * extend the line through it: 3 px (half-gap) + 6 px (gap) + 36 px (bonus row) + 3 px (half-gap) = 48 px.
+ * The bonus row circles paint on top via DOM order, so they naturally obscure the line where they overlap.
+ */
+.auto-cross-line.down.through-bonus { bottom: -45px; }
+.auto-cross-line.up.through-bonus   { top: -45px; }

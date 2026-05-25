@@ -69,7 +69,8 @@ public class PreviewController {
             new Scenario("/preview/8",  "2-player · near game end (many crosses)",                    false),
             new Scenario("/preview/9",  "5-player · extra-row variant · game finished → score screen",true),
             new Scenario("/preview/10", "Longo · 3-player · close RED (white+white=16) AND YELLOW (white+yellow=16) this turn", false),
-            new Scenario("/preview/11", "Longo · 3-player · cross value 15 twice: RED (white+white=15) AND YELLOW (white+yellow=15)", false)
+            new Scenario("/preview/11", "Longo · 3-player · cross value 15 twice: RED (white+white=15) AND YELLOW (white+yellow=15)", false),
+            new Scenario("/preview/12", "Big Points · 2-player · BONUS-RY cell '7' highlighted (WW=7)", false)
     );
 
     // ── HTML endpoints ────────────────────────────────────────────────────────────
@@ -107,6 +108,7 @@ public class PreviewController {
             case 9  -> scenario09();
             case 10 -> scenario10();
             case 11 -> scenario11();
+            case 12 -> scenario12();
             default -> null;
         };
         if (r == null) return ResponseEntity.notFound().build();
@@ -483,6 +485,43 @@ public class PreviewController {
                 "5-player · extra-row variant · game finished (5 score columns)",
                 scoreUrl(g.sessionId(), you),
                 otherScoreUrls(g, you));
+    }
+
+    // 12 — Big Points · 2-player · exactly one bonus cell highlighted
+    //
+    // Layout: [RED(0), BONUS-RY(1), YELLOW(2), GREEN(3), BONUS-GB(4), BLUE(5)]
+    //
+    // player0 has 6 crosses in RED and YELLOW (values 2–7).  That puts "7" in both
+    // neighbour rows of BONUS-RY, satisfying the bonus prerequisite for that cell.
+    //
+    // Dice: white1=3, white2=4 → WW=7 → BONUS-RY "7" glows.
+    // Coloured dice are all 6 so white+colour sums to 9/10, which have no prerequisite
+    // met (only 2–7 crossed), leaving exactly one bonus cell highlighted and no regular
+    // cells reachable (next uncrossed regular cells are "8", unreachable with these dice).
+    private PreviewResult scenario12() {
+        GameSetup g = startGame(2, GameSettings.builder().bigPoints(true).build());
+        Player p0 = g.players().get(0);
+        Player p1 = g.players().get(1);
+
+        // player0 (you): 6 crosses in RED and YELLOW → values 2–7 crossed in both
+        setCrosses(g, p0, 0, 6); // RED    indices 0–5 → values 2,3,4,5,6,7
+        setCrosses(g, p0, 2, 6); // YELLOW indices 0–5 → values 2,3,4,5,6,7
+
+        // player1: a little progress for visual variety
+        setCrosses(g, p1, 0, 3); // RED
+        setCrosses(g, p1, 3, 4); // GREEN
+
+        // WW=7 → BONUS-RY "7" is the only clickable bonus cell (prerequisite met).
+        // Coloured dice=6: white+colour=9 or 10, both outside the prerequisite-met
+        // range of 2–7 for BONUS-RY, so no additional bonus or regular cells light up.
+        UUID you = rollAndSetColored(g, 3, 4,
+                Map.of(Color.RED, 6, Color.YELLOW, 6, Color.GREEN, 6, Color.BLUE, 6));
+
+        return new PreviewResult(
+                "Big Points · 2-player · BONUS-RY cell '7' highlighted: WW=7, "
+                + "neighbour rows (RED+YELLOW) both have '7' crossed",
+                gameUrl(g.sessionId(), you),
+                otherGameUrls(g, you));
     }
 
     // 11 — Longo · 3-player · cross value 15 in RED (white+white) AND YELLOW (white+yellow die)

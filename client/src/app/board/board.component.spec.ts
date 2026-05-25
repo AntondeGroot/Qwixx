@@ -1167,3 +1167,132 @@ describe('BoardComponent — row-closure modal delegation', () => {
       });
     });
 });
+
+// ── BigPoints bonus cell prerequisite ────────────────────────────────────────
+//
+// Before the fix, collectCells only checked displayValue against the dice sum
+// and never verified the bonus-row prerequisite (that the value must already be
+// crossed in at least one of the two neighbouring colour rows).  This caused
+// both BONUS-RY and BONUS-GB to light up whenever WW matched their shared value,
+// regardless of whether any prerequisite was actually met.
+//
+// Requires the fix on two layers:
+//   1. GameStateMapper.mapRow() must propagate upperNeighbourRowId / lowerNeighbourRowId
+//   2. collectCells must skip bonus cells whose value is absent from both neighbour rows
+//
+// Layout: [RED(0), BONUS-RY(1), YELLOW(2), GREEN(3), BONUS-GB(4), BLUE(5)]
+// Roll: white1=4, white2=3  →  WW = 7
+
+describe('BoardComponent — BigPoints bonus cell prerequisite', () => {
+  let component: BoardComponent;
+
+  const RED_CELL    = { id: 'red-7',      position: 5, displayValue: '7', color: 'RED',    closingEligible: false, tags: [] };
+  const YELLOW_CELL = { id: 'yellow-7',   position: 5, displayValue: '7', color: 'YELLOW', closingEligible: false, tags: [] };
+  const GREEN_CELL  = { id: 'green-7',    position: 4, displayValue: '7', color: 'GREEN',  closingEligible: false, tags: [] };
+  const BLUE_CELL   = { id: 'blue-7',     position: 4, displayValue: '7', color: 'BLUE',   closingEligible: false, tags: [] };
+  const BONUS_RY    = { id: 'bonus-ry-7', position: 0, displayValue: '7', color: 'RED',    closingEligible: false,
+                        tags: [{ type: 'SECONDARY_COLOR', secondaryColor: 'YELLOW' }] };
+  const BONUS_GB    = { id: 'bonus-gb-7', position: 0, displayValue: '7', color: 'GREEN',  closingEligible: false,
+                        tags: [{ type: 'SECONDARY_COLOR', secondaryColor: 'BLUE' }] };
+
+  const BIG_POINTS_LAYOUT = {
+    rows: [
+      { id: 'row-red',      cells: [RED_CELL],    lock: null },
+      { id: 'row-bonus-ry', cells: [BONUS_RY],    lock: null, bonusRow: true,
+        upperNeighbourRowId: 'row-red',   lowerNeighbourRowId: 'row-yellow' },
+      { id: 'row-yellow',   cells: [YELLOW_CELL], lock: null },
+      { id: 'row-green',    cells: [GREEN_CELL],  lock: null },
+      { id: 'row-bonus-gb', cells: [BONUS_GB],    lock: null, bonusRow: true,
+        upperNeighbourRowId: 'row-green', lowerNeighbourRowId: 'row-blue' },
+      { id: 'row-blue',     cells: [BLUE_CELL],   lock: null },
+    ],
+  };
+
+  function makeBigPointsState(crossedByRowId: Record<string, string[]> = {}): GameState {
+    const rowStates: Record<string, { crossedCells: string[]; lockCrossed: boolean }> = {};
+    for (const [rowId, ids] of Object.entries(crossedByRowId)) {
+      rowStates[rowId] = { crossedCells: ids, lockCrossed: false };
+    }
+    return makeState({
+      sheetLayouts: {
+        [PLAYER_ID]: BIG_POINTS_LAYOUT as any,
+        [OTHER_ID]:  { rows: [] },
+      },
+      sheetProgress: {
+        [PLAYER_ID]: { punishments: 0, rowStates },
+        [OTHER_ID]:  { punishments: 0, rowStates: {} },
+      },
+      turnState: {
+        activePlayerId: PLAYER_ID,
+        phase: TurnPhase.ACTIVE_MOVE,
+        currentRoll: { white1: 4, white2: 3, coloredDice: {} },
+      },
+    } as unknown as Partial<GameState>);
+  }
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [BoardComponent],
+      providers: [
+        { provide: ActivatedRoute,    useValue: { snapshot: { paramMap: { get: () => '' } } } },
+        { provide: GamestatesService, useValue: { getGameState: () => of(makeState()) } },
+        { provide: MovesService,      useValue: { makeMove: vi.fn().mockReturnValue(of({})) } },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(BoardComponent);
+    component = fixture.componentInstance;
+    component.playerId.set(PLAYER_ID);
+  });
+
+  it('neither bonus cell is highlighted when no neighbour row has the value crossed', () => {
+    // Regression: before the fix both bonus cells lit up here because the check was missing.
+    component.gameState.set(makeBigPointsState());
+    const ids = component.clickableCellIds();
+    expect(ids.has('bonus-ry-7')).toBe(false);
+    expect(ids.has('bonus-gb-7')).toBe(false);
+  });
+
+  it('BONUS-RY lights up when its upper neighbour (RED) has the value crossed, BONUS-GB does not', () => {
+    component.gameState.set(makeBigPointsState({ 'row-red': ['red-7'] }));
+    const ids = component.clickableCellIds();
+    expect(ids.has('bonus-ry-7')).toBe(true);
+    expect(ids.has('bonus-gb-7')).toBe(false);
+  });
+
+  it('BONUS-RY lights up when its lower neighbour (YELLOW) has the value crossed, BONUS-GB does not', () => {
+    component.gameState.set(makeBigPointsState({ 'row-yellow': ['yellow-7'] }));
+    const ids = component.clickableCellIds();
+    expect(ids.has('bonus-ry-7')).toBe(true);
+    expect(ids.has('bonus-gb-7')).toBe(false);
+  });
+
+  it('BONUS-GB lights up when its upper neighbour (GREEN) has the value crossed, BONUS-RY does not', () => {
+    component.gameState.set(makeBigPointsState({ 'row-green': ['green-7'] }));
+    const ids = component.clickableCellIds();
+    expect(ids.has('bonus-gb-7')).toBe(true);
+    expect(ids.has('bonus-ry-7')).toBe(false);
+  });
+
+  it('BONUS-GB lights up when its lower neighbour (BLUE) has the value crossed, BONUS-RY does not', () => {
+    component.gameState.set(makeBigPointsState({ 'row-blue': ['blue-7'] }));
+    const ids = component.clickableCellIds();
+    expect(ids.has('bonus-gb-7')).toBe(true);
+    expect(ids.has('bonus-ry-7')).toBe(false);
+  });
+
+  it('both bonus cells light up when both pairs of neighbours satisfy the prerequisite', () => {
+    component.gameState.set(makeBigPointsState({ 'row-red': ['red-7'], 'row-green': ['green-7'] }));
+    const ids = component.clickableCellIds();
+    expect(ids.has('bonus-ry-7')).toBe(true);
+    expect(ids.has('bonus-gb-7')).toBe(true);
+  });
+
+  it('a regular cell with value 7 is still highlighted regardless of bonus prerequisites', () => {
+    // The prerequisite check must not accidentally gate regular (non-bonus) rows.
+    component.gameState.set(makeBigPointsState());
+    const ids = component.clickableCellIds();
+    expect(ids.has('red-7')).toBe(true);
+    expect(ids.has('yellow-7')).toBe(true);
+  });
+});

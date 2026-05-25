@@ -48,6 +48,8 @@ public class GameOptionsApiDelegateImpl implements GameOptionsApiDelegate {
                 o.defaultValue());
         dto.setDescriptionKey(o.descriptionKey());
         if (!o.choices().isEmpty()) dto.setChoices(o.choices());
+        if (o.adminOnly()) dto.setAdminOnly(true);
+        if (!o.incompatibleWith().isEmpty()) dto.setIncompatibleWith(o.incompatibleWith());
         return dto;
     }
 }

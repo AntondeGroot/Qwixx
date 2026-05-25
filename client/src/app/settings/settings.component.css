@@ -44,6 +44,17 @@ input[type="checkbox"] {
   height: 18px;
 }
 
+div.option-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+div.option-disabled label,
+div.option-disabled input {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .board-preview {
   display: flex;
   flex-direction: column;

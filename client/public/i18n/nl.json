@@ -18,6 +18,8 @@
     "gameModeDescription": "ONLINE dwingt speelvolgorde en dobbelstenen regels op de server af. OFFLINE laat spelers echte dobbelstenen gebruiken.",
     "cardMode": "Alle spelers krijgen",
     "cardModeDescription": "Sommige opties (zoals Extra rij) genereren altijd een unieke indeling per speler en overschrijven deze instelling.",
+    "bigPoints": "Big Points",
+    "bigPointsDescription": "Voegt twee bonusrijen toe. Je kunt een vakje ALLEEN aankruisen als je al een kruisje erboven of eronder hebt. Een kruisje in deze rijen telt voor beide gekleurde rijen. Het maximum aantal kruisjes is beperkt tot het aantal vakjes in een rij.",
     "randomOrder": "Willekeurige volgorde",
     "randomOrderDescription": "Schud de weergavewaarden in elke rij.",
     "extraRow": "Extra rij",

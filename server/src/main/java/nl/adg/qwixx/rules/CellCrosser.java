@@ -6,6 +6,7 @@ import nl.adg.qwixx.action.GameAction;
 import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.CellTag;
 import nl.adg.qwixx.data.Row;
+import nl.adg.qwixx.data.RollResult;
 import nl.adg.qwixx.state.ActiveTurnState;
 import nl.adg.qwixx.state.GameState;
 import nl.adg.qwixx.state.RowState;
@@ -43,15 +44,22 @@ class CellCrosser {
         ActiveTurnState ats        = isActive ? turn.activeTurnState() : null;
         SheetLayout layout         = state.sheetLayouts().get(playerId);
         var progress               = state.boardState().sheetProgress().get(playerId);
+        // Pre-turn snapshot used for Big Points bonus prerequisite check.
+        Map<UUID, SheetProgress> startProgress = turn.moveStartProgress();
+
         for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
-            if (state.isRowClosed(rowIndex)) continue;
-            Row row           = layout.rows().get(rowIndex);
+            Row row = layout.rows().get(rowIndex);
+
+            // Bonus rows are never globally closed, but skip closed normal rows.
+            if (!row.isBonusRow() && state.isRowClosed(rowIndex)) continue;
+
             RowState rowState = getRowState(progress, rowIndex);
             int rightmost     = rightmostCrossedPosition(row, rowState);
 
             for (Cell cell : row.cells()) {
                 if (!isReachableCell(cell, rightmost, rowState.crossedCells())) continue;
 
+                // Lock-eligibility guard (only for normal rows with a lock).
                 if (cell.isClosingEligible() && row.lock() != null) {
                     long alreadyCrossedRequired = row.lock().closingCells().stream()
                             .filter(id -> rowState.crossedCells().contains(id))
@@ -60,9 +68,18 @@ class CellCrosser {
                     if (normalCrossed < minCrosses) continue;
                 }
 
-                DiceCombination combo = isActive
-                        ? DiceRoller.resolveActiveCombo(roll, cell, ats, state.boardState().activeDice())
-                        : (DiceRoller.matchesWhiteWhite(roll, cell) ? DiceCombination.WHITE_WHITE : null);
+                // Bonus rows: the display value must have been permanently crossed in a
+                // neighbouring coloured row before this turn started.
+                if (row.isBonusRow()) {
+                    SheetProgress snap = startProgress != null ? startProgress.get(playerId) : null;
+                    if (!bonusPrerequisiteMet(layout, snap, row, cell)) continue;
+                }
+
+                DiceCombination combo = row.isBonusRow()
+                        ? resolveBonusCombo(roll, cell, ats, isActive)
+                        : (isActive
+                            ? DiceRoller.resolveActiveCombo(roll, cell, ats, state.boardState().activeDice())
+                            : (DiceRoller.matchesWhiteWhite(roll, cell) ? DiceCombination.WHITE_WHITE : null));
 
                 if (combo != null) {
                     actions.add(new CrossCellAction(playerId, rowIndex, cell.id(), combo));
@@ -70,6 +87,44 @@ class CellCrosser {
             }
         }
         return actions;
+    }
+
+    // Bonus cells respond to white+white OR either neighbouring colour die.
+    private static DiceCombination resolveBonusCombo(RollResult roll, Cell cell, ActiveTurnState ats, boolean isActive) {
+        if (!isActive) {
+            return DiceRoller.matchesWhiteWhite(roll, cell) ? DiceCombination.WHITE_WHITE : null;
+        }
+        if (!ats.whiteWhiteUsed() && DiceRoller.matchesWhiteWhite(roll, cell)) return DiceCombination.WHITE_WHITE;
+        if (!ats.colorDieUsed() && matchesBonusColorDie(roll, cell)) return DiceCombination.WHITE_COLOR;
+        return null;
+    }
+
+    // Returns true if white + primaryColor or white + secondaryColor equals the bonus cell's value.
+    private static boolean matchesBonusColorDie(RollResult roll, Cell cell) {
+        Integer pv = roll.coloredDice().get(cell.color());
+        if (pv != null && DiceRoller.matchesWhiteColor(roll, cell, pv)) return true;
+        for (CellTag tag : cell.tags()) {
+            if (tag instanceof CellTag.SecondaryColor sc) {
+                Integer sv = roll.coloredDice().get(sc.color());
+                if (sv != null && DiceRoller.matchesWhiteColor(roll, cell, sv)) return true;
+            }
+        }
+        return false;
+    }
+
+    // A bonus cell may only be offered when its display value is permanently crossed
+    // in at least one neighbouring coloured row (checked against the pre-turn snapshot).
+    private static boolean bonusPrerequisiteMet(SheetLayout layout, SheetProgress startProgress, Row bonusRow, Cell cell) {
+        if (startProgress == null) return false;
+        String value = cell.displayValue();
+        for (int neighborIndex : new int[]{bonusRow.upperRowIndex(), bonusRow.lowerRowIndex()}) {
+            if (neighborIndex < 0) continue;
+            RowState neighborState = getRowState(startProgress, neighborIndex);
+            boolean crossed = layout.rows().get(neighborIndex).cells().stream()
+                    .anyMatch(c -> c.displayValue().equals(value) && neighborState.crossedCells().contains(c.id()));
+            if (crossed) return true;
+        }
+        return false;
     }
 
     static boolean isReachableCell(Cell cell, int rightmost, Set<String> crossedCells) {

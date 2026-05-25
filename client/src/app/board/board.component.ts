@@ -378,6 +378,50 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   });
 
+  private bigPointsCap = computed((): number | null => {
+    const layout = this.gameState()?.sheetLayouts[this.playerId()];
+    if (!layout) return null;
+    const hasBonus = layout.rows.some(row =>
+      row.cells.some(c => c.tags?.some(t => t.type === CellTag.TypeEnum.SECONDARY_COLOR))
+    );
+    if (!hasBonus) return null;
+    const regularRow = layout.rows.find(r => r.lock != null);
+    return regularRow ? regularRow.cells.length + 4 : null;
+  });
+
+  maxedColors = computed((): Set<string> => {
+    const cap = this.bigPointsCap();
+    if (cap === null) return this.emptySet;
+    const layout   = this.gameState()?.sheetLayouts[this.playerId()];
+    const progress = this.gameState()?.sheetProgress[this.playerId()];
+    if (!layout) return this.emptySet;
+
+    const counts: Record<string, number> = {};
+    for (const row of layout.rows) {
+      const rowState = progress?.rowStates[row.id];
+      if (!rowState) continue;
+      const crossed = new Set(rowState.crossedCells ?? []);
+      for (const cell of row.cells) {
+        if (!crossed.has(cell.id)) continue;
+        counts[cell.color] = (counts[cell.color] ?? 0) + 1;
+        for (const tag of cell.tags ?? []) {
+          if (tag.type === CellTag.TypeEnum.SECONDARY_COLOR && tag.secondaryColor) {
+            counts[tag.secondaryColor] = (counts[tag.secondaryColor] ?? 0) + 1;
+          }
+        }
+      }
+      if (rowState.lockCrossed && row.lock) {
+        counts[row.lock.color] = (counts[row.lock.color] ?? 0) + 1;
+      }
+    }
+
+    const maxed = new Set<string>();
+    for (const [color, count] of Object.entries(counts)) {
+      if (count >= cap) maxed.add(color);
+    }
+    return maxed;
+  });
+
   bonusNumbersFor(pid: string): number[] {
     return this.gameState()?.bonusNumbers?.[pid] ?? [];
   }
@@ -474,6 +518,16 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     result:      Set<string>
   ) {
     const bonusNums: number[] = this.gameState()?.bonusNumbers?.[this.playerId()] ?? [];
+
+    // Build a map from rowId -> Set of crossed displayValues for the bonus prerequisite check.
+    const crossedValuesInRow = (rowId: string | undefined): Set<string> => {
+      if (!rowId) return new Set();
+      const rowLayout = layout.rows.find(r => r.id === rowId);
+      if (!rowLayout) return new Set();
+      const crossedIds = new Set(progress?.rowStates[rowId]?.crossedCells ?? []);
+      return new Set(rowLayout.cells.filter(c => crossedIds.has(c.id)).map(c => c.displayValue));
+    };
+
     for (const row of layout.rows) {
       if (restrictRow && row.id !== restrictRow) continue;
       if (closedRows[row.id]) continue;
@@ -487,6 +541,11 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
           const alreadyCrossedClosing = row.lock.closingCells.filter(id => crossed.has(id)).length;
           const normalCrossed = crossed.size - alreadyCrossedClosing;
           if (normalCrossed + 1 < row.lock.minCrosses) continue;
+        }
+        if (row.bonusRow) {
+          const upperCrossed = crossedValuesInRow(row.upperNeighbourRowId);
+          const lowerCrossed = crossedValuesInRow(row.lowerNeighbourRowId);
+          if (!upperCrossed.has(cell.displayValue) && !lowerCrossed.has(cell.displayValue)) continue;
         }
         result.add(cell.id);
       }
@@ -904,14 +963,29 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   // For each row in the current player's layout: pixel x-offsets of auto-cross
   // connections going up (to the row above) and down (to the row below).
   // Formula: 8px left-padding + position * (44px cell + 4px gap) + 22px half-width.
-  myRowConnectors = computed((): Map<string, { above: number[], below: number[] }> => {
+  // When the immediately adjacent row is a bonus row, we also look one step further
+  // so that connections spanning across a bonus row are found correctly.
+  myRowConnectors = computed((): Map<string, { above: number[], below: number[], hasBonusRowAbove: boolean, hasBonusRowBelow: boolean }> => {
     const layout = this.layoutFor(this.playerId());
-    const result = new Map<string, { above: number[], below: number[] }>();
+    const result = new Map<string, { above: number[], below: number[], hasBonusRowAbove: boolean, hasBonusRowBelow: boolean }>();
     if (!layout) return result;
     for (let i = 0; i < layout.rows.length; i++) {
       const row = layout.rows[i];
-      const aboveIds = new Set(layout.rows[i - 1]?.cells.map(c => c.id) ?? []);
-      const belowIds = new Set(layout.rows[i + 1]?.cells.map(c => c.id) ?? []);
+
+      const rowBelow = layout.rows[i + 1];
+      const hasBonusRowBelow = rowBelow?.bonusRow === true;
+      const belowIds = new Set<string>(rowBelow?.cells.map(c => c.id) ?? []);
+      if (hasBonusRowBelow && i + 2 < layout.rows.length) {
+        for (const id of layout.rows[i + 2].cells.map(c => c.id)) belowIds.add(id);
+      }
+
+      const rowAbove = layout.rows[i - 1];
+      const hasBonusRowAbove = rowAbove?.bonusRow === true;
+      const aboveIds = new Set<string>(rowAbove?.cells.map(c => c.id) ?? []);
+      if (hasBonusRowAbove && i - 2 >= 0) {
+        for (const id of layout.rows[i - 2].cells.map(c => c.id)) aboveIds.add(id);
+      }
+
       const above: number[] = [];
       const below: number[] = [];
       for (const cell of row.cells) {
@@ -922,7 +996,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
           if (belowIds.has(tag.target)) below.push(offset);
         }
       }
-      result.set(row.id, { above, below });
+      result.set(row.id, { above, below, hasBonusRowAbove, hasBonusRowBelow });
     }
     return result;
   });

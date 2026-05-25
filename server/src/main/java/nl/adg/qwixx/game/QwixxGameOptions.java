@@ -18,6 +18,7 @@ public class QwixxGameOptions {
     private static final String CONNECTED_CELLS = "connectedCells";
     private static final String EXTRA_ROW = "extraRow";
     private static final String GAME_MODE = "gameMode";
+    private static final String BIG_POINTS   = "bigPoints";
     private static final String RANDOM_ORDER = "randomOrder";
 
     private QwixxGameOptions() {}
@@ -30,7 +31,10 @@ public class QwixxGameOptions {
                 "ONLINE", List.of("ONLINE", "OFFLINE")),
             GameOption.enumOption(CARD_MODE, "gameOption.cardMode", "gameOption.cardModeDescription",
                 "DETERMINISTIC", List.of("DETERMINISTIC", "PROBABILISTIC")),
-            GameOption.boolOption(RANDOM_ORDER, "gameOption.randomOrder", "gameOption.randomOrderDescription"),
+            GameOption.adminBoolOption(BIG_POINTS, "gameOption.bigPoints", "gameOption.bigPointsDescription")
+                    .withIncompatibleWith(List.of(RANDOM_ORDER)),
+            GameOption.boolOption(RANDOM_ORDER, "gameOption.randomOrder", "gameOption.randomOrderDescription")
+                    .withIncompatibleWith(List.of(BIG_POINTS)),
             GameOption.boolOption(EXTRA_ROW, "gameOption.extraRow", "gameOption.extraRowDescription"),
             GameOption.boolOption(CONNECTED_CELLS, "gameOption.connectedCells", "gameOption.connectedCellsDescription"),
             GameOption.intOption(BOT_COUNT, "gameOption.botCount", "gameOption.botCountDescription",
@@ -46,6 +50,7 @@ public class QwixxGameOptions {
         map.put(BASE,            s.base().name());
         map.put(GAME_MODE,       s.gameMode().name());
         map.put(CARD_MODE,       s.cardMode().name());
+        map.put(BIG_POINTS,      s.bigPoints());
         map.put(RANDOM_ORDER,    s.randomOrder());
         map.put(EXTRA_ROW,       s.extraRow());
         map.put(CONNECTED_CELLS, s.connectedCells());
@@ -62,6 +67,7 @@ public class QwixxGameOptions {
                 case BASE            -> builder.base(BaseVariant.valueOf(str(entry.getValue())));
                 case GAME_MODE       -> builder.gameMode(GameMode.valueOf(str(entry.getValue())));
                 case CARD_MODE       -> builder.cardMode(CardMode.valueOf(str(entry.getValue())));
+                case BIG_POINTS      -> builder.bigPoints(bool(entry.getValue()));
                 case RANDOM_ORDER    -> builder.randomOrder(bool(entry.getValue()));
                 case EXTRA_ROW       -> builder.extraRow(bool(entry.getValue()));
                 case CONNECTED_CELLS -> builder.connectedCells(bool(entry.getValue()));

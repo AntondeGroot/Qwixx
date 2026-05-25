@@ -67,8 +67,8 @@ public class TestUtils {
         try {
             driver.getCurrentUrl(); // throws if the session is dead
             return driver;
-        } catch (WebDriverException e) {
-            try { driver.quit(); } catch (Exception ignored) {}
+        } catch (WebDriverException _) {
+            try { driver.quit(); } catch (Exception _) {}
             return factory.get();
         }
     }
@@ -128,8 +128,8 @@ public class TestUtils {
         try {
             new WebDriverWait(driver, Duration.ofSeconds(25)).until(d -> {
                 try {
-                    return !d.findElements(By.className("score-table")).isEmpty();
-                } catch (StaleElementReferenceException e) {
+                    return !d.findElements(By.className("player-row")).isEmpty();
+                } catch (StaleElementReferenceException _) {
                     return false;
                 }
             });
@@ -138,7 +138,7 @@ public class TestUtils {
             String source = driver.getPageSource();
             String snippet = source.length() > 800 ? source.substring(0, 800) : source;
             throw new AssertionError(
-                ".score-table not found after 25 s.\n" +
+                ".player-row not found after 25 s (score data not yet loaded).\n" +
                 "Current URL: " + url + "\n" +
                 "Page source: " + snippet, e);
         }
@@ -165,7 +165,7 @@ public class TestUtils {
                 try {
                     return d.findElements(By.className("row")).stream()
                             .anyMatch(WebElement::isDisplayed);
-                } catch (StaleElementReferenceException e) {
+                } catch (StaleElementReferenceException _) {
                     return false;
                 }
             });
@@ -184,7 +184,7 @@ public class TestUtils {
             try {
                 d.findElement(By.id(id)).click();
                 return true;
-            } catch (StaleElementReferenceException e) {
+            } catch (StaleElementReferenceException _) {
                 return false;
             }
         });
@@ -213,7 +213,7 @@ public class TestUtils {
     public static void wait(int millis) {
         try {
             Thread.sleep(millis);
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         }
     }

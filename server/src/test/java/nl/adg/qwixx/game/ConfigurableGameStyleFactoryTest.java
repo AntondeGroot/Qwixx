@@ -263,6 +263,31 @@ class ConfigurableGameStyleFactoryTest {
         assertNotSame(result.get(p1), result.get(p2));
     }
 
+    // --- big points ---
+
+    @Test
+    void bigPointsStandardBonusRowAlignedWithRedRow() {
+        ConfigurableGameStyleFactory f = new ConfigurableGameStyleFactory(
+            GameSettings.builder().base(BaseVariant.STANDARD).bigPoints(true).build());
+        List<Row> rows = rows(f);
+        // rows: [RED(0), BONUS-RY(1), YELLOW(2), GREEN(3), BONUS-GB(4), BLUE(5)]
+        List<String> redValues   = rows.get(0).cells().stream().map(Cell::displayValue).toList();
+        List<String> bonusValues = rows.get(1).cells().stream().map(Cell::displayValue).toList();
+        assertEquals(redValues, bonusValues,
+            "Bonus row display values must match RED row for all positions");
+    }
+
+    @Test
+    void bigPointsLongoBonusRowAlignedWithRedRow() {
+        ConfigurableGameStyleFactory f = new ConfigurableGameStyleFactory(
+            GameSettings.builder().base(BaseVariant.LONGO).bigPoints(true).build());
+        List<Row> rows = rows(f);
+        List<String> redValues   = rows.get(0).cells().stream().map(Cell::displayValue).toList();
+        List<String> bonusValues = rows.get(1).cells().stream().map(Cell::displayValue).toList();
+        assertEquals(redValues, bonusValues,
+            "Bonus row display values must match RED row for all positions");
+    }
+
     // --- dice ---
 
     @Test

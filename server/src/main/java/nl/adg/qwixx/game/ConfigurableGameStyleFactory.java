@@ -6,6 +6,7 @@ import nl.adg.qwixx.data.Color;
 import nl.adg.qwixx.data.Die;
 import nl.adg.qwixx.data.LockCell;
 import nl.adg.qwixx.data.Row;
+import nl.adg.qwixx.rules.BigPointsScoringEngine;
 import nl.adg.qwixx.rules.LongoTurnRules;
 import nl.adg.qwixx.rules.OfflineTurnRules;
 import nl.adg.qwixx.rules.ScoringEngine;
@@ -46,6 +47,24 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
     @Override
     public Map<UUID, List<Row>> buildRows(List<UUID> players) {
         Map<UUID, List<Row>> result = new HashMap<>();
+
+        if (settings.bigPoints()) {
+            // Big Points: two bonus rows interleaved between RED-YELLOW and GREEN-BLUE.
+            // Bonus rows are shared (no per-player randomisation needed for them).
+            // The four coloured rows follow the normal per-player/shared logic.
+            boolean perPlayer = settings.cardMode() == CardMode.PROBABILISTIC || settings.extraRow();
+            for (UUID player : players) {
+                List<Row> colored = perPlayer ? buildStandardRows() : null;
+                if (colored == null && result.isEmpty()) colored = buildStandardRows();
+                if (colored == null) colored = buildStandardRows(); // each player gets own copy
+                if (settings.randomOrder()) shuffleDisplayValues(colored);
+                if (settings.extraRow()) applyExtraRow(colored);
+                if (settings.connectedCells()) applyConnectedCells(colored);
+                result.put(player, interleaveWithBonusRows(colored));
+            }
+            return result;
+        }
+
         // extraRow is always per-player (each player gets an independently drawn bounce offset)
         boolean perPlayer = settings.cardMode() == CardMode.PROBABILISTIC || settings.extraRow();
         if (!perPlayer) {
@@ -63,6 +82,49 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
             }
         }
         return result;
+    }
+
+    /**
+     * Takes the 4 standard coloured rows [RED, YELLOW, GREEN, BLUE] and returns a 6-row
+     * list with bonus rows inserted: [RED(0), BONUS-RY(1), YELLOW(2), GREEN(3), BONUS-GB(4), BLUE(5)].
+     */
+    private List<Row> interleaveWithBonusRows(List<Row> colored) {
+        Row red    = colored.get(0);
+        Row yellow = colored.get(1);
+        Row green  = colored.get(2);
+        Row blue   = colored.get(3);
+
+        Row bonusRY = buildBonusRow(Color.RED,   Color.YELLOW, true);   // ascending  2..max
+        Row bonusGB = buildBonusRow(Color.GREEN,  Color.BLUE,  false);  // descending max..2
+
+        List<Row> rows = new ArrayList<>();
+        rows.add(red);      // index 0
+        rows.add(bonusRY);  // index 1
+        rows.add(yellow);   // index 2
+        rows.add(green);    // index 3
+        rows.add(bonusGB);  // index 4
+        rows.add(blue);     // index 5
+
+        bonusRY.setBonusRow(0, 2);  // neighbours: red(0) and yellow(2)
+        bonusGB.setBonusRow(3, 5);  // neighbours: green(3) and blue(5)
+
+        return rows;
+    }
+
+    /** Builds a bonus row with split-color cells (primary = upperColor, secondary = lowerColor). */
+    private Row buildBonusRow(Color upperColor, Color lowerColor, boolean ascending) {
+        int max = maxDisplayValue();
+        Row row = new Row();
+        for (int i = 0; i <= max - 2; i++) {
+            Cell cell = new Cell(i);
+            cell.setColor(upperColor);
+            cell.setDisplayValue(ascending ? String.valueOf(i + 2) : String.valueOf(max - i));
+            cell.setTags(List.of(new CellTag.SecondaryColor(lowerColor)));
+            cell.setClosingEligible(false);
+            row.addCell(cell);
+        }
+        // No lock — bonus rows cannot be closed.
+        return row;
     }
 
     private static final int[] BOUNCE = {0, 1, 2, 3, 2, 1};
@@ -114,7 +176,17 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
 
     @Override
     public ScoringEngine buildScoringEngine() {
+        if (settings.bigPoints()) return new BigPointsScoringEngine(bigPointsScoreCap());
         return new StandardScoringEngine();
+    }
+
+    // Standard: 11 cells + 4 bonus = 15  → triangular(15) = 120 (matches the official rule)
+    // Longo:    15 cells + 4 bonus = 19  → triangular(19) = 190
+    private int bigPointsScoreCap() {
+        return switch (settings.base()) {
+            case STANDARD -> 15;
+            case LONGO    -> 19;
+        };
     }
 
     @Override

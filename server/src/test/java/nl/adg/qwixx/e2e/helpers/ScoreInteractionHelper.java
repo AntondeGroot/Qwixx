@@ -8,7 +8,6 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
 
 public class ScoreInteractionHelper {
 
@@ -40,64 +39,61 @@ public class ScoreInteractionHelper {
     // ── Player rows ────────────────────────────────────────────────────────────
 
     /**
-     * Returns the player row element for the given player name, or empty if not found.
-     * Uses JavaScript so the lookup is immune to component-boundary XPath quirks.
-     */
-    public static Optional<WebElement> findPlayerRow(WebDriver driver, String playerName) {
-        try {
-            WebElement row = (WebElement) ((JavascriptExecutor) driver).executeScript(
-                    "return Array.from(document.querySelectorAll('.player-row')).find(r => " +
-                    "  r.querySelector('.player-name')?.textContent.trim() === arguments[0]);",
-                    playerName);
-            return Optional.ofNullable(row);
-        } catch (Exception e) {
-            return Optional.empty();
-        }
-    }
-
-    /**
      * Returns the displayed total for a player (text inside .total-value of that player's row).
+     *
+     * Done in a single JS call so there is no stale-element window between finding the
+     * player row and reading the total — Chrome 148 can replace the node between the two
+     * Java calls, causing the findElement on the returned WebElement to silently return 0.
      */
     public static int getPlayerDisplayedTotal(WebDriver driver, String playerName) {
-        return findPlayerRow(driver, playerName)
-                .map(row -> {
-                    try {
-                        return Integer.parseInt(
-                                row.findElement(By.className("total-value")).getText().trim());
-                    } catch (Exception e) {
-                        return 0;
-                    }
-                })
-                .orElse(0);
+        try {
+            Object result = ((JavascriptExecutor) driver).executeScript(
+                    "const row = Array.from(document.querySelectorAll('.player-row')).find(r => " +
+                    "  r.querySelector('.player-name')?.textContent.trim() === arguments[0]);" +
+                    "if (!row) return null;" +
+                    "const tv = row.querySelector('.total-value');" +
+                    "return tv ? tv.textContent.trim() : null;",
+                    playerName);
+            return result == null ? 0 : Integer.parseInt(result.toString());
+        } catch (Exception e) {
+            return 0;
+        }
     }
 
     /**
      * Returns true when the player's row has the CSS `top` value corresponding to {@code rank}.
      * Rank 0 = top of screen (80 * 0 = 0 px), rank 1 = 80 px, etc.
-     *
-     * The score component sets an inline `top: Npx` via Angular's [style.top.px] binding,
-     * which we read from the element's style attribute.
      */
     public static boolean isPlayerAtRank(WebDriver driver, String playerName, int rank) {
-        return findPlayerRow(driver, playerName)
-                .map(row -> {
-                    String style = row.getAttribute("style");
-                    String expected = "top: " + (rank * 80) + "px";
-                    return style != null && style.contains(expected);
-                })
-                .orElse(false);
+        try {
+            Object result = ((JavascriptExecutor) driver).executeScript(
+                    "const row = Array.from(document.querySelectorAll('.player-row')).find(r => " +
+                    "  r.querySelector('.player-name')?.textContent.trim() === arguments[0]);" +
+                    "if (!row) return null;" +
+                    "return row.getAttribute('style');",
+                    playerName);
+            String style = result == null ? null : result.toString();
+            return style != null && style.contains("top: " + (rank * 80) + "px");
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**
      * Returns true if the player row carries the {@code winner} CSS class (golden glow).
      */
     public static boolean isPlayerRowMarkedWinner(WebDriver driver, String playerName) {
-        return findPlayerRow(driver, playerName)
-                .map(row -> {
-                    String cls = row.getAttribute("class");
-                    return cls != null && cls.contains("winner");
-                })
-                .orElse(false);
+        try {
+            Object result = ((JavascriptExecutor) driver).executeScript(
+                    "const row = Array.from(document.querySelectorAll('.player-row')).find(r => " +
+                    "  r.querySelector('.player-name')?.textContent.trim() === arguments[0]);" +
+                    "return row ? row.getAttribute('class') : null;",
+                    playerName);
+            String cls = result == null ? null : result.toString();
+            return cls != null && cls.contains("winner");
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     // ── Modal buttons ──────────────────────────────────────────────────────────
@@ -118,7 +114,11 @@ public class ScoreInteractionHelper {
      * waiting for both together is the reliable way to avoid race conditions.
      */
     public static void clickViewScoresButton(WebDriver driver) {
-        driver.findElement(By.cssSelector(".winner-modal .btn-ghost")).click();
+        // Use JS click to avoid "Node with given id does not belong to the document" —
+        // Chrome 148 rejects a stale node ID when Angular re-renders between findElement
+        // and the WebDriver click command. JS click is atomic: query + click in one hop.
+        ((JavascriptExecutor) driver).executeScript(
+                "document.querySelector('.winner-modal .btn-ghost')?.click();");
         // Wait for: modal gone, action bar present, AND rows correctly repositioned.
         // The last condition covers the afterEveryRender cycle that recalculates rowH
         // to account for the action bar's extra height — without it the assertion that

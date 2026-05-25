@@ -33,18 +33,17 @@ public class BoardInteractionHelper {
     /**
      * Clicks the cell whose displayed value equals {@code displayValue} in the given row color.
      *
-     * Strategy: use pure-JS DOM traversal to locate the element (avoiding stale-element
-     * exceptions from Angular component host boundaries), then hand the found element back
-     * to Selenium for a proper WebElement.click().  JavaScript's own element.click() is
-     * less reliable for Angular event bindings in headless Chrome — Selenium's click
-     * physically dispatches the event through the browser's input pipeline.
+     * The click is performed inside the same JS call that locates the element so that
+     * there is no window for Angular to replace the DOM node between the query and the
+     * click (Chrome 148 throws "Node with given id does not belong to the document" in
+     * that window, which the WebDriverWait swallows and retries until timeout).
      */
     public static void clickCellByValue(WebDriver driver, String rowColor, String displayValue) {
         try {
             new WebDriverWait(driver, Duration.ofSeconds(5)).until(d -> {
-                WebElement cell = (WebElement) ((JavascriptExecutor) d).executeScript(
+                Object clicked = ((JavascriptExecutor) d).executeScript(
                         "const section = document.querySelector('section.current-player');" +
-                        "if (!section) return null;" +
+                        "if (!section) return false;" +
                         "for (const span of section.querySelectorAll('.cell-value')) {" +
                         "  if (span.textContent.trim() !== arguments[1]) continue;" +
                         "  let cell = span.parentElement;" +
@@ -53,13 +52,11 @@ public class BoardInteractionHelper {
                         "  let row = cell.parentElement;" +
                         "  while (row && !(row.classList && row.classList.contains('row'))) row = row.parentElement;" +
                         "  if (!row || row.getAttribute('data-color') !== arguments[0]) continue;" +
-                        "  return cell;" +
+                        "  cell.click(); return true;" +
                         "}" +
-                        "return null;",
+                        "return false;",
                         rowColor, displayValue);
-                if (cell == null) return false;
-                cell.click();
-                return true;
+                return Boolean.TRUE.equals(clicked);
             });
         } catch (org.openqa.selenium.TimeoutException e) {
             throw new NoSuchElementException(
@@ -186,9 +183,21 @@ public class BoardInteractionHelper {
         }
     }
 
-    /** Clicks the OK/Confirm button on the row-closure notification modal. */
+    /**
+     * Clicks the OK/Confirm button on the row-closure notification modal.
+     *
+     * Waits up to 5 s for the button to appear in the DOM (the modal-overlay may render
+     * before Angular has rendered the buttons inside it), then clicks via JS to avoid
+     * the Chrome 148 "Node with given id does not belong to the document" stale-node error.
+     */
     public static void clickModalConfirmButton(WebDriver driver) {
-        driver.findElement(By.xpath("//button[contains(@class,'btn-notification-ok')]")).click();
+        new WebDriverWait(driver, Duration.ofSeconds(5)).until(d -> {
+            Object clicked = ((JavascriptExecutor) d).executeScript(
+                    "const btn = document.querySelector('.btn-notification-ok');" +
+                    "if (!btn) return false;" +
+                    "btn.click(); return true;");
+            return Boolean.TRUE.equals(clicked);
+        });
     }
 
     /** Clicks the Change button on the row-closure notification modal. */

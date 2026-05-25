@@ -1,11 +1,12 @@
 import { Component, computed, input } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { Player } from '../../generated/model/player';
-import { SheetLayout } from '../../generated/model/sheetLayout';
-import { SheetProgress } from '../../generated/model/sheetProgress';
-import { SheetRow } from '../../generated/model/sheetRow';
-import { TurnPhase } from '../../generated/model/turnPhase';
-import { TurnState } from '../../generated/model/turnState';
+import { Player } from '../../generated';
+import { SheetCell } from '../../generated';
+import { SheetLayout } from '../../generated';
+import { SheetProgress } from '../../generated';
+import { SheetRow } from '../../generated';
+import { TurnPhase } from '../../generated';
+import { TurnState } from '../../generated';
 
 @Component({
   selector: 'app-player-list',
@@ -70,5 +71,16 @@ export class PlayerListComponent {
 
   initials(name: string): string {
     return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  }
+
+  readonly colorHex: Record<string, string> = {
+    RED:    '#d32f2f',
+    YELLOW: '#f9a825',
+    GREEN:  '#388e3c',
+    BLUE:   '#1565c0',
+  };
+
+  secondaryColorOf(cell: SheetCell | undefined): string | null {
+    return cell?.tags?.find(t => t.type === 'SECONDARY_COLOR')?.secondaryColor ?? null;
   }
 }

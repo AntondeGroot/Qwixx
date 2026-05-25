@@ -18,6 +18,8 @@
     "gameModeDescription": "ONLINE håndhever tursyklus og terningregler på serveren. OFFLINE lar spillere bruke ekte terninger.",
     "cardMode": "Alle spillere får",
     "cardModeDescription": "Noen alternativer (som Ekstra rad) genererer alltid unike oppsett per spiller og overstyrer denne innstillingen.",
+    "bigPoints": "Big Points",
+    "bigPointsDescription": "Legger til to bonusrader. Du kan krysse av en rute KUN når du allerede har et kryss over eller under den. Et kryss i disse radene teller for begge fargeradene. Maksimalt antall kryss er begrenset til antall ruter i en rad.",
     "randomOrder": "Tilfeldig rekkefølge",
     "randomOrderDescription": "Bland visningsverdiene i hver rad.",
     "extraRow": "Ekstra rad",

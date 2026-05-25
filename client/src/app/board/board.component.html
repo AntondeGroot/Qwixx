@@ -55,8 +55,11 @@
                 [isDeclarantLockPending]="declarantPendingLockRowIds().has(row.id)"
                 [isPendingAutoLock]="pendingAutoLockRowId() === row.id"
                 [lockClickable]="isLockEligible(playerId(), row.id)"
+                [maxedColors]="maxedColors()"
                 [connectorOffsetsAbove]="myRowConnectors().get(row.id)?.above ?? []"
                 [connectorOffsetsBelow]="myRowConnectors().get(row.id)?.below ?? []"
+                [hasBonusRowAbove]="myRowConnectors().get(row.id)?.hasBonusRowAbove ?? false"
+                [hasBonusRowBelow]="myRowConnectors().get(row.id)?.hasBonusRowBelow ?? false"
                 (cellClicked)="onCellClicked(row.id, $event, playerId())"
                 (lockClicked)="onLockClicked(row.id, playerId())" />
             }

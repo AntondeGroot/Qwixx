@@ -169,17 +169,27 @@ class GameStateMapper {
     }
 
     private static nl.adg.qwixx.generated.model.SheetLayout mapSheetLayout(SheetLayout layout) {
-        List<SheetRow> rows = layout.rows().stream()
-                .map(GameStateMapper::mapRow)
-                .toList();
+        List<Row> domainRows = layout.rows();
+        List<SheetRow> rows = new ArrayList<>();
+        for (Row row : domainRows) {
+            rows.add(mapRow(row, domainRows));
+        }
         return new nl.adg.qwixx.generated.model.SheetLayout(rows);
     }
 
-    private static SheetRow mapRow(Row row) {
+    private static SheetRow mapRow(Row row, List<Row> allRows) {
         List<SheetCell> cells = row.cells().stream()
                 .map(GameStateMapper::mapCell)
                 .toList();
-        return new SheetRow(row.id(), cells, mapLock(row.lock()));
+        SheetRow dto = new SheetRow(row.id(), cells, mapLock(row.lock()))
+                .bonusRow(row.isBonusRow());
+        if (row.isBonusRow()) {
+            int upper = row.upperRowIndex();
+            int lower = row.lowerRowIndex();
+            if (upper >= 0) dto.setUpperNeighbourRowId(allRows.get(upper).id());
+            if (lower >= 0) dto.setLowerNeighbourRowId(allRows.get(lower).id());
+        }
+        return dto;
     }
 
     private static SheetCell mapCell(Cell cell) {
@@ -216,6 +226,10 @@ class GameStateMapper {
                     new nl.adg.qwixx.generated.model.CellTag(
                             nl.adg.qwixx.generated.model.CellTag.TypeEnum.BONUS_POINTS)
                             .amount(b.amount());
+            case CellTag.SecondaryColor sc ->
+                    new nl.adg.qwixx.generated.model.CellTag(
+                            nl.adg.qwixx.generated.model.CellTag.TypeEnum.SECONDARY_COLOR)
+                            .secondaryColor(sc.color().name());
         };
     }
 

@@ -18,6 +18,8 @@
     "gameModeDescription": "ONLINE erzwingt Reihenfolge und Würfelregeln auf dem Server. OFFLINE lässt Spieler echte Würfel verwenden.",
     "cardMode": "Alle Spieler erhalten",
     "cardModeDescription": "Einige Optionen (z. B. Zusätzliche Reihe) erzeugen immer ein einzigartiges Layout pro Spieler und überschreiben diese Einstellung.",
+    "bigPoints": "Big Points",
+    "bigPointsDescription": "Fügt zwei Bonusreihen hinzu. Du kannst ein Feld NUR ankreuzen, wenn du bereits ein Kreuz darüber oder darunter hast. Ein Kreuz in diesen Reihen zählt für beide Farbreihen. Die maximale Anzahl an Kreuzen ist auf die Anzahl der Felder in einer Reihe begrenzt.",
     "randomOrder": "Zufällige Reihenfolge",
     "randomOrderDescription": "Mischen Sie die Anzeigewerte in jeder Reihe.",
     "extraRow": "Zusätzliche Reihe",

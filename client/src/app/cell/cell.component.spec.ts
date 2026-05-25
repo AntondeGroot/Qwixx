@@ -50,6 +50,38 @@ describe('CellComponent', () => {
     });
   });
 
+  describe('big-points cell rendering', () => {
+    it('renders SVG instead of display-value span when SECONDARY_COLOR tag is present', () => {
+      const f = TestBed.createComponent(CellComponent);
+      f.componentRef.setInput('cell', makeCell({
+        tags: [{ type: CellTag.TypeEnum.SECONDARY_COLOR, secondaryColor: 'YELLOW' as any }],
+      }));
+      f.detectChanges();
+      const el = f.nativeElement as HTMLElement;
+      expect(el.querySelector('.cell-value')).toBeNull();
+      expect(el.querySelector('.big-points-svg')).not.toBeNull();
+    });
+
+    it('applies big-points-cell class when SECONDARY_COLOR tag is present', () => {
+      const f = TestBed.createComponent(CellComponent);
+      f.componentRef.setInput('cell', makeCell({
+        tags: [{ type: CellTag.TypeEnum.SECONDARY_COLOR, secondaryColor: 'YELLOW' as any }],
+      }));
+      f.detectChanges();
+      const el = f.nativeElement as HTMLElement;
+      expect(el.querySelector('.big-points-cell')).not.toBeNull();
+    });
+
+    it('renders display-value span and no SVG for a regular cell', () => {
+      const f = TestBed.createComponent(CellComponent);
+      f.componentRef.setInput('cell', makeCell());
+      f.detectChanges();
+      const el = f.nativeElement as HTMLElement;
+      expect(el.querySelector('.cell-value')).not.toBeNull();
+      expect(el.querySelector('.big-points-svg')).toBeNull();
+    });
+  });
+
   describe('inputs default values', () => {
     it('crossed defaults to false', () => {
       expect(component.crossed()).toBe(false);

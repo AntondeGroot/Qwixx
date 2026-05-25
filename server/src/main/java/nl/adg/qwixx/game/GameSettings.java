@@ -11,6 +11,7 @@ public class GameSettings {
     private final boolean      randomOrder;
     private final boolean      connectedCells;
     private final boolean      extraRow;
+    private final boolean      bigPoints;
     private final boolean      mixedColors;
     private final CardMode     cardMode;
     private final GameMode     gameMode;
@@ -25,6 +26,7 @@ public class GameSettings {
         this.randomOrder = builder.randomOrder;
         this.connectedCells = builder.connectedCells;
         this.extraRow    = builder.extraRow;
+        this.bigPoints   = builder.bigPoints;
         this.mixedColors = builder.mixedColors;
         this.cardMode    = builder.cardMode;
         this.gameMode    = builder.gameMode;
@@ -37,6 +39,7 @@ public class GameSettings {
     public boolean         randomOrder()    { return randomOrder; }
     public boolean         connectedCells() { return connectedCells; }
     public boolean         extraRow()       { return extraRow; }
+    public boolean         bigPoints()      { return bigPoints; }
     public boolean         mixedColors()    { return mixedColors; }
     public CardMode        cardMode()       { return cardMode; }
     public GameMode        gameMode()       { return gameMode; }
@@ -57,6 +60,7 @@ public class GameSettings {
         private boolean        randomOrder    = false;
         private boolean        connectedCells = false;
         private boolean        extraRow       = false;
+        private boolean        bigPoints      = false;
         private boolean        mixedColors    = false;
         private CardMode       cardMode       = CardMode.DETERMINISTIC;
         private GameMode       gameMode       = GameMode.ONLINE;
@@ -68,12 +72,20 @@ public class GameSettings {
         public Builder randomOrder(boolean v)              { this.randomOrder = v; return this; }
         public Builder connectedCells(boolean v)           { this.connectedCells = v; return this; }
         public Builder extraRow(boolean v)                 { this.extraRow = v; return this; }
+        public Builder bigPoints(boolean v)                { this.bigPoints = v; return this; }
         public Builder mixedColors(boolean v)              { this.mixedColors = v; return this; }
         public Builder cardMode(CardMode cardMode)         { this.cardMode = cardMode; return this; }
         public Builder gameMode(GameMode gameMode)         { this.gameMode = gameMode; return this; }
         public Builder botCount(int v)                     { this.botCount = v; return this; }
         public Builder botStrategy(BotStrategy v)          { this.botStrategy = v; return this; }
         public Builder botProfiles(List<BotProfile> v)    { this.botProfiles = List.copyOf(v); return this; }
-        public GameSettings build()                        { return new GameSettings(this); }
+        public GameSettings build() {
+            if (randomOrder && bigPoints) {
+                throw new IllegalArgumentException(
+                    "randomOrder and bigPoints cannot be combined: shuffling the colour rows " +
+                    "breaks the positional guardrail that makes the bonus prerequisite meaningful");
+            }
+            return new GameSettings(this);
+        }
     }
 }

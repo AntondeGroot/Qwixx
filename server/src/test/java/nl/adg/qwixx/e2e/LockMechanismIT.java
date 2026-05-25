@@ -73,13 +73,17 @@ public class LockMechanismIT extends BaseIntegrationTest {
     @ExtendWith(RetryOnChromeFailure.Extension.class)
     @RetryOnChromeFailure
     void lockBecomesAutoCrossedAfterCrossingClosingCell() {
-        // Setup: 5 crosses (no "2"), dice 1+1 → white+white sum = 2 → "2" cell is reachable
-        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, 5);
-        api.roll(sessionId, playerIds.get(0));
-        api.setDice(sessionId, 1, 1);
+        // Use local session so @RetryOnChromeFailure can re-run safely without stale API state.
+        String sid = api.createGame(2);
+        List<String> pids = api.getOrderedPlayerIds(sid);
 
-        TestUtils.navigateTo(driver0, sessionId, playerIds.get(0));
-        TestUtils.navigateTo(driver1, sessionId, playerIds.get(1));
+        // Setup: 5 crosses (no "2"), dice 1+1 → white+white sum = 2 → "2" cell is reachable
+        api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, 5);
+        api.roll(sid, pids.get(0));
+        api.setDice(sid, 1, 1);
+
+        TestUtils.navigateTo(driver0, sid, pids.get(0));
+        TestUtils.navigateTo(driver1, sid, pids.get(1));
 
         assertFalse(isLockButtonCrossed(driver0, "BLUE"),
                 "Lock should not be crossed before crossing '2'");
@@ -109,7 +113,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
                 "BLUE row must be closed after both players complete their turns");
     }
 
-    // ── Lock-intent modal: declaring player ───────────────────────────────────
+    // ── Lock-intent modal: declaring player ──────────────────────────────────
 
     @Test
     void activePlayerSeesNoModalAfterCrossingClosingCell() {
@@ -329,6 +333,8 @@ public class LockMechanismIT extends BaseIntegrationTest {
     }
 
     @Test
+    @ExtendWith(RetryOnChromeFailure.Extension.class)
+    @RetryOnChromeFailure
     void longoYesOnSelfCloseModal_passivePlayerSeesModalImmediately() {
         String sid = api.createGame(2, java.util.Map.of("base", "LONGO"));
         List<String> pids = api.getOrderedPlayerIds(sid);

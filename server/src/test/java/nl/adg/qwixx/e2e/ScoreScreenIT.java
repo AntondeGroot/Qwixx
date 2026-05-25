@@ -2,12 +2,14 @@ package nl.adg.qwixx.e2e;
 
 import nl.adg.qwixx.e2e.helpers.ScoreInteractionHelper;
 import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
+import nl.adg.qwixx.e2e.utils.RetryOnChromeFailure;
 import nl.adg.qwixx.e2e.utils.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -103,7 +105,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
         TestUtils.navigateToScore(driver, sessionId);
 
         // Wait for the full animation + modal to appear (up to 35 s)
-        waitUntilWinnerModalVisible(driver, 10);
+        waitUntilWinnerModalVisible(driver, 30);
 
         String winner = getWinnerName(driver);
         assertEquals("player0", winner,
@@ -111,10 +113,12 @@ public class ScoreScreenIT extends BaseIntegrationTest {
     }
 
     @Test
+    @ExtendWith(RetryOnChromeFailure.Extension.class)
+    @RetryOnChromeFailure
     void winnerIsAtTopOfRankingAfterAnimation() {
         TestUtils.navigateToScore(driver, sessionId);
 
-        waitUntilWinnerModalVisible(driver, 10);
+        waitUntilWinnerModalVisible(driver, 30);
 
         assertTrue(isPlayerAtRank(driver, "player0", 0),
                 "player0 (31 pts) should be at rank 0 (top) after the full animation");
@@ -126,7 +130,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
     void winnerRowReceivesGoldenWinnerClass() {
         TestUtils.navigateToScore(driver, sessionId);
 
-        waitUntilWinnerModalVisible(driver, 10);
+        waitUntilWinnerModalVisible(driver, 30);
 
         assertTrue(isPlayerRowMarkedWinner(driver, "player0"),
                 "player0's row should carry the 'winner' CSS class for the golden glow");
@@ -138,7 +142,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
     void finalDisplayedTotalsMatchExpectedScores() {
         TestUtils.navigateToScore(driver, sessionId);
 
-        waitUntilWinnerModalVisible(driver, 10);
+        waitUntilWinnerModalVisible(driver, 30);
 
         assertEquals(31, getPlayerDisplayedTotal(driver, "player0"),
                 "player0: RED 4×=10 + BLUE 6×=21 → 31 pts");
@@ -151,7 +155,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
     @Test
     void winnerModalHasAllThreeButtons() {
         TestUtils.navigateToScore(driver, sessionId);
-        waitUntilWinnerModalVisible(driver, 10);
+        waitUntilWinnerModalVisible(driver, 30);
 
         assertEquals(3, getModalButtonCount(driver),
                 "Winner modal must have exactly 3 buttons: View Scores, New Game, Leave Game");
@@ -162,7 +166,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
     @Test
     void viewScoresButtonDismissesModal() {
         TestUtils.navigateToScore(driver, sessionId);
-        waitUntilWinnerModalVisible(driver, 10);
+        waitUntilWinnerModalVisible(driver, 30);
 
         assertTrue(isWinnerModalVisible(driver),
                 "Modal must be visible before clicking View Scores");
@@ -176,7 +180,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
     @Test
     void viewScoresButtonRevealsActionBar() {
         TestUtils.navigateToScore(driver, sessionId);
-        waitUntilWinnerModalVisible(driver, 10);
+        waitUntilWinnerModalVisible(driver, 30);
 
         assertFalse(isActionBarVisible(driver),
                 "Action bar must not be visible while the modal is open");
@@ -190,7 +194,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
     @Test
     void actionBarHasTwoButtonsAfterViewScores() {
         TestUtils.navigateToScore(driver, sessionId);
-        waitUntilWinnerModalVisible(driver, 10);
+        waitUntilWinnerModalVisible(driver, 30);
         clickViewScoresButton(driver);
 
         assertEquals(3, getActionBarButtonCount(driver),
@@ -200,7 +204,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
     @Test
     void scoreTableRemainsVisibleAfterViewScores() {
         TestUtils.navigateToScore(driver, sessionId);
-        waitUntilWinnerModalVisible(driver, 10);
+        waitUntilWinnerModalVisible(driver, 30);
         clickViewScoresButton(driver);
 
         List<String> names = getVisiblePlayerNames(driver);
@@ -215,7 +219,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
     @Test
     void newGameButtonNavigatesToSettings() {
         TestUtils.navigateToScore(driver, sessionId);
-        waitUntilWinnerModalVisible(driver, 10);
+        waitUntilWinnerModalVisible(driver, 30);
 
        clickNewGameButton(driver);
 
@@ -228,15 +232,23 @@ public class ScoreScreenIT extends BaseIntegrationTest {
 
     @Test
     void leaveGameButtonNavigatesToLobby() {
-        TestUtils.navigateToScore(driver, sessionId);
-        waitUntilWinnerModalVisible(driver, 10);
-
-        clickLeaveGameButton(driver);
-
-        new WebDriverWait(driver, Duration.ofSeconds(10))
-                .until(d -> d.getCurrentUrl().startsWith("http://localhost:4100"));
-        assertTrue(driver.getCurrentUrl().startsWith("http://localhost:4100"),
-                "Leave Game button must redirect to the lobby. Current URL: " + driver.getCurrentUrl());
+        // Use a dedicated driver that is discarded after this test. Clicking Leave Game
+        // redirects to http://localhost:4100 (the lobby), which is outside the test
+        // server domain and results in a connection-refused page. Chrome 148 can lose
+        // its DevTools connection after that navigation, which would poison the shared
+        // class-level driver and cause NoSuchSession in subsequent tests.
+        WebDriver tempDriver = TestUtils.createDriver();
+        try {
+            TestUtils.navigateToScore(tempDriver, sessionId);
+            waitUntilWinnerModalVisible(tempDriver, 30);
+            clickLeaveGameButton(tempDriver);
+            new WebDriverWait(tempDriver, Duration.ofSeconds(10))
+                    .until(d -> d.getCurrentUrl().startsWith("http://localhost:4100"));
+            assertTrue(tempDriver.getCurrentUrl().startsWith("http://localhost:4100"),
+                    "Leave Game button must redirect to the lobby. Current URL: " + tempDriver.getCurrentUrl());
+        } finally {
+            tempDriver.quit();
+        }
     }
 
     // ── Mobile portrait layout ────────────────────────────────────────────────
@@ -305,7 +317,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
     @Test
     void winnerModalIsVisibleInPortraitMode() {
         TestUtils.navigateToScore(portraitDriver, sessionId);
-        waitUntilWinnerModalVisible(portraitDriver, 10);
+        waitUntilWinnerModalVisible(portraitDriver, 30);
 
         assertTrue(isWinnerModalVisible(portraitDriver),
                 "Winner modal must be visible in portrait mode");
@@ -330,7 +342,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
     @Test
     void scoreScreenPortrait_playerNamesAreVisible() {
         TestUtils.navigateToScore(portraitDriver, sessionId);
-        waitUntilWinnerModalVisible(portraitDriver, 10);
+        waitUntilWinnerModalVisible(portraitDriver, 30);
         clickViewScoresButton(portraitDriver);
 
         boolean namesVisible = (boolean) ((JavascriptExecutor) portraitDriver).executeScript(
@@ -356,7 +368,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
     @Test
     void scoreScreenPortrait_totalColumnIsWithinViewport() {
         TestUtils.navigateToScore(portraitDriver, sessionId);
-        waitUntilWinnerModalVisible(portraitDriver, 10);
+        waitUntilWinnerModalVisible(portraitDriver, 30);
         clickViewScoresButton(portraitDriver);
 
         boolean totalsVisible = (boolean) ((JavascriptExecutor) portraitDriver).executeScript(

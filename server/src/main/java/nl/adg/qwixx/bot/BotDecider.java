@@ -276,6 +276,10 @@ public class BotDecider {
                 }
                 case CellTag.ExtraBucket ignored ->
                         adjust -= profile.rarityBonus();
+                case CellTag.SecondaryColor ignored -> {
+                    int displayValue = parseDisplayValue(cell, center);
+                    adjust -= Math.abs(displayValue - center) * profile.rarityBonus();
+                }
             }
         }
         return adjust;

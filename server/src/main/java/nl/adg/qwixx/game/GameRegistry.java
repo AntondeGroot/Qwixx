@@ -10,11 +10,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class GameRegistry {
 
     private static final Map<String, GameSettings> PRESETS = Map.of(
-        "standard",  GameSettings.builder().base(BaseVariant.STANDARD).build(),
-        "longo",     GameSettings.builder().base(BaseVariant.LONGO).build(),
-        "extra-row", GameSettings.builder().base(BaseVariant.STANDARD).extraRow(true).build(),
-        "random",    GameSettings.builder().base(BaseVariant.STANDARD).randomOrder(true)
-                         .cardMode(CardMode.PROBABILISTIC).build()
+        "standard",             GameSettings.builder().base(BaseVariant.STANDARD).build(),
+        "longo",                GameSettings.builder().base(BaseVariant.LONGO).build(),
+        "extra-row",            GameSettings.builder().base(BaseVariant.STANDARD).extraRow(true).build(),
+        "random",               GameSettings.builder().base(BaseVariant.STANDARD).randomOrder(true)
+                                    .cardMode(CardMode.PROBABILISTIC).build(),
+        "big-points",           GameSettings.builder().base(BaseVariant.STANDARD).bigPoints(true).build(),
+        "longo-big-points",     GameSettings.builder().base(BaseVariant.LONGO).bigPoints(true).build()
     );
 
     private static final Map<String, GameSession> SESSIONS = new ConcurrentHashMap<>();

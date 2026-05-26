@@ -364,6 +364,24 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
           || phase === TurnPhase.ACTIVE_MOVE);
   });
 
+  // True when the active player has no clickable cells and can only take a punishment.
+  // pendingCellIds check: after an x-change cross the player can still RESET_TURN.
+  mustGiveUp = computed(() =>
+    !this.rollingDice()
+    && this.canGiveUp()
+    && !this.canPassActive()
+    && this.pendingCellIds().size === 0
+    && this.clickableCellIds().size === 0
+  );
+
+  // True when a passive player has no cells to cross and passing is their only option.
+  mustPassPassive = computed(() =>
+    !this.rollingDice()
+    && this.canPassPassive()
+    && !this.hasPendingPassiveCross()
+    && this.clickableCellIds().size === 0
+  );
+
   gameFaces = computed((): 6 | 8 => {
     const layout = this.gameState()?.sheetLayouts[this.playerId()];
     return (layout?.rows[0]?.cells.length ?? 11) > 11 ? 8 : 6;

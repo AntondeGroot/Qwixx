@@ -20,6 +20,7 @@ public class QwixxGameOptions {
     private static final String GAME_MODE = "gameMode";
     private static final String BIG_POINTS   = "bigPoints";
     private static final String RANDOM_ORDER = "randomOrder";
+    private static final String X_CHANGE     = "xChange";
 
     private QwixxGameOptions() {}
 
@@ -37,6 +38,7 @@ public class QwixxGameOptions {
                     .withIncompatibleWith(List.of(BIG_POINTS)),
             GameOption.boolOption(EXTRA_ROW, "gameOption.extraRow", "gameOption.extraRowDescription"),
             GameOption.boolOption(CONNECTED_CELLS, "gameOption.connectedCells", "gameOption.connectedCellsDescription"),
+            GameOption.adminBoolOption(X_CHANGE, "gameOption.xchange", "gameOption.xchangeDescription"),
             GameOption.intOption(BOT_COUNT, "gameOption.botCount", "gameOption.botCountDescription",
                 "0", 0, 3),
             GameOption.enumOption(BOT_STRATEGY, "gameOption.botStrategy", "gameOption.botStrategyDescription",
@@ -54,6 +56,7 @@ public class QwixxGameOptions {
         map.put(RANDOM_ORDER,    s.randomOrder());
         map.put(EXTRA_ROW,       s.extraRow());
         map.put(CONNECTED_CELLS, s.connectedCells());
+        map.put(X_CHANGE,        s.xChange());
         map.put(BOT_COUNT,       s.botCount());
         map.put(BOT_STRATEGY,    s.botStrategy() != null ? s.botStrategy().name()
                                                            : BotStrategy.BALANCED.name());
@@ -71,6 +74,7 @@ public class QwixxGameOptions {
                 case RANDOM_ORDER    -> builder.randomOrder(bool(entry.getValue()));
                 case EXTRA_ROW       -> builder.extraRow(bool(entry.getValue()));
                 case CONNECTED_CELLS -> builder.connectedCells(bool(entry.getValue()));
+                case X_CHANGE        -> builder.xChange(bool(entry.getValue()));
                 case BOT_COUNT       -> builder.botCount(integer(entry.getValue()));
                 case BOT_STRATEGY    -> builder.botStrategy(BotStrategy.valueOf(str(entry.getValue())));
                 default              -> log.warning("unknown game option '" + entry.getKey() + "', ignoring");

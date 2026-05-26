@@ -1,6 +1,7 @@
 import { Component, computed, input, output } from '@angular/core';
 import { SheetRow } from '../../generated/model/sheetRow';
 import { RowState } from '../../generated/model/rowState';
+import { CellTag } from '../../generated/model/cellTag';
 import { CellComponent } from '../cell/cell.component';
 
 @Component({
@@ -37,10 +38,15 @@ export class RowComponent {
 
   closingEligibleCells = computed(() => this.row().cells.filter(c => c.closingEligible));
 
+  isXChangeRow = computed(() =>
+    this.row().cells.some(c => c.tags.some(t => t.type === CellTag.TypeEnum.X_CHANGE))
+  );
+
   // For bonus rows (no lock), the last 1 (Standard) or 2 (Longo) cells are pulled into a
   // visual alignment zone so they line up with the closing cells of adjacent regular rows.
   private bonusZoneCellCount = computed(() => {
     if (this.row().lock != null) return 0;
+    if (this.isXChangeRow()) return 0;
     const total = this.row().cells.length;
     return total > 12 ? 2 : 1;
   });

@@ -154,3 +154,64 @@
   --glow-dim:  rgba(0, 229, 255, 0.50);
   --glow-mid:  rgba(0, 229, 255, 0.75);
 }
+
+/* X-Change diamond cells */
+.cell.x-change-cell {
+  width: 40px;
+  height: 40px;
+  background: white;
+  border: 2.5px solid #7B1FA2;
+  border-radius: 7px;
+  transform: rotate(45deg);
+  overflow: visible;
+}
+
+/* Override color backgrounds — x-change cells are always white inside */
+.cell.x-change-cell[data-color] {
+  background: white;
+  color: #333;
+}
+
+.xchange-inner {
+  transform: rotate(-45deg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.xchange-top,
+.xchange-bot {
+  font-size: 12px;
+  font-weight: 700;
+  color: #7B1FA2;
+  line-height: 1.1;
+}
+
+.xchange-arrows {
+  width: 20px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.cell.x-change-cell .cell-cross {
+  transform: rotate(-45deg);
+  font-size: 26px;
+  color: #7B1FA2;
+}
+
+/* Glow on clickable x-change cells — host needs position for ::after */
+:host.host-xchange-clickable {
+  display: block;
+  position: relative;
+}
+
+:host.host-xchange-clickable .cell.x-change-cell {
+  animation: pulse-glow 1.4s ease-in-out infinite;
+  --glow-full: rgba(0, 229, 255, 0.95);
+  --glow-dim:  rgba(0, 229, 255, 0.50);
+  --glow-mid:  rgba(0, 229, 255, 0.75);
+}

@@ -11,8 +11,13 @@ import { ScoreCard } from '../../generated/model/scoreCard';
 import { GameState } from '../../generated/model/gameState';
 import { RowState } from '../../generated/model/rowState';
 import { RowComponent } from '../row/row.component';
+import { CellTag } from '../../generated/model/cellTag';
+import { SheetRow } from '../../generated/model/sheetRow';
 
 const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
+
+const isXChangeRow = (r: SheetRow): boolean =>
+  r.cells.some(c => c.tags.some(t => t.type === CellTag.TypeEnum.X_CHANGE));
 
 interface PlayerRow {
   id:                  string;
@@ -262,7 +267,7 @@ export class ScoreComponent implements OnInit {
       this.finalState.set(state);
 
       const layout   = Object.values(state.sheetLayouts)[0];
-      const colors   = layout.rows.filter(r => !r.bonusRow).map(r => r.cells[0]!.color as string);
+      const colors   = layout.rows.filter(r => !r.bonusRow && !isXChangeRow(r)).map(r => r.cells[0]!.color as string);
       const hasExtra = Object.values(scores).some(s => s.extraPoints > 0);
       const hasBonus = Object.values(scores).some(s => s.bonusPoints > 0);
       this.colorCols.set(colors);
@@ -313,7 +318,7 @@ export class ScoreComponent implements OnInit {
       // Derive column structure from any player's layout.
       // Bonus rows are excluded: their points are already in scoreCard.bonusPoints.
       const layout   = Object.values(state.sheetLayouts)[0];
-      const colors   = layout.rows.filter(r => !r.bonusRow).map(r => r.cells[0]!.color as string);
+      const colors   = layout.rows.filter(r => !r.bonusRow && !isXChangeRow(r)).map(r => r.cells[0]!.color as string);
       const hasExtra = Object.values(scores).some(s => s.extraPoints  > 0);
       const hasBonus = Object.values(scores).some(s => s.bonusPoints  > 0);
 

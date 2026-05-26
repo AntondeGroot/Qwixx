@@ -62,25 +62,33 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
                 if (settings.connectedCells()) applyConnectedCells(colored);
                 result.put(player, interleaveWithBonusRows(colored));
             }
-            return result;
-        }
-
-        // extraRow is always per-player (each player gets an independently drawn bounce offset)
-        boolean perPlayer = settings.cardMode() == CardMode.PROBABILISTIC || settings.extraRow();
-        if (!perPlayer) {
-            List<Row> shared = buildStandardRows();
-            if (settings.randomOrder()) shuffleDisplayValues(shared);
-            if (settings.connectedCells()) applyConnectedCells(shared);
-            for (UUID player : players) result.put(player, shared);
         } else {
-            for (UUID player : players) {
-                List<Row> playerRows = buildStandardRows();
-                if (settings.randomOrder()) shuffleDisplayValues(playerRows);
-                if (settings.extraRow()) applyExtraRow(playerRows);
-                if (settings.connectedCells()) applyConnectedCells(playerRows);
-                result.put(player, playerRows);
+            // extraRow is always per-player (each player gets an independently drawn bounce offset)
+            boolean perPlayer = settings.cardMode() == CardMode.PROBABILISTIC || settings.extraRow();
+            if (!perPlayer) {
+                List<Row> shared = buildStandardRows();
+                if (settings.randomOrder()) shuffleDisplayValues(shared);
+                if (settings.connectedCells()) applyConnectedCells(shared);
+                if (settings.xChange()) shared.add(buildXChangeRow());
+                for (UUID player : players) result.put(player, shared);
+                return result;
+            } else {
+                for (UUID player : players) {
+                    List<Row> playerRows = buildStandardRows();
+                    if (settings.randomOrder()) shuffleDisplayValues(playerRows);
+                    if (settings.extraRow()) applyExtraRow(playerRows);
+                    if (settings.connectedCells()) applyConnectedCells(playerRows);
+                    result.put(player, playerRows);
+                }
             }
         }
+
+        if (settings.xChange()) {
+            // X-Change row is appended after all per-player rows are built.
+            Row xChangeRow = buildXChangeRow();
+            for (UUID player : players) result.get(player).add(xChangeRow);
+        }
+
         return result;
     }
 
@@ -277,6 +285,24 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
             cells.add(cell);
         }
         row.addLock(buildLock(color, cells));
+        return row;
+    }
+
+    private static final int[][] X_CHANGE_PAIRS = {
+        {8, 5}, {9, 7}, {11, 3}, {7, 4}, {10, 3}, {8, 6}, {10, 5}, {11, 9}, {6, 4}
+    };
+
+    private Row buildXChangeRow() {
+        Row row = new Row();
+        for (int i = 0; i < X_CHANGE_PAIRS.length; i++) {
+            Cell cell = new Cell(i);
+            cell.setColor(Color.BLUE);
+            cell.setDisplayValue("");
+            cell.setTags(List.of(new CellTag.XChange(X_CHANGE_PAIRS[i][0], X_CHANGE_PAIRS[i][1])));
+            cell.setClosingEligible(false);
+            row.addCell(cell);
+        }
+        // No lock — x-change rows cannot be closed.
         return row;
     }
 

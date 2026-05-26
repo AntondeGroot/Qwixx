@@ -5,6 +5,7 @@
      [class.extra-bucket]="hasTag()(TagEnum.EXTRA_BUCKET)"
      [class.auto-cross]="hasTag()(TagEnum.AUTO_CROSS)"
      [class.big-points-cell]="!!secondaryColor()"
+     [class.x-change-cell]="!!xChangeValues()"
      [class.primary-maxed]="primaryMaxed()"
      [class.secondary-maxed]="secondaryMaxed()"
      [class.clickable]="showClickable() ?? clickable()"
@@ -23,6 +24,17 @@
       <path d="M35.9,8 C29,7,25,10,22,16 C19,22,15,25,8.1,24"
             stroke="white" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round" fill="none"/>
     </svg>
+  } @else if (xChangeValues()) {
+    <div class="xchange-inner">
+      <span class="xchange-top">{{ xChangeValues()!.a }}</span>
+      <svg class="xchange-arrows" viewBox="0 0 20 14" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3,2 Q3,7 8,7" stroke="#7B1FA2" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        <path d="M6,5 L8,7 L6,9" stroke="#7B1FA2" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M17,12 Q17,7 12,7" stroke="#7B1FA2" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        <path d="M14,9 L12,7 L14,5" stroke="#7B1FA2" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="xchange-bot">{{ xChangeValues()!.b }}</span>
+    </div>
   } @else {
     <span class="cell-value">{{ cell().displayValue }}</span>
   }

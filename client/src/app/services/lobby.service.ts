@@ -5,7 +5,7 @@ import { BASE_PATH } from '../../generated/variables';
 
 export interface LobbyState {
   players:         { id: string; name: string }[];
-  proposedOptions: { [key: string]: any };
+  proposedOptions: Record<string, unknown>;
   maxPlayers:      number;
 }
 
@@ -22,7 +22,7 @@ export class LobbyService {
     return this.http.get<LobbyState>(this.url(sessionId));
   }
 
-  update(sessionId: string, gameOptions: { [key: string]: any }): Observable<void> {
+  update(sessionId: string, gameOptions: Record<string, unknown>): Observable<void> {
     return this.http.put<void>(this.url(sessionId), { gameOptions });
   }
 }

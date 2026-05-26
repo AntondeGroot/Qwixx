@@ -1,6 +1,6 @@
 import { Component, computed, effect, ElementRef, inject, input, OnDestroy, signal } from '@angular/core';
 import { NgClass, NgStyle } from '@angular/common';
-import { DiceSvgService } from './dice-svg.service';
+import { DiceColor, DiceSvgService } from './dice-svg.service';
 
 @Component({
   selector: 'app-dice',
@@ -52,7 +52,7 @@ export class DiceComponent implements OnDestroy {
     });
 
     effect(() => {
-      const color = this.color().toLowerCase() as any;
+      const color = this.color().toLowerCase() as DiceColor;
       const faces = this.faces();
       const type  = this.animating() ? 'anim' : 'results';
       this.svc.getUrl(faces, color, type).then(url => this.svgUrl.set(url));

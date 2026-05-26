@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-type DiceColor = 'white' | 'red' | 'blue' | 'green' | 'yellow';
+export type DiceColor = 'white' | 'red' | 'blue' | 'green' | 'yellow';
 type DiceType  = 'anim' | 'results';
 
 // Maps from red body colors → target body colors.

@@ -118,6 +118,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
         ).subscribe(() => {
           if (!this.suppressLobbySync) {
             this.lobbyService.update(this.sessionId()!, this.buildGameOptions())
+              // eslint-disable-next-line @typescript-eslint/no-empty-function
               .subscribe({ error: () => {} });
           }
           this.fetchPreview();
@@ -162,7 +163,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
   }
 
   // Update the form with lobby options without triggering an outgoing PUT.
-  private applyLobbyOptions(opts: Record<string, any>): void {
+  private applyLobbyOptions(opts: Record<string, unknown>): void {
     if (!opts || Object.keys(opts).length === 0) return;
     this.suppressLobbySync = true;
     for (const [key, value] of Object.entries(opts)) {

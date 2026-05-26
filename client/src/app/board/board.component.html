@@ -90,9 +90,12 @@
                 <span class="punishment-label">{{ 'punishment' | translate }} : –5</span>
                 @for (i of [0, 1, 2, 3]; track i) {
                   <div class="punishment-box"
+                       role="button"
+                       [tabindex]="canTakePunishment(playerId()) ? 0 : -1"
                        [class.taken]="(state.sheetProgress[playerId()]?.punishments ?? 0) > i"
                        [class.clickable]="canTakePunishment(playerId())"
-                       (click)="onPunishmentClicked(playerId())"></div>
+                       (click)="onPunishmentClicked(playerId())"
+                       (keydown.enter)="onPunishmentClicked(playerId())"></div>
                 }
               </div>
             </div>

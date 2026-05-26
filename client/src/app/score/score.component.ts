@@ -334,14 +334,14 @@ export class ScoreComponent implements OnInit {
       ];
 
       // Initialise all player rows at zero
-      const initDisplayed = (sc: ScoreCard): Record<string, number> =>
+      const initDisplayed = (): Record<string, number> =>
         Object.fromEntries(cols.map(c => [c.key, 0]));
 
       const rows: PlayerRow[] = state.players.map((p, i) => ({
         id:                  p.id,
         name:                p.name,
         scoreCard:           scores[p.id],
-        displayed:           initDisplayed(scores[p.id]),
+        displayed:           initDisplayed(),
         displayedPunishment: 0,
         rank:                i,
         lifting:             false,
@@ -422,7 +422,7 @@ export class ScoreComponent implements OnInit {
         const t     = Math.min(1, (now - start) / duration);
         const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
         onTick(eased);
-        t < 1 ? requestAnimationFrame(frame) : resolve();
+        if (t < 1) { requestAnimationFrame(frame); } else { resolve(); }
       };
       requestAnimationFrame(frame);
     });

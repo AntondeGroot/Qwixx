@@ -1,11 +1,10 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { TranslationService } from '../services/translation.service';
 
 @Component({
   selector: 'app-language-selector',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   template: `
     <div class="language-selector">
       <button class="language-btn" (click)="toggleDropdown()" [attr.aria-label]="'Change language'">
@@ -14,16 +13,19 @@ import { TranslationService } from '../services/translation.service';
           <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
         </svg>
       </button>
-      <div class="dropdown" *ngIf="showDropdown">
-        <button
-          *ngFor="let lang of translationService.languages"
-          class="dropdown-item"
-          [class.active]="lang.code === translationService.currentLanguage()"
-          (click)="selectLanguage(lang.code)"
-        >
-          {{ lang.label }}
-        </button>
-      </div>
+      @if (showDropdown) {
+        <div class="dropdown">
+          @for (lang of translationService.languages; track lang.code) {
+            <button
+              class="dropdown-item"
+              [class.active]="lang.code === translationService.currentLanguage()"
+              (click)="selectLanguage(lang.code)"
+            >
+              {{ lang.label }}
+            </button>
+          }
+        </div>
+      }
     </div>
   `,
   styles: [`

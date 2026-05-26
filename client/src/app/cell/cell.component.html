@@ -1,4 +1,6 @@
 <div class="cell"
+     [attr.role]="(clickable() || pending()) ? 'button' : null"
+     [tabindex]="(clickable() || pending()) ? 0 : -1"
      [class.crossed]="crossed()"
      [class.pending]="pending()"
      [class.closing-eligible]="cell().closingEligible"
@@ -13,6 +15,7 @@
      [attr.data-color]="cell().color"
      [attr.data-secondary-color]="secondaryColor()"
      (click)="(clickable() || pending()) && clicked.emit()"
+     (keydown.enter)="(clickable() || pending()) && clicked.emit()"
      [attr.translate]="'no'">
   @if (secondaryColor()) {
     <!-- SVG fills via inherited CSS custom properties --primary-color / --secondary-color. -->

@@ -19,7 +19,6 @@ import { TurnPhase } from '../../generated/model/turnPhase';
 import { DiceComponent } from '../dice/dice.component';
 import { PlayerListComponent } from '../player-list/player-list.component';
 import { RowComponent } from '../row/row.component';
-import { ClosureNotification } from '../row-closure-modal/row-closure-modal.component';
 import { RowClosureModalService } from '../services/row-closure-modal.service';
 import { AudioService } from '../services/audio.service';
 
@@ -527,7 +526,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     targetValue:    number,
     restrictRow:    string | null,
     result:         Set<string>,
-    hasXChangeActive: boolean = false
+    hasXChangeActive = false
   ) {
     const bonusNums: number[] = this.gameState()?.bonusNumbers?.[this.playerId()] ?? [];
 

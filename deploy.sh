@@ -12,6 +12,9 @@ fi
 SSH="ssh -i ~/.ssh/pi_deploy_key $TARGET"
 SCP="scp -i ~/.ssh/pi_deploy_key"
 
+echo "🔨 Linting client..."
+(cd client && npm run lint)
+
 echo "🔨 Running client unit tests..."
 (cd client && npx ng test --watch=false)
 

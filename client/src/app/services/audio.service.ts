@@ -11,6 +11,6 @@ export class AudioService {
   play(filename: string): void {
     if (typeof Audio === 'undefined') return;
     const audio = new Audio(`assets/audio/${filename}`);
-    audio.play()?.catch(() => {});
+    audio.play()?.catch(() => { /* autoplay blocked, ignore */ });
   }
 }

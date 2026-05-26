@@ -23,7 +23,11 @@ class TurnHelper {
     }
 
     static boolean hasAlreadyActed(TurnState turn, UUID playerId) {
-        return hasPendingCross(turn, playerId) || turn.passivesActed().contains(playerId);
+        if (turn.passivesActed().contains(playerId)) return true;
+        if (!hasPendingCross(turn, playerId)) return false;
+        // An x-change-only pending cross doesn't consume the WW slot; the player still
+        // needs to cross a regular cell with the new effectiveWW value.
+        return !turn.xChangeEffectiveWW().containsKey(playerId);
     }
 
     static List<UUID> unactedPassives(GameState state, UUID excludedPlayer) {

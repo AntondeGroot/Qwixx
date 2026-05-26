@@ -46,6 +46,8 @@ class CellCrosser {
         var progress               = state.boardState().sheetProgress().get(playerId);
         // Pre-turn snapshot used for Big Points bonus prerequisite check.
         Map<UUID, SheetProgress> startProgress = turn.moveStartProgress();
+        // Effective white+white after an x-change cross; null means use the actual roll sum.
+        Integer effectiveWW        = turn.xChangeEffectiveWW().get(playerId);
 
         for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
             Row row = layout.rows().get(rowIndex);
@@ -75,11 +77,21 @@ class CellCrosser {
                     if (!bonusPrerequisiteMet(layout, snap, row, cell)) continue;
                 }
 
-                DiceCombination combo = row.isBonusRow()
-                        ? resolveBonusCombo(roll, cell, ats, isActive)
-                        : (isActive
-                            ? DiceRoller.resolveActiveCombo(roll, cell, ats, state.boardState().activeDice())
-                            : (DiceRoller.matchesWhiteWhite(roll, cell) ? DiceCombination.WHITE_WHITE : null));
+                CellTag.XChange xChange = findXChangeTag(cell);
+                DiceCombination combo;
+                if (xChange != null) {
+                    if (effectiveWW != null) continue; // x-change already applied this turn
+                    combo = resolveXChangeCombo(roll, xChange, ats, isActive);
+                } else if (effectiveWW != null && !row.isBonusRow()) {
+                    // Effective WW overrides actual WW for normal cells; bonus rows use their own logic.
+                    combo = resolveWithEffectiveWW(roll, cell, ats, isActive, effectiveWW);
+                } else if (row.isBonusRow()) {
+                    combo = resolveBonusCombo(roll, cell, ats, isActive);
+                } else if (isActive) {
+                    combo = DiceRoller.resolveActiveCombo(roll, cell, ats, state.boardState().activeDice());
+                } else {
+                    combo = DiceRoller.matchesWhiteWhite(roll, cell) ? DiceCombination.WHITE_WHITE : null;
+                }
 
                 if (combo != null) {
                     actions.add(new CrossCellAction(playerId, rowIndex, cell.id(), combo));
@@ -87,6 +99,42 @@ class CellCrosser {
             }
         }
         return actions;
+    }
+
+    // Resolves combo for a normal cell when effectiveWW is active.
+    // WW slot targets effectiveWW value; color die is still independent.
+    private static DiceCombination resolveWithEffectiveWW(RollResult roll, Cell cell, ActiveTurnState ats, boolean isActive, int effectiveWW) {
+        String target = String.valueOf(effectiveWW);
+        if (isActive) {
+            if (!ats.whiteWhiteUsed() && !ats.colorDieUsed() && cell.displayValue().equals(target)) {
+                return DiceCombination.WHITE_WHITE;
+            }
+            if (!ats.colorDieUsed()) {
+                Integer colorValue = roll.coloredDice().get(cell.color());
+                if (colorValue != null && DiceRoller.matchesWhiteColor(roll, cell, colorValue)) {
+                    return DiceCombination.WHITE_COLOR;
+                }
+            }
+            return null;
+        } else {
+            return cell.displayValue().equals(target) ? DiceCombination.WHITE_WHITE : null;
+        }
+    }
+
+    // X-Change cells respond only to white+white sum matching either value in the pair.
+    static CellTag.XChange findXChangeTag(Cell cell) {
+        if (cell == null) return null;
+        for (CellTag tag : cell.tags()) {
+            if (tag instanceof CellTag.XChange xc) return xc;
+        }
+        return null;
+    }
+
+    private static DiceCombination resolveXChangeCombo(RollResult roll, CellTag.XChange xc, ActiveTurnState ats, boolean isActive) {
+        int ww = roll.white1() + roll.white2();
+        if (ww != xc.a() && ww != xc.b()) return null;
+        if (isActive && ats != null && ats.whiteWhiteUsed()) return null;
+        return DiceCombination.WHITE_WHITE;
     }
 
     // Bonus cells respond to white+white OR either neighbouring colour die.

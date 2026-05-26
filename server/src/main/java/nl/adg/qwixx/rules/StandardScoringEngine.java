@@ -23,6 +23,7 @@ public class StandardScoringEngine implements ScoringEngine {
 
         for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
             Row row           = layout.rows().get(rowIndex);
+            if (isXChangeRow(row)) continue;
             RowState rowState = progress.rowStates().get(rowIndex);
             if (rowState == null) continue;
 
@@ -50,6 +51,11 @@ public class StandardScoringEngine implements ScoringEngine {
         int punishmentPoints = progress.punishments() * PUNISHMENT_PENALTY;
 
         return new ScoreCard(crosses, points, extraCrosses, extraPoints, bonusPoints, punishmentPoints);
+    }
+
+    private static boolean isXChangeRow(Row row) {
+        return row.cells().stream()
+                .anyMatch(c -> c.tags().stream().anyMatch(t -> t instanceof CellTag.XChange));
     }
 
     private static Map<Color, Integer> zeroCrossesPerColor() {

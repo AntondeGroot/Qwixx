@@ -13,6 +13,8 @@ import nl.adg.qwixx.action.UndoLastCrossAction;
 import static nl.adg.qwixx.rules.CellCrosser.getRowState;
 import static nl.adg.qwixx.rules.RowClosureEvaluator.*;
 
+import nl.adg.qwixx.data.Cell;
+import nl.adg.qwixx.data.CellTag;
 import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.state.ActiveTurnState;
 import nl.adg.qwixx.state.GameState;
@@ -139,8 +141,8 @@ public class StandardTurnRules implements TurnRules {
     }
 
     private void applyCrossCell(GameState state, CrossCellAction action) {
-        TurnState turn = state.turnState();
-        UUID playerId  = action.playerId();
+        TurnState turn   = state.turnState();
+        UUID playerId    = action.playerId();
         boolean isActive = playerId.equals(turn.activePlayerId());
 
         if (state.isRowClosed(action.rowIndex()))
@@ -153,9 +155,33 @@ public class StandardTurnRules implements TurnRules {
             requirePassiveMayCrossCell(turn, playerId);
         }
 
+        Cell cell = findCell(state, playerId, action.rowIndex(), action.cellId());
+        CellTag.XChange xChangeTag = CellCrosser.findXChangeTag(cell);
+
+        if (xChangeTag != null) {
+            applyXChangeCross(state, turn, playerId, action, xChangeTag);
+        } else {
+            applyRegularCross(state, turn, playerId, action, isActive);
+        }
+    }
+
+    private void applyXChangeCross(GameState state, TurnState turn, UUID playerId,
+                                   CrossCellAction action, CellTag.XChange xChangeTag) {
         Map<Integer, Set<String>> crossed = crossCellWithAutoTags(state, playerId, action.rowIndex(), action.cellId());
         savePendingCrosses(turn, playerId, crossed);
+        int actualWW    = turn.currentRoll().white1() + turn.currentRoll().white2();
+        int effectiveWW = (actualWW == xChangeTag.a()) ? xChangeTag.b() : xChangeTag.a();
+        turn.xChangeEffectiveWW().put(playerId, effectiveWW);
+    }
 
+    private void applyRegularCross(GameState state, TurnState turn, UUID playerId,
+                                   CrossCellAction action, boolean isActive) {
+        Map<Integer, Set<String>> crossed = crossCellWithAutoTags(state, playerId, action.rowIndex(), action.cellId());
+        if (turn.xChangeEffectiveWW().containsKey(playerId)) {
+            mergeWithPreviousXChangeCross(turn.undoBuffer().get(playerId), crossed);
+            turn.xChangeEffectiveWW().remove(playerId);
+        }
+        savePendingCrosses(turn, playerId, crossed);
         if (isActive) {
             recordActiveDiceUsage(turn.activeTurnState(), action.combination());
         } else {
@@ -163,12 +189,26 @@ public class StandardTurnRules implements TurnRules {
         }
     }
 
+    private static void mergeWithPreviousXChangeCross(Map<Integer, Set<String>> xChangeCross,
+                                                      Map<Integer, Set<String>> regularCross) {
+        if (xChangeCross == null) return;
+        for (var entry : xChangeCross.entrySet()) {
+            regularCross.computeIfAbsent(entry.getKey(), k -> new HashSet<>()).addAll(entry.getValue());
+        }
+    }
+
+    private Cell findCell(GameState state, UUID playerId, int rowIndex, String cellId) {
+        return getLayout(state, playerId).rows().get(rowIndex).cells().stream()
+                .filter(c -> c.id().equals(cellId)).findFirst().orElse(null);
+    }
+
     private void requirePassiveMayCrossCell(TurnState turn, UUID playerId) {
         if (turn.phase() != TurnPhase.ACTIVE_MOVE && turn.phase() != TurnPhase.PASSIVE_MOVE)
             throw new IllegalMoveException("expected phase ACTIVE_MOVE or PASSIVE_MOVE but was " + turn.phase());
         if (!turn.passivePlayerQueue().contains(playerId))
             throw new IllegalMoveException("player not in passive queue");
-        if (TurnHelper.hasPendingCross(turn, playerId))
+        // X-change-only pending cross doesn't consume the WW slot; the next regular cross is still allowed.
+        if (TurnHelper.hasPendingCross(turn, playerId) && !turn.xChangeEffectiveWW().containsKey(playerId))
             throw new IllegalMoveException("passive player already made a white+white cross this turn");
     }
 
@@ -246,6 +286,7 @@ public class StandardTurnRules implements TurnRules {
 
         clearPendingCrosses(turn, playerId);
         turn.passivesActed().remove(playerId);
+        turn.xChangeEffectiveWW().remove(playerId);
     }
 
     private void applyGiveUp(GameState state, GiveUpAction action) {
@@ -284,6 +325,7 @@ public class StandardTurnRules implements TurnRules {
         restoreToSnapshot(state, turn, playerId);
         cancelPlayerRowClosure(state, playerId);
         clearPendingCrosses(turn, playerId);
+        turn.xChangeEffectiveWW().remove(playerId);
     }
 
     /** Removes all pending closures and notifications declared by this player this turn. */

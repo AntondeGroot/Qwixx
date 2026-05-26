@@ -112,3 +112,34 @@
  */
 .auto-cross-line.down.through-bonus { bottom: -45px; }
 .auto-cross-line.up.through-bonus   { top: -45px; }
+
+/* X-Change row: purple track behind the diamond cells */
+.row.xchange-row {
+  background: transparent;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  /* Match the width of 10 regular cells (values 12→3): 10×44 + 9×4 + 2×8 padding = 492px */
+  width: 492px;
+  gap: 0;                      /* space-evenly handles all spacing; inherited gap would make edges unequal */
+  justify-content: space-evenly;
+}
+
+/* Thick purple horizontal line running the full width behind all cells */
+.row.xchange-row::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 8px;
+  background: #7B1FA2;
+  border-radius: 4px;
+  z-index: 0;
+}
+
+/* Cells sit above the purple track */
+.row.xchange-row app-cell {
+  position: relative;
+  z-index: 1;
+}

@@ -1,5 +1,6 @@
 package nl.adg.qwixx.e2e.utils;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 import org.openqa.selenium.WebDriverException;
@@ -8,6 +9,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.Method;
 
 /**
  * Retries a browser test up to {@link #times()} times when Chrome crashes
@@ -49,9 +51,17 @@ public @interface RetryOnChromeFailure {
             System.out.printf("[RetryOnChromeFailure] %s crashed (attempt %d/%d): %s%n",
                     ctx.getDisplayName(), attempt, ann.times(), t.getMessage());
 
-            // Re-invoke the test method manually for the next attempt.
+            // Re-run @BeforeEach methods so ensureAlive() can recreate the crashed driver,
+            // then re-invoke the test method.
             try {
-                ctx.getRequiredTestMethod().invoke(ctx.getRequiredTestInstance());
+                Object instance = ctx.getRequiredTestInstance();
+                for (Method m : instance.getClass().getDeclaredMethods()) {
+                    if (m.isAnnotationPresent(BeforeEach.class)) {
+                        m.setAccessible(true);
+                        m.invoke(instance);
+                    }
+                }
+                ctx.getRequiredTestMethod().invoke(instance);
             } catch (java.lang.reflect.InvocationTargetException e) {
                 handleTestExecutionException(ctx, e.getCause());
             }

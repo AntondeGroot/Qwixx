@@ -453,8 +453,10 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const closedRows = state.closedRows ?? {};
 
     if (turn.phase === TurnPhase.ACTIVE_MOVE && this.isMyTurn()) {
+      const effectiveWW = turn.effectiveWhiteWhite?.[pid];
       if (!turn.whiteWhiteUsed && !turn.colorDieUsed) {
-        this.collectCells(layout, progress, closedRows, roll.white1 + roll.white2, null, result);
+        const wwTarget = effectiveWW ?? (roll.white1 + roll.white2);
+        this.collectCells(layout, progress, closedRows, wwTarget, null, result, effectiveWW != null);
       }
       if (!turn.colorDieUsed) {
         for (const row of layout.rows) {
@@ -470,9 +472,13 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     } else if ((turn.phase === TurnPhase.PASSIVE_MOVE
                 || turn.phase === TurnPhase.ACTIVE_MOVE)
-               && this.isInPassiveQueue()
-               && this.pendingCellIds().size === 0) {
-      this.collectCells(layout, progress, closedRows, roll.white1 + roll.white2, null, result);
+               && this.isInPassiveQueue()) {
+      const effectiveWW = turn.effectiveWhiteWhite?.[pid];
+      // Allow WW cells when no pending cross, OR when the only pending cross is an x-change.
+      if (this.pendingCellIds().size === 0 || effectiveWW != null) {
+        const wwTarget = effectiveWW ?? (roll.white1 + roll.white2);
+        this.collectCells(layout, progress, closedRows, wwTarget, null, result, effectiveWW != null);
+      }
     }
 
     return result;
@@ -496,26 +502,32 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const result     = new Set<string>();
 
     if (turn.phase === TurnPhase.ACTIVE_MOVE && this.isMyTurn()) {
+      const effectiveWW = turn.effectiveWhiteWhite?.[pid];
       if (!turn.whiteWhiteUsed && !turn.colorDieUsed) {
-        this.collectCells(layout, progress, closedRows, roll.white1 + roll.white2, null, result);
+        const wwTarget = effectiveWW ?? (roll.white1 + roll.white2);
+        this.collectCells(layout, progress, closedRows, wwTarget, null, result, effectiveWW != null);
       }
     } else if ((turn.phase === TurnPhase.PASSIVE_MOVE
                 || turn.phase === TurnPhase.ACTIVE_MOVE)
-               && this.isInPassiveQueue()
-               && this.pendingCellIds().size === 0) {
-      this.collectCells(layout, progress, closedRows, roll.white1 + roll.white2, null, result);
+               && this.isInPassiveQueue()) {
+      const effectiveWW = turn.effectiveWhiteWhite?.[pid];
+      if (this.pendingCellIds().size === 0 || effectiveWW != null) {
+        const wwTarget = effectiveWW ?? (roll.white1 + roll.white2);
+        this.collectCells(layout, progress, closedRows, wwTarget, null, result, effectiveWW != null);
+      }
     }
 
     return result;
   });
 
   private collectCells(
-    layout:      SheetLayout,
-    progress:    SheetProgress | undefined,
-    closedRows:  Record<string, string>,
-    targetValue: number,
-    restrictRow: string | null,
-    result:      Set<string>
+    layout:         SheetLayout,
+    progress:       SheetProgress | undefined,
+    closedRows:     Record<string, string>,
+    targetValue:    number,
+    restrictRow:    string | null,
+    result:         Set<string>,
+    hasXChangeActive: boolean = false
   ) {
     const bonusNums: number[] = this.gameState()?.bonusNumbers?.[this.playerId()] ?? [];
 
@@ -536,7 +548,13 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       for (const cell of row.cells) {
         if (crossed.has(cell.id)) continue;
         if (cell.position <= lastPos) continue;
-        if (parseInt(cell.displayValue) !== targetValue) continue;
+        // X-change cells: match against their pair values instead of displayValue.
+        const xchangeTag = cell.tags.find(t => t.type === CellTag.TypeEnum.X_CHANGE);
+        if (xchangeTag) {
+          if (hasXChangeActive) continue; // x-change already applied; don't offer another
+          if (restrictRow) continue;       // x-change only available via white+white (no restrictRow)
+          if (xchangeTag.valueA !== targetValue && xchangeTag.valueB !== targetValue) continue;
+        } else if (parseInt(cell.displayValue) !== targetValue) continue;
         if (cell.closingEligible && row.lock) {
           const alreadyCrossedClosing = row.lock.closingCells.filter(id => crossed.has(id)).length;
           const normalCrossed = crossed.size - alreadyCrossedClosing;
@@ -690,11 +708,14 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     const turn = this.turnState();
     if (!turn?.currentRoll) return null;
-    const roll      = turn.currentRoll;
-    const cellValue = parseInt(cell.displayValue);
-    const rowColor  = row.cells[0]?.color as Color;
-    const colorVal  = roll.coloredDice[rowColor] ?? null;
-    const isWW    = cellValue === roll.white1 + roll.white2 && !turn.whiteWhiteUsed;
+    const roll       = turn.currentRoll;
+    const pid        = this.playerId();
+    const cellValue  = parseInt(cell.displayValue);
+    const rowColor   = row.cells[0]?.color as Color;
+    const colorVal   = roll.coloredDice[rowColor] ?? null;
+    const effectiveWW = turn.effectiveWhiteWhite?.[pid];
+    const wwTarget   = effectiveWW ?? (roll.white1 + roll.white2);
+    const isWW    = cellValue === wwTarget && !turn.whiteWhiteUsed && !turn.colorDieUsed;
     const isColor = colorVal != null &&
       (cellValue === roll.white1 + colorVal || cellValue === roll.white2 + colorVal) &&
       !turn.colorDieUsed;

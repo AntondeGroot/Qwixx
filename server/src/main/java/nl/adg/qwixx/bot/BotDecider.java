@@ -280,6 +280,11 @@ public class BotDecider {
                     int displayValue = parseDisplayValue(cell, center);
                     adjust -= Math.abs(displayValue - center) * profile.rarityBonus();
                 }
+                case CellTag.XChange xc -> {
+                    // Prefer cells where the closer value to the center dice mean is matched.
+                    int bestMatch = Math.min(Math.abs(xc.a() - center), Math.abs(xc.b() - center));
+                    adjust += (profile.rarityBonus() - bestMatch) * 0.5;
+                }
             }
         }
         return adjust;

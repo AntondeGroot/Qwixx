@@ -21,12 +21,15 @@ public class TurnState {
     Map<UUID, SheetProgress> moveStartProgress;
     // cells crossed by each player's last CrossCellAction: playerId → rowIndex → cellIds
     Map<UUID, Map<Integer, Set<String>>> undoBuffer;
+    // effective white+white value per player after crossing an x-change cell this turn
+    Map<UUID, Integer> xChangeEffectiveWW;
 
     public TurnState() {
         this.passivePlayerQueue  = new ArrayList<>();
         this.passivesActed       = new HashSet<>();
         this.moveStartProgress   = new HashMap<>();
         this.undoBuffer          = new HashMap<>();
+        this.xChangeEffectiveWW  = new HashMap<>();
     }
 
     public UUID activePlayerId()                          { return activePlayerId; }
@@ -37,6 +40,7 @@ public class TurnState {
     public Set<UUID> passivesActed()                      { return passivesActed; }
     public Map<UUID, SheetProgress> moveStartProgress()   { return moveStartProgress; }
     public Map<UUID, Map<Integer, Set<String>>> undoBuffer() { return undoBuffer; }
+    public Map<UUID, Integer> xChangeEffectiveWW()        { return xChangeEffectiveWW; }
 
     public void setActivePlayerId(UUID id)                             { this.activePlayerId = id; }
     public void setPhase(TurnPhase phase)                              { this.phase = phase; }
@@ -46,4 +50,5 @@ public class TurnState {
     public void setPassivesActed(Set<UUID> s)                          { this.passivesActed = s; }
     public void setMoveStartProgress(Map<UUID, SheetProgress> snap)    { this.moveStartProgress = snap; }
     public void setUndoBuffer(Map<UUID, Map<Integer, Set<String>>> buf) { this.undoBuffer = buf; }
+    public void setXChangeEffectiveWW(Map<UUID, Integer> map)          { this.xChangeEffectiveWW = map; }
 }

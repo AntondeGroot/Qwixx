@@ -26,6 +26,8 @@
     "extraRowDescription": "Fügen Sie eine Bonusreihe von Zellen hinzu, die eine Welle über vier Reihen bildet.",
     "connectedCells": "Verbundene Zellen",
     "connectedCellsDescription": "Verknüpft Zellen zwischen benachbarten Reihen: das Ankreuzen einer Zelle kreuzt automatisch die verbundene Zelle in der nächsten Reihe.",
+    "xchange": "X-Tausch",
+    "xchangeDescription": "Fügt eine extra Reihe hinzu mit der Möglichkeit, deine Weiß+Weiß-Kombination gegen die andere Zahl in der Zelle zu tauschen.",
     "botCount": "Computergegner",
     "botCountDescription": "Anzahl der computergesteuerten Spieler.",
     "botStrategy": "Bot-Strategie",

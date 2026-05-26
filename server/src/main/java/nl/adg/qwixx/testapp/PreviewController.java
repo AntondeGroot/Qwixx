@@ -70,7 +70,8 @@ public class PreviewController {
             new Scenario("/preview/9",  "5-player · extra-row variant · game finished → score screen",true),
             new Scenario("/preview/10", "Longo · 3-player · close RED (white+white=16) AND YELLOW (white+yellow=16) this turn", false),
             new Scenario("/preview/11", "Longo · 3-player · cross value 15 twice: RED (white+white=15) AND YELLOW (white+yellow=15)", false),
-            new Scenario("/preview/12", "Big Points · 2-player · BONUS-RY cell '7' highlighted (WW=7)", false)
+            new Scenario("/preview/12", "Big Points · 2-player · BONUS-RY cell '7' highlighted (WW=7)", false),
+            new Scenario("/preview/13", "X-Change · 2-player · white+white=9 highlights the (9↔7) exchange cell", false)
     );
 
     // ── HTML endpoints ────────────────────────────────────────────────────────────
@@ -109,6 +110,7 @@ public class PreviewController {
             case 10 -> scenario10();
             case 11 -> scenario11();
             case 12 -> scenario12();
+            case 13 -> scenario13();
             default -> null;
         };
         if (r == null) return ResponseEntity.notFound().build();
@@ -520,6 +522,39 @@ public class PreviewController {
         return new PreviewResult(
                 "Big Points · 2-player · BONUS-RY cell '7' highlighted: WW=7, "
                 + "neighbour rows (RED+YELLOW) both have '7' crossed",
+                gameUrl(g.sessionId(), you),
+                otherGameUrls(g, you));
+    }
+
+    // 13 — X-Change · 2-player · WW=9 lights up the (9↔7) exchange cell
+    //
+    //  X-Change pairs (in cell order): {8,5},{9,7},{11,3},{7,4},{10,3},{8,6},{10,5},{11,9},{6,4}
+    //  Dice: white1=4, white2=5 → WW=9 → the cell at position 1 (pair 9↔7) glows cyan.
+    //  Clicking it crosses the cell and changes the active WW target to 7 for this turn.
+    //  Regular "9" cells in RED and YELLOW are also lit (WW=9 applies to all rows),
+    //  showing how the x-change cell competes alongside normal options.
+    private PreviewResult scenario13() {
+        GameSetup g = startGame(2, GameSettings.builder().xChange(true).build());
+        Player p0 = g.players().get(0);
+        Player p1 = g.players().get(1);
+
+        // player0 (you): a few crosses in RED and YELLOW so the board looks live
+        setCrosses(g, p0, 0, 3); // RED   values 2,3,4 crossed
+        setCrosses(g, p0, 1, 2); // YELLOW values 2,3 crossed
+
+        // player1: progress in GREEN and BLUE for visual variety
+        setCrosses(g, p1, 2, 4); // GREEN values 12,11,10,9 crossed
+        setCrosses(g, p1, 3, 2); // BLUE  values 12,11 crossed
+
+        // WW = 4+5 = 9 → x-change cell (9↔7) at position 1 glows cyan.
+        // Colored dice set so white+color sums land elsewhere (not 9), keeping
+        // the x-change highlight the headline of this scenario.
+        UUID you = rollAndSetColored(g, 4, 5,
+                Map.of(Color.RED, 6, Color.YELLOW, 3, Color.GREEN, 5, Color.BLUE, 2));
+
+        return new PreviewResult(
+                "X-Change · 2-player · dice 4+5 (WW=9) highlights the (9↔7) exchange cell. "
+                + "Click it to cross it — effective WW becomes 7 for the rest of this turn.",
                 gameUrl(g.sessionId(), you),
                 otherGameUrls(g, you));
     }

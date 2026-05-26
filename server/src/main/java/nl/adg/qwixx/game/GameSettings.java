@@ -12,6 +12,7 @@ public class GameSettings {
     private final boolean      connectedCells;
     private final boolean      extraRow;
     private final boolean      bigPoints;
+    private final boolean      xChange;
     private final boolean      mixedColors;
     private final CardMode     cardMode;
     private final GameMode     gameMode;
@@ -27,6 +28,7 @@ public class GameSettings {
         this.connectedCells = builder.connectedCells;
         this.extraRow    = builder.extraRow;
         this.bigPoints   = builder.bigPoints;
+        this.xChange     = builder.xChange;
         this.mixedColors = builder.mixedColors;
         this.cardMode    = builder.cardMode;
         this.gameMode    = builder.gameMode;
@@ -40,6 +42,7 @@ public class GameSettings {
     public boolean         connectedCells() { return connectedCells; }
     public boolean         extraRow()       { return extraRow; }
     public boolean         bigPoints()      { return bigPoints; }
+    public boolean         xChange()        { return xChange; }
     public boolean         mixedColors()    { return mixedColors; }
     public CardMode        cardMode()       { return cardMode; }
     public GameMode        gameMode()       { return gameMode; }
@@ -61,6 +64,7 @@ public class GameSettings {
         private boolean        connectedCells = false;
         private boolean        extraRow       = false;
         private boolean        bigPoints      = false;
+        private boolean        xChange        = false;
         private boolean        mixedColors    = false;
         private CardMode       cardMode       = CardMode.DETERMINISTIC;
         private GameMode       gameMode       = GameMode.ONLINE;
@@ -73,6 +77,7 @@ public class GameSettings {
         public Builder connectedCells(boolean v)           { this.connectedCells = v; return this; }
         public Builder extraRow(boolean v)                 { this.extraRow = v; return this; }
         public Builder bigPoints(boolean v)                { this.bigPoints = v; return this; }
+        public Builder xChange(boolean v)                  { this.xChange = v; return this; }
         public Builder mixedColors(boolean v)              { this.mixedColors = v; return this; }
         public Builder cardMode(CardMode cardMode)         { this.cardMode = cardMode; return this; }
         public Builder gameMode(GameMode gameMode)         { this.gameMode = gameMode; return this; }

@@ -26,6 +26,8 @@
     "extraRowDescription": "Add a bonus row of cells forming a wave across the four rows.",
     "connectedCells": "Connected cells",
     "connectedCellsDescription": "Link cells between adjacent rows: crossing one auto-crosses the connected cell in the next row.",
+    "xchange": "X-Change",
+    "xchangeDescription": "Adds an extra row with the option to change your white+white combination for the other number in that cell.",
     "botCount": "Computer opponents",
     "botCountDescription": "Number of computer-controlled players to add.",
     "botStrategy": "Bot strategy",

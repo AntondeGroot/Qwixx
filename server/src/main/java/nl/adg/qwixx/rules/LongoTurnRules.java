@@ -83,7 +83,10 @@ public class LongoTurnRules extends StandardTurnRules {
         List<Integer> bonuses = vd.bonusNumbersPerPlayer().getOrDefault(playerId, List.of());
         if (bonuses.isEmpty()) return false;
         int whiteSum = state.turnState().currentRoll().white1() + state.turnState().currentRoll().white2();
-        return bonuses.contains(whiteSum);
+        if (bonuses.contains(whiteSum)) return true;
+        // After an x-change cross, the effective WW may differ from the actual roll sum.
+        Integer effectiveWW = state.turnState().xChangeEffectiveWW().get(playerId);
+        return effectiveWW != null && bonuses.contains(effectiveWW);
     }
 
     private Optional<CrossCellAction> leftmostBonusCellAction(UUID playerId, int rowIndex, Row row, RowState rowState) {

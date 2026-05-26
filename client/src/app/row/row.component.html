@@ -1,4 +1,4 @@
-<div class="row" [class.closed]="closed()" [class.bonus-row]="!row().lock" [attr.data-color]="row().cells[0]?.color" [attr.translate]="'no'">
+<div class="row" [class.closed]="closed()" [class.bonus-row]="!row().lock && !isXChangeRow()" [class.xchange-row]="isXChangeRow()" [attr.data-color]="row().cells[0]?.color" [attr.translate]="'no'" [style.width]="xChangeRowWidth()">
   @for (offset of connectorOffsetsAbove(); track offset) {
     <div class="auto-cross-line up" [class.through-bonus]="hasBonusRowAbove()" [style.left.px]="offset"></div>
   }

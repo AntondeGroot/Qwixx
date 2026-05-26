@@ -4,6 +4,7 @@ import nl.adg.qwixx.action.CrossCellAction;
 import nl.adg.qwixx.action.DeclareLockIntentAction;
 import nl.adg.qwixx.action.DiceCombination;
 import nl.adg.qwixx.action.RollAction;
+import nl.adg.qwixx.data.CellTag;
 import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.Color;
 import nl.adg.qwixx.data.Die;
@@ -860,6 +861,53 @@ class LongoTurnRulesTest {
                 "a second white+white cross must be rejected after the bonus cross");
     }
 
+    // ── Longo bonus + x-change interaction ───────────────────────────────────────
+    //
+    // When the player crosses an x-change cell, the effective WW becomes the *other*
+    // value in the pair.  If that effective WW matches the player's bonus number, the
+    // bonus cell must be highlighted and crossable — even though the actual dice roll
+    // does not match the bonus number.
+
+    @Test
+    void bonusOfferedAfterXChangeWhenEffectiveWWMatchesBonusNumber() {
+        // Roll WW=10, bonus number=7, x-change pair (10,7) → effectiveWW=7.
+        // Before x-change: bonus must NOT be offered (actual WW=10 ≠ 7).
+        // After x-change:  bonus MUST be offered (effectiveWW=7 = bonus=7).
+        GameState state = stateWithLongoXChangeAfterRoll(p1, p1, p2);
+        state.setVariantData(new LongoVariantData(Map.of(p1, List.of(7))));
+        state.turnState().setCurrentRoll(
+                new RollResult(5, 5, state.turnState().currentRoll().coloredDice())); // WW=10
+
+        SheetLayout layout = state.sheetLayouts().get(p1);
+        String bonusCellId = layout.rows().get(0).cells().get(0).id(); // RED row pos 0
+
+        assertFalse(
+                rules.getValidActions(state, p1).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction cc && cc.cellId().equals(bonusCellId)),
+                "bonus must NOT be offered before x-change (actual WW=10 ≠ bonus=7)");
+
+        // Cross x-change pair (10,7) → effectiveWW=7 = bonus number.
+        rules.apply(state, longoXChangeCrossForPair(state, p1, 10, 7));
+        assertEquals(7, state.turnState().xChangeEffectiveWW().get(p1),
+                "effectiveWW must be 7 after crossing pair (10,7) with actual WW=10");
+
+        // After x-change: bonus cell must appear as WHITE_WHITE.
+        assertTrue(
+                rules.getValidActions(state, p1).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction cc
+                                && cc.cellId().equals(bonusCellId)
+                                && cc.combination() == DiceCombination.WHITE_WHITE),
+                "bonus cell must be offered as WHITE_WHITE after x-change sets effectiveWW=7");
+
+        // Applying the bonus cross must succeed.
+        assertDoesNotThrow(
+                () -> rules.apply(state, new CrossCellAction(p1, 0, bonusCellId, DiceCombination.WHITE_WHITE)),
+                "bonus cross must be accepted after x-change sets effectiveWW=7");
+        assertTrue(
+                state.boardState().sheetProgress().get(p1).rowStates().get(0).crossedCells().contains(bonusCellId),
+                "bonus cell must be crossed after applying the action");
+    }
+
     // ── Passive co-closer: second-to-last cell crossed this turn ─────────────────
     //
     // Regression: endTurnInPassiveMove previously cleared the undo buffer BEFORE calling
@@ -1015,6 +1063,67 @@ class LongoTurnRulesTest {
         rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p1));
         assertTrue(state.isRowClosed(1), "row 1 must close after p1 EndTurns");
         assertTrue(state.gameOver(), "game must be over after 2 rows close");
+    }
+
+    // ── X-change + Longo helpers ─────────────────────────────────────────────────
+
+    private GameState stateWithLongoXChangeAfterRoll(UUID active, UUID... allPlayers) {
+        List<UUID> players = Arrays.asList(allPlayers);
+        Map<UUID, SheetLayout> layouts = new HashMap<>();
+        Map<UUID, SheetProgress> progress = new HashMap<>();
+        for (UUID p : players) {
+            layouts.put(p, longoLayoutWithXChange());
+            progress.put(p, emptyProgress());
+        }
+        List<Die> dice = new ArrayList<>(List.of(
+                new Die(Color.WHITE, 8), new Die(Color.WHITE, 8),
+                new Die(Color.RED, 8), new Die(Color.YELLOW, 8),
+                new Die(Color.GREEN, 8), new Die(Color.BLUE, 8)));
+        BoardState board = new BoardState(progress, dice, new HashMap<>());
+        TurnState turn = new TurnState();
+        turn.setActivePlayerId(active);
+        turn.setPhase(TurnPhase.ROLL);
+        GameState state = new GameState(CardMode.DETERMINISTIC, players, new LongoVariantData(new HashMap<>()),
+                layouts, board, turn);
+        rules.apply(state, new RollAction(active));
+        return state;
+    }
+
+    private SheetLayout longoLayoutWithXChange() {
+        List<Row> rows = new ArrayList<>();
+        rows.add(longoAscendingRow(Color.RED));
+        rows.add(longoAscendingRow(Color.YELLOW));
+        rows.add(longoDescendingRow(Color.GREEN));
+        rows.add(longoDescendingRow(Color.BLUE));
+        rows.add(longoXChangeRow());
+        return new SheetLayout(rows);
+    }
+
+    private Row longoXChangeRow() {
+        int[][] pairs = {{11,6},{12,9},{14,4},{10,7},{9,5},{13,4},{11,7},{13,6},{12,8},{14,12},{7,5}};
+        Row row = new Row();
+        for (int i = 0; i < pairs.length; i++) {
+            Cell c = new Cell(i);
+            c.setColor(Color.BLUE);
+            c.setDisplayValue("");
+            c.setTags(List.of(new CellTag.XChange(pairs[i][0], pairs[i][1])));
+            c.setClosingEligible(false);
+            row.addCell(c);
+        }
+        return row;
+    }
+
+    private CrossCellAction longoXChangeCrossForPair(GameState state, UUID playerId, int a, int b) {
+        return rules.getValidActions(state, playerId).stream()
+                .filter(act -> act instanceof CrossCellAction cc
+                        && state.sheetLayouts().get(playerId).rows().get(cc.rowIndex())
+                                .cells().stream()
+                                .anyMatch(c -> c.id().equals(cc.cellId())
+                                        && c.tags().stream().anyMatch(t -> t instanceof CellTag.XChange xc
+                                                && xc.a() == a && xc.b() == b)))
+                .map(act -> (CrossCellAction) act)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no XChange(" + a + "," + b + ") offered to " + playerId));
     }
 
     private Random fixedRandom() {

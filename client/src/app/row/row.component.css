@@ -112,3 +112,34 @@
  */
 .auto-cross-line.down.through-bonus { bottom: -45px; }
 .auto-cross-line.up.through-bonus   { top: -45px; }
+
+/* X-Change row: purple track behind the diamond cells */
+/* Width is set dynamically via [style.width] in the template: 48×cellCount+60 px */
+/* Standard (9 cells) = 492px, Longo (13 cells) = 684px */
+.row.xchange-row {
+  background: transparent;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  gap: 0;                      /* space-evenly handles all spacing; inherited gap would make edges unequal */
+  justify-content: space-evenly;
+}
+
+/* Thick purple horizontal line running the full width behind all cells */
+.row.xchange-row::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 8px;
+  background: #7B1FA2;
+  border-radius: 4px;
+  z-index: 0;
+}
+
+/* Cells sit above the purple track */
+.row.xchange-row app-cell {
+  position: relative;
+  z-index: 1;
+}

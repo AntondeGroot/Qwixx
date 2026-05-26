@@ -1759,4 +1759,283 @@ class StandardTurnRulesTest {
             }
         };
     }
+
+    // -------------------------------------------------------------------------
+    // X-Change mechanic tests
+    // -------------------------------------------------------------------------
+    //
+    // WW = 9 (white1=4, white2=5 override) matches pairs (9,7) and (11,9).
+    // Crossing (9,7) sets effectiveWW=7; crossing (11,9) sets effectiveWW=11.
+
+    @Test
+    void xChange_activePlayerSeesXChangeCellWhenWWSumMatchesPairValue() {
+        GameState state = stateWithXChangeAfterRoll(p1, p1, p2);
+        assertTrue(rules.getValidActions(state, p1).stream()
+                .filter(a -> a instanceof CrossCellAction)
+                .map(a -> (CrossCellAction) a)
+                .anyMatch(cc -> isXChangeCell(state, p1, cc)),
+                "X-change cell must be offered when WW sum matches its pair value");
+    }
+
+    @Test
+    void xChange_notOfferedWhenWWDoesNotMatchAnyPairValue() {
+        GameState state = stateWithXChangeAfterRoll(p1, p1, p2);
+        // Override to WW=2, which matches no x-change pair
+        state.turnState().setCurrentRoll(
+                new RollResult(1, 1, state.turnState().currentRoll().coloredDice()));
+        assertFalse(rules.getValidActions(state, p1).stream()
+                .filter(a -> a instanceof CrossCellAction)
+                .map(a -> (CrossCellAction) a)
+                .anyMatch(cc -> isXChangeCell(state, p1, cc)),
+                "X-change cell must NOT be offered when WW does not match any pair value");
+    }
+
+    @Test
+    void xChange_crossingDoesNotConsumeWhiteWhiteSlot() {
+        GameState state = stateWithXChangeAfterRoll(p1, p1, p2);
+        rules.apply(state, firstXChangeCrossAction(state, p1));
+        assertFalse(state.turnState().activeTurnState().whiteWhiteUsed(),
+                "Crossing x-change must not consume the white+white slot");
+    }
+
+    @Test
+    void xChange_effectiveWWStoredAfterCross() {
+        GameState state = stateWithXChangeAfterRoll(p1, p1, p2);
+        rules.apply(state, xChangeCrossForPair(state, p1, 9, 7));
+        Integer effective = state.turnState().xChangeEffectiveWW().get(p1);
+        assertNotNull(effective, "effectiveWW must be stored after x-change cross");
+        assertEquals(7, effective, "effectiveWW must be the 'other' value (b) when WW matched a");
+    }
+
+    @Test
+    void xChange_effectiveWWIsOtherPairValueWhenWWMatchedSecondValue() {
+        GameState state = stateWithXChangeAfterRoll(p1, p1, p2);
+        rules.apply(state, xChangeCrossForPair(state, p1, 11, 9));
+        Integer effective = state.turnState().xChangeEffectiveWW().get(p1);
+        assertNotNull(effective);
+        assertEquals(11, effective, "effectiveWW must be the 'other' value (a) when WW matched b");
+    }
+
+    @Test
+    void xChange_afterCross_regularCellsMatchingEffectiveWWOfferedAsWW() {
+        GameState state = stateWithXChangeAfterRoll(p1, p1, p2);
+        rules.apply(state, xChangeCrossForPair(state, p1, 9, 7));
+        // effectiveWW=7 → cells with displayValue "7" must be offered as WHITE_WHITE
+        assertTrue(rules.getValidActions(state, p1).stream()
+                .filter(a -> a instanceof CrossCellAction cc && cc.combination() == DiceCombination.WHITE_WHITE)
+                .map(a -> (CrossCellAction) a)
+                .anyMatch(cc -> findCell(state, p1, cc.rowIndex(), cc.cellId()).displayValue().equals("7")),
+                "Cells matching effectiveWW=7 must be offered as WHITE_WHITE after x-change");
+    }
+
+    @Test
+    void xChange_afterCross_actualWWCellsNoLongerOfferedAsWW() {
+        GameState state = stateWithXChangeAfterRoll(p1, p1, p2);
+        rules.apply(state, xChangeCrossForPair(state, p1, 9, 7));
+        // WW=9 cells must NOT be offered as WHITE_WHITE (effectiveWW replaced actual WW)
+        assertFalse(rules.getValidActions(state, p1).stream()
+                .filter(a -> a instanceof CrossCellAction cc && cc.combination() == DiceCombination.WHITE_WHITE)
+                .map(a -> (CrossCellAction) a)
+                .anyMatch(cc -> findCell(state, p1, cc.rowIndex(), cc.cellId()).displayValue().equals("9")),
+                "Actual WW=9 cells must not be offered as WHITE_WHITE after x-change (effectiveWW=7)");
+    }
+
+    @Test
+    void xChange_cannotApplySecondXChangeInSameTurn() {
+        GameState state = stateWithXChangeAfterRoll(p1, p1, p2);
+        rules.apply(state, firstXChangeCrossAction(state, p1));
+        assertFalse(rules.getValidActions(state, p1).stream()
+                .filter(a -> a instanceof CrossCellAction)
+                .map(a -> (CrossCellAction) a)
+                .anyMatch(cc -> isXChangeCell(state, p1, cc)),
+                "A second x-change cell must not be offered after one x-change cross");
+    }
+
+    @Test
+    void xChange_crossingRegularCellWithEffectiveWWConsumesWWSlot() {
+        GameState state = stateWithXChangeAfterRoll(p1, p1, p2);
+        rules.apply(state, xChangeCrossForPair(state, p1, 9, 7));
+        // Now cross a "7" cell using the effective WW slot
+        CrossCellAction regular7 = rules.getValidActions(state, p1).stream()
+                .filter(a -> a instanceof CrossCellAction cc && cc.combination() == DiceCombination.WHITE_WHITE)
+                .map(a -> (CrossCellAction) a)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no effectiveWW cell offered after x-change"));
+        rules.apply(state, regular7);
+        assertTrue(state.turnState().activeTurnState().whiteWhiteUsed(),
+                "Crossing effectiveWW cell must consume the white+white slot");
+        assertFalse(state.turnState().xChangeEffectiveWW().containsKey(p1),
+                "effectiveWW must be cleared after crossing regular cell with it");
+    }
+
+    @Test
+    void xChange_resetClearsEffectiveWW() {
+        GameState state = stateWithXChangeAfterRoll(p1, p1, p2);
+        rules.apply(state, xChangeCrossForPair(state, p1, 9, 7));
+        assertNotNull(state.turnState().xChangeEffectiveWW().get(p1));
+        rules.apply(state, new ResetTurnAction(p1));
+        assertFalse(state.turnState().xChangeEffectiveWW().containsKey(p1),
+                "effectiveWW must be cleared after active player resets");
+    }
+
+    @Test
+    void xChange_passiveSeesXChangeCellInActiveMovePhase() {
+        GameState state = stateWithXChangeAfterRoll(p1, p1, p2);
+        assertTrue(rules.getValidActions(state, p2).stream()
+                .filter(a -> a instanceof CrossCellAction)
+                .map(a -> (CrossCellAction) a)
+                .anyMatch(cc -> isXChangeCell(state, p2, cc)),
+                "Passive player must see x-change cells when WW matches in ACTIVE_MOVE");
+    }
+
+    @Test
+    void xChange_passiveAfterXChangeCrossCanStillCrossRegularCell() {
+        GameState state = stateWithXChangeAfterRoll(p1, p1, p2);
+        // Passive crosses x-change
+        rules.apply(state, xChangeCrossForPair(state, p2, 9, 7));
+        // Passive must still be offered regular cells matching effectiveWW=7
+        assertTrue(rules.getValidActions(state, p2).stream()
+                .anyMatch(a -> a instanceof CrossCellAction),
+                "Passive must still be offered cross actions after x-change (effectiveWW active)");
+    }
+
+    @Test
+    void xChange_passiveXChangeCrossDoesNotMarkAsActed() {
+        GameState state = stateWithXChangeAfterRoll(p1, p1, p2);
+        rules.apply(state, xChangeCrossForPair(state, p2, 9, 7));
+        assertFalse(state.turnState().passivesActed().contains(p2),
+                "Passive must not be marked as 'acted' after only crossing x-change");
+    }
+
+    @Test
+    void xChange_passiveAfterXChangeAndRegularCross_noMoreCrossesOffered() {
+        GameState state = stateWithXChangeAfterRoll(p1, p1, p2);
+        rules.apply(state, xChangeCrossForPair(state, p2, 9, 7));
+        // Cross a regular cell with effectiveWW=7
+        CrossCellAction regular = rules.getValidActions(state, p2).stream()
+                .filter(a -> a instanceof CrossCellAction)
+                .map(a -> (CrossCellAction) a)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no cross action after x-change for passive"));
+        rules.apply(state, regular);
+        assertFalse(rules.getValidActions(state, p2).stream().anyMatch(a -> a instanceof CrossCellAction),
+                "Passive must not be offered more cross actions after x-change + regular cell");
+    }
+
+    @Test
+    void xChange_passiveResetAfterXChangeClearsEffectiveWW() {
+        GameState state = stateWithXChangeAfterRoll(p1, p1, p2);
+        rules.apply(state, xChangeCrossForPair(state, p2, 9, 7));
+        assertNotNull(state.turnState().xChangeEffectiveWW().get(p2));
+        rules.apply(state, new ResetTurnAction(p2));
+        assertFalse(state.turnState().xChangeEffectiveWW().containsKey(p2),
+                "passive's effectiveWW must be cleared after reset");
+    }
+
+    @Test
+    void xChange_passiveSeesXChangeCellInPassiveMovePhase() {
+        GameState state = stateInPassiveMoveWithXChange(p1, p1, p2);
+        assertTrue(rules.getValidActions(state, p2).stream()
+                .filter(a -> a instanceof CrossCellAction)
+                .map(a -> (CrossCellAction) a)
+                .anyMatch(cc -> isXChangeCell(state, p2, cc)),
+                "Passive player must see x-change cells in PASSIVE_MOVE when WW matches");
+    }
+
+    // ── X-change state builders ───────────────────────────────────────────────
+
+    /** State with x-change layout in ACTIVE_MOVE; roll overridden to WW=9 (matches pairs (9,7) and (11,9)). */
+    private GameState stateWithXChangeAfterRoll(UUID active, UUID... allPlayers) {
+        List<UUID> players = Arrays.asList(allPlayers);
+        Map<UUID, SheetLayout> layouts = new HashMap<>();
+        Map<UUID, SheetProgress> progress = new HashMap<>();
+        for (UUID p : players) {
+            layouts.put(p, standardLayoutWithXChange());
+            progress.put(p, emptyProgress());
+        }
+        List<Die> dice = new ArrayList<>(List.of(
+                new Die(Color.WHITE, 6), new Die(Color.WHITE, 6),
+                new Die(Color.RED, 6), new Die(Color.YELLOW, 6),
+                new Die(Color.GREEN, 6), new Die(Color.BLUE, 6)));
+        BoardState board = new BoardState(progress, dice, new HashMap<>());
+        TurnState turn = new TurnState();
+        turn.setActivePlayerId(active);
+        turn.setPhase(TurnPhase.ROLL);
+        GameState state = new GameState(CardMode.DETERMINISTIC, players, null, layouts, board, turn);
+        rules.apply(state, new RollAction(active));
+        // Override to WW=9 (matches x-change pairs (9,7) and (11,9))
+        state.turnState().setCurrentRoll(
+                new RollResult(4, 5, state.turnState().currentRoll().coloredDice()));
+        return state;
+    }
+
+    /** State with x-change layout in PASSIVE_MOVE; roll overridden to WW=9. */
+    private GameState stateInPassiveMoveWithXChange(UUID active, UUID... allPlayers) {
+        GameState state = stateWithXChangeAfterRoll(active, allPlayers);
+        rules.apply(state, firstCrossAction(state, active));
+        rules.apply(state, new EndTurnAction(active));
+        // Re-apply WW=9 override (roll survives into PASSIVE_MOVE)
+        state.turnState().setCurrentRoll(
+                new RollResult(4, 5, state.turnState().currentRoll().coloredDice()));
+        return state;
+    }
+
+    // ── X-change layout helpers ───────────────────────────────────────────────
+
+    private SheetLayout standardLayoutWithXChange() {
+        List<Row> rows = new ArrayList<>();
+        rows.add(ascendingRow(Color.RED));
+        rows.add(ascendingRow(Color.YELLOW));
+        rows.add(descendingRow(Color.GREEN));
+        rows.add(descendingRow(Color.BLUE));
+        rows.add(xChangeRow());
+        return new SheetLayout(rows);
+    }
+
+    private Row xChangeRow() {
+        int[][] pairs = {{8,5},{9,7},{11,3},{7,4},{10,3},{8,6},{10,5},{11,9},{6,4}};
+        Row row = new Row();
+        for (int i = 0; i < pairs.length; i++) {
+            Cell c = new Cell(i);
+            c.setColor(Color.BLUE);
+            c.setDisplayValue("");
+            c.setTags(List.of(new CellTag.XChange(pairs[i][0], pairs[i][1])));
+            c.setClosingEligible(false);
+            row.addCell(c);
+        }
+        return row;
+    }
+
+    // ── X-change action helpers ───────────────────────────────────────────────
+
+    private CrossCellAction firstXChangeCrossAction(GameState state, UUID playerId) {
+        return rules.getValidActions(state, playerId).stream()
+                .filter(a -> a instanceof CrossCellAction cc && isXChangeCell(state, playerId, cc))
+                .map(a -> (CrossCellAction) a)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no XChange CrossCellAction offered to " + playerId));
+    }
+
+    private CrossCellAction xChangeCrossForPair(GameState state, UUID playerId, int a, int b) {
+        return rules.getValidActions(state, playerId).stream()
+                .filter(act -> act instanceof CrossCellAction cc && isXChangeCellWithPair(state, playerId, cc, a, b))
+                .map(act -> (CrossCellAction) act)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no XChange(" + a + "," + b + ") cell offered to " + playerId));
+    }
+
+    private boolean isXChangeCell(GameState state, UUID playerId, CrossCellAction action) {
+        return state.sheetLayouts().get(playerId).rows().get(action.rowIndex())
+                .cells().stream()
+                .anyMatch(c -> c.id().equals(action.cellId()) &&
+                        c.tags().stream().anyMatch(t -> t instanceof CellTag.XChange));
+    }
+
+    private boolean isXChangeCellWithPair(GameState state, UUID playerId, CrossCellAction action, int a, int b) {
+        return state.sheetLayouts().get(playerId).rows().get(action.rowIndex())
+                .cells().stream()
+                .anyMatch(c -> c.id().equals(action.cellId()) &&
+                        c.tags().stream().anyMatch(t -> t instanceof CellTag.XChange xc
+                                && xc.a() == a && xc.b() == b));
+    }
 }

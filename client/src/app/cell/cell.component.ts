@@ -9,6 +9,7 @@ import { CellTag } from '../../generated/model/cellTag';
   host: {
     '[class.host-big-points-clickable]': '!!secondaryColor() && !!(showClickable() ?? clickable())',
     '[class.host-ww]': '!!secondaryColor() && showDieHint()',
+    '[class.host-xchange-clickable]': '!!xChangeValues() && !!(showClickable() ?? clickable())',
   }
 })
 export class CellComponent {
@@ -32,6 +33,11 @@ export class CellComponent {
   secondaryColor = computed(() =>
     this.cell().tags.find(t => t.type === CellTag.TypeEnum.SECONDARY_COLOR)?.secondaryColor ?? null
   );
+
+  xChangeValues = computed(() => {
+    const tag = this.cell().tags.find(t => t.type === CellTag.TypeEnum.X_CHANGE);
+    return tag ? { a: tag.valueA!, b: tag.valueB! } : null;
+  });
 
   primaryMaxed   = computed(() => !!this.secondaryColor() && this.maxedColors().has(this.cell().color));
   secondaryMaxed = computed(() => {

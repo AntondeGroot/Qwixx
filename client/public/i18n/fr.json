@@ -26,6 +26,8 @@
     "extraRowDescription": "Ajouter une rangée bonus de cellules formant une vague sur quatre rangées.",
     "connectedCells": "Cellules connectées",
     "connectedCellsDescription": "Relie les cellules entre rangées adjacentes : cocher une cellule coche automatiquement la cellule connectée dans la rangée suivante.",
+    "xchange": "X-Échange",
+    "xchangeDescription": "Ajoute une rangée supplémentaire avec la possibilité d'échanger votre combinaison blanc+blanc contre l'autre nombre de cette case.",
     "botCount": "Adversaires ordinateur",
     "botCountDescription": "Nombre de joueurs contrôlés par l'ordinateur.",
     "botStrategy": "Stratégie du bot",

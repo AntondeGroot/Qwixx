@@ -139,6 +139,12 @@ class GameStateMapper {
             dto.setPendingCrosses(pending);
         }
 
+        if (!turn.xChangeEffectiveWW().isEmpty()) {
+            Map<String, Integer> effWW = new HashMap<>();
+            turn.xChangeEffectiveWW().forEach((pid, v) -> effWW.put(pid.toString(), v));
+            dto.setEffectiveWhiteWhite(effWW);
+        }
+
         return dto;
     }
 
@@ -230,6 +236,11 @@ class GameStateMapper {
                     new nl.adg.qwixx.generated.model.CellTag(
                             nl.adg.qwixx.generated.model.CellTag.TypeEnum.SECONDARY_COLOR)
                             .secondaryColor(sc.color().name());
+            case CellTag.XChange xc ->
+                    new nl.adg.qwixx.generated.model.CellTag(
+                            nl.adg.qwixx.generated.model.CellTag.TypeEnum.X_CHANGE)
+                            .valueA(xc.a())
+                            .valueB(xc.b());
         };
     }
 

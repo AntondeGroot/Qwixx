@@ -569,6 +569,11 @@ components:
             type: array
             items:
               type: string
+        effectiveWhiteWhite:
+          type: object
+          description: Map of playerId to effective white+white value after crossing an x-change cell this turn.
+          additionalProperties:
+            type: integer
 
     GameState:
       type: object
@@ -683,7 +688,7 @@ components:
       properties:
         type:
           type: string
-          enum: [EXTRA_BUCKET, AUTO_CROSS, BONUS_POINTS, DOUBLE_CROSS, SECONDARY_COLOR]
+          enum: [EXTRA_BUCKET, AUTO_CROSS, BONUS_POINTS, DOUBLE_CROSS, SECONDARY_COLOR, X_CHANGE]
         target:
           type: string
           description: Target cell ID — only present for AUTO_CROSS.
@@ -693,6 +698,12 @@ components:
         secondaryColor:
           type: string
           description: Second scoring colour — only present for SECONDARY_COLOR (Big Points bonus cells).
+        valueA:
+          type: integer
+          description: First exchange value — only present for X_CHANGE.
+        valueB:
+          type: integer
+          description: Second exchange value — only present for X_CHANGE.
 
     SheetCell:
       type: object

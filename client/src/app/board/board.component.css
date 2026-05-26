@@ -313,6 +313,28 @@ h2 {
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
 }
 
+@keyframes golden-glow {
+  0%, 100% { filter: none; }
+  50%       { filter: drop-shadow(0 0 8px rgba(249, 168, 37, 0.85)); }
+}
+
+/* Always declare the animation but keep it paused so rapid class toggles
+   (e.g. rollingDice suppressing must-pass) don't restart/stack the effect. */
+.punishment-box,
+.btn-pass-arrow {
+  animation: golden-glow 1.4s ease-in-out infinite;
+  animation-play-state: paused;
+}
+
+.punishment-box.must-give-up {
+  border-color: #f9a825;
+  animation-play-state: running;
+}
+
+.btn-pass-arrow.must-pass {
+  animation-play-state: running;
+}
+
 .punishment-box.taken::before,
 .punishment-box.taken::after {
   content: '';

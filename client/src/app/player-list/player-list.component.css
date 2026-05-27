@@ -123,6 +123,10 @@
   opacity: 0.4;
 }
 
+.mini-row.mini-row-xchange {
+  gap: 3px;
+}
+
 /* Color bands */
 .mini-row[data-color="RED"]    .mini-cell { background: #d32f2f; }
 .mini-row[data-color="YELLOW"] .mini-cell { background: #f9a825; }
@@ -141,6 +145,17 @@
 .mini-row .mini-cell.mini-cell-big-points {
   border-radius: 50%;
   background: linear-gradient(135deg, var(--mini-primary) 50%, var(--mini-secondary) 50%);
+}
+
+/* X-Change cells: diamond (rotated square) with purple border and white fill */
+.mini-row .mini-cell.mini-cell-xchange {
+  width: 6px;
+  height: 6px;
+  background: white;
+  border: 1.5px solid #7B1FA2;
+  border-radius: 1px;
+  gap: 5px !important;
+  transform: rotate(45deg);
 }
 
 /* Closing-eligible cells get a slightly lighter shade via opacity */

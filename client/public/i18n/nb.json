@@ -43,7 +43,9 @@
       "MOST_POINTS": "Flest poeng",
       "MOST_WINS": "Flest seire",
       "BALANCED": "Balansert"
-    }
+    },
+    "luckyNumber": "Lucky Number",
+    "luckyNumberDescription": "Legger til en bonusrad med 4 bonuspoeng (5, 6, 7, 8). Bare den aktive spilleren kan krysse av denne når hvit terning 1 + hvit terning 2 + hvilken som helst farget terning er lik 15. Han kan bare krysse av denne bonusen ELLER gjøre sine vanlige trekk."
   },
   "score": {
     "finalScores": "Sluttresultat",

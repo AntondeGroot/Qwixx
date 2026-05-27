@@ -215,3 +215,56 @@
   --glow-dim:  rgba(0, 229, 255, 0.50);
   --glow-mid:  rgba(0, 229, 255, 0.75);
 }
+
+/* ── Lucky Number cells: orange diamond (rotated square) ─────────────────────── */
+.cell.lucky-number-cell {
+  width: 40px;
+  height: 40px;
+  background: #F57C00;
+  border: 2.5px solid #E65100;
+  border-radius: 10px;
+  transform: rotate(45deg);
+  overflow: visible;
+  color: white;
+}
+
+/* Override any color backgrounds — lucky-number cells are always orange */
+.cell.lucky-number-cell[data-color] {
+  background: #F57C00;
+  color: white;
+}
+
+.lucky-number-value {
+  transform: rotate(-45deg);
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.cell.lucky-number-cell .cell-cross {
+  transform: rotate(-45deg);
+  font-size: 24px;
+  color: white;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+/* Glow on clickable lucky-number cells — always cyan (white+white path) */
+:host.host-lucky-number-clickable {
+  display: block;
+  position: relative;
+}
+
+:host.host-lucky-number-clickable .cell.lucky-number-cell {
+  animation: pulse-glow 1.4s ease-in-out infinite;
+  --glow-full: rgba(0, 229, 255, 0.95);
+  --glow-dim:  rgba(0, 229, 255, 0.50);
+  --glow-mid:  rgba(0, 229, 255, 0.75);
+}
+
+:host.host-lucky-number-ww .cell.lucky-number-cell {
+  --glow-full: rgba(0, 229, 255, 0.95);
+  --glow-dim:  rgba(0, 229, 255, 0.50);
+  --glow-mid:  rgba(0, 229, 255, 0.75);
+}

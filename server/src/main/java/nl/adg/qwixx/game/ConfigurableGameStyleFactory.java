@@ -70,6 +70,7 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
                 if (settings.randomOrder()) shuffleDisplayValues(shared);
                 if (settings.connectedCells()) applyConnectedCells(shared);
                 if (settings.xChange()) shared.add(buildXChangeRow());
+                if (settings.luckyNumber()) shared.add(buildLuckyRow());
                 for (UUID player : players) result.put(player, shared);
                 return result;
             } else {
@@ -87,6 +88,12 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
             // X-Change row is appended after all per-player rows are built.
             Row xChangeRow = buildXChangeRow();
             for (UUID player : players) result.get(player).add(xChangeRow);
+        }
+
+        if (settings.luckyNumber()) {
+            // Lucky Number row is shared and appended last.
+            Row luckyRow = buildLuckyRow();
+            for (UUID player : players) result.get(player).add(luckyRow);
         }
 
         return result;
@@ -313,6 +320,29 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
             row.addCell(cell);
         }
         // No lock — x-change rows cannot be closed.
+        return row;
+    }
+
+    /** Lucky row: 4 orange diamond cells worth 5 / 6 / 7 / 8 points each (max 26 total). */
+    private static final int[] LUCKY_BONUS_POINTS = {5, 6, 7, 8};
+
+    /** Lucky-move target sum: 15 for Standard, 20 for Longo. */
+    private static final int LUCKY_TARGET_STANDARD = 13;
+    private static final int LUCKY_TARGET_LONGO    = 18;
+
+    private Row buildLuckyRow() {
+        int target = settings.base() == BaseVariant.LONGO ? LUCKY_TARGET_LONGO : LUCKY_TARGET_STANDARD;
+        Row row = new Row();
+        for (int i = 0; i < LUCKY_BONUS_POINTS.length; i++) {
+            int pts = LUCKY_BONUS_POINTS[i];
+            Cell cell = new Cell(i);
+            cell.setColor(Color.BLUE);
+            cell.setDisplayValue(String.valueOf(pts));
+            cell.setTags(List.of(new CellTag.LuckyNumber(pts)));
+            cell.setClosingEligible(false);
+            row.addCell(cell);
+        }
+        row.setLuckyRow(target);
         return row;
     }
 

@@ -43,7 +43,9 @@
       "MOST_POINTS": "Maximum de points",
       "MOST_WINS": "Maximum de victoires",
       "BALANCED": "Équilibré"
-    }
+    },
+    "luckyNumber": "Lucky Number",
+    "luckyNumberDescription": "Ajoute une rangée bonus avec 4 points bonus (5, 6, 7, 8). Seul le joueur actif peut cocher cette rangée quand dé blanc 1 + dé blanc 2 + n'importe quel dé coloré égale 15. Il ne peut cocher ce bonus QUE s'il renonce à ses coups réguliers."
   },
   "score": {
     "finalScores": "Score final",

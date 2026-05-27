@@ -11,6 +11,7 @@ public class Row {
   private boolean bonusRow    = false;
   private int upperRowIndex   = -1;
   private int lowerRowIndex   = -1;
+  private int luckyTarget     = 0;   // 0 = not a lucky row; >0 = target sum for the lucky move
 
   public Row(){
     id = UUID.randomUUID().toString();
@@ -30,10 +31,14 @@ public class Row {
     this.lowerRowIndex  = lowerRowIndex;
   }
 
-  public String id()          { return id; }
-  public List<Cell> cells()   { return cells; }
-  public LockCell lock()      { return lock; }
-  public boolean isBonusRow() { return bonusRow; }
-  public int upperRowIndex()  { return upperRowIndex; }
-  public int lowerRowIndex()  { return lowerRowIndex; }
+  public void setLuckyRow(int target) { this.luckyTarget = target; }
+
+  public String id()              { return id; }
+  public List<Cell> cells()       { return cells; }
+  public LockCell lock()          { return lock; }
+  public boolean isBonusRow()     { return bonusRow; }
+  public int upperRowIndex()      { return upperRowIndex; }
+  public int lowerRowIndex()      { return lowerRowIndex; }
+  public boolean isLuckyRow()     { return luckyTarget > 0; }
+  public int luckyTarget()        { return luckyTarget; }
 }

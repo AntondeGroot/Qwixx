@@ -43,7 +43,9 @@
       "MOST_POINTS": "Meeste punten",
       "MOST_WINS": "Meeste overwinningen",
       "BALANCED": "Gebalanceerd"
-    }
+    },
+    "luckyNumber": "Lucky Number",
+    "luckyNumberDescription": "Voegt een bonusrij toe met 4 bonuspunten (5, 6, 7, 8). Alleen de actieve speler kan deze kruisen wanneer witte dobbelsteen 1 + witte dobbelsteen 2 + een willekeurige gekleurde dobbelsteen gelijk is aan 15. Hij kan alleen deze bonus kruisen ÓF zijn reguliere zetten doen."
   },
   "score": {
     "finalScores": "Eindstand",

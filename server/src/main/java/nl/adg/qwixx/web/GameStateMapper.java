@@ -126,6 +126,7 @@ class GameStateMapper {
         if (ats != null) {
             dto.setWhiteWhiteUsed(ats.whiteWhiteUsed());
             dto.setColorDieUsed(ats.colorDieUsed());
+            if (ats.luckyNumberUsed()) dto.setLuckyNumberUsed(true);
         }
 
         if (!turn.undoBuffer().isEmpty()) {
@@ -188,7 +189,9 @@ class GameStateMapper {
                 .map(GameStateMapper::mapCell)
                 .toList();
         SheetRow dto = new SheetRow(row.id(), cells, mapLock(row.lock()))
-                .bonusRow(row.isBonusRow());
+                .bonusRow(row.isBonusRow())
+                .luckyRow(row.isLuckyRow())
+                .luckyTarget(row.isLuckyRow() ? row.luckyTarget() : null);
         if (row.isBonusRow()) {
             int upper = row.upperRowIndex();
             int lower = row.lowerRowIndex();
@@ -241,6 +244,10 @@ class GameStateMapper {
                             nl.adg.qwixx.generated.model.CellTag.TypeEnum.X_CHANGE)
                             .valueA(xc.a())
                             .valueB(xc.b());
+            case CellTag.LuckyNumber ln ->
+                    new nl.adg.qwixx.generated.model.CellTag(
+                            nl.adg.qwixx.generated.model.CellTag.TypeEnum.LUCKY_NUMBER)
+                            .amount(ln.bonusPoints());
         };
     }
 

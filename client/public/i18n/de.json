@@ -43,7 +43,9 @@
       "MOST_POINTS": "Meiste Punkte",
       "MOST_WINS": "Meiste Siege",
       "BALANCED": "Ausgewogen"
-    }
+    },
+    "luckyNumber": "Lucky Number",
+    "luckyNumberDescription": "Fügt eine Bonusreihe mit 4 Bonuspunkten (5, 6, 7, 8) hinzu. Nur der aktive Spieler kann diese ankreuzen, wenn weißer Würfel 1 + weißer Würfel 2 + irgendein farbiger Würfel 15 ergibt. Er kann nur diesen Bonus ankreuzen ODER seine regulären Züge machen."
   },
   "score": {
     "finalScores": "Endstand",

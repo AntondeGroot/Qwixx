@@ -8,6 +8,7 @@
      [class.auto-cross]="hasTag()(TagEnum.AUTO_CROSS)"
      [class.big-points-cell]="!!secondaryColor()"
      [class.x-change-cell]="!!xChangeValues()"
+     [class.lucky-number-cell]="!!luckyNumberBonusPoints()"
      [class.primary-maxed]="primaryMaxed()"
      [class.secondary-maxed]="secondaryMaxed()"
      [class.clickable]="showClickable() ?? clickable()"
@@ -38,6 +39,8 @@
       </svg>
       <span class="xchange-bot">{{ xChangeValues()!.b }}</span>
     </div>
+  } @else if (luckyNumberBonusPoints()) {
+    <span class="lucky-number-value">{{ luckyNumberBonusPoints() }}</span>
   } @else {
     <span class="cell-value">{{ cell().displayValue }}</span>
   }

@@ -43,7 +43,9 @@
       "MOST_POINTS": "Massimo punti",
       "MOST_WINS": "Massimo vittorie",
       "BALANCED": "Equilibrato"
-    }
+    },
+    "luckyNumber": "Lucky Number",
+    "luckyNumberDescription": "Aggiunge una riga bonus con 4 punti bonus (5, 6, 7, 8). Solo il giocatore attivo può sbarrare questa riga quando dado bianco 1 + dado bianco 2 + qualsiasi dado colorato è uguale a 15. Può sbarrare solo questo bonus OPPURE eseguire le sue mosse regolari."
   },
   "score": {
     "finalScores": "Punteggio finale",

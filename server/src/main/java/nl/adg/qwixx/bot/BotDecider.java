@@ -285,6 +285,9 @@ public class BotDecider {
                     int bestMatch = Math.min(Math.abs(xc.a() - center), Math.abs(xc.b() - center));
                     adjust += (profile.rarityBonus() - bestMatch) * 0.5;
                 }
+                case CellTag.LuckyNumber luckyNumber ->
+                        // Treat luckyNumber bonus points like any other bonus: subtract to make cell more attractive.
+                        adjust -= luckyNumber.bonusPoints();
             }
         }
         return adjust;

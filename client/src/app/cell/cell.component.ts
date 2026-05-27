@@ -10,6 +10,8 @@ import { CellTag } from '../../generated/model/cellTag';
     '[class.host-big-points-clickable]': '!!secondaryColor() && !!(showClickable() ?? clickable())',
     '[class.host-ww]': '!!secondaryColor() && showDieHint()',
     '[class.host-xchange-clickable]': '!!xChangeValues() && !!(showClickable() ?? clickable())',
+    '[class.host-lucky-number-clickable]': '!!luckyNumberBonusPoints() && !!(showClickable() ?? clickable())',
+    '[class.host-lucky-number-ww]': '!!luckyNumberBonusPoints() && showDieHint()',
   }
 })
 export class CellComponent {
@@ -37,6 +39,11 @@ export class CellComponent {
   xChangeValues = computed(() => {
     const tag = this.cell().tags.find(t => t.type === CellTag.TypeEnum.X_CHANGE);
     return tag ? { a: tag.valueA!, b: tag.valueB! } : null;
+  });
+
+  luckyNumberBonusPoints = computed(() => {
+    const tag = this.cell().tags.find(t => t.type === CellTag.TypeEnum.LUCKY_NUMBER);
+    return tag ? tag.amount! : null;
   });
 
   primaryMaxed   = computed(() => !!this.secondaryColor() && this.maxedColors().has(this.cell().color));

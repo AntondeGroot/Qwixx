@@ -11,6 +11,7 @@ import nl.adg.qwixx.action.RollAction;
 import nl.adg.qwixx.action.TakePunishmentAction;
 import nl.adg.qwixx.action.UndoLastCrossAction;
 import static nl.adg.qwixx.rules.CellCrosser.getRowState;
+import static nl.adg.qwixx.rules.CellCrosser.isReachableCell;
 import static nl.adg.qwixx.rules.RowClosureEvaluator.*;
 
 import nl.adg.qwixx.data.Cell;
@@ -25,6 +26,7 @@ import nl.adg.qwixx.state.TurnPhase;
 import nl.adg.qwixx.state.TurnState;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -72,10 +74,25 @@ public class StandardTurnRules implements TurnRules {
 
     private List<GameAction> activeActions(GameState state, UUID playerId, TurnState turn) {
         List<GameAction> actions = new ArrayList<>();
+
+        if (turn.activeTurnState().luckyNumberUsed()) {
+            // After a Lucky Number cross the active player may only confirm or undo — no more crosses.
+            actions.add(new GiveUpAction(playerId));
+            actions.add(new ResetTurnAction(playerId));
+            actions.add(new EndTurnAction(playerId));
+            return actions;
+        }
+
         actions.addAll(crossCellActions(state, playerId, true));
         actions.addAll(declareLockIntentActions(state, playerId, getMinCrossesRequired()));
         actions.add(new GiveUpAction(playerId));
         actions.add(new ResetTurnAction(playerId));
+
+        // Lucky Number is only available before any other action this turn.
+        if (!turn.activeTurnState().hasActed()) {
+            actions.addAll(luckyNumberCellActions(state, playerId));
+        }
+
         if (turn.activeTurnState().hasActed()) {
             actions.add(new EndTurnAction(playerId));
         }
@@ -160,9 +177,25 @@ public class StandardTurnRules implements TurnRules {
 
         if (xChangeTag != null) {
             applyXChangeCross(state, turn, playerId, action, xChangeTag);
+        } else if (isActive && isLuckyNumberCell(cell)) {
+            applyLuckyNumberCross(state, turn, playerId, action);
         } else {
             applyRegularCross(state, turn, playerId, action, isActive);
         }
+    }
+
+    private static boolean isLuckyNumberCell(Cell cell) {
+        if (cell == null) return false;
+        return cell.tags().stream().anyMatch(t -> t instanceof CellTag.LuckyNumber);
+    }
+
+    private void applyLuckyNumberCross(GameState state, TurnState turn, UUID playerId, CrossCellAction action) {
+        if (turn.activeTurnState().hasActed()) {
+            throw new IllegalMoveException("Lucky Number can only be used before making any other move this turn");
+        }
+        Map<Integer, Set<String>> crossed = crossCellWithAutoTags(state, playerId, action.rowIndex(), action.cellId());
+        savePendingCrosses(turn, playerId, crossed);
+        turn.activeTurnState().setLuckyNumberUsed();
     }
 
     private void applyXChangeCross(GameState state, TurnState turn, UUID playerId,
@@ -448,6 +481,40 @@ public class StandardTurnRules implements TurnRules {
 
     protected Map<Integer, Set<String>> crossCellWithAutoTags(GameState state, UUID playerId, int rowIndex, String cellId) {
         return cellCrosser.cross(state, playerId, rowIndex, cellId);
+    }
+
+    // ── Lucky Number ──────────────────────────────────────────────────────────────
+
+    /**
+     * Returns a CrossCellAction for the leftmost uncrossed Lucky Number cell when the
+     * prerequisite is met: white1 + white2 + any active coloured die = 15.
+     */
+    protected List<GameAction> luckyNumberCellActions(GameState state, UUID playerId) {
+        TurnState turn = state.turnState();
+        var roll = turn.currentRoll();
+        if (roll == null) return List.of();
+
+        SheetLayout layout     = getLayout(state, playerId);
+        SheetProgress progress = getProgress(state, playerId);
+
+        for (int i = 0; i < layout.rows().size(); i++) {
+            Row row = layout.rows().get(i);
+            if (!row.isLuckyRow()) continue;
+            boolean prereqMet = roll.coloredDice().values().stream()
+                    .anyMatch(colored -> roll.white1() + roll.white2() + colored == row.luckyTarget());
+            if (!prereqMet) return List.of();
+            RowState rowState = getRowState(progress, i);
+            int rightmost     = rightmostCrossedPosition(row, rowState);
+            final int rowIndex = i;
+            return row.cells().stream()
+                    .filter(c -> isReachableCell(c, rightmost, rowState.crossedCells()))
+                    .min(Comparator.comparingInt(Cell::position))
+                    .map(cell -> (GameAction) new CrossCellAction(
+                            playerId, rowIndex, cell.id(), DiceCombination.WHITE_WHITE))
+                    .map(List::of)
+                    .orElse(List.of());
+        }
+        return List.of();
     }
 
     // ── Lock eligibility delegates (protected for subclasses and tests) ────────

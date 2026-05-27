@@ -27,6 +27,17 @@ public class StandardScoringEngine implements ScoringEngine {
             RowState rowState = progress.rowStates().get(rowIndex);
             if (rowState == null) continue;
 
+            // Lucky Number row: score = sum of all crossed cells' bonus points (max 5+6+7+8 = 26).
+            if (row.isLuckyRow()) {
+                for (Cell cell : row.cells()) {
+                    if (!rowState.crossedCells().contains(cell.id())) continue;
+                    for (CellTag tag : cell.tags()) {
+                        if (tag instanceof CellTag.LuckyNumber(int pts)) bonusPoints += pts;
+                    }
+                }
+                continue;
+            }
+
             for (Cell cell : row.cells()) {
                 if (!rowState.crossedCells().contains(cell.id())) continue;
                 crosses.merge(cell.color(), 1, Integer::sum);
@@ -36,7 +47,7 @@ public class StandardScoringEngine implements ScoringEngine {
                         case CellTag.DoubleCross ignored        -> crosses.merge(cell.color(), 1, Integer::sum);
                         case CellTag.BonusPoints(int amt)       -> bonusPoints += amt;
                         case CellTag.SecondaryColor(Color sc)   -> crosses.merge(sc, 1, Integer::sum);
-                        default -> { /* AutoCross is rule-time only, not scored */ }
+                        default -> { /* AutoCross is rule-time only; LuckyNumber rows are handled above */ }
                     }
                 }
             }

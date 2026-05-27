@@ -91,4 +91,12 @@ export class PlayerListComponent {
   isXChangeRow(row: SheetRow): boolean {
     return this.isXChange(row.cells[0]);
   }
+
+  isLuckyNumber(cell: SheetCell): boolean {
+    return cell.tags?.some(t => t.type === 'LUCKY_NUMBER') ?? false;
+  }
+
+  isLuckyRow(row: SheetRow): boolean {
+    return row.luckyRow === true;
+  }
 }

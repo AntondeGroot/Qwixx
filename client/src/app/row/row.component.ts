@@ -1,4 +1,5 @@
 import { Component, computed, input, output } from '@angular/core';
+import { TranslateModule } from '@ngx-translate/core';
 import { SheetRow } from '../../generated/model/sheetRow';
 import { RowState } from '../../generated/model/rowState';
 import { CellTag } from '../../generated/model/cellTag';
@@ -6,7 +7,7 @@ import { CellComponent } from '../cell/cell.component';
 
 @Component({
   selector: 'app-row',
-  imports: [CellComponent],
+  imports: [CellComponent, TranslateModule],
   templateUrl: './row.component.html',
   styleUrl: './row.component.css'
 })
@@ -42,6 +43,10 @@ export class RowComponent {
     this.row().cells.some(c => c.tags.some(t => t.type === CellTag.TypeEnum.X_CHANGE))
   );
 
+  isLuckyRow  = computed(() => this.row().luckyRow === true);
+  luckyTarget   = computed(() => this.row().luckyTarget ?? 15);
+  luckyLabel    = computed(() => `LUCKY ${this.luckyTarget()}`);
+
   // Formula: (n+1)×44 + n×4 + 16 = 48n+60  →  Standard 9 cells = 492px, Longo 13 cells = 684px
   xChangeRowWidth = computed(() =>
     this.isXChangeRow() ? `${48 * this.row().cells.length + 60}px` : null
@@ -52,6 +57,7 @@ export class RowComponent {
   private bonusZoneCellCount = computed(() => {
     if (this.row().lock != null) return 0;
     if (this.isXChangeRow()) return 0;
+    if (this.isLuckyRow()) return 0;  // lucky number row has no alignment zone
     const total = this.row().cells.length;
     return total > 12 ? 2 : 1;
   });

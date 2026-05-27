@@ -562,6 +562,9 @@ components:
         colorDieUsed:
           type: boolean
           description: Whether the active player has already used the color die option this turn.
+        luckyNumberUsed:
+          type: boolean
+          description: Whether the active player has used their Lucky Number move this turn.
         pendingCrosses:
           type: object
           description: Map of playerId to cell IDs crossed this turn but not yet confirmed. Empty once the turn ends.
@@ -688,7 +691,7 @@ components:
       properties:
         type:
           type: string
-          enum: [EXTRA_BUCKET, AUTO_CROSS, BONUS_POINTS, DOUBLE_CROSS, SECONDARY_COLOR, X_CHANGE]
+          enum: [EXTRA_BUCKET, AUTO_CROSS, BONUS_POINTS, DOUBLE_CROSS, SECONDARY_COLOR, X_CHANGE, LUCKY_NUMBER]
         target:
           type: string
           description: Target cell ID — only present for AUTO_CROSS.
@@ -776,6 +779,15 @@ components:
             True when this row is a scoring bonus row (e.g. Big Points) that should
             not appear as a separate colour column in the score animation.
             Its points are already captured in the dedicated bonusPoints field of ScoreCard.
+        luckyRow:
+          type: boolean
+          default: false
+          description: True when this row is the Lucky Number bonus row.
+        luckyTarget:
+          type: integer
+          description: >
+            For lucky rows only: the target dice sum (white1 + white2 + any coloured die)
+            that unlocks a cross. 15 for Standard, 20 for Longo. Absent on non-lucky rows.
         upperNeighbourRowId:
           type: string
           description: >

@@ -52,6 +52,9 @@ class CellCrosser {
         for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
             Row row = layout.rows().get(rowIndex);
 
+            // Lucky Number rows are handled separately by the turn-rules layer.
+            if (row.isLuckyRow()) continue;
+
             // Bonus rows are never globally closed, but skip closed normal rows.
             if (!row.isBonusRow() && state.isRowClosed(rowIndex)) continue;
 

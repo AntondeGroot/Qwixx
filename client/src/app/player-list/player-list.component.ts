@@ -83,4 +83,12 @@ export class PlayerListComponent {
   secondaryColorOf(cell: SheetCell | undefined): string | null {
     return cell?.tags?.find(t => t.type === 'SECONDARY_COLOR')?.secondaryColor ?? null;
   }
+
+  isXChange(cell: SheetCell): boolean {
+    return cell.tags?.some(t => t.type === 'X_CHANGE') ?? false;
+  }
+
+  isXChangeRow(row: SheetRow): boolean {
+    return this.isXChange(row.cells[0]);
+  }
 }

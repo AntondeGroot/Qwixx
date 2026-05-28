@@ -145,39 +145,6 @@
 }
 
 /* ── Lucky 15 row label ──────────────────────────────────────────────────── */
-.lucky-number-label {
-  flex-shrink: 0;
-  white-space: nowrap;
-  pointer-events: none;
-
-  font-family: 'Luckiest Guy', cursive;
-  font-size: 15px;
-  letter-spacing: 2px;
-  line-height: 1;
-
-  /* Solid orange fill — visible on any background */
-  color: #F28C28;
-
-  /* Layer 1 (inner): white outline at ±2px */
-  /* Layer 2 (outer): dark-orange shadow at ±4px */
-  /* Layer 3: soft ground drop-shadow */
-  text-shadow:
-    -2px -2px 0 #fff,  2px -2px 0 #fff,
-    -2px  2px 0 #fff,  2px  2px 0 #fff,
-    -2px  0   0 #fff,  2px  0   0 #fff,
-     0   -2px 0 #fff,  0    2px 0 #fff,
-    -4px -4px 0 #8B3000,  4px -4px 0 #8B3000,
-    -4px  4px 0 #8B3000,  4px  4px 0 #8B3000,
-    -4px  0   0 #8B3000,  4px  0   0 #8B3000,
-     0   -4px 0 #8B3000,  0    4px 0 #8B3000,
-     0    6px 3px rgba(60, 15, 0, 0.55);
-}
-
-/* "Points" label after the cells: slightly smaller, same style */
-.lucky-number-label.lucky-number-pts {
-  font-size: 12px;
-  letter-spacing: 1px;
-}
 
 /* ── Lucky 15 row: outer row layout ─────────────────────────────────────── */
 .row.lucky-number-row {

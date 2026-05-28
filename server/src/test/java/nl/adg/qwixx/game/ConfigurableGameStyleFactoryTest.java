@@ -308,4 +308,193 @@ class ConfigurableGameStyleFactoryTest {
         assertEquals(6, dice.size());
         assertTrue(dice.stream().allMatch(d -> d.faces() == 8));
     }
+
+    // ── Lucky Number ──────────────────────────────────────────────────────────
+
+    private ConfigurableGameStyleFactory luckyNumberFactory(BaseVariant base) {
+        return new ConfigurableGameStyleFactory(
+                GameSettings.builder().base(base).luckyNumber(true).build());
+    }
+
+    private Row luckyRow(BaseVariant base) {
+        return luckyNumberFactory(base)
+                .buildRows(List.of(UUID.randomUUID())).values().iterator().next()
+                .stream().filter(Row::isLuckyRow).findFirst()
+                .orElseThrow(() -> new AssertionError("no lucky row found"));
+    }
+
+    @Test
+    void luckyNumber_standardRowIsMarkedAsLucky() {
+        assertTrue(luckyRow(BaseVariant.STANDARD).isLuckyRow());
+    }
+
+    @Test
+    void luckyNumber_standardTargetIs13() {
+        assertEquals(13, luckyRow(BaseVariant.STANDARD).luckyTarget());
+    }
+
+    @Test
+    void luckyNumber_longoTargetIs18() {
+        assertEquals(18, luckyRow(BaseVariant.LONGO).luckyTarget());
+    }
+
+    @Test
+    void luckyNumber_rowHasFourCells() {
+        assertEquals(4, luckyRow(BaseVariant.STANDARD).cells().size());
+    }
+
+    @Test
+    void luckyNumber_allCellsHaveLuckyNumberTag() {
+        for (Cell cell : luckyRow(BaseVariant.STANDARD).cells()) {
+            assertTrue(cell.tags().stream().anyMatch(t -> t instanceof CellTag.LuckyNumber),
+                    "Every cell in the lucky row must have a LuckyNumber tag");
+        }
+    }
+
+    @Test
+    void luckyNumber_bonusPointsAre5_6_7_8() {
+        List<Integer> pts = luckyRow(BaseVariant.STANDARD).cells().stream()
+                .map(c -> c.tags().stream()
+                        .filter(t -> t instanceof CellTag.LuckyNumber)
+                        .map(t -> ((CellTag.LuckyNumber) t).bonusPoints())
+                        .findFirst().orElseThrow())
+                .toList();
+        assertEquals(List.of(5, 6, 7, 8), pts);
+    }
+
+    @Test
+    void luckyNumber_cellsAreNotClosingEligible() {
+        assertTrue(luckyRow(BaseVariant.STANDARD).cells().stream()
+                .noneMatch(Cell::isClosingEligible));
+    }
+
+    // ── Lucky Cross ───────────────────────────────────────────────────────────
+
+    private ConfigurableGameStyleFactory luckyCrossFactory(BaseVariant base, CardMode mode) {
+        return new ConfigurableGameStyleFactory(
+                GameSettings.builder().base(base).cardMode(mode).luckyCross(true).build());
+    }
+
+    private List<Row> luckyCrossRows(BaseVariant base) {
+        return luckyCrossFactory(base, CardMode.DETERMINISTIC)
+                .buildRows(List.of(UUID.randomUUID())).values().iterator().next();
+    }
+
+    private long countLuckyCrossCells(Row row) {
+        return row.cells().stream()
+                .filter(c -> c.tags().stream().anyMatch(t -> t instanceof CellTag.LuckyCross))
+                .count();
+    }
+
+    @Test
+    void luckyCross_standard_eachRowHas3CrossFields() {
+        for (Row row : luckyCrossRows(BaseVariant.STANDARD)) {
+            assertEquals(3, countLuckyCrossCells(row),
+                    "Standard: each coloured row must have exactly 3 Lucky Cross fields");
+        }
+    }
+
+    @Test
+    void luckyCross_longo_eachRowHas4CrossFields() {
+        for (Row row : luckyCrossRows(BaseVariant.LONGO)) {
+            assertEquals(4, countLuckyCrossCells(row),
+                    "Longo: each coloured row must have exactly 4 Lucky Cross fields");
+        }
+    }
+
+    @Test
+    void luckyCross_standard_totalCellsPerRowIs14() {
+        for (Row row : luckyCrossRows(BaseVariant.STANDARD)) {
+            assertEquals(14, row.cells().size(),
+                    "Standard: 11 normal + 3 Lucky Cross = 14 cells per row");
+        }
+    }
+
+    @Test
+    void luckyCross_longo_totalCellsPerRowIs19() {
+        for (Row row : luckyCrossRows(BaseVariant.LONGO)) {
+            assertEquals(19, row.cells().size(),
+                    "Longo: 15 normal + 4 Lucky Cross = 19 cells per row");
+        }
+    }
+
+    @Test
+    void luckyCross_crossFieldsAreNotClosingEligible() {
+        for (Row row : luckyCrossRows(BaseVariant.STANDARD)) {
+            for (Cell cell : row.cells()) {
+                if (cell.tags().stream().anyMatch(t -> t instanceof CellTag.LuckyCross)) {
+                    assertFalse(cell.isClosingEligible(),
+                            "Lucky Cross fields must not be closing-eligible");
+                }
+            }
+        }
+    }
+
+    @Test
+    void luckyCross_normalCellsHaveCorrectDisplayValuesAscending() {
+        Row red = luckyCrossRows(BaseVariant.STANDARD).get(0); // RED = ascending
+        List<String> normalValues = red.cells().stream()
+                .filter(c -> c.tags().stream().noneMatch(t -> t instanceof CellTag.LuckyCross))
+                .map(Cell::displayValue)
+                .toList();
+        assertEquals(11, normalValues.size());
+        for (int i = 0; i < normalValues.size(); i++) {
+            assertEquals(String.valueOf(i + 2), normalValues.get(i),
+                    "Normal cell " + i + " must have display value " + (i + 2));
+        }
+    }
+
+    @Test
+    void luckyCross_crossFieldPositionsDifferBetweenRows() {
+        List<Row> rows = luckyCrossRows(BaseVariant.STANDARD);
+        List<List<Integer>> crossPositionsPerRow = rows.stream()
+                .map(row -> row.cells().stream()
+                        .filter(c -> c.tags().stream().anyMatch(t -> t instanceof CellTag.LuckyCross))
+                        .map(Cell::position)
+                        .toList())
+                .toList();
+        // All four rows must have different cross-field position sets (shifted pattern).
+        Set<List<Integer>> unique = new HashSet<>(crossPositionsPerRow);
+        assertEquals(4, unique.size(),
+                "Each row must have a distinct Lucky Cross field position pattern (cyclic shift)");
+    }
+
+    @Test
+    void luckyCross_deterministicModeAllPlayersShareSameRowObjects() {
+        UUID p1 = UUID.randomUUID(), p2 = UUID.randomUUID();
+        Map<UUID, List<Row>> result = luckyCrossFactory(BaseVariant.STANDARD, CardMode.DETERMINISTIC)
+                .buildRows(List.of(p1, p2));
+        assertSame(result.get(p1), result.get(p2),
+                "Deterministic mode must share the same row list across all players");
+    }
+
+    @Test
+    void luckyCross_probabilisticModeGivesEachPlayerDistinctRows() {
+        UUID p1 = UUID.randomUUID(), p2 = UUID.randomUUID();
+        Map<UUID, List<Row>> result = luckyCrossFactory(BaseVariant.STANDARD, CardMode.PROBABILISTIC)
+                .buildRows(List.of(p1, p2));
+        assertNotSame(result.get(p1), result.get(p2),
+                "Probabilistic mode must give each player a distinct row list");
+    }
+
+    @Test
+    void luckyCross_randomOrderDoesNotMoveLuckyCrossFields() {
+        ConfigurableGameStyleFactory f = new ConfigurableGameStyleFactory(
+                GameSettings.builder()
+                        .base(BaseVariant.STANDARD)
+                        .luckyCross(true)
+                        .randomOrder(true)
+                        .build(),
+                new Random(42));
+        List<Row> rows = f.buildRows(List.of(UUID.randomUUID())).values().iterator().next();
+        for (Row row : rows) {
+            // Lucky Cross fields must still have empty display values after shuffle
+            for (Cell cell : row.cells()) {
+                if (cell.tags().stream().anyMatch(t -> t instanceof CellTag.LuckyCross)) {
+                    assertEquals("", cell.displayValue(),
+                            "randomOrder must not overwrite Lucky Cross field display values");
+                }
+            }
+        }
+    }
 }

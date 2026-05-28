@@ -45,7 +45,9 @@
       "BALANCED": "Gebalanceerd"
     },
     "luckyNumber": "Lucky Number",
-    "luckyNumberDescription": "Voegt een bonusrij toe met 4 bonuspunten (5, 6, 7, 8). Alleen de actieve speler kan deze kruisen wanneer witte dobbelsteen 1 + witte dobbelsteen 2 + een willekeurige gekleurde dobbelsteen gelijk is aan 15. Hij kan alleen deze bonus kruisen ÓF zijn reguliere zetten doen."
+    "luckyNumberDescription": "Voegt een bonusrij toe met 4 bonuspunten (5, 6, 7, 8). Alleen de actieve speler kan deze kruisen wanneer witte dobbelsteen 1 + witte dobbelsteen 2 + een willekeurige gekleurde dobbelsteen gelijk is aan 15. Hij kan alleen deze bonus kruisen ÓF zijn reguliere zetten doen.",
+    "luckyCross": "Lucky Cross",
+    "luckyCrossDescription": "Voegt 3 bonusvelden toe aan elke gekleurde rij (4 bij Longo). Wanneer twee willekeurige dobbelstenen een 1 en een 5 tonen, mag elke speler eenmalig het volgende bonusveld kruisen. Wit+wit: vrije rijkeuze. Wit+gekleurd: die gekleurde rij. Gekleurd+gekleurd: een van die twee rijen. Kan voor of na de reguliere zet."
   },
   "score": {
     "finalScores": "Eindstand",

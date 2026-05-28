@@ -2038,4 +2038,459 @@ class StandardTurnRulesTest {
                         c.tags().stream().anyMatch(t -> t instanceof CellTag.XChange xc
                                 && xc.a() == a && xc.b() == b));
     }
+
+    // =========================================================================
+    // Lucky Number mechanic tests
+    // =========================================================================
+    //
+    // Layout: standard 4 coloured rows + 1 lucky-number row (luckyTarget = 13).
+    // Roll: white1=3, white2=4, blue=6 → 3+4+6 = 13 ✓ (after override).
+    // Default fixed random yields blue=5 (sum 12), so the override is required.
+
+    @Test
+    void luckyNumber_offeredToActivePlayerWhenPrereqMet() {
+        GameState state = stateWithLuckyNumberAfterRoll(p1, p1, p2);
+        assertTrue(rules.getValidActions(state, p1).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction cc && isLuckyNumberAction(state, p1, cc)),
+                "Lucky Number cell must be offered when ww + any coloured die equals luckyTarget");
+    }
+
+    @Test
+    void luckyNumber_notOfferedWhenPrereqNotMet() {
+        GameState state = stateWithLuckyNumberAfterRoll(p1, p1, p2);
+        // Override so no combo reaches 13
+        state.turnState().setCurrentRoll(new RollResult(1, 1, state.turnState().currentRoll().coloredDice()));
+        assertFalse(rules.getValidActions(state, p1).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction cc && isLuckyNumberAction(state, p1, cc)),
+                "Lucky Number cell must NOT be offered when no combo equals luckyTarget");
+    }
+
+    @Test
+    void luckyNumber_onlyOfferedBeforeAnyOtherMove() {
+        GameState state = stateWithLuckyNumberAfterRoll(p1, p1, p2);
+        rules.apply(state, firstRegularCrossAction(state, p1));
+        assertFalse(rules.getValidActions(state, p1).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction cc && isLuckyNumberAction(state, p1, cc)),
+                "Lucky Number must not be offered after any other move has been made");
+    }
+
+    @Test
+    void luckyNumber_crossSetsLuckyNumberUsedFlag() {
+        GameState state = stateWithLuckyNumberAfterRoll(p1, p1, p2);
+        rules.apply(state, firstLuckyNumberAction(state, p1));
+        assertTrue(state.turnState().activeTurnState().luckyNumberUsed(),
+                "luckyNumberUsed flag must be set after crossing a Lucky Number cell");
+    }
+
+    @Test
+    void luckyNumber_afterCross_noRegularCrossesOffered() {
+        GameState state = stateWithLuckyNumberAfterRoll(p1, p1, p2);
+        rules.apply(state, firstLuckyNumberAction(state, p1));
+        assertFalse(rules.getValidActions(state, p1).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction cc && !isLuckyNumberAction(state, p1, cc)),
+                "No regular cross actions must be offered after Lucky Number cross");
+    }
+
+    @Test
+    void luckyNumber_afterCross_endTurnOffered() {
+        GameState state = stateWithLuckyNumberAfterRoll(p1, p1, p2);
+        rules.apply(state, firstLuckyNumberAction(state, p1));
+        assertTrue(rules.getValidActions(state, p1).stream().anyMatch(a -> a instanceof EndTurnAction),
+                "EndTurnAction must be offered after Lucky Number cross");
+    }
+
+    @Test
+    void luckyNumber_notOfferedToPassivePlayers() {
+        GameState state = stateWithLuckyNumberAfterRoll(p1, p1, p2);
+        assertFalse(rules.getValidActions(state, p2).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction cc && isLuckyNumberAction(state, p2, cc)),
+                "Passive players must never be offered Lucky Number actions");
+    }
+
+    @Test
+    void luckyNumber_countsAsHasActed_allowsEndTurn() {
+        GameState state = stateWithLuckyNumberAfterRoll(p1, p1, p2);
+        rules.apply(state, firstLuckyNumberAction(state, p1));
+        assertTrue(state.turnState().activeTurnState().hasActed(),
+                "Lucky Number cross must count as hasActed()");
+    }
+
+    @Test
+    void luckyNumber_resetClearsFlag() {
+        GameState state = stateWithLuckyNumberAfterRoll(p1, p1, p2);
+        rules.apply(state, firstLuckyNumberAction(state, p1));
+        assertTrue(state.turnState().activeTurnState().luckyNumberUsed());
+        rules.apply(state, new ResetTurnAction(p1));
+        assertFalse(state.turnState().activeTurnState().luckyNumberUsed(),
+                "luckyNumberUsed must be cleared after ResetTurnAction");
+    }
+
+    // ── Lucky Number state builders ───────────────────────────────────────────
+
+    /** Roll override: white1=3, white2=4, blue=6 → ww+blue = 13 = luckyTarget. */
+    private GameState stateWithLuckyNumberAfterRoll(UUID active, UUID... allPlayers) {
+        List<UUID> players = Arrays.asList(allPlayers);
+        Map<UUID, SheetLayout> layouts = new HashMap<>();
+        Map<UUID, SheetProgress> progress = new HashMap<>();
+        for (UUID p : players) {
+            List<Row> rows = new ArrayList<>();
+            rows.add(ascendingRow(Color.RED));
+            rows.add(ascendingRow(Color.YELLOW));
+            rows.add(descendingRow(Color.GREEN));
+            rows.add(descendingRow(Color.BLUE));
+            rows.add(luckyNumberRow());
+            layouts.put(p, new SheetLayout(rows));
+            progress.put(p, emptyProgress());
+        }
+        List<Die> dice = new ArrayList<>(List.of(
+                new Die(Color.WHITE, 6), new Die(Color.WHITE, 6),
+                new Die(Color.RED, 6), new Die(Color.YELLOW, 6),
+                new Die(Color.GREEN, 6), new Die(Color.BLUE, 6)));
+        BoardState board = new BoardState(progress, dice, new HashMap<>());
+        TurnState turn = new TurnState();
+        turn.setActivePlayerId(active);
+        turn.setPhase(TurnPhase.ROLL);
+        GameState state = new GameState(CardMode.DETERMINISTIC, players, null, layouts, board, turn);
+        rules.apply(state, new RollAction(active));
+        // Override: blue=6 so ww(3+4)+blue(6) = 13 = luckyTarget
+        Map<Color, Integer> colored = new EnumMap<>(Color.class);
+        colored.put(Color.RED, 2); colored.put(Color.YELLOW, 3);
+        colored.put(Color.GREEN, 4); colored.put(Color.BLUE, 6);
+        state.turnState().setCurrentRoll(new RollResult(3, 4, colored));
+        return state;
+    }
+
+    private Row luckyNumberRow() {
+        int[] bonusPoints = {5, 6, 7, 8};
+        Row row = new Row();
+        for (int i = 0; i < bonusPoints.length; i++) {
+            Cell c = new Cell(i);
+            c.setColor(Color.BLUE);
+            c.setDisplayValue(String.valueOf(bonusPoints[i]));
+            c.setTags(List.of(new CellTag.LuckyNumber(bonusPoints[i])));
+            c.setClosingEligible(false);
+            row.addCell(c);
+        }
+        row.setLuckyRow(13);
+        return row;
+    }
+
+    // ── Lucky Number action helpers ───────────────────────────────────────────
+
+    private CrossCellAction firstLuckyNumberAction(GameState state, UUID playerId) {
+        return rules.getValidActions(state, playerId).stream()
+                .filter(a -> a instanceof CrossCellAction cc && isLuckyNumberAction(state, playerId, cc))
+                .map(a -> (CrossCellAction) a)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no Lucky Number action offered to " + playerId));
+    }
+
+    private CrossCellAction firstRegularCrossAction(GameState state, UUID playerId) {
+        return rules.getValidActions(state, playerId).stream()
+                .filter(a -> a instanceof CrossCellAction cc && !isLuckyNumberAction(state, playerId, cc)
+                        && !isLuckyCrossAction(state, playerId, cc))
+                .map(a -> (CrossCellAction) a)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no regular CrossCellAction offered to " + playerId));
+    }
+
+    private boolean isLuckyNumberAction(GameState state, UUID playerId, CrossCellAction action) {
+        return state.sheetLayouts().get(playerId).rows().get(action.rowIndex())
+                .cells().stream()
+                .anyMatch(c -> c.id().equals(action.cellId())
+                        && c.tags().stream().anyMatch(t -> t instanceof CellTag.LuckyNumber));
+    }
+
+    // =========================================================================
+    // Lucky Cross mechanic tests
+    // =========================================================================
+    //
+    // Layout: standard 4 coloured rows each with lucky-cross fields at positions 2, 6, 11
+    // (gap pattern [2,3,4,2]).
+    //
+    // Default fixed random roll: white1=3, white2=4, red=2, yellow=3, green=4, blue=5.
+    // That roll has NO 1+5 combo.  Tests that need a combo override the roll.
+    //
+    // Combos used:
+    //   white1=1, white2=5                 → free choice (any coloured row)
+    //   white1=1, white2=4, red=5          → only RED row
+    //   white1=3, white2=4, red=1, green=5 → RED or GREEN rows (two-coloured combo)
+
+    @Test
+    void luckyCross_notOfferedWhenNo1And5Combo() {
+        GameState state = stateWithLuckyCrossAfterRoll(p1, p1, p2);
+        // default roll: no 1+5 pair
+        assertFalse(hasluckyCrossAction(rules.getValidActions(state, p1), state, p1),
+                "Lucky Cross must not be offered when no 1+5 combo is present");
+    }
+
+    @Test
+    void luckyCross_offeredToActivePlayerWhenWhiteWhiteIs1And5() {
+        GameState state = stateWithLuckyCrossAfterRoll(p1, p1, p2);
+        setRoll(state, 1, 5, Map.of(Color.RED, 2, Color.YELLOW, 3, Color.GREEN, 4, Color.BLUE, 2));
+        List<CrossCellAction> offered = luckyCrossActions(rules.getValidActions(state, p1), state, p1);
+        assertEquals(4, offered.size(),
+                "white+white 1+5 must offer one Lucky Cross field in each of the 4 coloured rows");
+    }
+
+    @Test
+    void luckyCross_offeredOnlyForMatchingRowWhenWhiteColorCombo() {
+        GameState state = stateWithLuckyCrossAfterRoll(p1, p1, p2);
+        // white1=1, white2=4, red=5 → only RED row
+        setRoll(state, 1, 4, Map.of(Color.RED, 5, Color.YELLOW, 3, Color.GREEN, 4, Color.BLUE, 2));
+        List<CrossCellAction> offered = luckyCrossActions(rules.getValidActions(state, p1), state, p1);
+        assertEquals(1, offered.size(), "white+colored 1+5 must offer exactly one Lucky Cross field");
+        assertEquals(Color.RED, rowColor(state, p1, offered.get(0).rowIndex()),
+                "Offered Lucky Cross field must be in the RED row");
+    }
+
+    @Test
+    void luckyCross_offeredForEitherRowWhenTwoColoredAre1And5() {
+        GameState state = stateWithLuckyCrossAfterRoll(p1, p1, p2);
+        // red=1, green=5 → RED or GREEN rows
+        setRoll(state, 3, 4, Map.of(Color.RED, 1, Color.YELLOW, 3, Color.GREEN, 5, Color.BLUE, 2));
+        List<CrossCellAction> offered = luckyCrossActions(rules.getValidActions(state, p1), state, p1);
+        assertEquals(2, offered.size(), "colored+colored 1+5 must offer one field in each of the two rows");
+        assertTrue(offered.stream().anyMatch(a -> rowColor(state, p1, a.rowIndex()) == Color.RED));
+        assertTrue(offered.stream().anyMatch(a -> rowColor(state, p1, a.rowIndex()) == Color.GREEN));
+    }
+
+    @Test
+    void luckyCross_activePlayerCanUseBeforeRegularMove() {
+        GameState state = stateWithLuckyCrossAfterRoll(p1, p1, p2);
+        setRoll(state, 1, 5, Map.of(Color.RED, 2, Color.YELLOW, 3, Color.GREEN, 4, Color.BLUE, 2));
+        rules.apply(state, firstLuckyCrossAction(state, p1));
+        assertTrue(state.turnState().luckyCrossUsed().contains(p1),
+                "luckyCrossUsed must contain active player after Lucky Cross");
+    }
+
+    @Test
+    void luckyCross_activePlayerCanUseAfterRegularMove() {
+        GameState state = stateWithLuckyCrossAfterRoll(p1, p1, p2);
+        setRoll(state, 1, 5, Map.of(Color.RED, 2, Color.YELLOW, 3, Color.GREEN, 4, Color.BLUE, 2));
+        rules.apply(state, firstRegularCrossAction(state, p1));
+        assertTrue(hasluckyCrossAction(rules.getValidActions(state, p1), state, p1),
+                "Lucky Cross must still be offered after regular move");
+    }
+
+    @Test
+    void luckyCross_passivePlayerCanUseLuckyCross() {
+        GameState state = stateWithLuckyCrossAfterRoll(p1, p1, p2);
+        setRoll(state, 1, 5, Map.of(Color.RED, 2, Color.YELLOW, 3, Color.GREEN, 4, Color.BLUE, 2));
+        assertTrue(hasluckyCrossAction(rules.getValidActions(state, p2), state, p2),
+                "Passive player must be offered Lucky Cross when 1+5 combo is present");
+    }
+
+    @Test
+    void luckyCross_passiveCanUseAfterWhiteWhiteCross() {
+        GameState state = stateWithLuckyCrossAfterRoll(p1, p1, p2);
+        setRoll(state, 1, 5, Map.of(Color.RED, 2, Color.YELLOW, 3, Color.GREEN, 4, Color.BLUE, 2));
+        rules.apply(state, firstWhiteWhiteAction(state, p2));
+        assertTrue(hasluckyCrossAction(rules.getValidActions(state, p2), state, p2),
+                "Passive player must still be offered Lucky Cross after their white+white cross");
+    }
+
+    @Test
+    void luckyCross_cannotBeUsedTwiceBySamePlayer() {
+        GameState state = stateWithLuckyCrossAfterRoll(p1, p1, p2);
+        setRoll(state, 1, 5, Map.of(Color.RED, 2, Color.YELLOW, 3, Color.GREEN, 4, Color.BLUE, 2));
+        rules.apply(state, firstLuckyCrossAction(state, p1));
+        assertFalse(hasluckyCrossAction(rules.getValidActions(state, p1), state, p1),
+                "Lucky Cross must not be offered again after it has been used");
+    }
+
+    @Test
+    void luckyCross_setsLuckyCrossUsedInTurnState() {
+        GameState state = stateWithLuckyCrossAfterRoll(p1, p1, p2);
+        setRoll(state, 1, 5, Map.of(Color.RED, 2, Color.YELLOW, 3, Color.GREEN, 4, Color.BLUE, 2));
+        rules.apply(state, firstLuckyCrossAction(state, p1));
+        assertTrue(state.turnState().luckyCrossUsed().contains(p1),
+                "TurnState.luckyCrossUsed must contain the player after a Lucky Cross");
+    }
+
+    @Test
+    void luckyCross_setsLuckyCrossUsedInActiveTurnState() {
+        GameState state = stateWithLuckyCrossAfterRoll(p1, p1, p2);
+        setRoll(state, 1, 5, Map.of(Color.RED, 2, Color.YELLOW, 3, Color.GREEN, 4, Color.BLUE, 2));
+        rules.apply(state, firstLuckyCrossAction(state, p1));
+        assertTrue(state.turnState().activeTurnState().luckyCrossUsed(),
+                "ActiveTurnState.luckyCrossUsed must be set after active player's Lucky Cross");
+    }
+
+    @Test
+    void luckyCross_countsAsHasActed_allowsEndTurn() {
+        GameState state = stateWithLuckyCrossAfterRoll(p1, p1, p2);
+        setRoll(state, 1, 5, Map.of(Color.RED, 2, Color.YELLOW, 3, Color.GREEN, 4, Color.BLUE, 2));
+        rules.apply(state, firstLuckyCrossAction(state, p1));
+        assertTrue(state.turnState().activeTurnState().hasActed(),
+                "Lucky Cross alone must satisfy hasActed() so active player can end turn");
+        assertTrue(rules.getValidActions(state, p1).stream().anyMatch(a -> a instanceof EndTurnAction),
+                "EndTurnAction must be offered after Lucky Cross alone");
+    }
+
+    @Test
+    void luckyCross_resetClearsUsedFlag() {
+        GameState state = stateWithLuckyCrossAfterRoll(p1, p1, p2);
+        setRoll(state, 1, 5, Map.of(Color.RED, 2, Color.YELLOW, 3, Color.GREEN, 4, Color.BLUE, 2));
+        rules.apply(state, firstLuckyCrossAction(state, p1));
+        assertTrue(state.turnState().luckyCrossUsed().contains(p1));
+        rules.apply(state, new ResetTurnAction(p1));
+        assertFalse(state.turnState().luckyCrossUsed().contains(p1),
+                "luckyCrossUsed must be cleared after ResetTurnAction");
+        assertFalse(state.turnState().activeTurnState().luckyCrossUsed(),
+                "ActiveTurnState.luckyCrossUsed must also be cleared after reset");
+    }
+
+    @Test
+    void luckyCross_regularCrossActionsDoNotIncludeLuckyCrossFields() {
+        GameState state = stateWithLuckyCrossAfterRoll(p1, p1, p2);
+        // Even with a matching roll, regular crossCellActions must not contain Lucky Cross cells.
+        setRoll(state, 1, 5, Map.of(Color.RED, 2, Color.YELLOW, 3, Color.GREEN, 4, Color.BLUE, 2));
+        // White sum = 6; check no cross action targets a LuckyCross cell via regular path.
+        assertFalse(rules.getValidActions(state, p1).stream()
+                        .filter(a -> a instanceof CrossCellAction cc && !isLuckyCrossAction(state, p1, cc))
+                        .map(a -> (CrossCellAction) a)
+                        .anyMatch(cc -> isLuckyCrossAction(state, p1, cc)),
+                "Regular cross actions must never include Lucky Cross fields");
+    }
+
+    @Test
+    void luckyCross_offersLeftmostAvailableFieldSkippingCrossed() {
+        GameState state = stateWithLuckyCrossAfterRoll(p1, p1, p2);
+        setRoll(state, 1, 5, Map.of(Color.RED, 2, Color.YELLOW, 3, Color.GREEN, 4, Color.BLUE, 2));
+
+        // Cross the first lucky cross field in RED row (position 2)
+        CrossCellAction firstField = luckyCrossActions(rules.getValidActions(state, p1), state, p1)
+                .stream().filter(a -> rowColor(state, p1, a.rowIndex()) == Color.RED)
+                .findFirst().orElseThrow();
+        rules.apply(state, firstField);
+
+        // Clear luckyCrossUsed so we can use it again for the assertion
+        state.turnState().luckyCrossUsed().remove(p1);
+        state.turnState().activeTurnState().reset();
+
+        // Next offered RED lucky cross field must be the one at position 6
+        CrossCellAction secondField = luckyCrossActions(rules.getValidActions(state, p1), state, p1)
+                .stream().filter(a -> rowColor(state, p1, a.rowIndex()) == Color.RED)
+                .findFirst().orElseThrow();
+        Cell cell = findCell(state, p1, secondField.rowIndex(), secondField.cellId());
+        assertEquals(6, cell.position(), "Second offered Lucky Cross field must be at position 6");
+    }
+
+    // ── Lucky Cross state builders ────────────────────────────────────────────
+
+    /** State in ACTIVE_MOVE with lucky cross rows. Roll is default (no 1+5 combo). */
+    private GameState stateWithLuckyCrossAfterRoll(UUID active, UUID... allPlayers) {
+        List<UUID> players = Arrays.asList(allPlayers);
+        Map<UUID, SheetLayout> layouts = new HashMap<>();
+        Map<UUID, SheetProgress> progress = new HashMap<>();
+        for (UUID p : players) {
+            List<Row> rows = new ArrayList<>();
+            rows.add(ascendingRowWithLuckyCross(Color.RED));
+            rows.add(ascendingRowWithLuckyCross(Color.YELLOW));
+            rows.add(descendingRowWithLuckyCross(Color.GREEN));
+            rows.add(descendingRowWithLuckyCross(Color.BLUE));
+            layouts.put(p, new SheetLayout(rows));
+            progress.put(p, emptyProgress());
+        }
+        List<Die> dice = new ArrayList<>(List.of(
+                new Die(Color.WHITE, 6), new Die(Color.WHITE, 6),
+                new Die(Color.RED, 6), new Die(Color.YELLOW, 6),
+                new Die(Color.GREEN, 6), new Die(Color.BLUE, 6)));
+        BoardState board = new BoardState(progress, dice, new HashMap<>());
+        TurnState turn = new TurnState();
+        turn.setActivePlayerId(active);
+        turn.setPhase(TurnPhase.ROLL);
+        GameState state = new GameState(CardMode.DETERMINISTIC, players, null, layouts, board, turn);
+        rules.apply(state, new RollAction(active));
+        return state;
+    }
+
+    private void setRoll(GameState state, int w1, int w2, Map<Color, Integer> coloredDice) {
+        state.turnState().setCurrentRoll(new RollResult(w1, w2, coloredDice));
+    }
+
+    // Gap pattern [2,3,4,2]: lucky cross fields at positions 2, 6, 11 (0-indexed).
+    private Row ascendingRowWithLuckyCross(Color color) {
+        return buildRowWithLuckyCross(color, true);
+    }
+
+    private Row descendingRowWithLuckyCross(Color color) {
+        return buildRowWithLuckyCross(color, false);
+    }
+
+    private Row buildRowWithLuckyCross(Color color, boolean ascending) {
+        int[] gaps = {2, 3, 4, 2};
+        Row row = new Row();
+        List<Cell> normalCells = new ArrayList<>();
+        int pos = 0, displayVal = ascending ? 2 : 12;
+        for (int g = 0; g < gaps.length; g++) {
+            for (int n = 0; n < gaps[g]; n++) {
+                Cell c = new Cell(pos++);
+                c.setColor(color);
+                c.setDisplayValue(String.valueOf(displayVal));
+                displayVal += ascending ? 1 : -1;
+                c.setTags(List.of());
+                row.addCell(c);
+                normalCells.add(c);
+            }
+            if (g < gaps.length - 1) {
+                Cell lc = new Cell(pos++);
+                lc.setColor(color);
+                lc.setDisplayValue("");
+                lc.setTags(List.of(new CellTag.LuckyCross()));
+                lc.setClosingEligible(false);
+                row.addCell(lc);
+            }
+        }
+        Cell last = normalCells.get(normalCells.size() - 1);
+        last.setClosingEligible(true);
+        row.addLock(new LockCell(UUID.randomUUID().toString(), color, 6, List.of(last.id())));
+        return row;
+    }
+
+    // ── Lucky Cross action helpers ────────────────────────────────────────────
+
+    private CrossCellAction firstLuckyCrossAction(GameState state, UUID playerId) {
+        return luckyCrossActions(rules.getValidActions(state, playerId), state, playerId)
+                .stream().findFirst()
+                .orElseThrow(() -> new AssertionError("no Lucky Cross action offered to " + playerId));
+    }
+
+    private CrossCellAction firstWhiteWhiteAction(GameState state, UUID playerId) {
+        return rules.getValidActions(state, playerId).stream()
+                .filter(a -> a instanceof CrossCellAction cc
+                        && cc.combination() == DiceCombination.WHITE_WHITE
+                        && !isLuckyCrossAction(state, playerId, cc))
+                .map(a -> (CrossCellAction) a)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no WW cross action offered to " + playerId));
+    }
+
+    private List<CrossCellAction> luckyCrossActions(List<GameAction> actions, GameState state, UUID playerId) {
+        return actions.stream()
+                .filter(a -> a instanceof CrossCellAction cc && isLuckyCrossAction(state, playerId, cc))
+                .map(a -> (CrossCellAction) a)
+                .toList();
+    }
+
+    private boolean hasluckyCrossAction(List<GameAction> actions, GameState state, UUID playerId) {
+        return actions.stream()
+                .anyMatch(a -> a instanceof CrossCellAction cc && isLuckyCrossAction(state, playerId, cc));
+    }
+
+    private boolean isLuckyCrossAction(GameState state, UUID playerId, CrossCellAction action) {
+        return state.sheetLayouts().get(playerId).rows().get(action.rowIndex())
+                .cells().stream()
+                .anyMatch(c -> c.id().equals(action.cellId())
+                        && c.tags().stream().anyMatch(t -> t instanceof CellTag.LuckyCross));
+    }
+
+    private Color rowColor(GameState state, UUID playerId, int rowIndex) {
+        return state.sheetLayouts().get(playerId).rows().get(rowIndex).cells().stream()
+                .filter(c -> c.tags().stream().noneMatch(t -> t instanceof CellTag.LuckyCross))
+                .map(Cell::color)
+                .findFirst()
+                .orElseThrow();
+    }
 }

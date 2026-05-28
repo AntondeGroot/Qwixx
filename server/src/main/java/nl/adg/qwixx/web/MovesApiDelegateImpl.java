@@ -84,6 +84,8 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
             case RESET_TURN        -> new ResetTurnAction(pid);
             case GIVE_UP           -> new GiveUpAction(pid);
             case UNDO_LAST_CROSS   -> new UndoLastCrossAction(pid);
+            case CROSS_LUCKY_CROSS -> new CrossCellAction(
+                    pid, parseRowIndex(req.getRowId(), session, pid), req.getCellId(), DiceCombination.WHITE_WHITE);
             case CROSS_LOCK        -> throw new IllegalMoveException("CROSS_LOCK is no longer a valid move type");
         };
     }

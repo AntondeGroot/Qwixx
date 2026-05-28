@@ -14,6 +14,7 @@ public class GameSettings {
     private final boolean      bigPoints;
     private final boolean      xChange;
     private final boolean      luckyNumber;
+    private final boolean      luckyCross;
     private final boolean      mixedColors;
     private final CardMode     cardMode;
     private final GameMode     gameMode;
@@ -31,6 +32,7 @@ public class GameSettings {
         this.bigPoints   = builder.bigPoints;
         this.xChange     = builder.xChange;
         this.luckyNumber = builder.luckyNumber;
+        this.luckyCross  = builder.luckyCross;
         this.mixedColors = builder.mixedColors;
         this.cardMode    = builder.cardMode;
         this.gameMode    = builder.gameMode;
@@ -46,6 +48,7 @@ public class GameSettings {
     public boolean         bigPoints()      { return bigPoints; }
     public boolean         xChange()        { return xChange; }
     public boolean         luckyNumber()    { return luckyNumber; }
+    public boolean         luckyCross()     { return luckyCross; }
     public boolean         mixedColors()    { return mixedColors; }
     public CardMode        cardMode()       { return cardMode; }
     public GameMode        gameMode()       { return gameMode; }
@@ -69,6 +72,7 @@ public class GameSettings {
         private boolean        bigPoints      = false;
         private boolean        xChange        = false;
         private boolean        luckyNumber    = false;
+        private boolean        luckyCross     = false;
         private boolean        mixedColors    = false;
         private CardMode       cardMode       = CardMode.DETERMINISTIC;
         private GameMode       gameMode       = GameMode.ONLINE;
@@ -83,6 +87,7 @@ public class GameSettings {
         public Builder bigPoints(boolean v)                { this.bigPoints = v; return this; }
         public Builder xChange(boolean v)                  { this.xChange = v; return this; }
         public Builder luckyNumber(boolean v)              { this.luckyNumber = v; return this; }
+        public Builder luckyCross(boolean v)               { this.luckyCross = v; return this; }
         public Builder mixedColors(boolean v)              { this.mixedColors = v; return this; }
         public Builder cardMode(CardMode cardMode)         { this.cardMode = cardMode; return this; }
         public Builder gameMode(GameMode gameMode)         { this.gameMode = gameMode; return this; }

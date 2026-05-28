@@ -161,6 +161,72 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     return result;
   });
 
+  // True when the current player's layout contains Lucky Cross fields.
+  hasLuckyCross = computed(() => {
+    const layout = this.layoutFor(this.playerId());
+    return !!layout?.rows.some(r => r.cells.some(c => c.tags.some(t => t.type === CellTag.TypeEnum.LUCKY_CROSS)));
+  });
+
+  // ── Lucky Cross highlight ─────────────────────────────────────────────────────
+  // The next available Lucky Cross cell in each eligible row is highlighted when:
+  //   - any two dice show a 1 and a 5 (white+white = free; white+colored = that row; colored+colored = either row)
+  //   - this player has not yet used their Lucky Cross bonus this turn
+  //   - available to both the active player and passive players in the queue
+  luckyCrossHighlightCellIds = computed((): Set<string> => {
+    const state = this.gameState();
+    const pid   = this.playerId();
+    const turn  = this.turnState();
+    if (!state || !turn?.currentRoll) return this.emptySet;
+    const inQueue = this.isMyTurn() || this.isInPassiveQueue();
+    if (!inQueue) return this.emptySet;
+    if (turn.luckyCrossUsed?.includes(pid)) return this.emptySet;
+
+    const roll = turn.currentRoll;
+    const w1 = roll.white1, w2 = roll.white2;
+    const coloredEntries = Object.entries(roll.coloredDice) as [string, number][];
+
+    // Determine eligible row colors (null = any, empty set = none)
+    const freeChoice = (w1 === 1 && w2 === 5) || (w1 === 5 && w2 === 1);
+    const eligibleColors = new Set<string>();
+    if (!freeChoice) {
+      for (const [color, v] of coloredEntries) {
+        if ((w1 === 1 && v === 5) || (w1 === 5 && v === 1) || (w2 === 1 && v === 5) || (w2 === 5 && v === 1)) {
+          eligibleColors.add(color);
+        }
+      }
+      for (let i = 0; i < coloredEntries.length; i++) {
+        for (let j = i + 1; j < coloredEntries.length; j++) {
+          const vi = coloredEntries[i][1], vj = coloredEntries[j][1];
+          if ((vi === 1 && vj === 5) || (vi === 5 && vj === 1)) {
+            eligibleColors.add(coloredEntries[i][0]);
+            eligibleColors.add(coloredEntries[j][0]);
+          }
+        }
+      }
+      if (eligibleColors.size === 0) return this.emptySet;
+    }
+
+    const layout   = state.sheetLayouts[pid];
+    const progress = state.sheetProgress[pid];
+    if (!layout) return this.emptySet;
+
+    const result = new Set<string>();
+    const closedRows = state.closedRows ?? {};
+    for (const row of layout.rows) {
+      if (closedRows[row.id]) continue;
+      const rowColor = row.cells.find(c => !c.tags.some(t => t.type === CellTag.TypeEnum.LUCKY_CROSS))?.color;
+      if (!freeChoice && (!rowColor || !eligibleColors.has(rowColor))) continue;
+      const crossed = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
+      const lastPos = Math.max(-1, ...row.cells.filter(c => crossed.has(c.id)).map(c => c.position));
+      const next = row.cells
+        .filter(c => c.tags.some(t => t.type === CellTag.TypeEnum.LUCKY_CROSS))
+        .filter(c => !crossed.has(c.id) && c.position > lastPos)
+        .sort((a, b) => a.position - b.position)[0];
+      if (next) result.add(next.id);
+    }
+    return result;
+  });
+
   // Cells reachable via the Longo bonus-number path only: white+white equals a bonus
   // number so the leftmost uncrossed cell in each tied-fewest row gets offered.
   // Tracked separately so onCellClicked can always send CROSS_WHITE_WHITE for them,
@@ -535,6 +601,8 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       if (!turn.whiteWhiteUsed && !turn.colorDieUsed) {
         for (const id of this.luckyNumberHighlightCellIds()) result.add(id);
       }
+      // Lucky Cross cells are available independently of the regular move.
+      for (const id of this.luckyCrossHighlightCellIds()) result.add(id);
     } else if ((turn.phase === TurnPhase.PASSIVE_MOVE
                 || turn.phase === TurnPhase.ACTIVE_MOVE)
                && this.isInPassiveQueue()) {
@@ -544,6 +612,8 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
         const wwTarget = effectiveWW ?? (roll.white1 + roll.white2);
         this.collectCells(layout, progress, closedRows, wwTarget, null, result, effectiveWW != null);
       }
+      // Lucky Cross cells are available independently of the white+white move.
+      for (const id of this.luckyCrossHighlightCellIds()) result.add(id);
     }
 
     return result;
@@ -576,6 +646,8 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       if (!turn.whiteWhiteUsed && !turn.colorDieUsed && !turn.luckyNumberUsed) {
         for (const id of this.luckyNumberHighlightCellIds()) result.add(id);
       }
+      // Lucky Cross cells also glow cyan.
+      for (const id of this.luckyCrossHighlightCellIds()) result.add(id);
     } else if ((turn.phase === TurnPhase.PASSIVE_MOVE
                 || turn.phase === TurnPhase.ACTIVE_MOVE)
                && this.isInPassiveQueue()) {
@@ -584,6 +656,8 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
         const wwTarget = effectiveWW ?? (roll.white1 + roll.white2);
         this.collectCells(layout, progress, closedRows, wwTarget, null, result, effectiveWW != null);
       }
+      // Lucky Cross cells glow cyan for passive players too.
+      for (const id of this.luckyCrossHighlightCellIds()) result.add(id);
     }
 
     return result;
@@ -757,6 +831,13 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.luckyNumberHighlightCellIds().has(cellId)) {
       this.audio.play(AudioService.CROSS);
       this.sendMove({ moveType: MoveType.CROSS_WHITE_WHITE, rowId, cellId });
+      return;
+    }
+
+    // Lucky Cross cells: send as CROSS_LUCKY_CROSS — server validates the 1+5 combo.
+    if (this.luckyCrossHighlightCellIds().has(cellId)) {
+      this.audio.play(AudioService.CROSS);
+      this.sendMove({ moveType: MoveType.CROSS_LUCKY_CROSS, rowId, cellId });
       return;
     }
 

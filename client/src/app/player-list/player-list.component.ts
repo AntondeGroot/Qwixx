@@ -96,6 +96,10 @@ export class PlayerListComponent {
     return cell.tags?.some(t => t.type === 'LUCKY_NUMBER') ?? false;
   }
 
+  isLuckyCross(cell: SheetCell): boolean {
+    return cell.tags?.some(t => t.type === 'LUCKY_CROSS') ?? false;
+  }
+
   isLuckyRow(row: SheetRow): boolean {
     return row.luckyRow === true;
   }

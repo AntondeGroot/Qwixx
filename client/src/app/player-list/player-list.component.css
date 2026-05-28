@@ -173,6 +173,16 @@
   transform: rotate(45deg);
 }
 
+/* Lucky Cross mini cells: same orange diamond, ~50% the size */
+.mini-row .mini-cell.mini-cell-lucky-cross {
+  width: 4px;
+  height: 4px;
+  background: #F57C00;
+  border: 1px solid #E65100;
+  border-radius: 1px;
+  transform: rotate(45deg);
+}
+
 /* Closing-eligible cells get a slightly lighter shade via opacity */
 .mini-cell.closing-eligible {
   opacity: 0.75;

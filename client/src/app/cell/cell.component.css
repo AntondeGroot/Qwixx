@@ -268,3 +268,28 @@
   --glow-dim:  rgba(0, 229, 255, 0.50);
   --glow-mid:  rgba(0, 229, 255, 0.75);
 }
+
+/* ── Lucky Cross cells: ~75% the width of a regular cell ─────────────────────── */
+:host.host-lucky-cross .cell.lucky-number-cell {
+  width: 33px;
+  height: 33px;
+  border-radius: 6px;
+}
+
+/* ✦ symbol — counter-rotated like the lucky-number-value */
+.lucky-cross-value {
+  font-size: 11px;
+}
+
+/* Cyan pulse glow when the Lucky Cross bonus is available */
+:host.host-lucky-cross-clickable {
+  display: block;
+  position: relative;
+}
+
+:host.host-lucky-cross-clickable .cell.lucky-number-cell {
+  animation: pulse-glow 1.4s ease-in-out infinite;
+  --glow-full: rgba(0, 229, 255, 0.95);
+  --glow-dim:  rgba(0, 229, 255, 0.50);
+  --glow-mid:  rgba(0, 229, 255, 0.75);
+}

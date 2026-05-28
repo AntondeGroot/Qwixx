@@ -22,6 +22,7 @@ public class QwixxGameOptions {
     private static final String RANDOM_ORDER = "randomOrder";
     private static final String X_CHANGE     = "xChange";
     private static final String LUCKY_NUMBER = "luckyNumber";
+    private static final String LUCKY_CROSS  = "luckyCross";
 
     private QwixxGameOptions() {}
 
@@ -41,6 +42,7 @@ public class QwixxGameOptions {
             GameOption.boolOption(CONNECTED_CELLS, "gameOption.connectedCells", "gameOption.connectedCellsDescription"),
             GameOption.adminBoolOption(X_CHANGE, "gameOption.xchange", "gameOption.xchangeDescription"),
             GameOption.adminBoolOption(LUCKY_NUMBER, "gameOption.luckyNumber", "gameOption.luckyNumberDescription"),
+            GameOption.adminBoolOption(LUCKY_CROSS,  "gameOption.luckyCross",  "gameOption.luckyCrossDescription"),
             GameOption.intOption(BOT_COUNT, "gameOption.botCount", "gameOption.botCountDescription",
                 "0", 0, 3),
             GameOption.enumOption(BOT_STRATEGY, "gameOption.botStrategy", "gameOption.botStrategyDescription",
@@ -60,6 +62,7 @@ public class QwixxGameOptions {
         map.put(CONNECTED_CELLS, s.connectedCells());
         map.put(X_CHANGE,        s.xChange());
         map.put(LUCKY_NUMBER,    s.luckyNumber());
+        map.put(LUCKY_CROSS,     s.luckyCross());
         map.put(BOT_COUNT,       s.botCount());
         map.put(BOT_STRATEGY,    s.botStrategy() != null ? s.botStrategy().name()
                                                            : BotStrategy.BALANCED.name());
@@ -79,6 +82,7 @@ public class QwixxGameOptions {
                 case CONNECTED_CELLS -> builder.connectedCells(bool(entry.getValue()));
                 case X_CHANGE        -> builder.xChange(bool(entry.getValue()));
                 case LUCKY_NUMBER    -> builder.luckyNumber(bool(entry.getValue()));
+                case LUCKY_CROSS     -> builder.luckyCross(bool(entry.getValue()));
                 case BOT_COUNT       -> builder.botCount(integer(entry.getValue()));
                 case BOT_STRATEGY    -> builder.botStrategy(BotStrategy.valueOf(str(entry.getValue())));
                 default              -> log.warning("unknown game option '" + entry.getKey() + "', ignoring");

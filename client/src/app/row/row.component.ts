@@ -44,7 +44,7 @@ export class RowComponent {
   );
 
   isLuckyRow  = computed(() => this.row().luckyRow === true);
-  luckyTarget   = computed(() => this.row().luckyTarget ?? 15);
+  luckyTarget   = computed(() => this.row().luckyTarget);
   luckyLabel    = computed(() => `LUCKY ${this.luckyTarget()}`);
 
   // Formula: (n+1)×44 + n×4 + 16 = 48n+60  →  Standard 9 cells = 492px, Longo 13 cells = 684px

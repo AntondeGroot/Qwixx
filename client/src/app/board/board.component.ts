@@ -128,7 +128,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   // The leftmost uncrossed Lucky Number cell is highlighted cyan (WW glow) when:
   //   - it's my turn and phase = ACTIVE_MOVE
   //   - no move has been made yet (no WW used, no color die used, no luckyNumberUsed)
-  //   - white1 + white2 + any active colored die = 15
+  //   - white1 + white2 + any active colored die = row.luckyTarget
   luckyNumberHighlightCellIds = computed((): Set<string> => {
     const state = this.gameState();
     const pid   = this.playerId();
@@ -137,12 +137,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.isMyTurn() || turn.phase !== TurnPhase.ACTIVE_MOVE) return this.emptySet;
     if (turn.whiteWhiteUsed || turn.colorDieUsed || turn.luckyNumberUsed) return this.emptySet;
 
-    const roll = turn.currentRoll;
-    const prereqMet = Object.values(roll.coloredDice).some(
-      v => v != null && roll.white1 + roll.white2 + v === 15
-    );
-    if (!prereqMet) return this.emptySet;
-
+    const roll     = turn.currentRoll;
     const layout   = state.sheetLayouts[pid];
     const progress = state.sheetProgress[pid];
     if (!layout) return this.emptySet;
@@ -150,6 +145,10 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const result = new Set<string>();
     for (const row of layout.rows) {
       if (!row.luckyRow) continue;
+      const prereqMet = Object.values(roll.coloredDice).some(
+        v => v != null && roll.white1 + roll.white2 + v === row.luckyTarget
+      );
+      if (!prereqMet) continue;
       const crossed  = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
       const lastPos  = crossed.size > 0
         ? Math.max(...row.cells.filter(c => crossed.has(c.id)).map(c => c.position))

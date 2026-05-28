@@ -45,7 +45,9 @@
       "BALANCED": "Équilibré"
     },
     "luckyNumber": "Lucky Number",
-    "luckyNumberDescription": "Ajoute une rangée bonus avec 4 points bonus (5, 6, 7, 8). Seul le joueur actif peut cocher cette rangée quand dé blanc 1 + dé blanc 2 + n'importe quel dé coloré égale 15. Il ne peut cocher ce bonus QUE s'il renonce à ses coups réguliers."
+    "luckyNumberDescription": "Ajoute une rangée bonus avec 4 points bonus (5, 6, 7, 8). Seul le joueur actif peut cocher cette rangée quand dé blanc 1 + dé blanc 2 + n'importe quel dé coloré égale 15. Il ne peut cocher ce bonus QUE s'il renonce à ses coups réguliers.",
+    "luckyCross": "Lucky Cross",
+    "luckyCrossDescription": "Ajoute 3 cases bonus à chaque rangée colorée (4 pour Longo). Quand deux dés quelconques montrent un 1 et un 5, chaque joueur peut cocher une fois la prochaine case bonus. Blanc+blanc : libre choix de rangée. Blanc+coloré : cette rangée colorée. Coloré+coloré : une de ces deux rangées. Utilisable avant ou après le coup régulier."
   },
   "score": {
     "finalScores": "Score final",

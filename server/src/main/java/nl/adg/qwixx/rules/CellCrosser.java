@@ -52,7 +52,7 @@ class CellCrosser {
         for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
             Row row = layout.rows().get(rowIndex);
 
-            // Lucky Number rows are handled separately by the turn-rules layer.
+            // Lucky Number and Lucky Cross rows/cells are handled by the turn-rules layer.
             if (row.isLuckyRow()) continue;
 
             // Bonus rows are never globally closed, but skip closed normal rows.
@@ -79,6 +79,9 @@ class CellCrosser {
                     SheetProgress snap = startProgress != null ? startProgress.get(playerId) : null;
                     if (!bonusPrerequisiteMet(layout, snap, row, cell)) continue;
                 }
+
+                // Lucky Cross fields are bonus cells reachable only via the 1+5 combo path.
+                if (cell.tags() != null && cell.tags().stream().anyMatch(t -> t instanceof CellTag.LuckyCross)) continue;
 
                 CellTag.XChange xChange = findXChangeTag(cell);
                 DiceCombination combo;

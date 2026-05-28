@@ -146,6 +146,10 @@ class GameStateMapper {
             dto.setEffectiveWhiteWhite(effWW);
         }
 
+        if (!turn.luckyCrossUsed().isEmpty()) {
+            dto.setLuckyCrossUsed(turn.luckyCrossUsed().stream().map(UUID::toString).toList());
+        }
+
         return dto;
     }
 
@@ -248,6 +252,9 @@ class GameStateMapper {
                     new nl.adg.qwixx.generated.model.CellTag(
                             nl.adg.qwixx.generated.model.CellTag.TypeEnum.LUCKY_NUMBER)
                             .amount(ln.bonusPoints());
+            case CellTag.LuckyCross ignored ->
+                    new nl.adg.qwixx.generated.model.CellTag(
+                            nl.adg.qwixx.generated.model.CellTag.TypeEnum.LUCKY_CROSS);
         };
     }
 

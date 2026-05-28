@@ -288,6 +288,7 @@ public class BotDecider {
                 case CellTag.LuckyNumber luckyNumber ->
                         // Treat luckyNumber bonus points like any other bonus: subtract to make cell more attractive.
                         adjust -= luckyNumber.bonusPoints();
+                case CellTag.LuckyCross _ -> {} // no tag-level adjustment; base position score still applies
             }
         }
         return adjust;

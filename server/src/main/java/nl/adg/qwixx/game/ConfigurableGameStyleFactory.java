@@ -66,7 +66,9 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
             // extraRow is always per-player (each player gets an independently drawn bounce offset)
             boolean perPlayer = settings.cardMode() == CardMode.PROBABILISTIC || settings.extraRow();
             if (!perPlayer) {
-                List<Row> shared = buildStandardRows();
+                List<Row> shared = settings.luckyCross()
+                        ? buildStandardRowsWithLuckyCross(0)
+                        : buildStandardRows();
                 if (settings.randomOrder()) shuffleDisplayValues(shared);
                 if (settings.connectedCells()) applyConnectedCells(shared);
                 if (settings.xChange()) shared.add(buildXChangeRow());
@@ -74,8 +76,11 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
                 for (UUID player : players) result.put(player, shared);
                 return result;
             } else {
+                int[] gaps = luckyCrossGaps();
                 for (UUID player : players) {
-                    List<Row> playerRows = buildStandardRows();
+                    List<Row> playerRows = settings.luckyCross()
+                            ? buildStandardRowsWithLuckyCross(random.nextInt(gaps.length))
+                            : buildStandardRows();
                     if (settings.randomOrder()) shuffleDisplayValues(playerRows);
                     if (settings.extraRow()) applyExtraRow(playerRows);
                     if (settings.connectedCells()) applyConnectedCells(playerRows);
@@ -158,11 +163,13 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
 
     private void shuffleDisplayValues(List<Row> rows) {
         for (Row row : rows) {
-            List<String> values = new ArrayList<>(row.cells().stream().map(Cell::displayValue).toList());
+            List<Cell> normalCells = row.cells().stream()
+                    .filter(c -> c.tags().stream().noneMatch(t -> t instanceof CellTag.LuckyCross))
+                    .toList();
+            List<String> values = new ArrayList<>(normalCells.stream().map(Cell::displayValue).toList());
             Collections.shuffle(values, random);
-            List<Cell> cells = row.cells();
-            for (int i = 0; i < cells.size(); i++) {
-                cells.get(i).setDisplayValue(values.get(i));
+            for (int i = 0; i < normalCells.size(); i++) {
+                normalCells.get(i).setDisplayValue(values.get(i));
             }
         }
     }
@@ -321,6 +328,91 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
         }
         // No lock — x-change rows cannot be closed.
         return row;
+    }
+
+    // ── Lucky Cross ───────────────────────────────────────────────────────────
+
+    // Gap pattern: number of normal cells before each lucky cross field, then after the last one.
+    // Standard [2,3,4,2] → 11 normals + 3 crosses; Longo [2,3,4,4,2] → 15 normals + 4 crosses.
+    private static final int[] LUCKY_CROSS_GAPS_STANDARD = {2, 3, 4, 2};
+    private static final int[] LUCKY_CROSS_GAPS_LONGO    = {2, 3, 4, 4, 2};
+
+    private int[] luckyCrossGaps() {
+        return settings.base() == BaseVariant.LONGO ? LUCKY_CROSS_GAPS_LONGO : LUCKY_CROSS_GAPS_STANDARD;
+    }
+
+    /**
+     * Builds all four coloured rows with lucky cross fields interleaved.
+     * Row i gets a cyclic shift of (baseShift + i) positions in the gap pattern so each
+     * row has its cross fields at different positions. baseShift = 0 for deterministic mode,
+     * a random value for probabilistic mode.
+     */
+    private List<Row> buildStandardRowsWithLuckyCross(int baseShift) {
+        int[] gaps = luckyCrossGaps();
+        List<Row> rows = new ArrayList<>();
+        rows.add(buildAscendingRowWithLuckyCross(Color.RED,    shiftedGaps(gaps, baseShift)));
+        rows.add(buildAscendingRowWithLuckyCross(Color.YELLOW, shiftedGaps(gaps, baseShift + 1)));
+        rows.add(buildDescendingRowWithLuckyCross(Color.GREEN, shiftedGaps(gaps, baseShift + 2)));
+        rows.add(buildDescendingRowWithLuckyCross(Color.BLUE,  shiftedGaps(gaps, baseShift + 3)));
+        return rows;
+    }
+
+    private static int[] shiftedGaps(int[] base, int shift) {
+        int n = base.length;
+        int s = ((shift % n) + n) % n;
+        int[] result = new int[n];
+        for (int i = 0; i < n; i++) result[i] = base[(i + s) % n];
+        return result;
+    }
+
+    // Builds ascending row (values 2..max) with lucky cross fields at gap-defined positions.
+    private Row buildAscendingRowWithLuckyCross(Color color, int[] gaps) {
+        Row row = new Row();
+        List<Cell> normalCells = new ArrayList<>();
+        int pos = 0, displayVal = 2;
+        for (int g = 0; g < gaps.length; g++) {
+            for (int n = 0; n < gaps[g]; n++) {
+                Cell cell = new Cell(pos++);
+                cell.setColor(color);
+                cell.setDisplayValue(String.valueOf(displayVal++));
+                cell.setTags(List.of());
+                row.addCell(cell);
+                normalCells.add(cell);
+            }
+            if (g < gaps.length - 1) row.addCell(buildLuckyCrossCell(color, pos++));
+        }
+        row.addLock(buildLock(color, normalCells));
+        return row;
+    }
+
+    // Builds descending row (values max..2) with lucky cross fields at gap-defined positions.
+    private Row buildDescendingRowWithLuckyCross(Color color, int[] gaps) {
+        int max = maxDisplayValue();
+        Row row = new Row();
+        List<Cell> normalCells = new ArrayList<>();
+        int pos = 0, displayVal = max;
+        for (int g = 0; g < gaps.length; g++) {
+            for (int n = 0; n < gaps[g]; n++) {
+                Cell cell = new Cell(pos++);
+                cell.setColor(color);
+                cell.setDisplayValue(String.valueOf(displayVal--));
+                cell.setTags(List.of());
+                row.addCell(cell);
+                normalCells.add(cell);
+            }
+            if (g < gaps.length - 1) row.addCell(buildLuckyCrossCell(color, pos++));
+        }
+        row.addLock(buildLock(color, normalCells));
+        return row;
+    }
+
+    private static Cell buildLuckyCrossCell(Color color, int position) {
+        Cell cell = new Cell(position);
+        cell.setColor(color);
+        cell.setDisplayValue("");
+        cell.setTags(List.of(new CellTag.LuckyCross()));
+        cell.setClosingEligible(false);
+        return cell;
     }
 
     /** Lucky row: 4 orange diamond cells worth 5 / 6 / 7 / 8 points each (max 26 total). */

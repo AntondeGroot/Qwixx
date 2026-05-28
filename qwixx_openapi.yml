@@ -385,6 +385,7 @@ components:
         - RESET_TURN
         - GIVE_UP
         - UNDO_LAST_CROSS
+        - CROSS_LUCKY_CROSS
 
     GameStatus:
       type: string
@@ -565,6 +566,11 @@ components:
         luckyNumberUsed:
           type: boolean
           description: Whether the active player has used their Lucky Number move this turn.
+        luckyCrossUsed:
+          type: array
+          items:
+            type: string
+          description: Player IDs that have already used their Lucky Cross bonus this turn.
         pendingCrosses:
           type: object
           description: Map of playerId to cell IDs crossed this turn but not yet confirmed. Empty once the turn ends.
@@ -691,7 +697,7 @@ components:
       properties:
         type:
           type: string
-          enum: [EXTRA_BUCKET, AUTO_CROSS, BONUS_POINTS, DOUBLE_CROSS, SECONDARY_COLOR, X_CHANGE, LUCKY_NUMBER]
+          enum: [EXTRA_BUCKET, AUTO_CROSS, BONUS_POINTS, DOUBLE_CROSS, SECONDARY_COLOR, X_CHANGE, LUCKY_NUMBER, LUCKY_CROSS]
         target:
           type: string
           description: Target cell ID — only present for AUTO_CROSS.

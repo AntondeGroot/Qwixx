@@ -420,3 +420,72 @@ a {
 .score-box__bottom {
   color: #1565c0;
 }
+
+/* ── Lucky Cross indicator row ──────────────────────────────────────────────── */
+.lucky-cross-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0 4px;
+}
+
+
+.lucky-cross-indicator-cells {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 6px;
+}
+
+/* Orange track behind the mini cells */
+.lucky-cross-indicator-cells::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 6px;
+  background: #E65100;
+  border-radius: 3px;
+  z-index: 0;
+}
+
+/* Mini orange diamond cell — same shape as lucky-number-cell but smaller */
+.lucky-cross-mini-cell {
+  position: relative;
+  z-index: 1;
+  width: 30px;
+  height: 30px;
+  background: #F57C00;
+  border: 2px solid #E65100;
+  border-radius: 8px;
+  transform: rotate(45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.lucky-cross-mini-cell.plus {
+  background: transparent;
+  border-color: transparent;
+}
+
+.lucky-cross-mini-cell span {
+  transform: rotate(-45deg);
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.lucky-cross-mini-cell.plus span {
+  color: #F28C28;
+  font-size: 16px;
+  text-shadow:
+    -1px -1px 0 #fff,  1px -1px 0 #fff,
+    -1px  1px 0 #fff,  1px  1px 0 #fff;
+}

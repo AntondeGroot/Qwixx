@@ -12,6 +12,8 @@ import { CellTag } from '../../generated/model/cellTag';
     '[class.host-xchange-clickable]': '!!xChangeValues() && !!(showClickable() ?? clickable())',
     '[class.host-lucky-number-clickable]': '!!luckyNumberBonusPoints() && !!(showClickable() ?? clickable())',
     '[class.host-lucky-number-ww]': '!!luckyNumberBonusPoints() && showDieHint()',
+    '[class.host-lucky-cross]': 'isLuckyCross()',
+    '[class.host-lucky-cross-clickable]': 'isLuckyCross() && !!(showClickable() ?? clickable())',
   }
 })
 export class CellComponent {
@@ -45,6 +47,10 @@ export class CellComponent {
     const tag = this.cell().tags.find(t => t.type === CellTag.TypeEnum.LUCKY_NUMBER);
     return tag ? tag.amount! : null;
   });
+
+  isLuckyCross = computed(() =>
+    this.cell().tags.some(t => t.type === CellTag.TypeEnum.LUCKY_CROSS)
+  );
 
   primaryMaxed   = computed(() => !!this.secondaryColor() && this.maxedColors().has(this.cell().color));
   secondaryMaxed = computed(() => {

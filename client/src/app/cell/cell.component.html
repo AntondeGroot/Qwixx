@@ -8,7 +8,7 @@
      [class.auto-cross]="hasTag()(TagEnum.AUTO_CROSS)"
      [class.big-points-cell]="!!secondaryColor()"
      [class.x-change-cell]="!!xChangeValues()"
-     [class.lucky-number-cell]="!!luckyNumberBonusPoints()"
+     [class.lucky-number-cell]="!!luckyNumberBonusPoints() || isLuckyCross()"
      [class.primary-maxed]="primaryMaxed()"
      [class.secondary-maxed]="secondaryMaxed()"
      [class.clickable]="showClickable() ?? clickable()"
@@ -41,6 +41,8 @@
     </div>
   } @else if (luckyNumberBonusPoints()) {
     <span class="lucky-number-value">{{ luckyNumberBonusPoints() }}</span>
+  } @else if (isLuckyCross()) {
+    <span class="lucky-number-value lucky-cross-value">✦</span>
   } @else {
     <span class="cell-value">{{ cell().displayValue }}</span>
   }

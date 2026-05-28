@@ -45,7 +45,9 @@
       "BALANCED": "Ausgewogen"
     },
     "luckyNumber": "Lucky Number",
-    "luckyNumberDescription": "Fügt eine Bonusreihe mit 4 Bonuspunkten (5, 6, 7, 8) hinzu. Nur der aktive Spieler kann diese ankreuzen, wenn weißer Würfel 1 + weißer Würfel 2 + irgendein farbiger Würfel 15 ergibt. Er kann nur diesen Bonus ankreuzen ODER seine regulären Züge machen."
+    "luckyNumberDescription": "Fügt eine Bonusreihe mit 4 Bonuspunkten (5, 6, 7, 8) hinzu. Nur der aktive Spieler kann diese ankreuzen, wenn weißer Würfel 1 + weißer Würfel 2 + irgendein farbiger Würfel 15 ergibt. Er kann nur diesen Bonus ankreuzen ODER seine regulären Züge machen.",
+    "luckyCross": "Lucky Cross",
+    "luckyCrossDescription": "Fügt 3 Bonusfelder zu jeder farbigen Reihe hinzu (4 bei Longo). Wenn zwei beliebige Würfel eine 1 und eine 5 zeigen, darf jeder Spieler einmal das nächste verfügbare Bonusfeld ankreuzen. Weiß+Weiß: freie Reihenwahl. Weiß+Farbe: diese farbige Reihe. Farbe+Farbe: eine der beiden Reihen. Vor oder nach dem regulären Zug möglich."
   },
   "score": {
     "finalScores": "Endstand",

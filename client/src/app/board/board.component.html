@@ -63,6 +63,12 @@
                 (cellClicked)="onCellClicked(row.id, $event, playerId())"
                 (lockClicked)="onLockClicked(row.id, playerId())" />
             }
+            @if (hasLuckyCross()) {
+              <div class="lucky-cross-indicator">
+                <span class="lucky-number-label">LUCKY</span>
+                <span class="lucky-number-label">1+5</span>
+              </div>
+            }
             <div class="score-strip">
               <div class="score-labels">
                 <span>{{ 'crosses' | translate }}</span>

@@ -45,7 +45,9 @@
       "BALANCED": "Equilibrato"
     },
     "luckyNumber": "Lucky Number",
-    "luckyNumberDescription": "Aggiunge una riga bonus con 4 punti bonus (5, 6, 7, 8). Solo il giocatore attivo può sbarrare questa riga quando dado bianco 1 + dado bianco 2 + qualsiasi dado colorato è uguale a 15. Può sbarrare solo questo bonus OPPURE eseguire le sue mosse regolari."
+    "luckyNumberDescription": "Aggiunge una riga bonus con 4 punti bonus (5, 6, 7, 8). Solo il giocatore attivo può sbarrare questa riga quando dado bianco 1 + dado bianco 2 + qualsiasi dado colorato è uguale a 15. Può sbarrare solo questo bonus OPPURE eseguire le sue mosse regolari.",
+    "luckyCross": "Lucky Cross",
+    "luckyCrossDescription": "Aggiunge 3 campi bonus a ogni riga colorata (4 per Longo). Quando due dadi qualsiasi mostrano un 1 e un 5, ogni giocatore può sbarrare una volta il prossimo campo bonus disponibile. Bianco+bianco: scelta libera della riga. Bianco+colorato: quella riga colorata. Colorato+colorato: una delle due righe. Utilizzabile prima o dopo la mossa regolare."
   },
   "score": {
     "finalScores": "Punteggio finale",

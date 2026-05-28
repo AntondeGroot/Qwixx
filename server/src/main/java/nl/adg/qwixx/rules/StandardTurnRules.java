@@ -487,7 +487,7 @@ public class StandardTurnRules implements TurnRules {
 
     /**
      * Returns a CrossCellAction for the leftmost uncrossed Lucky Number cell when the
-     * prerequisite is met: white1 + white2 + any active coloured die = 15.
+     * prerequisite is met: white1 + white2 + any active coloured die = luckyTarget.
      */
     protected List<GameAction> luckyNumberCellActions(GameState state, UUID playerId) {
         TurnState turn = state.turnState();

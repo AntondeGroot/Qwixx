@@ -34,8 +34,9 @@ export class RowComponent {
   connectorOffsetsBelow = input<number[]>([]);
   // True when the row immediately above/below is a bonus row (e.g. Big Points).
   // Used to extend the connector line through the full height of the bonus row.
-  hasBonusRowAbove = input(false);
-  hasBonusRowBelow = input(false);
+  hasBonusRowAbove    = input(false);
+  hasBonusRowBelow    = input(false);
+  showLuckyCrossHint  = input(false);
 
   closingEligibleCells = computed(() => this.row().cells.filter(c => c.closingEligible));
 

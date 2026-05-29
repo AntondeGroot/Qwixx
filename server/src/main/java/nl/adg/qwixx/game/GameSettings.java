@@ -100,6 +100,11 @@ public class GameSettings {
                     "randomOrder and bigPoints cannot be combined: shuffling the colour rows " +
                     "breaks the positional guardrail that makes the bonus prerequisite meaningful");
             }
+            if (luckyCross && bigPoints) {
+                throw new IllegalArgumentException(
+                    "luckyCross and bigPoints cannot be combined: lucky cross fields are " +
+                    "interleaved in the coloured rows, which is incompatible with the bonus row layout");
+            }
             return new GameSettings(this);
         }
     }

@@ -61,9 +61,10 @@
                 [hasBonusRowAbove]="myRowConnectors().get(row.id)?.hasBonusRowAbove ?? false"
                 [hasBonusRowBelow]="myRowConnectors().get(row.id)?.hasBonusRowBelow ?? false"
                 (cellClicked)="onCellClicked(row.id, $event, playerId())"
+                [showLuckyCrossHint]="row.luckyRow === true && hasLuckyCross()"
                 (lockClicked)="onLockClicked(row.id, playerId())" />
             }
-            @if (hasLuckyCross()) {
+            @if (hasLuckyCross() && !hasLuckyNumberRow()) {
               <div class="lucky-cross-indicator">
                 <span class="lucky-number-label">LUCKY</span>
                 <span class="lucky-number-label">1+5</span>

@@ -146,6 +146,15 @@
 
 /* ── Lucky 15 row label ──────────────────────────────────────────────────── */
 
+.lucky-number-slash {
+  font-size: 44px;
+  padding: 0 40px;
+  /* Drop-shadow only — no white outline — so it reads as a separator, not a label */
+  text-shadow:
+    0 3px 0 #8B3000,
+    0 5px 8px rgba(60, 15, 0, 0.45);
+}
+
 /* ── Lucky 15 row: outer row layout ─────────────────────────────────────── */
 .row.lucky-number-row {
   background: transparent;

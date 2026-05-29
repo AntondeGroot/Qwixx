@@ -167,6 +167,11 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     return !!layout?.rows.some(r => r.cells.some(c => c.tags.some(t => t.type === CellTag.TypeEnum.LUCKY_CROSS)));
   });
 
+  hasLuckyNumberRow = computed(() => {
+    const layout = this.layoutFor(this.playerId());
+    return !!layout?.rows.some(r => r.luckyRow);
+  });
+
   // ── Lucky Cross highlight ─────────────────────────────────────────────────────
   // The next available Lucky Cross cell in each eligible row is highlighted when:
   //   - any two dice show a 1 and a 5 (white+white = free; white+colored = that row; colored+colored = either row)

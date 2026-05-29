@@ -31,7 +31,10 @@
                [attr.data-color]="(isXChangeRow(row) || isLuckyRow(row)) ? null : row.cells[0]?.color"
                [style.--mini-primary]="colorHex[row.cells[0]?.color ?? '']"
                [style.--mini-secondary]="colorHex[secondaryColorOf(row.cells[0]) ?? '']">
-            @for (cell of row.cells; track cell.id) {
+            @for (cell of row.cells; track cell.id; let idx = $index) {
+              @if (cell.closingEligible && !row.cells[idx - 1]?.closingEligible) {
+                <div class="mini-closing-divider"></div>
+              }
               <div class="mini-cell"
                    [class.mini-cell-big-points]="row.bonusRow"
                    [class.mini-cell-xchange]="isXChange(cell)"

@@ -183,6 +183,16 @@
   transform: rotate(45deg);
 }
 
+/* Vertical divider between the last normal cell and the closing-eligible cell(s) */
+.mini-closing-divider {
+  width: 1.5px;
+  align-self: stretch;
+  background: rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+  border-radius: 1px;
+  margin: 0 1px;
+}
+
 /* Closing-eligible cells get a slightly lighter shade via opacity */
 .mini-cell.closing-eligible {
   opacity: 0.75;

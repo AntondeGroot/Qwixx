@@ -35,14 +35,15 @@ public class QwixxGameOptions {
             GameOption.enumOption(CARD_MODE, "gameOption.cardMode", "gameOption.cardModeDescription",
                 "DETERMINISTIC", List.of("DETERMINISTIC", "PROBABILISTIC")),
             GameOption.adminBoolOption(BIG_POINTS, "gameOption.bigPoints", "gameOption.bigPointsDescription")
-                    .withIncompatibleWith(List.of(RANDOM_ORDER)),
+                    .withIncompatibleWith(List.of(RANDOM_ORDER, LUCKY_CROSS)),
             GameOption.boolOption(RANDOM_ORDER, "gameOption.randomOrder", "gameOption.randomOrderDescription")
                     .withIncompatibleWith(List.of(BIG_POINTS)),
             GameOption.boolOption(EXTRA_ROW, "gameOption.extraRow", "gameOption.extraRowDescription"),
             GameOption.boolOption(CONNECTED_CELLS, "gameOption.connectedCells", "gameOption.connectedCellsDescription"),
             GameOption.adminBoolOption(X_CHANGE, "gameOption.xchange", "gameOption.xchangeDescription"),
             GameOption.adminBoolOption(LUCKY_NUMBER, "gameOption.luckyNumber", "gameOption.luckyNumberDescription"),
-            GameOption.adminBoolOption(LUCKY_CROSS,  "gameOption.luckyCross",  "gameOption.luckyCrossDescription"),
+            GameOption.adminBoolOption(LUCKY_CROSS,  "gameOption.luckyCross",  "gameOption.luckyCrossDescription")
+                    .withIncompatibleWith(List.of(BIG_POINTS)),
             GameOption.intOption(BOT_COUNT, "gameOption.botCount", "gameOption.botCountDescription",
                 "0", 0, 3),
             GameOption.enumOption(BOT_STRATEGY, "gameOption.botStrategy", "gameOption.botStrategyDescription",

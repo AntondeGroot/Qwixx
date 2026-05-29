@@ -19,6 +19,10 @@
       }
     </div>
     <span class="lucky-number-label lucky-number-pts">{{ 'points' | translate }}</span>
+    @if (showLuckyCrossHint()) {
+      <span class="lucky-number-label lucky-number-slash">&</span>
+      <span class="lucky-number-label">LUCKY 1+5</span>
+    }
   } @else {
     @for (cell of regularCells(); track cell.id) {
       <app-cell [cell]="cell" [crossed]="isCrossed(cell.id)"

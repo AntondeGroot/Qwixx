@@ -68,4 +68,50 @@ class GameOptionsApiDelegateImplTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.rows[0].cells.length()").value(11));
     }
+
+    // ── type field must be serialised correctly for every option ─────────────
+
+    @Test
+    void botCountHasTypeInteger() throws Exception {
+        mvc.perform(get("/game-options"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.key=='botCount')].type").value("INTEGER"));
+    }
+
+    @Test
+    void botCountHasMinValueAndMaxValue() throws Exception {
+        mvc.perform(get("/game-options"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.key=='botCount')].minValue").value(0))
+                .andExpect(jsonPath("$[?(@.key=='botCount')].maxValue").value(3));
+    }
+
+    @Test
+    void botStrategyHasTypeEnum() throws Exception {
+        mvc.perform(get("/game-options"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.key=='botStrategy')].type").value("ENUM"));
+    }
+
+    @Test
+    void booleanOptionsHaveTypeBooleanNotEnum() throws Exception {
+        // bigPoints, randomOrder, extraRow, connectedCells, xChange, luckyNumber, luckyCross
+        for (String key : new String[]{"bigPoints", "randomOrder", "extraRow", "connectedCells",
+                "xChange", "luckyNumber", "luckyCross"}) {
+            mvc.perform(get("/game-options"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[?(@.key=='" + key + "')].type").value("BOOLEAN"));
+        }
+    }
+
+    @Test
+    void noIntegerOptionIsSerializedAsEnum() throws Exception {
+        // Regression guard: OptionType.INTEGER must never appear as "ENUM" in the response.
+        // The toDto() method previously defaulted everything non-BOOLEAN to ENUM.
+        mvc.perform(get("/game-options"))
+                .andExpect(status().isOk())
+                // botCount is the only INTEGER option; its type must not be ENUM
+                .andExpect(jsonPath(
+                        "$[?(@.key=='botCount' && @.type=='ENUM')]").isEmpty());
+    }
 }

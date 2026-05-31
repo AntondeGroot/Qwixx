@@ -39,15 +39,20 @@ public class GameOptionsApiDelegateImpl implements GameOptionsApiDelegate {
     }
 
     private GameOption toDto(nl.adg.qwixx.game.GameOption o) {
+        GameOption.TypeEnum typeEnum = switch (o.type()) {
+            case BOOLEAN -> GameOption.TypeEnum.BOOLEAN;
+            case INTEGER -> GameOption.TypeEnum.INTEGER;
+            case ENUM    -> GameOption.TypeEnum.ENUM;
+        };
         GameOption dto = new GameOption(
                 o.key(),
                 o.labelKey(),
-                o.type() == OptionType.BOOLEAN
-                        ? GameOption.TypeEnum.BOOLEAN
-                        : GameOption.TypeEnum.ENUM,
+                typeEnum,
                 o.defaultValue());
         dto.setDescriptionKey(o.descriptionKey());
         if (!o.choices().isEmpty()) dto.setChoices(o.choices());
+        if (o.minValue() != null) dto.setMinValue(o.minValue());
+        if (o.maxValue() != null) dto.setMaxValue(o.maxValue());
         if (o.adminOnly()) dto.setAdminOnly(true);
         if (!o.incompatibleWith().isEmpty()) dto.setIncompatibleWith(o.incompatibleWith());
         return dto;

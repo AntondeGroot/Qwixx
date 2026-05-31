@@ -54,38 +54,82 @@ export class SettingsComponent implements OnInit, OnDestroy {
   botCount  = signal<number>(0);
   botSlots  = computed(() => Array.from({ length: this.botCount() }, (_, i) => i + 1));
   // Cap bots so total players (humans + bots) stays within a sensible Qwixx limit of 5.
-  maxBotCount = computed(() => Math.max(0, 5 - this.lobbyPlayers().length));
+  maxBotCount = computed(() => Math.max(0, this.maxPlayers() - this.lobbyPlayers().length));
 
   // Suppress lobby → form updates while the player is actively editing
   private suppressLobbySync = false;
+
+  isEmbedMode = signal(false);
 
   form!: FormGroup;
 
   readonly TypeEnum = GameOption.TypeEnum;
 
   ngOnInit() {
-    this.isAdmin.set(this.route.snapshot.queryParamMap.get('admin') === '1');
+    const params = this.route.snapshot.queryParamMap;
+
+    this.isAdmin.set(params.get('admin') === '1');
 
     // Query params are authoritative; fall back to sessionStorage written by newGame().
     this.sessionId.set(
-      this.route.snapshot.queryParamMap.get('sessionId') ||
+      params.get('sessionId') ||
       sessionStorage.getItem('qwixx_lobby_sid') ||
       null
     );
     this.playerId.set(
-      this.route.snapshot.queryParamMap.get('playerId') ||
+      params.get('playerId') ||
       sessionStorage.getItem('qwixx_lobby_pid') ||
       null
     );
+
+    // Embed mode: hosted inside another app's iframe (e.g. GWT GameRoom).
+    // The Start button is hidden; option changes are pushed to the parent via postMessage.
+    const isEmbed = params.get('embed') === '1';
+    this.isEmbedMode.set(isEmbed);
+
+    if (isEmbed) {
+      // The GWT GameRoom manages botCount/botStrategy through its own widgets and
+      // may not include them in the ?options= JSON. Listen for a postMessage from
+      // the parent that carries individual option overrides after the iframe loads.
+      window.addEventListener('message', (event: MessageEvent) => {
+        const data = event.data;
+        if (!data || data.type !== 'qwixx-options-set') return;
+        const overrides = data.options as Record<string, unknown>;
+        if (!overrides) return;
+        for (const [key, value] of Object.entries(overrides)) {
+          const ctrl = this.form?.get(key);
+          if (!ctrl) continue;
+          const opt = this.gameOptions().find(o => o.key === key);
+          const coerced =
+            opt?.type === GameOption.TypeEnum.BOOLEAN ? Boolean(value) :
+            opt?.type === GameOption.TypeEnum.INTEGER ? Number(value) :
+            value;
+          ctrl.setValue(coerced, { emitEvent: false });
+        }
+        this.fetchPreview();
+      });
+    }
+
+    // Allow the host app to set the UI language via ?lang=
+    const langParam = params.get('lang');
+    if (langParam) {
+      this.translate.use(langParam);
+    }
+
+    // Initial options from the host app, serialised as a JSON string in ?options=.
+    // The GWT may also pass individual integer options (e.g. botCount) as top-level
+    // query params because it manages those through its own widgets.
+    const optionsParam = params.get('options');
+    const botCountParam = params.get('botCount');
 
     this.form = this.fb.group({});
 
     this.gamesService.getGameOptions().subscribe(opts => {
       for (const opt of opts) {
         this.form.addControl(opt.key, this.fb.control(
-          opt.type === GameOption.TypeEnum.BOOLEAN
-            ? opt.defaultValue === 'true'
-            : opt.defaultValue
+          opt.type === GameOption.TypeEnum.BOOLEAN ? opt.defaultValue === 'true' :
+          opt.type === GameOption.TypeEnum.INTEGER ? Number(opt.defaultValue)  :
+          opt.defaultValue
         ));
       }
       this.gameOptions.set(opts);
@@ -99,6 +143,30 @@ export class SettingsComponent implements OnInit, OnDestroy {
           }
         }
       }
+
+      // Apply initial options supplied by the host app before fetching the preview.
+      if (optionsParam) {
+        try {
+          const init = JSON.parse(optionsParam) as Record<string, string>;
+          for (const [k, v] of Object.entries(init)) {
+            const ctrl = this.form.get(k);
+            if (!ctrl) continue;
+            // Re-type the string value to match the control's expected type.
+            const opt = opts.find(o => o.key === k);
+            ctrl.setValue(
+              opt?.type === GameOption.TypeEnum.BOOLEAN ? v === 'true' :
+              opt?.type === GameOption.TypeEnum.INTEGER ? Number(v) : v,
+              {emitEvent: false}
+            );
+          }
+        } catch { /* ignore malformed options */ }
+      }
+
+      // Standalone botCount param overrides anything in the JSON (GWT may send it separately).
+      if (botCountParam !== null) {
+        this.form.get('botCount')?.setValue(Number(botCountParam), { emitEvent: false });
+      }
+
       this.fetchPreview();
 
       // Keep botCount signal in sync with the form for all modes
@@ -106,7 +174,17 @@ export class SettingsComponent implements OnInit, OnDestroy {
         .subscribe(v => this.botCount.set(Number(v['botCount'] ?? 0)));
       this.botCount.set(Number(this.form.get('botCount')?.value ?? 0));
 
-      if (this.isRestartMode) {
+      if (isEmbed) {
+        // Immediately post the current options so the host has them even before
+        // the user changes anything.
+        this.postOptionsToParent();
+
+        // Push every subsequent change to the parent frame.
+        this.form.valueChanges.pipe(
+          debounceTime(100),
+          takeUntilDestroyed(this.destroyRef),
+        ).subscribe(() => this.postOptionsToParent());
+      } else if (this.isRestartMode) {
         this.startLobbySync();
         this.startGameStartSse();
 
@@ -127,6 +205,16 @@ export class SettingsComponent implements OnInit, OnDestroy {
         this.form.valueChanges.subscribe(() => this.fetchPreview());
       }
     });
+  }
+
+  /** Serialise current options as stringified values and postMessage them to the parent window. */
+  private postOptionsToParent(): void {
+    const raw = this.buildGameOptions();
+    const stringOpts: Record<string, string> = {};
+    for (const [k, v] of Object.entries(raw)) {
+      stringOpts[k] = String(v);
+    }
+    window.parent.postMessage({type: 'qwixx-options-changed', options: stringOpts}, '*');
   }
 
   ngOnDestroy() {
@@ -168,7 +256,13 @@ export class SettingsComponent implements OnInit, OnDestroy {
     this.suppressLobbySync = true;
     for (const [key, value] of Object.entries(opts)) {
       const ctrl = this.form.get(key);
-      if (ctrl && ctrl.value !== value) ctrl.setValue(value, { emitEvent: false });
+      if (!ctrl) continue;
+      const opt = this.gameOptions().find(o => o.key === key);
+      const coerced =
+        opt?.type === GameOption.TypeEnum.BOOLEAN ? Boolean(value) :
+        opt?.type === GameOption.TypeEnum.INTEGER ? Number(value) :
+        value;
+      if (ctrl.value !== coerced) ctrl.setValue(coerced, { emitEvent: false });
     }
     this.suppressLobbySync = false;
     // setValue above used emitEvent:false so valueChanges didn't fire — re-enforce manually.
@@ -288,4 +382,19 @@ export class SettingsComponent implements OnInit, OnDestroy {
     if (opt.key === 'botCount' && this.isRestartMode) return this.maxBotCount();
     return opt.maxValue ?? null;
   }
+
+  /** True when the integer range is small enough to show as a select (≤ 10 steps). */
+  isSmallIntegerRange(opt: GameOption): boolean {
+    const min = opt.minValue ?? 0;
+    const max = this.effectiveMax(opt) ?? opt.maxValue ?? null;
+    return max !== null && (max - min) <= 10;
+  }
+
+  /** [min, min+1, …, max] used for select options in small integer ranges. */
+  integerRange(opt: GameOption): number[] {
+    const min = opt.minValue ?? 0;
+    const max = this.effectiveMax(opt) ?? opt.maxValue ?? min;
+    return Array.from({ length: max - min + 1 }, (_, i) => min + i);
+  }
+
 }

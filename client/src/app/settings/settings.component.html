@@ -24,8 +24,16 @@
           }
         </select>
       } @else if (opt.type === TypeEnum.INTEGER) {
-        <input [id]="opt.key" type="number" [formControlName]="opt.key"
-               [min]="opt.minValue ?? null" [max]="effectiveMax(opt)" />
+        @if (isSmallIntegerRange(opt)) {
+          <select [id]="opt.key" [formControlName]="opt.key">
+            @for (n of integerRange(opt); track n) {
+              <option [ngValue]="n">{{ n }}</option>
+            }
+          </select>
+        } @else {
+          <input [id]="opt.key" type="number" [formControlName]="opt.key"
+                 [min]="opt.minValue ?? null" [max]="effectiveMax(opt)" />
+        }
       }
     </div>
   }

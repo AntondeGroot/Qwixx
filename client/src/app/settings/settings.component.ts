@@ -333,7 +333,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
     const gameOptions = this.buildGameOptions();
 
     if (this.isRestartMode) {
-      // Push final options to lobby so all pollers see them, then restart.
       this.lobbyService.update(this.sessionId()!, gameOptions).subscribe(() => {
         this.gamesService.restartGame(this.sessionId()!, { gameOptions }).subscribe({
           next: () => {
@@ -344,7 +343,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
         });
       });
     } else {
-      // Standalone / offline mode: 1 human slot; bots are added on top at start time.
       this.gamesService.createNewGame({ roomName: 'Offline', maxPlayers: 1, gameOptions })
         .subscribe({
           next: res => {

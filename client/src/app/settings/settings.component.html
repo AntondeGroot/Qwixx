@@ -13,7 +13,69 @@
 
   @for (opt of availableGameOptions(); track opt.key) {
     <div [class.option-disabled]="form.get(opt.key)?.disabled">
-      <label [for]="opt.key">{{ getGameOptionLabel(opt.key) }}</label>
+      <div class="option-header">
+        <label [for]="opt.key">{{ getGameOptionLabel(opt.key) }}</label>
+        @switch (opt.key) {
+          @case ('luckyNumber') {
+            <div class="opt-chip">
+              <div class="opt-chip-track opt-chip-track--orange">
+                <span class="opt-cell opt-cell--diamond opt-cell--orange"></span>
+                <span class="opt-cell opt-cell--diamond opt-cell--orange"></span>
+                <span class="opt-cell opt-cell--diamond opt-cell--orange"></span>
+              </div>
+            </div>
+          }
+          @case ('luckyCross') {
+            <div class="opt-chip">
+              <div class="opt-chip-track opt-chip-track--red">
+                <span class="opt-cell opt-cell--red"></span>
+                <span class="opt-cell opt-cell--red"></span>
+                <span class="opt-cell opt-cell--diamond opt-cell--orange opt-cell--sm"></span>
+                <span class="opt-cell opt-cell--red"></span>
+                <span class="opt-cell opt-cell--red"></span>
+              </div>
+            </div>
+          }
+          @case ('xChange') {
+            <div class="opt-chip">
+              <div class="opt-chip-track opt-chip-track--purple">
+                <span class="opt-cell opt-cell--diamond opt-cell--xchange"></span>
+                <span class="opt-cell opt-cell--diamond opt-cell--xchange"></span>
+              </div>
+            </div>
+          }
+          @case ('bigPoints') {
+            <div class="opt-chip">
+              <span class="opt-cell opt-cell--split" style="--split-a:#d32f2f;--split-b:#f9a825"></span>
+              <span class="opt-cell opt-cell--split" style="--split-a:#388e3c;--split-b:#1565c0"></span>
+            </div>
+          }
+          @case ('connectedCells') {
+            <div class="opt-chip">
+              <span class="opt-cell opt-cell--red opt-cell--connected"></span>
+              <span class="opt-cell opt-cell--yellow opt-cell--connected"></span>
+            </div>
+          }
+          @case ('extraRow') {
+            <div class="opt-chip">
+              <div class="opt-chip-track opt-chip-track--yellow">
+                <span class="opt-cell opt-cell--yellow"></span>
+                <span class="opt-cell opt-cell--yellow opt-cell--extra"></span>
+                <span class="opt-cell opt-cell--yellow"></span>
+              </div>
+            </div>
+          }
+          @case ('randomOrder') {
+            <div class="opt-chip">
+              <div class="opt-chip-track opt-chip-track--green">
+                <span class="opt-cell opt-cell--green opt-cell--num">8</span>
+                <span class="opt-cell opt-cell--green opt-cell--num">3</span>
+                <span class="opt-cell opt-cell--green opt-cell--num">11</span>
+              </div>
+            </div>
+          }
+        }
+      </div>
 
       @if (opt.type === TypeEnum.BOOLEAN) {
         <input [id]="opt.key" type="checkbox" [formControlName]="opt.key" />
@@ -34,6 +96,9 @@
           <input [id]="opt.key" type="number" [formControlName]="opt.key"
                  [min]="opt.minValue ?? null" [max]="effectiveMax(opt)" />
         }
+      }
+      @if (opt.descriptionKey) {
+        <p class="option-desc">{{ opt.descriptionKey | translate }}</p>
       }
     </div>
   }

@@ -184,7 +184,6 @@ public class NewGameLobbyIT extends BaseIntegrationTest {
      */
     @Test
     void anyPlayerCanStartGame_othersAreRedirectedAutomatically() {
-        // Player3 leaves at the score screen.
         d3 = openScoreAsPlayer(3);
         waitUntilScoreLoaded(d3);
         waitUntilWinnerModalVisible(d3, 10);
@@ -192,7 +191,6 @@ public class NewGameLobbyIT extends BaseIntegrationTest {
         d3.quit();
         d3 = null;
 
-        // Players 0 and 1 go to settings; player 2 stays on the score screen.
         d0 = openSettingsAsPlayer(0);
         d1 = openSettingsAsPlayer(1);
         d2 = openScoreAsPlayer(2);
@@ -202,34 +200,20 @@ public class NewGameLobbyIT extends BaseIntegrationTest {
         waitUntilScoreLoaded(d2);
         waitUntilWinnerModalVisible(d2, 10);
 
-        // Player1 changes an option to verify it takes effect in the restarted game.
         api.updateLobby(sessionId, Map.of("extraRow", false));
-
-        // Player0 starts the game.
         clickStartGame(d0);
 
-        // All three browsers must navigate to the game board.
         String gamePrefix = "/game/" + sessionId;
+        new WebDriverWait(d0, Duration.ofSeconds(10)).until(d -> d.getCurrentUrl().contains(gamePrefix));
+        new WebDriverWait(d1, Duration.ofSeconds(10)).until(d -> d.getCurrentUrl().contains(gamePrefix));
+        new WebDriverWait(d2, Duration.ofSeconds(10)).until(d -> d.getCurrentUrl().contains(gamePrefix));
 
-        new WebDriverWait(d0, Duration.ofSeconds(10))
-                .until(d -> d.getCurrentUrl().contains(gamePrefix));
-        new WebDriverWait(d1, Duration.ofSeconds(10))
-                .until(d -> d.getCurrentUrl().contains(gamePrefix));
-        new WebDriverWait(d2, Duration.ofSeconds(10))
-                .until(d -> d.getCurrentUrl().contains(gamePrefix));
+        assertTrue(d0.getCurrentUrl().contains(gamePrefix));
+        assertTrue(d1.getCurrentUrl().contains(gamePrefix));
+        assertTrue(d2.getCurrentUrl().contains(gamePrefix));
 
-        assertTrue(d0.getCurrentUrl().contains(gamePrefix),
-                "player0 must be on the game board after start. URL: " + d0.getCurrentUrl());
-        assertTrue(d1.getCurrentUrl().contains(gamePrefix),
-                "player1 must be on the game board after start. URL: " + d1.getCurrentUrl());
-        assertTrue(d2.getCurrentUrl().contains(gamePrefix),
-                "player2 must be redirected from score to game board. URL: " + d2.getCurrentUrl());
-
-        // The restarted game must have exactly 3 players.
         List<String> newPlayerIds = api.getPlayerIds(sessionId);
-        assertEquals(3, newPlayerIds.size(),
-                "Restarted game must have 3 players. Got: " + newPlayerIds.size());
-        assertFalse(newPlayerIds.contains(playerIdByName.get("player3")),
-                "player3 must not be in the restarted game");
+        assertEquals(3, newPlayerIds.size());
+        assertFalse(newPlayerIds.contains(playerIdByName.get("player3")));
     }
 }

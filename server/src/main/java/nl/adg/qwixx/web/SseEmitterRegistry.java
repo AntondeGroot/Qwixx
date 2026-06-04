@@ -62,6 +62,11 @@ public class SseEmitterRegistry {
         list.removeAll(dead);
     }
 
+    void completeAll(String sessionId) {
+        List<SseEmitter> list = sessions.remove(sessionId);
+        if (list != null) list.forEach(SseEmitter::complete);
+    }
+
     private void remove(String sessionId, SseEmitter emitter) {
         List<SseEmitter> list = sessions.get(sessionId);
         if (list != null) list.remove(emitter);

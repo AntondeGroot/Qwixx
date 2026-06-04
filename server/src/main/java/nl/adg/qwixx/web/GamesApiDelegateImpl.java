@@ -83,6 +83,7 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
     public ResponseEntity<Void> stopGame(String sessionId) {
         require(sessionId);
         GameRegistry.removeGame(sessionId);
+        sseRegistry.completeAll(sessionId);
         return ResponseEntity.noContent().build();
     }
 

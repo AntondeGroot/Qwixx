@@ -1,5 +1,5 @@
 #!/bin/bash
-SSH="ssh -i ~/.ssh/pi_deploy_key my-pi"
+SSH="ssh -i ~/.ssh/pi_deploy_key my-pi-ext"
 
 echo "=== systemd service status ==="
 $SSH "systemctl status qwixx --no-pager" 2>&1 || true
@@ -7,6 +7,10 @@ $SSH "systemctl status qwixx --no-pager" 2>&1 || true
 echo ""
 echo "=== last 50 log lines ==="
 $SSH "journalctl -u qwixx -n 50 --no-pager" 2>&1 || true
+
+echo ""
+echo "=== errors in journal ==="
+$SSH "journalctl -u qwixx --no-pager -r -o cat | grep -E -m 5 -B 5 'Z[[:space:]]+(ERROR|WARN)[[:space:]]+[0-9]+' | tac | awk 'NR==1{n=1; printf \"--- error %d ---\n\", n} /^--\$/{n++; printf \"\n--- error %d ---\n\", n; next} /Z[[:space:]]+(ERROR|WARN)/{print \">>> \" \$0; next} {print}'" 2>&1 || true
 
 echo ""
 echo "=== jar file ==="

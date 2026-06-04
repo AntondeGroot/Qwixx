@@ -468,16 +468,16 @@ public class PreviewController {
     // 9 — 5-player · extra-row · finished; five rows in the score table
     private PreviewResult scenario09() {
         GameSetup g = startGame(5, GameSettings.builder().extraRow(true).build());
-        // rows: RED=0, YELLOW=1, GREEN=2, BLUE=3, EXTRA=4
+        // rows: RED=0, YELLOW=1, GREEN=2, BLUE=3 (extraRow tags existing cells, no 5th row)
         int[][] crosses = {
-                {7, 3, 5, 4, 6},
-                {4, 8, 2, 7, 3},
-                {6, 4, 9, 3, 5},
-                {3, 6, 4, 8, 7},
-                {5, 2, 6, 4, 4},
+                {7, 3, 5, 4},
+                {4, 8, 2, 7},
+                {6, 4, 9, 3},
+                {3, 6, 4, 8},
+                {5, 2, 6, 4},
         };
         for (int p = 0; p < 5; p++) {
-            for (int r = 0; r < 5; r++) {
+            for (int r = 0; r < 4; r++) {
                 setCrosses(g, g.players().get(p), r, crosses[p][r]);
             }
         }

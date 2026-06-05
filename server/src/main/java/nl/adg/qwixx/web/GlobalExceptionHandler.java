@@ -35,6 +35,13 @@ public class GlobalExceptionHandler {
         return response(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex) throws Exception {
+        // Let Spring Boot handle framework exceptions (e.g. NoResourceFoundException → SPA fallback)
+        if (ex instanceof org.springframework.web.ErrorResponse) throw ex;
+        return response(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+    }
+
     private static ResponseEntity<ErrorResponse> response(HttpStatus status, String message) {
         return ResponseEntity.status(status)
                 .body(new ErrorResponse(message, status.value()));

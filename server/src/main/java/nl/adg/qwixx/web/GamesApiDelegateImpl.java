@@ -56,10 +56,13 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
     }
 
     @Override
-    public ResponseEntity<Void> startGame(String sessionId) {
+    public ResponseEntity<Void> startGame(String sessionId,
+            nl.adg.qwixx.generated.model.StartGameRequest req) {
         GameSession session = require(sessionId);
+        List<Integer> botPics = (req != null && req.getBotProfilePics() != null)
+                ? req.getBotProfilePics() : List.of();
         try {
-            session.start();
+            session.start(botPics);
         } catch (IllegalStateException ex) {
             throw new GameAlreadyStartedException(sessionId);
         }

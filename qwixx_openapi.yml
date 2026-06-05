@@ -80,6 +80,18 @@ paths:
         - games
       parameters:
         - $ref: '#/components/parameters/sessionId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                botProfilePics:
+                  type: array
+                  items:
+                    type: integer
+                  description: Shuffled list of available bot profile-pic indices; each bot gets the next one (no duplicates).
       responses:
         '200':
           description: Game was started

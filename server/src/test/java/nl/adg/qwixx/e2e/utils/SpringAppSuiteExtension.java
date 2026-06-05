@@ -19,7 +19,7 @@ public class SpringAppSuiteExtension implements BeforeAllCallback, TestWatcher {
         ║  E2E test failed — leftover Chrome processes can cause   ║
         ║  subsequent runs to flake. Kill them before re-running:  ║
         ║                                                          ║
-        ║    pkill -f chrome-user-data                             ║
+        ║    pkill -9 -f "Google Chrome"; pkill -9 chromedriver    ║
         ╚══════════════════════════════════════════════════════════╝
         """);
   }

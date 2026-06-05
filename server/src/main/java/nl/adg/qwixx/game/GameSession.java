@@ -47,6 +47,8 @@ public class GameSession {
     private final Map<UUID, nl.adg.qwixx.bot.BotProfile> botProfiles = new HashMap<>();
     private       GameState   state;
     private       SessionStatus status = SessionStatus.WAITING;
+    /** Full pool of available bot profile-pic indices, as supplied by GameRoom at start time. */
+    private List<Integer> botPicPool = List.of();
 
     public GameSession(String sessionId, String roomName, int maxPlayers, GameSettings settings) {
         this.sessionId  = sessionId;
@@ -76,6 +78,10 @@ public class GameSession {
     }
 
     public synchronized void start() {
+        start(List.of());
+    }
+
+    public synchronized void start(List<Integer> availableBotPics) {
         if (status != SessionStatus.WAITING)
             throw new IllegalStateException("game already started");
 
@@ -94,8 +100,12 @@ public class GameSession {
         if (players.isEmpty() && settings.botCount() == 0)
             throw new IllegalStateException("cannot start with no players");
 
+        botPicPool = List.copyOf(availableBotPics);
+        List<Integer> shuffled = new ArrayList<>(botPicPool);
+        shuffle(shuffled);
         for (int i = 0; i < settings.botCount(); i++) {
-            Player bot = Player.of("Computer " + (i + 1));
+            String pic = i < shuffled.size() ? String.valueOf(shuffled.get(i)) : null;
+            Player bot = new Player(UUID.randomUUID(), "Computer " + (i + 1), pic);
             players.add(bot);
             botPlayerIds.add(bot.id());
             botProfiles.put(bot.id(), settings.profileForBot(i));
@@ -189,8 +199,11 @@ public class GameSession {
         botPlayerIds.clear();
         botProfiles.clear();
 
+        List<Integer> shuffled = new ArrayList<>(botPicPool);
+        shuffle(shuffled);
         for (int i = 0; i < newSettings.botCount(); i++) {
-            Player bot = Player.of("Computer " + (i + 1));
+            String pic = i < shuffled.size() ? String.valueOf(shuffled.get(i)) : null;
+            Player bot = new Player(UUID.randomUUID(), "Computer " + (i + 1), pic);
             players.add(bot);
             botPlayerIds.add(bot.id());
             botProfiles.put(bot.id(), newSettings.profileForBot(i));

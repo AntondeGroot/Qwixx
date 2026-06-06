@@ -2,22 +2,6 @@ package nl.adg.qwixx.game;
 
 import static java.util.Collections.shuffle;
 
-import nl.adg.qwixx.action.GameAction;
-import nl.adg.qwixx.action.RollAction;
-import nl.adg.qwixx.bot.BotDecider;
-import nl.adg.qwixx.data.Die;
-import nl.adg.qwixx.data.Row;
-import nl.adg.qwixx.rules.ScoreCard;
-import nl.adg.qwixx.rules.TurnRules;
-import nl.adg.qwixx.state.BoardState;
-import nl.adg.qwixx.state.CardMode;
-import nl.adg.qwixx.state.GameState;
-import nl.adg.qwixx.state.RowState;
-import nl.adg.qwixx.state.SheetLayout;
-import nl.adg.qwixx.state.SheetProgress;
-import nl.adg.qwixx.state.TurnPhase;
-import nl.adg.qwixx.state.TurnState;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,6 +12,20 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
+import nl.adg.qwixx.action.GameAction;
+import nl.adg.qwixx.action.RollAction;
+import nl.adg.qwixx.bot.BotDecider;
+import nl.adg.qwixx.data.Die;
+import nl.adg.qwixx.data.Row;
+import nl.adg.qwixx.rules.ScoreCard;
+import nl.adg.qwixx.rules.TurnRules;
+import nl.adg.qwixx.state.BoardState;
+import nl.adg.qwixx.state.GameState;
+import nl.adg.qwixx.state.RowState;
+import nl.adg.qwixx.state.SheetLayout;
+import nl.adg.qwixx.state.SheetProgress;
+import nl.adg.qwixx.state.TurnPhase;
+import nl.adg.qwixx.state.TurnState;
 
 public class GameSession {
 
@@ -64,11 +62,6 @@ public class GameSession {
         if (players.size() >= maxPlayers)
             throw new IllegalStateException("session is full");
         players.add(player);
-    }
-
-    private synchronized int effectiveBotCount() {
-        Object val = proposedOptions.get("botCount");
-        return val instanceof Number n ? n.intValue() : settings.botCount();
     }
 
     public synchronized void removePlayer(UUID playerId) {
@@ -270,18 +263,20 @@ public class GameSession {
 
     private GameState runBotTurns(GameState state, Consumer<GameState> botStateListener) {
         if (botPlayerIds.isEmpty()) return state;
+        GameState current = state;
         int guard = 0;
-        while (!state.gameOver() && guard++ < 200) {
-            UUID bot = nextBotToAct(state);
+        while (!current.gameOver() && guard < 200) {
+            guard++;
+            UUID bot = nextBotToAct(current);
             if (bot == null) break;
-            List<GameAction> valid = rules.getValidActions(state, bot);
+            List<GameAction> valid = rules.getValidActions(current, bot);
             if (valid.isEmpty()) break;
-            GameAction action = BotDecider.decide(state, bot, valid,
+            GameAction action = BotDecider.decide(current, bot, valid,
                     botProfiles.getOrDefault(bot, nl.adg.qwixx.bot.BotProfile.DEFAULT));
-            state = rules.apply(state, action);
+            current = rules.apply(current, action);
 
             if (action instanceof RollAction && botStateListener != null) {
-                botStateListener.accept(state);
+                botStateListener.accept(current);
                 try {
                     Thread.sleep(BOT_ROLL_DELAY_MS);
                 } catch (InterruptedException e) {
@@ -290,7 +285,7 @@ public class GameSession {
                 }
             }
         }
-        return state;
+        return current;
     }
 
     private UUID nextBotToAct(GameState state) {

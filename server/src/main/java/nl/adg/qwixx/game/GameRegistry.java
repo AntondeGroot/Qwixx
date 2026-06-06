@@ -1,11 +1,10 @@
 package nl.adg.qwixx.game;
 
-import nl.adg.qwixx.state.CardMode;
-
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import nl.adg.qwixx.state.CardMode;
 
 public class GameRegistry {
 

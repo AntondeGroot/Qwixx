@@ -155,9 +155,9 @@
 @media (orientation: portrait) {
   :host {
     position: fixed;
-    top:    calc((100dvh - 100dvw) / 2);
-    left:   calc((100dvw - 100dvh) / 2);
-    width:  100dvh;
+    top: calc((100dvh - 100dvw) / 2);
+    left: calc((100dvw - 100dvh) / 2);
+    width: 100dvh;
     height: 100dvw;
     transform: rotate(90deg);
     transform-origin: 50% 50%;

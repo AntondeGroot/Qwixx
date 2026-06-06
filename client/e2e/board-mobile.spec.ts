@@ -5,22 +5,22 @@ const PHONE_W = 412;
 const PHONE_H = 915;
 
 // After our CSS rotation the board occupies landscape space: 915 × 412
-const LANDSCAPE_W = PHONE_H;   // 915
-const LANDSCAPE_H = PHONE_W;   // 412
+const LANDSCAPE_W = PHONE_H; // 915
+const LANDSCAPE_H = PHONE_W; // 412
 
 const SESSION_ID = 'session-mobile-test';
-const PLAYER_ID  = 'player-1';
-const OTHER_ID   = 'player-2';
+const PLAYER_ID = 'player-1';
+const OTHER_ID = 'player-2';
 
 // ── Realistic Qwixx board ─────────────────────────────────────────────────────
 function makeRows() {
   return [
-    { color: 'RED',    ascending: true  },
-    { color: 'YELLOW', ascending: true  },
-    { color: 'GREEN',  ascending: false },
-    { color: 'BLUE',   ascending: false },
+    { color: 'RED', ascending: true },
+    { color: 'YELLOW', ascending: true },
+    { color: 'GREEN', ascending: false },
+    { color: 'BLUE', ascending: false },
   ].map(({ color, ascending }) => {
-    const values = Array.from({ length: 11 }, (_, i) => ascending ? i + 2 : 12 - i);
+    const values = Array.from({ length: 11 }, (_, i) => (ascending ? i + 2 : 12 - i));
     const cells = values.map((v, i) => ({
       id: `${color}-${v}`,
       position: i,
@@ -34,7 +34,8 @@ function makeRows() {
       id: `row-${color}`,
       cells,
       lock: {
-        id: `lock-${color}`, color,
+        id: `lock-${color}`,
+        color,
         minCrosses: 5,
         requiredCells: [`${color}-${lockVal}`],
       },
@@ -47,15 +48,15 @@ const ROWS = makeRows();
 const MOCK_STATE = {
   players: [
     { id: PLAYER_ID, name: 'Alice' },
-    { id: OTHER_ID,  name: 'Bob'   },
+    { id: OTHER_ID, name: 'Bob' },
   ],
   sheetLayouts: {
     [PLAYER_ID]: { rows: ROWS },
-    [OTHER_ID]:  { rows: ROWS },
+    [OTHER_ID]: { rows: ROWS },
   },
   sheetProgress: {
     [PLAYER_ID]: { punishments: 0, rowStates: {} },
-    [OTHER_ID]:  { punishments: 0, rowStates: {} },
+    [OTHER_ID]: { punishments: 0, rowStates: {} },
   },
   closedRows: {},
   activeDiceColors: ['RED', 'YELLOW', 'GREEN', 'BLUE'],
@@ -64,7 +65,8 @@ const MOCK_STATE = {
     phase: 'ACTIVE_MOVE',
     passivePlayerQueue: [PLAYER_ID],
     currentRoll: {
-      white1: 3, white2: 4,
+      white1: 3,
+      white2: 4,
       coloredDice: { RED: 2, YELLOW: 3, GREEN: 4, BLUE: 5 },
     },
     whiteWhiteUsed: false,
@@ -77,11 +79,14 @@ const MOCK_STATE = {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function setup(page: Page) {
-  await page.route(`**/gamestates/${SESSION_ID}**`, route =>
-    route.fulfill({ contentType: 'application/json', body: JSON.stringify(MOCK_STATE) })
+  await page.route(`**/gamestates/${SESSION_ID}**`, (route) =>
+    route.fulfill({ contentType: 'application/json', body: JSON.stringify(MOCK_STATE) }),
   );
-  await page.route(`**/moves/**`, route =>
-    route.fulfill({ contentType: 'application/json', body: JSON.stringify({ result: 'ACCEPTED' }) })
+  await page.route(`**/moves/**`, (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ result: 'ACCEPTED' }),
+    }),
   );
 }
 
@@ -91,8 +96,8 @@ async function expectInViewport(page: Page, selector: string) {
   expect(box, `${selector} has no bounding box`).not.toBeNull();
   expect(box!.x, `${selector} overflows left`).toBeGreaterThanOrEqual(-1);
   expect(box!.y, `${selector} overflows top`).toBeGreaterThanOrEqual(-1);
-  expect(box!.x + box!.width,  `${selector} overflows right`)  .toBeLessThanOrEqual(PHONE_W + 1);
-  expect(box!.y + box!.height, `${selector} overflows bottom`) .toBeLessThanOrEqual(PHONE_H + 1);
+  expect(box!.x + box!.width, `${selector} overflows right`).toBeLessThanOrEqual(PHONE_W + 1);
+  expect(box!.y + box!.height, `${selector} overflows bottom`).toBeLessThanOrEqual(PHONE_H + 1);
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -122,8 +127,11 @@ test.describe('Board layout on portrait phone (OnePlus Nord / Pixel 6 class)', (
     const rows = page.locator('app-row');
     const widths = await Promise.all(
       Array.from({ length: 4 }, (_, i) =>
-        rows.nth(i).boundingBox().then(b => b!.width)
-      )
+        rows
+          .nth(i)
+          .boundingBox()
+          .then((b) => b!.width),
+      ),
     );
     const [first, ...rest] = widths;
     for (const w of rest) {
@@ -183,7 +191,9 @@ test.describe('Board layout on portrait phone (OnePlus Nord / Pixel 6 class)', (
 test.describe('Board layout after active→passive state transition', () => {
   test.use({ viewport: { width: PHONE_W, height: PHONE_H } });
 
-  test('all elements stay within viewport after player transitions from active to passive', async ({ page }) => {
+  test('all elements stay within viewport after player transitions from active to passive', async ({
+    page,
+  }) => {
     // Phase 1: PLAYER_ID is active, waiting to roll (no dice yet)
     const rollPhaseState = {
       ...MOCK_STATE,
@@ -207,7 +217,8 @@ test.describe('Board layout after active→passive state transition', () => {
         phase: 'ACTIVE_MOVE',
         passivePlayerQueue: [OTHER_ID],
         currentRoll: {
-          white1: 3, white2: 4,
+          white1: 3,
+          white2: 4,
           coloredDice: { RED: 2, YELLOW: 3, GREEN: 4, BLUE: 5 },
         },
         whiteWhiteUsed: false,
@@ -234,11 +245,14 @@ test.describe('Board layout after active→passive state transition', () => {
 
     let currentState: object = rollPhaseState;
 
-    await page.route(`**/gamestates/${SESSION_ID}**`, route =>
-      route.fulfill({ contentType: 'application/json', body: JSON.stringify(currentState) })
+    await page.route(`**/gamestates/${SESSION_ID}**`, (route) =>
+      route.fulfill({ contentType: 'application/json', body: JSON.stringify(currentState) }),
     );
-    await page.route(`**/moves/**`, route =>
-      route.fulfill({ contentType: 'application/json', body: JSON.stringify({ result: 'ACCEPTED' }) })
+    await page.route(`**/moves/**`, (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ result: 'ACCEPTED' }),
+      }),
     );
 
     // ── Step 1: load page as active player in ROLL phase ──────────────────────
@@ -261,9 +275,11 @@ test.describe('Board layout after active→passive state transition', () => {
     await expectInViewport(page, 'app-row:nth-child(4)');
     await expectInViewport(page, '.score-strip');
 
-    const scaleDuringActiveMovePhase = await page.locator('app-board').evaluate((el: HTMLElement) =>
-      parseFloat(getComputedStyle(el).getPropertyValue('--mobile-scale') || '0')
-    );
+    const scaleDuringActiveMovePhase = await page
+      .locator('app-board')
+      .evaluate((el: HTMLElement) =>
+        parseFloat(getComputedStyle(el).getPropertyValue('--mobile-scale') || '0'),
+      );
 
     // ── Step 3: turn ends → PLAYER_ID is now passive, OTHER_ID in ROLL phase ──
     currentState = passiveWaitState;
@@ -274,7 +290,7 @@ test.describe('Board layout after active→passive state transition', () => {
         const tb = document.querySelector('.turn-bar');
         return tb?.textContent?.includes('ROLL') ?? false;
       },
-      { timeout: 5000 }
+      { timeout: 5000 },
     );
 
     // All board elements must be fully within the phone viewport.
@@ -286,17 +302,20 @@ test.describe('Board layout after active→passive state transition', () => {
     await expectInViewport(page, '.punishment-track');
 
     // --mobile-scale must be set to a valid fraction.
-    const scaleAfter = await page.locator('app-board').evaluate((el: HTMLElement) =>
-      parseFloat(getComputedStyle(el).getPropertyValue('--mobile-scale') || '0')
-    );
+    const scaleAfter = await page
+      .locator('app-board')
+      .evaluate((el: HTMLElement) =>
+        parseFloat(getComputedStyle(el).getPropertyValue('--mobile-scale') || '0'),
+      );
     expect(scaleAfter, '--mobile-scale should be > 0 after transition').toBeGreaterThan(0);
     expect(scaleAfter, '--mobile-scale should be ≤ 1').toBeLessThanOrEqual(1);
 
     // The scale must not change significantly between active-move and passive-wait phases.
     // A large swing (e.g. 0.76 → 0.83) means the dice area disappeared and changed the
     // board's natural width — this was the root cause of the layout cut-off.
-    expect(Math.abs(scaleAfter - scaleDuringActiveMovePhase),
-      `scale jumped from ${scaleDuringActiveMovePhase} to ${scaleAfter}`)
-      .toBeLessThan(0.02);
+    expect(
+      Math.abs(scaleAfter - scaleDuringActiveMovePhase),
+      `scale jumped from ${scaleDuringActiveMovePhase} to ${scaleAfter}`,
+    ).toBeLessThan(0.02);
   });
 });

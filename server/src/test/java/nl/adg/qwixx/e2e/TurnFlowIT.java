@@ -1,5 +1,12 @@
 package nl.adg.qwixx.e2e;
 
+import static nl.adg.qwixx.e2e.helpers.BoardInteractionHelper.clickCellByValue;
+import static nl.adg.qwixx.e2e.helpers.BoardInteractionHelper.getCrossedCellCount;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
 import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
 import nl.adg.qwixx.e2e.utils.TestUtils;
 import org.junit.jupiter.api.AfterAll;
@@ -9,14 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
-
-import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-
-import static nl.adg.qwixx.e2e.helpers.BoardInteractionHelper.clickCellByValue;
-import static nl.adg.qwixx.e2e.helpers.BoardInteractionHelper.getCrossedCellCount;
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * End-to-end tests for two reported broken scenarios in the turn flow:

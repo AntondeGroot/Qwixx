@@ -1,5 +1,6 @@
 package nl.adg.qwixx.web;
 
+import java.util.concurrent.ConcurrentHashMap;
 import nl.adg.qwixx.game.GameSession;
 import nl.adg.qwixx.game.SessionStatus;
 import org.slf4j.Logger;
@@ -7,13 +8,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 @Component
 public class GameFinishedNotifier {
 
     private static final Logger logger = LoggerFactory.getLogger(GameFinishedNotifier.class);
 
+    @SuppressWarnings("PMD.LooseCoupling")
     private final ConcurrentHashMap<String, String> callbacks = new ConcurrentHashMap<>();
     private final RestTemplate restTemplate = new RestTemplate();
 

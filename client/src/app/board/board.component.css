@@ -6,9 +6,9 @@
 @media (orientation: portrait) {
   :host {
     position: fixed;
-    top:    calc((100dvh - 100dvw) / 2);
-    left:   calc((100dvw - 100dvh) / 2);
-    width:  100dvh;
+    top: calc((100dvh - 100dvw) / 2);
+    left: calc((100dvw - 100dvh) / 2);
+    width: 100dvh;
     height: 100dvw;
     overflow: hidden;
     transform: rotate(90deg);
@@ -103,7 +103,9 @@
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    transform 0.1s;
 }
 
 .btn-roll:hover:not(:disabled) {
@@ -139,7 +141,9 @@
   align-items: center;
   justify-content: center;
   line-height: 1;
-  transition: background 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    transform 0.1s;
 }
 
 .btn-confirm:hover {
@@ -160,7 +164,9 @@
   align-items: center;
   justify-content: center;
   line-height: 1;
-  transition: background 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    transform 0.1s;
 }
 
 .btn-pass-arrow:hover {
@@ -180,7 +186,6 @@
   transform: rotate(180deg);
   fill: #fde08a;
 }
-
 
 .error {
   color: #c62828;
@@ -232,12 +237,12 @@ h2 {
 }
 
 .bonus-chip {
-  position:relative;
+  position: relative;
   display: flex;
   align-items: center;
   gap: 4px;
-  width:80px;
-  height:80px;
+  width: 80px;
+  height: 80px;
   padding: 3px 8px 3px 5px;
   border-radius: 50%;
   background: #f5f5f5;
@@ -245,7 +250,10 @@ h2 {
   font-size: 14px;
   font-weight: 700;
   color: #555;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
 }
 
 .bonus-chip.bonus-active {
@@ -301,7 +309,9 @@ h2 {
   border: 3px solid #555;
   border-radius: 3px;
   flex-shrink: 0;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .punishment-box.clickable {
@@ -314,8 +324,13 @@ h2 {
 }
 
 @keyframes golden-glow {
-  0%, 100% { filter: none; }
-  50%       { filter: drop-shadow(0 0 8px rgba(249, 168, 37, 0.85)); }
+  0%,
+  100% {
+    filter: none;
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(249, 168, 37, 0.85));
+  }
 }
 
 .punishment-box.must-give-up {
@@ -421,7 +436,6 @@ a {
   padding: 8px 0 4px;
 }
 
-
 .lucky-cross-indicator-cells {
   position: relative;
   display: flex;
@@ -439,7 +453,7 @@ a {
   top: 50%;
   transform: translateY(-50%);
   height: 6px;
-  background: #E65100;
+  background: #e65100;
   border-radius: 3px;
   z-index: 0;
 }
@@ -450,8 +464,8 @@ a {
   z-index: 1;
   width: 30px;
   height: 30px;
-  background: #F57C00;
-  border: 2px solid #E65100;
+  background: #f57c00;
+  border: 2px solid #e65100;
   border-radius: 8px;
   transform: rotate(45deg);
   display: flex;
@@ -475,9 +489,11 @@ a {
 }
 
 .lucky-cross-mini-cell.plus span {
-  color: #F28C28;
+  color: #f28c28;
   font-size: 16px;
   text-shadow:
-    -1px -1px 0 #fff,  1px -1px 0 #fff,
-    -1px  1px 0 #fff,  1px  1px 0 #fff;
+    -1px -1px 0 #fff,
+    1px -1px 0 #fff,
+    -1px 1px 0 #fff,
+    1px 1px 0 #fff;
 }

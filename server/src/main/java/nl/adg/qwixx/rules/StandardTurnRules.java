@@ -1,5 +1,20 @@
 package nl.adg.qwixx.rules;
 
+import static nl.adg.qwixx.rules.CellCrosser.getRowState;
+import static nl.adg.qwixx.rules.CellCrosser.isReachableCell;
+import static nl.adg.qwixx.rules.RowClosureEvaluator.*;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
 import nl.adg.qwixx.action.CrossCellAction;
 import nl.adg.qwixx.action.DeclareLockIntentAction;
 import nl.adg.qwixx.action.DiceCombination;
@@ -10,10 +25,6 @@ import nl.adg.qwixx.action.ResetTurnAction;
 import nl.adg.qwixx.action.RollAction;
 import nl.adg.qwixx.action.TakePunishmentAction;
 import nl.adg.qwixx.action.UndoLastCrossAction;
-import static nl.adg.qwixx.rules.CellCrosser.getRowState;
-import static nl.adg.qwixx.rules.CellCrosser.isReachableCell;
-import static nl.adg.qwixx.rules.RowClosureEvaluator.*;
-
 import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.CellTag;
 import nl.adg.qwixx.data.Color;
@@ -27,17 +38,6 @@ import nl.adg.qwixx.state.SheetProgress;
 import nl.adg.qwixx.state.TurnPhase;
 import nl.adg.qwixx.state.TurnState;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
-
 public class StandardTurnRules implements TurnRules {
 
     static final int MAX_PUNISHMENTS = 4;
@@ -47,12 +47,12 @@ public class StandardTurnRules implements TurnRules {
 
     public StandardTurnRules() {
         this.diceRoller  = new DiceRoller(new Random());
-        this.cellCrosser = new CellCrosser(diceRoller);
+        this.cellCrosser = new CellCrosser();
     }
 
     public StandardTurnRules(Random random) {
         this.diceRoller  = new DiceRoller(random);
-        this.cellCrosser = new CellCrosser(diceRoller);
+        this.cellCrosser = new CellCrosser();
     }
 
     @Override
@@ -559,7 +559,7 @@ public class StandardTurnRules implements TurnRules {
     protected Set<Color> luckyCrossEligibleColors(RollResult roll) {
         if (roll == null) return Set.of();
         int w1 = roll.white1(), w2 = roll.white2();
-        Set<Color> eligible = new HashSet<>();
+        Set<Color> eligible = EnumSet.noneOf(Color.class);
         boolean freeChoice = false;
 
         // White + White → free choice of any row

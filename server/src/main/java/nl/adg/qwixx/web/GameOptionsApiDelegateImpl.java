@@ -1,19 +1,17 @@
 package nl.adg.qwixx.web;
 
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.game.ConfigurableGameStyleFactory;
 import nl.adg.qwixx.game.GameSettings;
-import nl.adg.qwixx.game.OptionType;
 import nl.adg.qwixx.game.QwixxGameOptions;
 import nl.adg.qwixx.generated.api.GameOptionsApiDelegate;
 import nl.adg.qwixx.generated.model.GameOption;
 import nl.adg.qwixx.generated.model.SheetLayout;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 @Service
 public class GameOptionsApiDelegateImpl implements GameOptionsApiDelegate {

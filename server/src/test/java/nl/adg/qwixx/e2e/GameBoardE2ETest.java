@@ -1,18 +1,17 @@
 package nl.adg.qwixx.e2e;
 
+import static nl.adg.qwixx.e2e.helpers.BoardInteractionHelper.getCrossedCellCount;
+import static nl.adg.qwixx.e2e.utils.TestUtils.getDriver;
+import static nl.adg.qwixx.e2e.utils.TestUtils.waitUntilBoardLoaded;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.List;
 import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-
-import java.util.List;
-
-import static nl.adg.qwixx.e2e.helpers.BoardInteractionHelper.getCrossedCellCount;
-import static nl.adg.qwixx.e2e.utils.TestUtils.getDriver;
-import static nl.adg.qwixx.e2e.utils.TestUtils.waitUntilBoardLoaded;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class GameBoardE2ETest extends BaseIntegrationTest {
 

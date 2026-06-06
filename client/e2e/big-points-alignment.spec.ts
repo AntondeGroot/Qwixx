@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 const SESSION_ID = 'session-bigpoints-alignment';
-const PLAYER_ID  = 'player-1';
-const OTHER_ID   = 'player-2';
+const PLAYER_ID = 'player-1';
+const OTHER_ID = 'player-2';
 
 function makeRegularCells(color: string, ascending: boolean) {
   return Array.from({ length: 11 }, (_, i) => ({
@@ -31,23 +31,26 @@ function lock(color: string) {
 }
 
 const ROWS = [
-  { id: 'row-RED',      cells: makeRegularCells('RED',    true),                  lock: lock('RED')    },
-  { id: 'row-BONUS-RY', cells: makeBonusCells('RED', 'YELLOW', true),             lock: null           },
-  { id: 'row-YELLOW',   cells: makeRegularCells('YELLOW', true),                  lock: lock('YELLOW') },
-  { id: 'row-GREEN',    cells: makeRegularCells('GREEN',  false),                 lock: lock('GREEN')  },
-  { id: 'row-BONUS-GB', cells: makeBonusCells('GREEN', 'BLUE', false),            lock: null           },
-  { id: 'row-BLUE',     cells: makeRegularCells('BLUE',   false),                 lock: lock('BLUE')   },
+  { id: 'row-RED', cells: makeRegularCells('RED', true), lock: lock('RED') },
+  { id: 'row-BONUS-RY', cells: makeBonusCells('RED', 'YELLOW', true), lock: null },
+  { id: 'row-YELLOW', cells: makeRegularCells('YELLOW', true), lock: lock('YELLOW') },
+  { id: 'row-GREEN', cells: makeRegularCells('GREEN', false), lock: lock('GREEN') },
+  { id: 'row-BONUS-GB', cells: makeBonusCells('GREEN', 'BLUE', false), lock: null },
+  { id: 'row-BLUE', cells: makeRegularCells('BLUE', false), lock: lock('BLUE') },
 ];
 
 const MOCK_STATE = {
-  players: [{ id: PLAYER_ID, name: 'Alice' }, { id: OTHER_ID, name: 'Bob' }],
+  players: [
+    { id: PLAYER_ID, name: 'Alice' },
+    { id: OTHER_ID, name: 'Bob' },
+  ],
   sheetLayouts: {
     [PLAYER_ID]: { rows: ROWS },
-    [OTHER_ID]:  { rows: ROWS },
+    [OTHER_ID]: { rows: ROWS },
   },
   sheetProgress: {
     [PLAYER_ID]: { punishments: 0, rowStates: {} },
-    [OTHER_ID]:  { punishments: 0, rowStates: {} },
+    [OTHER_ID]: { punishments: 0, rowStates: {} },
   },
   closedRows: {},
   activeDiceColors: ['RED', 'YELLOW', 'GREEN', 'BLUE'],
@@ -66,15 +69,22 @@ const MOCK_STATE = {
 test.describe('Big Points bonus row alignment', () => {
   test.beforeEach(async ({ page }) => {
     // Bypass the first-visit rules redirect so we land directly on the board.
-    await page.context().addCookies([{
-      name: 'qwixx_rules_seen_v1', value: '1',
-      domain: 'localhost', path: '/',
-    }]);
-    await page.route(`**/gamestates/${SESSION_ID}**`, route =>
-      route.fulfill({ contentType: 'application/json', body: JSON.stringify(MOCK_STATE) })
+    await page.context().addCookies([
+      {
+        name: 'qwixx_rules_seen_v1',
+        value: '1',
+        domain: 'localhost',
+        path: '/',
+      },
+    ]);
+    await page.route(`**/gamestates/${SESSION_ID}**`, (route) =>
+      route.fulfill({ contentType: 'application/json', body: JSON.stringify(MOCK_STATE) }),
     );
-    await page.route(`**/moves/**`, route =>
-      route.fulfill({ contentType: 'application/json', body: JSON.stringify({ result: 'ACCEPTED' }) })
+    await page.route(`**/moves/**`, (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ result: 'ACCEPTED' }),
+      }),
     );
     await page.goto(`/game/${SESSION_ID}/${PLAYER_ID}`);
     await page.waitForSelector('app-row', { timeout: 10_000 });
@@ -87,22 +97,22 @@ test.describe('Big Points bonus row alignment', () => {
   // For each position 0–10, the horizontal center of the big-points circle
   // must be within 2 px of the regular cell directly above it in the RED row.
   test('BONUS-RY circles are horizontally centred on the RED cells above', async ({ page }) => {
-    const redRow   = page.locator('app-row').nth(0);
+    const redRow = page.locator('app-row').nth(0);
     const bonusRow = page.locator('app-row').nth(1);
 
     for (let i = 0; i < 11; i++) {
-      const redBox   = await redRow.locator('app-cell').nth(i).locator('.cell').boundingBox();
+      const redBox = await redRow.locator('app-cell').nth(i).locator('.cell').boundingBox();
       const bonusBox = await bonusRow.locator('app-cell').nth(i).locator('.cell').boundingBox();
 
-      expect(redBox,   `RED cell ${i} missing`).not.toBeNull();
+      expect(redBox, `RED cell ${i} missing`).not.toBeNull();
       expect(bonusBox, `BONUS-RY cell ${i} missing`).not.toBeNull();
 
-      const redCenter   = redBox!.x + redBox!.width  / 2;
+      const redCenter = redBox!.x + redBox!.width / 2;
       const bonusCenter = bonusBox!.x + bonusBox!.width / 2;
 
       expect(
         Math.abs(redCenter - bonusCenter),
-        `position ${i}: RED x-center=${redCenter.toFixed(1)}, bonus x-center=${bonusCenter.toFixed(1)}`
+        `position ${i}: RED x-center=${redCenter.toFixed(1)}, bonus x-center=${bonusCenter.toFixed(1)}`,
       ).toBeLessThan(2);
     }
   });
@@ -119,11 +129,11 @@ test.describe('Big Points bonus row alignment', () => {
       expect(bonusBox, `BONUS-GB cell ${i} missing`).not.toBeNull();
 
       const greenCenter = greenBox!.x + greenBox!.width / 2;
-      const bonusCenter = bonusBox!.x + bonusBox!.width  / 2;
+      const bonusCenter = bonusBox!.x + bonusBox!.width / 2;
 
       expect(
         Math.abs(greenCenter - bonusCenter),
-        `position ${i}: GREEN x-center=${greenCenter.toFixed(1)}, bonus x-center=${bonusCenter.toFixed(1)}`
+        `position ${i}: GREEN x-center=${greenCenter.toFixed(1)}, bonus x-center=${bonusCenter.toFixed(1)}`,
       ).toBeLessThan(2);
     }
   });

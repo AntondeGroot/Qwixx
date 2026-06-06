@@ -1,19 +1,5 @@
 package nl.adg.qwixx.rules;
 
-import nl.adg.qwixx.action.CrossCellAction;
-import nl.adg.qwixx.action.DiceCombination;
-import nl.adg.qwixx.action.GameAction;
-import nl.adg.qwixx.data.Cell;
-import nl.adg.qwixx.data.CellTag;
-import nl.adg.qwixx.data.Row;
-import nl.adg.qwixx.data.RollResult;
-import nl.adg.qwixx.state.ActiveTurnState;
-import nl.adg.qwixx.state.GameState;
-import nl.adg.qwixx.state.RowState;
-import nl.adg.qwixx.state.SheetLayout;
-import nl.adg.qwixx.state.SheetProgress;
-import nl.adg.qwixx.state.TurnState;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,14 +8,23 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import nl.adg.qwixx.action.CrossCellAction;
+import nl.adg.qwixx.action.DiceCombination;
+import nl.adg.qwixx.action.GameAction;
+import nl.adg.qwixx.data.Cell;
+import nl.adg.qwixx.data.CellTag;
+import nl.adg.qwixx.data.RollResult;
+import nl.adg.qwixx.data.Row;
+import nl.adg.qwixx.state.ActiveTurnState;
+import nl.adg.qwixx.state.GameState;
+import nl.adg.qwixx.state.RowState;
+import nl.adg.qwixx.state.SheetLayout;
+import nl.adg.qwixx.state.SheetProgress;
+import nl.adg.qwixx.state.TurnState;
 
 class CellCrosser {
 
-    private final DiceRoller diceRoller;
-
-    CellCrosser(DiceRoller diceRoller) {
-        this.diceRoller = diceRoller;
-    }
+    CellCrosser() {}
 
     Map<Integer, Set<String>> cross(GameState state, UUID playerId, int rowIndex, String cellId) {
         Map<Integer, Set<String>> crossed = new HashMap<>();
@@ -37,6 +32,7 @@ class CellCrosser {
         return crossed;
     }
 
+    @SuppressWarnings("PMD.NullAssignment")
     List<GameAction> crossCellActions(GameState state, UUID playerId, boolean isActive, int minCrosses) {
         List<GameAction> actions   = new ArrayList<>();
         TurnState turn             = state.turnState();

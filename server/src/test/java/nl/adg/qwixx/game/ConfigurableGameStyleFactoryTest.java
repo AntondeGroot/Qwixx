@@ -1,12 +1,6 @@
 package nl.adg.qwixx.game;
 
-import nl.adg.qwixx.data.Cell;
-import nl.adg.qwixx.data.CellTag;
-import nl.adg.qwixx.data.Color;
-import nl.adg.qwixx.data.Die;
-import nl.adg.qwixx.data.Row;
-import nl.adg.qwixx.state.CardMode;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.HashSet;
 import java.util.List;
@@ -14,8 +8,13 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
+import nl.adg.qwixx.data.Cell;
+import nl.adg.qwixx.data.CellTag;
+import nl.adg.qwixx.data.Color;
+import nl.adg.qwixx.data.Die;
+import nl.adg.qwixx.data.Row;
+import nl.adg.qwixx.state.CardMode;
+import org.junit.jupiter.api.Test;
 
 class ConfigurableGameStyleFactoryTest {
 

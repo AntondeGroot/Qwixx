@@ -1,12 +1,11 @@
 package nl.adg.qwixx.e2e.utils;
 
+import java.io.File;
+import java.nio.file.Path;
 import nl.adg.qwixx.QwixxApplication;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.web.context.WebServerApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
-
-import java.io.File;
-import java.nio.file.Path;
 
 public class SpringAppTestHelper {
 

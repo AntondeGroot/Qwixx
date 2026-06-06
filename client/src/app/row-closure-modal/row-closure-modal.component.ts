@@ -13,7 +13,7 @@ export interface ClosureNotification {
   standalone: true,
   imports: [CommonModule, TranslateModule],
   templateUrl: './row-closure-modal.component.html',
-  styleUrl: './row-closure-modal.component.css'
+  styleUrl: './row-closure-modal.component.css',
 })
 export class RowClosureModalComponent {
   @Input() requests: ClosureNotification[] = [];
@@ -25,14 +25,22 @@ export class RowClosureModalComponent {
 
   @Input() lockConfirmRequest: { rowColor: Color } | null = null;
   @Output() lockYes = new EventEmitter<void>();
-  @Output() lockNo  = new EventEmitter<void>();
+  @Output() lockNo = new EventEmitter<void>();
 
   getRowColorClass(color: Color): string {
     return `cell-${color.toLowerCase()}`;
   }
 
-  onConfirm() { this.confirmSelection.emit(); }
-  onChangeSelection() { this.changeSelection.emit(); }
-  onLockYes() { this.lockYes.emit(); }
-  onLockNo()  { this.lockNo.emit(); }
+  onConfirm() {
+    this.confirmSelection.emit();
+  }
+  onChangeSelection() {
+    this.changeSelection.emit();
+  }
+  onLockYes() {
+    this.lockYes.emit();
+  }
+  onLockNo() {
+    this.lockNo.emit();
+  }
 }

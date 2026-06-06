@@ -1,5 +1,9 @@
 package nl.adg.qwixx.web;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import nl.adg.qwixx.action.CrossCellAction;
 import nl.adg.qwixx.action.DeclareLockIntentAction;
 import nl.adg.qwixx.action.DiceCombination;
@@ -13,7 +17,6 @@ import nl.adg.qwixx.action.UndoLastCrossAction;
 import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSession;
-import nl.adg.qwixx.state.SheetLayout;
 import nl.adg.qwixx.game.SessionNotFoundException;
 import nl.adg.qwixx.generated.api.MovesApiDelegate;
 import nl.adg.qwixx.generated.model.MoveRequest;
@@ -21,14 +24,10 @@ import nl.adg.qwixx.generated.model.MoveResponse;
 import nl.adg.qwixx.generated.model.MoveResult;
 import nl.adg.qwixx.rules.IllegalMoveException;
 import nl.adg.qwixx.state.GameState;
+import nl.adg.qwixx.state.SheetLayout;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 @Service
 public class MovesApiDelegateImpl implements MovesApiDelegate {
@@ -109,7 +108,7 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
         try {
             return UUID.fromString(playerId);
         } catch (IllegalArgumentException e) {
-            throw new IllegalMoveException("invalid playerId: " + playerId);
+            throw new IllegalMoveException("invalid playerId: " + playerId, e);
         }
     }
 

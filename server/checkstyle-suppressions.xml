@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.0//EN"
+    "https://checkstyle.org/dtds/suppressions_1_0.dtd">
+<suppressions>
+  <!-- Generated sources -->
+  <suppress files="[/\\]generated[/\\]" checks=".*"/>
+
+  <!-- Test files: star imports for Assertions.* and MockMvc matchers are standard practice -->
+  <suppress files="[/\\]test[/\\]" checks="AvoidStarImport"/>
+
+  <!-- GameStateMapper: generated model has classes with identical simple names as internal state
+       classes; all conflicts are resolved by FQN in code, star import covers the rest -->
+  <suppress files="GameStateMapper\.java" checks="AvoidStarImport"/>
+
+  <!-- RowClosureEvaluator is package-private; all its static members are used by these classes -->
+  <suppress files="StandardTurnRules\.java" checks="AvoidStarImport"/>
+  <suppress files="OfflineTurnRules\.java" checks="AvoidStarImport"/>
+
+  <!-- Test API helper: 'api' is a conventional short name for a test utility field -->
+  <suppress files="BaseIntegrationTest\.java" checks="ConstantName"/>
+</suppressions>

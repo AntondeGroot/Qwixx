@@ -1,12 +1,11 @@
 package nl.adg.qwixx.game;
 
-import nl.adg.qwixx.bot.BotStrategy;
-import nl.adg.qwixx.state.CardMode;
-
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import nl.adg.qwixx.bot.BotStrategy;
+import nl.adg.qwixx.state.CardMode;
 
 public class QwixxGameOptions {
 

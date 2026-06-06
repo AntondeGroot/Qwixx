@@ -1,16 +1,15 @@
 package nl.adg.qwixx.rules;
 
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import nl.adg.qwixx.action.DiceCombination;
 import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.Color;
 import nl.adg.qwixx.data.Die;
 import nl.adg.qwixx.data.RollResult;
 import nl.adg.qwixx.state.ActiveTurnState;
-
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
 
 class DiceRoller {
 

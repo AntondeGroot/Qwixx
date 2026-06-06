@@ -1,11 +1,10 @@
 package nl.adg.qwixx.rules;
 
-import nl.adg.qwixx.state.GameState;
-import nl.adg.qwixx.state.TurnState;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import nl.adg.qwixx.state.GameState;
+import nl.adg.qwixx.state.TurnState;
 
 class TurnHelper {
 

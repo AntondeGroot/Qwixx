@@ -5,4 +5,7 @@ public class GameNotFinishedException extends RuntimeException {
     public GameNotFinishedException(String sessionId) {
         super("game not finished: " + sessionId);
     }
+    public GameNotFinishedException(String sessionId, Throwable cause) {
+        super("game not finished: " + sessionId, cause);
+    }
 }

@@ -1,9 +1,9 @@
 package nl.adg.qwixx.bot;
 
-import org.junit.jupiter.api.Test;
-
 import static nl.adg.qwixx.bot.BotDecider.*;
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
 
 class BotDeciderTest {
 

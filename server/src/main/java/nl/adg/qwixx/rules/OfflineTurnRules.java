@@ -4,6 +4,9 @@ import static nl.adg.qwixx.rules.CellCrosser.getRowState;
 import static nl.adg.qwixx.rules.CellCrosser.isReachableCell;
 import static nl.adg.qwixx.rules.RowClosureEvaluator.*;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import nl.adg.qwixx.action.CrossCellAction;
 import nl.adg.qwixx.action.DeclareLockIntentAction;
 import nl.adg.qwixx.action.DiceCombination;
@@ -15,11 +18,6 @@ import nl.adg.qwixx.state.GameState;
 import nl.adg.qwixx.state.RowState;
 import nl.adg.qwixx.state.SheetLayout;
 import nl.adg.qwixx.state.SheetProgress;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 public class OfflineTurnRules extends StandardTurnRules {
 

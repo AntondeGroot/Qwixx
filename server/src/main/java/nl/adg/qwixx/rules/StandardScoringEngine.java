@@ -1,5 +1,7 @@
 package nl.adg.qwixx.rules;
 
+import java.util.EnumMap;
+import java.util.Map;
 import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.CellTag;
 import nl.adg.qwixx.data.Color;
@@ -7,9 +9,6 @@ import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.state.RowState;
 import nl.adg.qwixx.state.SheetLayout;
 import nl.adg.qwixx.state.SheetProgress;
-
-import java.util.EnumMap;
-import java.util.Map;
 
 public class StandardScoringEngine implements ScoringEngine {
 

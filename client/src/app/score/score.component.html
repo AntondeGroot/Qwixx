@@ -2,7 +2,6 @@
   <div class="loading">Loading…</div>
 } @else {
   <div class="score-screen" [attr.translate]="'no'">
-
     <!-- Sticky action bar — visible once the winner modal is dismissed via "View Scores" -->
     @if (showActionBar()) {
       <div class="action-bar">
@@ -23,69 +22,69 @@
     }
 
     <div #scoreCapture>
-    <h1 class="title">{{ 'score.finalScores' | translate }}</h1>
+      <h1 class="title">{{ 'score.finalScores' | translate }}</h1>
 
-    <div class="score-table">
+      <div class="score-table">
+        <!-- Column headers -->
+        <div class="header-row">
+          <div class="name-cell"></div>
 
-      <!-- Column headers -->
-      <div class="header-row">
-        <div class="name-cell"></div>
+          @for (col of allCols(); track col) {
+            <div
+              class="bucket-cell header-bucket"
+              [class.active-col]="activeKey() === col"
+              [class.done-col]="doneKeys().has(col)"
+            >
+              <div class="color-dot" [attr.data-col]="col.toLowerCase()"></div>
+            </div>
+          }
 
-        @for (col of allCols(); track col) {
-          <div class="bucket-cell header-bucket"
-               [class.active-col]="activeKey() === col"
-               [class.done-col]="doneKeys().has(col)">
-            <div class="color-dot" [attr.data-col]="col.toLowerCase()"></div>
+          <!-- Punishment header -->
+          <div
+            class="bucket-cell header-bucket pun-header"
+            [class.active-col]="punishActive()"
+            [class.done-col]="punishDone()"
+          >
+            <span class="pun-symbol">−5</span>
           </div>
-        }
 
-        <!-- Punishment header -->
-        <div class="bucket-cell header-bucket pun-header"
-             [class.active-col]="punishActive()"
-             [class.done-col]="punishDone()">
-          <span class="pun-symbol">−5</span>
+          <div class="total-cell header-total">{{ 'score.total' | translate }}</div>
         </div>
 
-        <div class="total-cell header-total">{{ 'score.total' | translate }}</div>
-      </div>
+        <!-- Player rows — absolutely positioned so rank drives top via CSS transition -->
+        <div class="rows-container" [style.height.px]="playerRows().length * rowH">
+          @for (player of playerRows(); track player.id) {
+            <div
+              class="player-row"
+              [class.lifting]="player.lifting"
+              [class.winner]="isWinner(player)"
+              [style.top.px]="topPx(player)"
+              [style.height.px]="playerRowHeight"
+            >
+              <div class="name-cell player-name">{{ player.name }}</div>
 
-      <!-- Player rows — absolutely positioned so rank drives top via CSS transition -->
-      <div class="rows-container" [style.height.px]="playerRows().length * rowH">
-        @for (player of playerRows(); track player.id) {
-          <div class="player-row"
-               [class.lifting]="player.lifting"
-               [class.winner]="isWinner(player)"
-               [style.top.px]="topPx(player)"
-               [style.height.px]="playerRowHeight">
+              @for (col of allCols(); track col) {
+                <div class="bucket-cell score-value" [class.active-val]="activeKey() === col">
+                  {{ player.displayed[col] }}
+                </div>
+              }
 
-            <div class="name-cell player-name">{{ player.name }}</div>
-
-            @for (col of allCols(); track col) {
-              <div class="bucket-cell score-value"
-                   [class.active-val]="activeKey() === col">
-                {{ player.displayed[col] }}
+              <!-- Punishment value counts down from 0 to a negative number -->
+              <div class="bucket-cell score-value pun-value" [class.active-val]="punishActive()">
+                {{ player.displayedPunishment }}
               </div>
-            }
 
-            <!-- Punishment value counts down from 0 to a negative number -->
-            <div class="bucket-cell score-value pun-value"
-                 [class.active-val]="punishActive()">
-              {{ player.displayedPunishment }}
+              <!-- Running total grows with each column -->
+              <div class="total-cell total-value" [class.winner-total]="isWinner(player)">
+                {{ displayedTotal(player) }}
+              </div>
             </div>
-
-            <!-- Running total grows with each column -->
-            <div class="total-cell total-value"
-                 [class.winner-total]="isWinner(player)">
-              {{ displayedTotal(player) }}
-            </div>
-
-          </div>
-        }
+          }
+        </div>
       </div>
-
-    </div><!-- /.score-table -->
-    </div><!-- /#scoreCapture -->
-
+      <!-- /.score-table -->
+    </div>
+    <!-- /#scoreCapture -->
   </div>
 
   <!-- Player's own board — shown below the score table for verification.
@@ -100,7 +99,8 @@
               <app-row
                 [row]="row"
                 [rowState]="myRowStateFor(row.id)"
-                [closed]="myIsRowClosed(row.id)" />
+                [closed]="myIsRowClosed(row.id)"
+              />
             }
             <div class="score-strip">
               <div class="score-labels">

@@ -29,8 +29,8 @@ label {
   letter-spacing: 0.05em;
 }
 
-input[type="text"],
-input[type="number"],
+input[type='text'],
+input[type='number'],
 select {
   padding: 8px 10px;
   border: 1px solid #ccc;
@@ -39,7 +39,7 @@ select {
   font-family: inherit;
 }
 
-input[type="checkbox"] {
+input[type='checkbox'] {
   width: 18px;
   height: 18px;
 }
@@ -66,7 +66,7 @@ div.option-disabled input {
   overflow-x: auto;
 }
 
-button[type="submit"] {
+button[type='submit'] {
   align-self: flex-start;
   padding: 10px 28px;
   background: #1565c0;
@@ -80,7 +80,7 @@ button[type="submit"] {
   transition: opacity 0.15s;
 }
 
-button[type="submit"]:disabled {
+button[type='submit']:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
@@ -139,11 +139,21 @@ p {
   border-radius: 6px;
 }
 
-.opt-chip-track--red    { background: rgba(211, 47,  47,  0.12); }
-.opt-chip-track--yellow { background: rgba(249, 168,  37,  0.15); }
-.opt-chip-track--green  { background: rgba( 56, 142,  60,  0.12); }
-.opt-chip-track--orange { background: rgba(230, 81,   0,   0.10); }
-.opt-chip-track--purple { background: rgba(123, 31,  162,  0.08); }
+.opt-chip-track--red {
+  background: rgba(211, 47, 47, 0.12);
+}
+.opt-chip-track--yellow {
+  background: rgba(249, 168, 37, 0.15);
+}
+.opt-chip-track--green {
+  background: rgba(56, 142, 60, 0.12);
+}
+.opt-chip-track--orange {
+  background: rgba(230, 81, 0, 0.1);
+}
+.opt-chip-track--purple {
+  background: rgba(123, 31, 162, 0.08);
+}
 
 .opt-cell {
   width: 20px;
@@ -160,9 +170,16 @@ p {
   box-sizing: border-box;
 }
 
-.opt-cell--red    { background: #d32f2f; }
-.opt-cell--yellow { background: #f9a825; color: #333; }
-.opt-cell--green  { background: #388e3c; }
+.opt-cell--red {
+  background: #d32f2f;
+}
+.opt-cell--yellow {
+  background: #f9a825;
+  color: #333;
+}
+.opt-cell--green {
+  background: #388e3c;
+}
 
 .opt-cell--diamond {
   transform: rotate(45deg);
@@ -172,13 +189,13 @@ p {
 }
 
 .opt-cell--orange {
-  background: #F57C00;
-  border-color: #E65100;
+  background: #f57c00;
+  border-color: #e65100;
 }
 
 .opt-cell--xchange {
   background: white;
-  border-color: #7B1FA2;
+  border-color: #7b1fa2;
   border-width: 2px;
 }
 

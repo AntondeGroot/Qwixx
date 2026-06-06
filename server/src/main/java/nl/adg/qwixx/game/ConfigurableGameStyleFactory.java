@@ -1,5 +1,15 @@
 package nl.adg.qwixx.game;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
 import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.CellTag;
 import nl.adg.qwixx.data.Color;
@@ -14,16 +24,6 @@ import nl.adg.qwixx.rules.StandardScoringEngine;
 import nl.adg.qwixx.rules.StandardTurnRules;
 import nl.adg.qwixx.rules.TurnRules;
 import nl.adg.qwixx.state.CardMode;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
 
 public class ConfigurableGameStyleFactory implements GameStyleFactory {
 
@@ -496,10 +496,8 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
                 int p2 = shuffled.get(j);
                 if (Math.abs(p1 - p2) < 3) continue;
                 if (prevPair != null) {
-                    boolean ok = true;
-                    for (int prev : prevPair) {
-                        if (Math.abs(p1 - prev) < 2 || Math.abs(p2 - prev) < 2) { ok = false; break; }
-                    }
+                    boolean ok = Arrays.stream(prevPair)
+                            .noneMatch(prev -> Math.abs(p1 - prev) < 2 || Math.abs(p2 - prev) < 2);
                     if (!ok) continue;
                 }
                 return new int[]{p1, p2};

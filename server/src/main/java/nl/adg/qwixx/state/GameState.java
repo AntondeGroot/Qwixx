@@ -1,12 +1,11 @@
 package nl.adg.qwixx.state;
 
-import nl.adg.qwixx.game.VariantData;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import nl.adg.qwixx.game.VariantData;
 
 // Top-level envelope. SheetLayout lives here as it is static; BoardState holds only what changes.
 public class GameState {

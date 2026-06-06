@@ -41,18 +41,25 @@ module.exports = defineConfig([
         },
       ],
       '@typescript-eslint/no-deprecated': 'error',
-      'no-restricted-imports': ['error', {
-        patterns: [
-          {
-            group: ['**/generated/model/!(models)'],
-            message: "Use the model barrel: import from '…/generated/model/models'",
-          },
-          {
-            group: ['**/generated/api/!(api)'],
-            message: "Use the API barrel: import from '…/generated/api/api'",
-          },
-        ],
-      }],
+      '@typescript-eslint/prefer-readonly': 'error',
+      '@typescript-eslint/no-floating-promises': 'error',
+      'no-console': ['error', { allow: ['warn', 'error'] }],
+      eqeqeq: ['error', 'always', { null: 'ignore' }],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/generated/model/!(models)'],
+              message: "Use the model barrel: import from '…/generated/model/models'",
+            },
+            {
+              group: ['**/generated/api/!(api)'],
+              message: "Use the API barrel: import from '…/generated/api/api'",
+            },
+          ],
+        },
+      ],
     },
   },
   {

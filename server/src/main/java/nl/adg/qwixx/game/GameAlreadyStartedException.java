@@ -5,4 +5,7 @@ public class GameAlreadyStartedException extends RuntimeException {
     public GameAlreadyStartedException(String sessionId) {
         super("game already started: " + sessionId);
     }
+    public GameAlreadyStartedException(String sessionId, Throwable cause) {
+        super("game already started: " + sessionId, cause);
+    }
 }

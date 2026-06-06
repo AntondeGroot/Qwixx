@@ -1,17 +1,16 @@
 package nl.adg.qwixx.e2e;
 
+import static nl.adg.qwixx.e2e.helpers.ScoreInteractionHelper.*;
+import static nl.adg.qwixx.e2e.utils.TestUtils.waitUntilScoreLoaded;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
 import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
 import nl.adg.qwixx.e2e.utils.TestUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.WebDriver;
-
-import java.util.List;
-
-import static nl.adg.qwixx.e2e.helpers.ScoreInteractionHelper.*;
-import static nl.adg.qwixx.e2e.utils.TestUtils.waitUntilScoreLoaded;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Verifies that all player rows remain fully within the viewport on the score

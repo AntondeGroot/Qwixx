@@ -5,86 +5,127 @@ import { test, expect } from '@playwright/test';
 // connectedCells, extraRow, randomOrder) and descriptions for all of them.
 const GAME_OPTIONS = [
   {
-    key: 'base', labelKey: 'gameOption.base',
+    key: 'base',
+    labelKey: 'gameOption.base',
     descriptionKey: 'gameOption.baseDescription',
-    type: 'ENUM', defaultValue: 'STANDARD', choices: ['STANDARD', 'LONGO'],
-    adminOnly: false, incompatibleWith: [],
+    type: 'ENUM',
+    defaultValue: 'STANDARD',
+    choices: ['STANDARD', 'LONGO'],
+    adminOnly: false,
+    incompatibleWith: [],
   },
   {
-    key: 'gameMode', labelKey: 'gameOption.gameMode',
+    key: 'gameMode',
+    labelKey: 'gameOption.gameMode',
     descriptionKey: 'gameOption.gameModeDescription',
-    type: 'ENUM', defaultValue: 'ONLINE', choices: ['ONLINE', 'OFFLINE'],
-    adminOnly: false, incompatibleWith: [],
+    type: 'ENUM',
+    defaultValue: 'ONLINE',
+    choices: ['ONLINE', 'OFFLINE'],
+    adminOnly: false,
+    incompatibleWith: [],
   },
   {
-    key: 'cardMode', labelKey: 'gameOption.cardMode',
+    key: 'cardMode',
+    labelKey: 'gameOption.cardMode',
     descriptionKey: 'gameOption.cardModeDescription',
-    type: 'ENUM', defaultValue: 'DETERMINISTIC', choices: ['DETERMINISTIC', 'PROBABILISTIC'],
-    adminOnly: false, incompatibleWith: [],
+    type: 'ENUM',
+    defaultValue: 'DETERMINISTIC',
+    choices: ['DETERMINISTIC', 'PROBABILISTIC'],
+    adminOnly: false,
+    incompatibleWith: [],
   },
   {
-    key: 'bigPoints', labelKey: 'gameOption.bigPoints',
+    key: 'bigPoints',
+    labelKey: 'gameOption.bigPoints',
     descriptionKey: 'gameOption.bigPointsDescription',
-    type: 'BOOLEAN', defaultValue: 'false',
-    adminOnly: true, incompatibleWith: ['randomOrder'],
+    type: 'BOOLEAN',
+    defaultValue: 'false',
+    adminOnly: true,
+    incompatibleWith: ['randomOrder'],
   },
   {
-    key: 'randomOrder', labelKey: 'gameOption.randomOrder',
+    key: 'randomOrder',
+    labelKey: 'gameOption.randomOrder',
     descriptionKey: 'gameOption.randomOrderDescription',
-    type: 'BOOLEAN', defaultValue: 'false',
-    adminOnly: false, incompatibleWith: ['bigPoints'],
+    type: 'BOOLEAN',
+    defaultValue: 'false',
+    adminOnly: false,
+    incompatibleWith: ['bigPoints'],
   },
   {
-    key: 'extraRow', labelKey: 'gameOption.extraRow',
+    key: 'extraRow',
+    labelKey: 'gameOption.extraRow',
     descriptionKey: 'gameOption.extraRowDescription',
-    type: 'BOOLEAN', defaultValue: 'false',
-    adminOnly: false, incompatibleWith: [],
+    type: 'BOOLEAN',
+    defaultValue: 'false',
+    adminOnly: false,
+    incompatibleWith: [],
   },
   {
-    key: 'connectedCells', labelKey: 'gameOption.connectedCells',
+    key: 'connectedCells',
+    labelKey: 'gameOption.connectedCells',
     descriptionKey: 'gameOption.connectedCellsDescription',
-    type: 'BOOLEAN', defaultValue: 'false',
-    adminOnly: false, incompatibleWith: [],
+    type: 'BOOLEAN',
+    defaultValue: 'false',
+    adminOnly: false,
+    incompatibleWith: [],
   },
   {
-    key: 'xChange', labelKey: 'gameOption.xchange',
+    key: 'xChange',
+    labelKey: 'gameOption.xchange',
     descriptionKey: 'gameOption.xchangeDescription',
-    type: 'BOOLEAN', defaultValue: 'false',
-    adminOnly: true, incompatibleWith: [],
+    type: 'BOOLEAN',
+    defaultValue: 'false',
+    adminOnly: true,
+    incompatibleWith: [],
   },
   {
-    key: 'luckyNumber', labelKey: 'gameOption.luckyNumber',
+    key: 'luckyNumber',
+    labelKey: 'gameOption.luckyNumber',
     descriptionKey: 'gameOption.luckyNumberDescription',
-    type: 'BOOLEAN', defaultValue: 'false',
-    adminOnly: true, incompatibleWith: [],
+    type: 'BOOLEAN',
+    defaultValue: 'false',
+    adminOnly: true,
+    incompatibleWith: [],
   },
   {
-    key: 'luckyCross', labelKey: 'gameOption.luckyCross',
+    key: 'luckyCross',
+    labelKey: 'gameOption.luckyCross',
     descriptionKey: 'gameOption.luckyCrossDescription',
-    type: 'BOOLEAN', defaultValue: 'false',
-    adminOnly: true, incompatibleWith: ['bigPoints'],
+    type: 'BOOLEAN',
+    defaultValue: 'false',
+    adminOnly: true,
+    incompatibleWith: ['bigPoints'],
   },
   {
-    key: 'botCount', labelKey: 'gameOption.botCount',
+    key: 'botCount',
+    labelKey: 'gameOption.botCount',
     descriptionKey: 'gameOption.botCountDescription',
-    type: 'INTEGER', defaultValue: '0', minValue: 0, maxValue: 3,
-    adminOnly: false, incompatibleWith: [],
+    type: 'INTEGER',
+    defaultValue: '0',
+    minValue: 0,
+    maxValue: 3,
+    adminOnly: false,
+    incompatibleWith: [],
   },
   {
-    key: 'botStrategy', labelKey: 'gameOption.botStrategy',
+    key: 'botStrategy',
+    labelKey: 'gameOption.botStrategy',
     descriptionKey: 'gameOption.botStrategyDescription',
-    type: 'ENUM', defaultValue: 'BALANCED',
+    type: 'ENUM',
+    defaultValue: 'BALANCED',
     choices: ['UNTRAINED', 'MOST_POINTS', 'MOST_WINS', 'BALANCED'],
-    adminOnly: false, incompatibleWith: [],
+    adminOnly: false,
+    incompatibleWith: [],
   },
 ];
 
 async function interceptOptions(page: Parameters<typeof test>[1]['page']) {
-  await page.route('**/game-options', route =>
-    route.fulfill({ contentType: 'application/json', body: JSON.stringify(GAME_OPTIONS) })
+  await page.route('**/game-options', (route) =>
+    route.fulfill({ contentType: 'application/json', body: JSON.stringify(GAME_OPTIONS) }),
   );
-  await page.route('**/games/preview**', route =>
-    route.fulfill({ contentType: 'application/json', body: JSON.stringify(null) })
+  await page.route('**/games/preview**', (route) =>
+    route.fulfill({ contentType: 'application/json', body: JSON.stringify(null) }),
   );
 }
 
@@ -113,7 +154,6 @@ async function findBotCountSelect(page: Parameters<typeof test>[1]['page']) {
 // ── Full form with chips and descriptions (the real GWT embed scenario) ─────────
 
 test.describe('Settings page — full form with chips and descriptions', () => {
-
   test.beforeEach(async ({ page }) => {
     await skipRulesRedirect(page);
     await interceptOptions(page);
@@ -135,11 +175,13 @@ test.describe('Settings page — full form with chips and descriptions', () => {
     expect(descCount).toBeGreaterThan(0);
   });
 
-  test('botCount select has options 0, 1, 2, 3 even with chips and descriptions rendered', async ({ page }) => {
+  test('botCount select has options 0, 1, 2, 3 even with chips and descriptions rendered', async ({
+    page,
+  }) => {
     const sel = await findBotCountSelect(page);
     expect(sel).not.toBeNull();
     const texts = await sel!.locator('option').allTextContents();
-    expect(texts.map(t => t.trim())).toEqual(['0', '1', '2', '3']);
+    expect(texts.map((t) => t.trim())).toEqual(['0', '1', '2', '3']);
   });
 
   test('botCount select is visible on screen', async ({ page }) => {
@@ -151,8 +193,10 @@ test.describe('Settings page — full form with chips and descriptions', () => {
   test('botCount select default is 0 (first option selected)', async ({ page }) => {
     const sel = await findBotCountSelect(page);
     expect(sel).not.toBeNull();
-    const idx  = await sel!.evaluate((el: HTMLSelectElement) => el.selectedIndex);
-    const text = await sel!.evaluate((el: HTMLSelectElement) => el.options[el.selectedIndex]?.text.trim());
+    const idx = await sel!.evaluate((el: HTMLSelectElement) => el.selectedIndex);
+    const text = await sel!.evaluate((el: HTMLSelectElement) =>
+      el.options[el.selectedIndex]?.text.trim(),
+    );
     expect(idx).toBe(0);
     expect(text).toBe('0');
   });
@@ -161,7 +205,9 @@ test.describe('Settings page — full form with chips and descriptions', () => {
     const sel = await findBotCountSelect(page);
     expect(sel).not.toBeNull();
     await sel!.selectOption({ index: 3 });
-    const text = await sel!.evaluate((el: HTMLSelectElement) => el.options[el.selectedIndex]?.text.trim());
+    const text = await sel!.evaluate((el: HTMLSelectElement) =>
+      el.options[el.selectedIndex]?.text.trim(),
+    );
     expect(text).toBe('3');
   });
 
@@ -177,6 +223,6 @@ test.describe('Settings page — full form with chips and descriptions', () => {
     const sel = await findBotCountSelect(page);
     expect(sel).not.toBeNull();
     const texts = await sel!.locator('option').allTextContents();
-    expect(texts.map(t => t.trim())).toEqual(['0', '1', '2', '3']);
+    expect(texts.map((t) => t.trim())).toEqual(['0', '1', '2', '3']);
   });
 });

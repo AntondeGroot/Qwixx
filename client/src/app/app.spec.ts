@@ -21,10 +21,10 @@ describe('App', () => {
         provideTranslateService({
           loader: {
             provide: TranslateLoader,
-            useClass: MockTranslateLoader
-          }
-        })
-      ]
+            useClass: MockTranslateLoader,
+          },
+        }),
+      ],
     }).compileComponents();
   });
 
@@ -69,7 +69,7 @@ describe('App', () => {
     service.show(
       [{ playerName: 'Alice', rowColor: Color.RED }],
       () => {},
-      () => {}
+      () => {},
     );
     fixture.detectChanges();
 
@@ -83,7 +83,11 @@ describe('App', () => {
     fixture.detectChanges();
 
     const service = TestBed.inject(RowClosureModalService);
-    service.show([{ playerName: 'Bob', rowColor: Color.BLUE }], () => {}, () => {});
+    service.show(
+      [{ playerName: 'Bob', rowColor: Color.BLUE }],
+      () => {},
+      () => {},
+    );
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.modal-overlay')).toBeTruthy();
 

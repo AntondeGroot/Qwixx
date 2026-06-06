@@ -1,9 +1,10 @@
 package nl.adg.qwixx.testapp;
 
+import java.util.HashSet;
+import java.util.Set;
 import nl.adg.qwixx.QwixxApplication;
 import nl.adg.qwixx.action.RollAction;
 import nl.adg.qwixx.data.RollResult;
-import nl.adg.qwixx.data.Color;
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSettings;
 import nl.adg.qwixx.game.Player;
@@ -13,11 +14,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
-
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Test application that creates a persistent test game session on startup.

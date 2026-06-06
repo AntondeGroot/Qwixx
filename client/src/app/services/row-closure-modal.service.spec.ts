@@ -20,7 +20,7 @@ describe('RowClosureModalService', () => {
     service.show(
       [{ playerName: 'Alice', rowColor: Color.RED }],
       () => {},
-      () => {}
+      () => {},
     );
     expect(service.requests()).toHaveLength(1);
     expect(service.requests()[0].playerName).toBe('Alice');
@@ -28,7 +28,7 @@ describe('RowClosureModalService', () => {
 
   it('show() sets confirm and change callbacks', () => {
     const onConfirm = vi.fn();
-    const onChange  = vi.fn();
+    const onChange = vi.fn();
     service.show([{ playerName: 'A', rowColor: Color.BLUE }], onConfirm, onChange);
 
     service.confirmFn!();
@@ -39,7 +39,11 @@ describe('RowClosureModalService', () => {
   });
 
   it('clear() empties requests and nulls callbacks', () => {
-    service.show([{ playerName: 'A', rowColor: Color.GREEN }], () => {}, () => {});
+    service.show(
+      [{ playerName: 'A', rowColor: Color.GREEN }],
+      () => {},
+      () => {},
+    );
     service.clear();
 
     expect(service.requests()).toEqual([]);
@@ -48,8 +52,19 @@ describe('RowClosureModalService', () => {
   });
 
   it('replaces previous requests on a second show()', () => {
-    service.show([{ playerName: 'A', rowColor: Color.RED }],   () => {}, () => {});
-    service.show([{ playerName: 'B', rowColor: Color.BLUE }, { playerName: 'C', rowColor: Color.GREEN }], () => {}, () => {});
+    service.show(
+      [{ playerName: 'A', rowColor: Color.RED }],
+      () => {},
+      () => {},
+    );
+    service.show(
+      [
+        { playerName: 'B', rowColor: Color.BLUE },
+        { playerName: 'C', rowColor: Color.GREEN },
+      ],
+      () => {},
+      () => {},
+    );
     expect(service.requests()).toHaveLength(2);
     expect(service.requests()[0].playerName).toBe('B');
   });

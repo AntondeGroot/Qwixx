@@ -3,9 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { of } from 'rxjs';
 import type { Mocked } from 'vitest';
 import { ScoreComponent } from './score.component';
-import { GamesService } from '../../generated/api/games.service';
-import { GamestatesService } from '../../generated/api/gamestates.service';
-import { PlayersService } from '../../generated/api/players.service';
+import { GamesService, GamestatesService, PlayersService } from '../../generated/api/api';
 import { environment } from '../../environments/environment';
 
 describe('ScoreComponent', () => {

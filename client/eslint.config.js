@@ -17,6 +17,12 @@ module.exports = defineConfig([
       angular.configs.tsRecommended,
     ],
     processor: angular.processInlineTemplates,
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: __dirname,
+      },
+    },
     rules: {
       '@angular-eslint/directive-selector': [
         'error',
@@ -34,6 +40,19 @@ module.exports = defineConfig([
           style: 'kebab-case',
         },
       ],
+      '@typescript-eslint/no-deprecated': 'error',
+      'no-restricted-imports': ['error', {
+        patterns: [
+          {
+            group: ['**/generated/model/!(models)'],
+            message: "Use the model barrel: import from '…/generated/model/models'",
+          },
+          {
+            group: ['**/generated/api/!(api)'],
+            message: "Use the API barrel: import from '…/generated/api/api'",
+          },
+        ],
+      }],
     },
   },
   {

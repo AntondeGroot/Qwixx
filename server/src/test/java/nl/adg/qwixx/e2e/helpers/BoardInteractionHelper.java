@@ -104,7 +104,7 @@ public class BoardInteractionHelper {
         try {
             WebElement row = driver.findElement(By.xpath(
                     SHEET + "//div[@data-color='" + rowColor + "' and contains(@class,'row')]"));
-            String classes = row.getAttribute("class");
+            String classes = row.getDomAttribute("class");
             return classes != null && classes.contains("closed");
         } catch (Exception e) {
             return false;
@@ -113,7 +113,7 @@ public class BoardInteractionHelper {
 
     // ── Lock cell ──────────────────────────────────────────────────────────────
 
-    /** Clicks the lock cell for the given row color. */
+    // Clicks the lock cell for the given row color.
 //    public static void clickLockButton(WebDriver driver, String rowColor) {
 //        driver.findElement(lockCellLocator(rowColor)).click();
 //    }

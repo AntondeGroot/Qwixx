@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
-import { Color } from '../../generated/model/color';
+import { Color } from '../../generated/model/models';
 
 export interface ClosureNotification {
   playerName: string;

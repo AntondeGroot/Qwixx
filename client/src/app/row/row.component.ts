@@ -1,8 +1,8 @@
 import { Component, computed, input, output } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
-import { SheetRow } from '../../generated/model/sheetRow';
-import { RowState } from '../../generated/model/rowState';
-import { CellTag } from '../../generated/model/cellTag';
+
+
+import { CellTag, RowState, SheetRow } from '../../generated/model/models';
 import { CellComponent } from '../cell/cell.component';
 
 @Component({

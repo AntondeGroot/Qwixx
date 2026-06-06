@@ -1,8 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RowClosureModalComponent, ClosureNotification } from './row-closure-modal.component';
 import { TranslateModule } from '@ngx-translate/core';
-import { Color } from '../../generated/model/color';
-import { DebugElement } from '@angular/core';
+import { Color } from '../../generated/model/models';
 
 describe('RowClosureModalComponent', () => {
   let component: RowClosureModalComponent;

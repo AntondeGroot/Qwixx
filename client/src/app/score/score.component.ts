@@ -4,15 +4,9 @@ import { environment } from '../../environments/environment';
 import { firstValueFrom, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { TranslateModule } from '@ngx-translate/core';
-import { GamesService } from '../../generated/api/games.service';
-import { GamestatesService } from '../../generated/api/gamestates.service';
-import { PlayersService } from '../../generated/api/players.service';
-import { ScoreCard } from '../../generated/model/scoreCard';
-import { GameState } from '../../generated/model/gameState';
-import { RowState } from '../../generated/model/rowState';
+import { GamesService, GamestatesService, PlayersService } from '../../generated/api/api';
+import { CellTag, GameState, RowState, ScoreCard, SheetRow } from '../../generated/model/models';
 import { RowComponent } from '../row/row.component';
-import { CellTag } from '../../generated/model/cellTag';
-import { SheetRow } from '../../generated/model/sheetRow';
 
 const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
 

@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { CellTag } from '../../generated/model/cellTag';
-import { SheetCell } from '../../generated/model/sheetCell';
+
+import { CellTag, SheetCell } from '../../generated/model/models';
 import { CellComponent } from './cell.component';
 
 function makeCell(overrides: Partial<SheetCell> = {}): SheetCell {

@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { RowClosureModalService } from './row-closure-modal.service';
-import { Color } from '../../generated/model/color';
+import { Color } from '../../generated/model/models';
 
 describe('RowClosureModalService', () => {
   let service: RowClosureModalService;

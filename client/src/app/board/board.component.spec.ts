@@ -1,17 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { of, Subject, throwError } from 'rxjs';
 import type { Mocked } from 'vitest';
 import { provideTranslateService, TranslateLoader, TranslationObject } from '@ngx-translate/core';
 import { Observable } from 'rxjs';
-import { GamestatesService } from '../../generated/api/gamestates.service';
-import { MovesService } from '../../generated/api/moves.service';
-import { Color } from '../../generated/model/color';
-import { GameState } from '../../generated/model/gameState';
-import { MoveType } from '../../generated/model/moveType';
-import { TurnPhase } from '../../generated/model/turnPhase';
+import { GamestatesService, MovesService } from '../../generated/api/api';
+import { Color, GameState, MoveType, TurnPhase } from '../../generated/model/models';
 import { RowClosureModalService } from '../services/row-closure-modal.service';
 import { DiceSvgService } from '../dice/dice-svg.service';
 import { BoardComponent } from './board.component';
@@ -1000,7 +996,7 @@ describe('BoardComponent — row-closure modal delegation', () => {
       ));
 
       await TestBed.configureTestingModule({
-        imports: [BoardComponent, HttpClientTestingModule],
+        imports: [BoardComponent],
         providers: [
           { provide: ActivatedRoute,    useValue: { snapshot: { paramMap: { get: () => '' } } } },
           { provide: GamestatesService, useValue: { getGameState: () => of(makeState()) } },
@@ -1008,6 +1004,7 @@ describe('BoardComponent — row-closure modal delegation', () => {
           { provide: DiceSvgService,    useValue: mockDiceSvgService },
           provideRouter([]),
           provideTranslateService({ loader: { provide: TranslateLoader, useClass: MockLoader } }),
+          provideHttpClientTesting(),
         ],
       }).compileComponents();
 
@@ -1089,7 +1086,7 @@ describe('BoardComponent — row-closure modal delegation', () => {
           activeId: OTHER_ID,
           passiveQueue: [PLAYER_ID],
         }));
-        TestBed.flushEffects();
+        TestBed.tick();
         expect(modalService.requests()).toHaveLength(0);
       });
 
@@ -1100,7 +1097,7 @@ describe('BoardComponent — row-closure modal delegation', () => {
           activeId: OTHER_ID,
           passiveQueue: [PLAYER_ID],
         }));
-        TestBed.flushEffects();
+        TestBed.tick();
         expect(modalService.requests()).toHaveLength(1);
         expect(modalService.requests()[0].rowColor).toBe(Color.BLUE);
       });
@@ -1112,7 +1109,7 @@ describe('BoardComponent — row-closure modal delegation', () => {
           activeId: PLAYER_ID,
           passiveQueue: [OTHER_ID],
         }));
-        TestBed.flushEffects();
+        TestBed.tick();
         expect(modalService.requests()).toHaveLength(1);
         expect(modalService.requests()[0].rowColor).toBe(Color.BLUE);
       });
@@ -1124,7 +1121,7 @@ describe('BoardComponent — row-closure modal delegation', () => {
           activeId: PLAYER_ID,
           passiveQueue: [OTHER_ID],
         }));
-        TestBed.flushEffects();
+        TestBed.tick();
         expect(modalService.requests()).toHaveLength(0);
       });
 
@@ -1142,7 +1139,7 @@ describe('BoardComponent — row-closure modal delegation', () => {
         } as GameState);
         // Simulate pendingAutoLock being set (passive went through YES/NO modal).
         (component as any).pendingAutoLock.set({ rowId: 'row-blue', autoLock: true, cellId: 'cell-3' });
-        TestBed.flushEffects();
+        TestBed.tick();
         // Modal must be suppressed — passive should see the board (and the lock cross) instead.
         expect(modalService.requests()).toHaveLength(0);
       });
@@ -1161,7 +1158,7 @@ describe('BoardComponent — row-closure modal delegation', () => {
         (component as any).suppressModal.set(true); // simulate prior OK click
         // No pendingAutoLock — regular cross, not a lock confirmation.
         (component as any).pendingAutoLock.set(null);
-        TestBed.flushEffects();
+        TestBed.tick();
         // Modal re-appears (hasPendingCross=true) so the passive can confirm their cross.
         expect(modalService.requests()).toHaveLength(1);
       });

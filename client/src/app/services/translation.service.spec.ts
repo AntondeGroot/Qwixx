@@ -9,7 +9,7 @@ describe('TranslationService', () => {
 
   beforeEach(() => {
     const translateServiceMock = {
-      setDefaultLang: vi.fn(),
+      setFallbackLang: vi.fn(),
       addLangs: vi.fn(),
       use: vi.fn(() => of({}))
     };

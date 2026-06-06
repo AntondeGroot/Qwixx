@@ -5,6 +5,7 @@
   "yourTurn": "Din tur",
   "playerTurn": "{{ name }}s tur",
   "confirm": "Bekreft",
+  "leaveGameConfirm": "Er du sikker på at du vil forlate spillet?",
   "roll": "Kast",
   "pass": "Pass",
   "endTurn": "Avslutt Tur",

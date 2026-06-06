@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = MovesApiController.class)
-@Import({MovesApiDelegateImpl.class, GlobalExceptionHandler.class, SseEmitterRegistry.class})
+@Import({MovesApiDelegateImpl.class, GlobalExceptionHandler.class, SseEmitterRegistry.class, GameFinishedNotifier.class})
 class MovesApiDelegateImplTest {
 
     @Autowired

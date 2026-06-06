@@ -92,6 +92,10 @@ paths:
                   items:
                     type: integer
                   description: Shuffled list of available bot profile-pic indices; each bot gets the next one (no duplicates).
+                callbackUrl:
+                  type: string
+                  nullable: true
+                  description: URL to POST to when the game finishes (empty body). Best-effort — failures are logged and ignored.
       responses:
         '200':
           description: Game was started

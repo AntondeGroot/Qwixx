@@ -5,6 +5,7 @@
   "yourTurn": "Du bist dran",
   "playerTurn": "{{ name }} ist dran",
   "confirm": "Bestätigen",
+  "leaveGameConfirm": "Möchtest du das Spiel wirklich verlassen?",
   "roll": "Würfeln",
   "pass": "Passen",
   "endTurn": "Zug beenden",

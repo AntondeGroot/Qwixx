@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { NavigationEnd, RouterOutlet, Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -8,13 +8,23 @@ import { LanguageSelectorComponent } from './language-selector/language-selector
 import { RowClosureModalComponent } from './row-closure-modal/row-closure-modal.component';
 import { RowClosureModalService } from './services/row-closure-modal.service';
 import { TranslationService } from './services/translation.service';
-
+import { RoomService } from './services/room.service';
+import { TranslateModule } from '@ngx-translate/core';
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, LanguageSelectorComponent, RowClosureModalComponent],
+  imports: [RouterOutlet, LanguageSelectorComponent, RowClosureModalComponent, TranslateModule],
   template: `
     <div class="app-container">
       <div class="top-controls">
+        @if (isOnGame() && roomService.roomId()) {
+          <button class="exit-btn" (click)="showExitConfirm.set(true)" aria-label="Back to room">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="exit-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        }
         <button class="rules-btn" (click)="openRules()" aria-label="How to play">
           <!-- Book / study icon adapted from study-icon.svg, using currentColor -->
           <svg viewBox="0 0 122.88 96.16" xmlns="http://www.w3.org/2000/svg" class="rules-icon" [class.upright]="isOnRules()">
@@ -44,6 +54,17 @@ import { TranslationService } from './services/translation.service';
         (lockYes)="modal.lockConfirmYesFn?.()"
         (lockNo)="modal.lockConfirmNoFn?.()">
       </app-row-closure-modal>
+      @if (showExitConfirm()) {
+        <div class="exit-confirm-overlay">
+          <div class="exit-confirm-dialog">
+            <p>{{ 'leaveGameConfirm' | translate }}</p>
+            <div class="exit-confirm-buttons">
+              <button class="exit-confirm-yes" (click)="confirmExit()">{{ 'rowClosure.yes' | translate }}</button>
+              <button class="exit-confirm-no" (click)="showExitConfirm.set(false)">{{ 'rowClosure.no' | translate }}</button>
+            </div>
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -67,7 +88,7 @@ import { TranslationService } from './services/translation.service';
       gap: 0;
     }
 
-    .rules-btn {
+    .rules-btn, .exit-btn {
       background: none;
       border: none;
       padding: 8px;
@@ -82,9 +103,15 @@ import { TranslationService } from './services/translation.service';
       &:hover { opacity: 0.7; }
     }
 
-    .rules-icon {
+    .rules-icon, .exit-icon {
       width: 24px;
       height: 24px;
+    }
+
+    @media (orientation: portrait) {
+      .exit-icon {
+        transform: rotate(90deg);
+      }
     }
 
     /* In portrait the board HTML is rotated 90° CW inside the real viewport.
@@ -105,13 +132,71 @@ import { TranslationService } from './services/translation.service';
         transform: none;
       }
     }
+
+    .exit-confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .exit-confirm-dialog {
+      background: #fff;
+      color: #000;
+      border-radius: 12px;
+      padding: 24px 28px;
+      max-width: 320px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+
+      p {
+        margin: 0 0 20px;
+        font-size: 1.05rem;
+        line-height: 1.4;
+      }
+    }
+
+    .exit-confirm-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+
+      button {
+        padding: 10px 28px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        cursor: pointer;
+        font-weight: 600;
+      }
+    }
+
+    .exit-confirm-yes {
+      background: #d32f2f;
+      color: #fff;
+
+      &:hover { background: #b71c1c; }
+    }
+
+    .exit-confirm-no {
+      background: #e0e0e0;
+      color: #000;
+
+      &:hover { background: #bdbdbd; }
+    }
   `]
 })
 export class App implements OnInit {
   private translationService = inject(TranslationService);
   private router             = inject(Router);
   private location           = inject(Location);
-  readonly modal = inject(RowClosureModalService);
+  readonly modal      = inject(RowClosureModalService);
+  readonly roomService = inject(RoomService);
+  readonly showExitConfirm = signal(false);
 
   readonly isOnRules = toSignal(
     this.router.events.pipe(
@@ -119,6 +204,14 @@ export class App implements OnInit {
       map(() => this.router.url.startsWith('/rules'))
     ),
     { initialValue: this.router.url.startsWith('/rules') }
+  );
+
+  readonly isOnGame = toSignal(
+    this.router.events.pipe(
+      filter(e => e instanceof NavigationEnd),
+      map(() => this.router.url.startsWith('/game/'))
+    ),
+    { initialValue: this.router.url.startsWith('/game/') }
   );
 
   ngOnInit() {
@@ -148,5 +241,10 @@ export class App implements OnInit {
     } else {
       this.router.navigate(['/rules']);
     }
+  }
+
+  confirmExit() {
+    this.showExitConfirm.set(false);
+    this.roomService.exit();
   }
 }

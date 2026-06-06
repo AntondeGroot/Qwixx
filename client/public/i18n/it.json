@@ -5,6 +5,7 @@
   "yourTurn": "Il tuo turno",
   "playerTurn": "È il turno di {{ name }}",
   "confirm": "Conferma",
+  "leaveGameConfirm": "Sei sicuro di voler lasciare il gioco?",
   "roll": "Lancia",
   "pass": "Passa",
   "endTurn": "Fine Turno",

@@ -44,6 +44,7 @@ public class GameSession {
     private volatile Map<String, Object> proposedOptions = new HashMap<>();
     private final List<Player> players = new ArrayList<>();
     private final Set<UUID>    botPlayerIds  = new LinkedHashSet<>();
+    private final Set<UUID>    leftPlayerIds = new LinkedHashSet<>();
     private final Map<UUID, nl.adg.qwixx.bot.BotProfile> botProfiles = new HashMap<>();
     private       GameState   state;
     private       SessionStatus status = SessionStatus.WAITING;
@@ -75,6 +76,15 @@ public class GameSession {
             throw new IllegalStateException("cannot remove players while game is in progress");
         boolean removed = players.removeIf(p -> p.id().equals(playerId));
         if (!removed) throw new IllegalArgumentException("player not found: " + playerId);
+    }
+
+    /** Called when a human player leaves during an in-progress game. Ends the game only when all humans have left. */
+    public synchronized void exitGame(UUID playerId) {
+        boolean known = players.stream().anyMatch(p -> p.id().equals(playerId));
+        if (!known) throw new IllegalArgumentException("player not found: " + playerId);
+        leftPlayerIds.add(playerId);
+        boolean allGone = humanPlayers().stream().allMatch(p -> leftPlayerIds.contains(p.id()));
+        if (allGone) forceFinish();
     }
 
     public synchronized void start() {

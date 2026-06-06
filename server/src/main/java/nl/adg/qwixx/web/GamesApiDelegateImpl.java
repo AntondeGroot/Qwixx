@@ -37,6 +37,9 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
     @Autowired
     private LobbyController lobbyController;
 
+    @Autowired
+    private GameFinishedNotifier gameFinishedNotifier;
+
     @Override
     public ResponseEntity<CreateNewGame201Response> createNewGame(NewGameRequest req) {
         String id = GameRegistry.createGame(req.getRoomName(), req.getMaxPlayers(),
@@ -61,6 +64,9 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
         GameSession session = require(sessionId);
         List<Integer> botPics = (req != null && req.getBotProfilePics() != null)
                 ? req.getBotProfilePics() : List.of();
+        if (req != null) {
+            gameFinishedNotifier.register(sessionId, req.getCallbackUrl());
+        }
         try {
             session.start(botPics);
         } catch (IllegalStateException ex) {
@@ -117,11 +123,16 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
     public ResponseEntity<Void> leaveGame(String sessionId, String playerId) {
         GameSession session = require(sessionId);
         try {
-            session.removePlayer(UUID.fromString(playerId));
+            if (session.status() == SessionStatus.IN_PROGRESS) {
+                session.exitGame(UUID.fromString(playerId));
+            } else {
+                session.removePlayer(UUID.fromString(playerId));
+            }
         } catch (IllegalArgumentException ex) {
             throw new SessionNotFoundException(playerId);
         }
         lobbyController.emitLobby(sessionId, session);
+        gameFinishedNotifier.checkAndNotify(sessionId, session);
         return ResponseEntity.noContent().build();
     }
 

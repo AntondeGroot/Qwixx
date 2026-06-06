@@ -11,11 +11,13 @@ import { environment } from '../environments/environment';
 import { LocaleInterceptor } from './interceptors/locale.interceptor';
 import { TranslationService } from './services/translation.service';
 
+const I18N_VERSION = Date.now();
+
 export class HttpLoaderFactory implements TranslateLoader {
   constructor(private http: HttpClient) {}
 
   getTranslation(lang: string): Observable<TranslationObject> {
-    return this.http.get<TranslationObject>(`./i18n/${lang}.json`);
+    return this.http.get<TranslationObject>(`./i18n/${lang}.json?v=${I18N_VERSION}`);
   }
 }
 

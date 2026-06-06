@@ -3,6 +3,7 @@ package nl.adg.qwixx.web;
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSettings;
 import nl.adg.qwixx.game.Player;
+import nl.adg.qwixx.game.SessionStatus;
 import nl.adg.qwixx.generated.api.GamesApiController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,11 +13,12 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = GamesApiController.class)
-@Import({GamesApiDelegateImpl.class, GlobalExceptionHandler.class, SseEmitterRegistry.class, LobbyController.class})
+@Import({GamesApiDelegateImpl.class, GlobalExceptionHandler.class, SseEmitterRegistry.class, LobbyController.class, GameFinishedNotifier.class})
 class GamesApiDelegateImplTest {
 
     @Autowired
@@ -213,6 +215,45 @@ class GamesApiDelegateImplTest {
         mvc.perform(delete("/games/{id}/players/{pid}", id,
                         "00000000-0000-0000-0000-000000000000"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void leaveGameReturns204WhenGameInProgress() throws Exception {
+        String id = GameRegistry.createGame("room", 4, GameSettings.builder().build());
+        Player alice = Player.of("Alice");
+        GameRegistry.getGame(id).addPlayer(alice);
+        GameRegistry.getGame(id).start();
+
+        mvc.perform(delete("/games/{id}/players/{pid}", id, alice.id().toString()))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void leaveGameFinishesSessionWhenLastHumanLeaves() throws Exception {
+        String id = GameRegistry.createGame("room", 4, GameSettings.builder().build());
+        Player alice = Player.of("Alice");
+        GameRegistry.getGame(id).addPlayer(alice);
+        GameRegistry.getGame(id).start();
+
+        mvc.perform(delete("/games/{id}/players/{pid}", id, alice.id().toString()))
+                .andExpect(status().isNoContent());
+
+        assertEquals(SessionStatus.FINISHED, GameRegistry.getGame(id).status());
+    }
+
+    @Test
+    void leaveGameKeepsSessionRunningWhenOtherHumansRemain() throws Exception {
+        String id = GameRegistry.createGame("room", 4, GameSettings.builder().build());
+        Player alice = Player.of("Alice");
+        Player bob   = Player.of("Bob");
+        GameRegistry.getGame(id).addPlayer(alice);
+        GameRegistry.getGame(id).addPlayer(bob);
+        GameRegistry.getGame(id).start();
+
+        mvc.perform(delete("/games/{id}/players/{pid}", id, alice.id().toString()))
+                .andExpect(status().isNoContent());
+
+        assertEquals(SessionStatus.IN_PROGRESS, GameRegistry.getGame(id).status());
     }
 
     // --- GET /games/{sessionId}/scores ---

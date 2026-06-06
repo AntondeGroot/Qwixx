@@ -5,6 +5,7 @@
   "yourTurn": "Your turn",
   "playerTurn": "{{ name }}'s turn",
   "confirm": "Confirm",
+  "leaveGameConfirm": "Are you sure you want to leave the game?",
   "roll": "Roll",
   "pass": "Pass",
   "endTurn": "End Turn",

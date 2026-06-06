@@ -21,6 +21,7 @@ import { PlayerListComponent } from '../player-list/player-list.component';
 import { RowComponent } from '../row/row.component';
 import { RowClosureModalService } from '../services/row-closure-modal.service';
 import { AudioService } from '../services/audio.service';
+import { RoomService } from '../services/room.service';
 
 @Component({
   selector: 'app-board',
@@ -36,6 +37,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly host               = inject(ElementRef<HTMLElement>);
   private readonly rowClosureModal    = inject(RowClosureModalService);
   private readonly audio              = inject(AudioService);
+  private readonly roomService        = inject(RoomService);
 
   sessionId   = signal('');
   playerId    = signal('');
@@ -286,8 +288,10 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit() {
     const sid = this.route.snapshot.paramMap.get('sessionId') ?? '';
     const pid = this.route.snapshot.paramMap.get('playerId') ?? '';
+    const rid = this.route.snapshot.queryParamMap.get('roomid') ?? null;
     this.sessionId.set(sid);
     this.playerId.set(pid);
+    this.roomService.setGame(sid, pid, rid);
     this.fetchState();
     this.setupSse(sid);
   }

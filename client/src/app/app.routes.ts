@@ -19,7 +19,8 @@ export const routes: Routes = [
     redirectTo: ({ queryParams }) => {
       const localeParam = queryParams['locale'] ? `?locale=${queryParams['locale']}` : '';
       if (queryParams['sessionid'] && queryParams['playerid']) {
-        return `/game/${queryParams['sessionid']}/${queryParams['playerid']}${localeParam}`;
+        const roomParam = queryParams['roomid'] ? `${localeParam ? '&' : '?'}roomid=${queryParams['roomid']}` : '';
+        return `/game/${queryParams['sessionid']}/${queryParams['playerid']}${localeParam}${roomParam}`;
       }
       return `/settings${localeParam}`;
     }

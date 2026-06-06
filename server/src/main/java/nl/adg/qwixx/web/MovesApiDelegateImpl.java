@@ -36,6 +36,9 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
     @Autowired
     private SseEmitterRegistry sseRegistry;
 
+    @Autowired
+    private GameFinishedNotifier gameFinishedNotifier;
+
     @Override
     public ResponseEntity<MoveResponse> makeMove(String sessionId, String playerId,
             MoveRequest req) {
@@ -52,6 +55,7 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
             sseRegistry.emit(sessionId, intermediate, session);
         });
         sseRegistry.emit(sessionId, newState, session);
+        gameFinishedNotifier.checkAndNotify(sessionId, session);
 
         MoveResult result = newState.gameOver() ? MoveResult.GAME_OVER : MoveResult.ACCEPTED;
 

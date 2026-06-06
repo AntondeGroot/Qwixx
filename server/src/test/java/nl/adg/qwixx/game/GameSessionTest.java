@@ -194,4 +194,74 @@ class GameSessionTest {
         s.addPlayer(Player.of("Alice"));
         assertThrows(IllegalStateException.class, () -> s.getScore(UUID.randomUUID()));
     }
+
+    // --- exitGame ---
+
+    @Test
+    void exitGame_singleHuman_finishesGame() {
+        GameSession s = session(4);
+        Player alice = Player.of("Alice");
+        s.addPlayer(alice);
+        s.start();
+        assertEquals(SessionStatus.IN_PROGRESS, s.status());
+
+        s.exitGame(alice.id());
+
+        assertEquals(SessionStatus.FINISHED, s.status());
+    }
+
+    @Test
+    void exitGame_firstOfTwoHumans_gameStaysInProgress() {
+        GameSession s = session(4);
+        Player alice = Player.of("Alice");
+        Player bob   = Player.of("Bob");
+        s.addPlayer(alice);
+        s.addPlayer(bob);
+        s.start();
+
+        s.exitGame(alice.id());
+
+        assertEquals(SessionStatus.IN_PROGRESS, s.status(),
+                "game must continue while at least one human player remains");
+    }
+
+    @Test
+    void exitGame_lastHuman_finishesGame() {
+        GameSession s = session(4);
+        Player alice = Player.of("Alice");
+        Player bob   = Player.of("Bob");
+        s.addPlayer(alice);
+        s.addPlayer(bob);
+        s.start();
+
+        s.exitGame(alice.id());
+        s.exitGame(bob.id());
+
+        assertEquals(SessionStatus.FINISHED, s.status(),
+                "game must end when the last human leaves");
+    }
+
+    @Test
+    void exitGame_humanWithBots_botsDoNotCountAsPlayers() {
+        GameSession s = new GameSession(UUID.randomUUID().toString(), "test", 4,
+                GameSettings.builder().botCount(2).build());
+        Player alice = Player.of("Alice");
+        s.addPlayer(alice);
+        s.start();
+
+        s.exitGame(alice.id());
+
+        assertEquals(SessionStatus.FINISHED, s.status(),
+                "game must end when the only human leaves, regardless of remaining bots");
+    }
+
+    @Test
+    void exitGame_unknownPlayer_throwsIllegalArgumentException() {
+        GameSession s = session(4);
+        s.addPlayer(Player.of("Alice"));
+        s.start();
+
+        assertThrows(IllegalArgumentException.class,
+                () -> s.exitGame(UUID.randomUUID()));
+    }
 }

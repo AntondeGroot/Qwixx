@@ -5,6 +5,7 @@
   "yourTurn": "Jouw beurt",
   "playerTurn": "{{ name }} is aan de beurt",
   "confirm": "Bevestigen",
+  "leaveGameConfirm": "Weet je zeker dat je het spel wilt verlaten?",
   "roll": "Rol",
   "pass": "Pas",
   "endTurn": "Einde Beurt",

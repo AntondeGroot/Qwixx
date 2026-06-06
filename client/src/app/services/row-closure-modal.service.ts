@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { Color } from '../../generated/model/color';
+import { Color } from '../../generated/model/models';
 import { ClosureNotification } from '../row-closure-modal/row-closure-modal.component';
 
 @Injectable({ providedIn: 'root' })

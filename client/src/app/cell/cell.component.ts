@@ -1,6 +1,6 @@
 import { Component, computed, input, output } from '@angular/core';
-import { SheetCell } from '../../generated/model/sheetCell';
-import { CellTag } from '../../generated/model/cellTag';
+
+import { CellTag, SheetCell } from '../../generated/model/models';
 
 @Component({
   selector: 'app-cell',

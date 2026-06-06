@@ -170,7 +170,7 @@ public class ScoreInteractionHelper {
     public static boolean isMobileScaleApplied(WebDriver driver) {
         try {
             WebElement host = driver.findElement(By.tagName("app-score"));
-            String style = host.getAttribute("style");
+            String style = host.getDomAttribute("style");
             return style != null && style.contains("--mobile-scale:");
         } catch (Exception e) {
             return false;

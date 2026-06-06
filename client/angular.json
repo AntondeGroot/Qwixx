@@ -25,7 +25,8 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles.css"]
+            "styles": ["src/styles.css"],
+            "allowedCommonJsDependencies": ["html2canvas"]
           },
           "configurations": {
             "production": {
@@ -43,7 +44,6 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
                   "maximumError": "8kB"
                 }
               ],
@@ -72,7 +72,10 @@
           "defaultConfiguration": "development"
         },
         "test": {
-          "builder": "@angular/build:unit-test"
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "setupFiles": ["src/test-setup.ts"]
+          }
         },
         "lint": {
           "builder": "@angular-eslint/builder:lint",

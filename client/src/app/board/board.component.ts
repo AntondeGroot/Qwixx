@@ -1,21 +1,10 @@
 import { AfterViewInit, Component, computed, effect, ElementRef, HostListener, inject, OnDestroy, OnInit, signal, untracked } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { TranslateModule } from '@ngx-translate/core';
-import { GamestatesService } from '../../generated/api/gamestates.service';
-import { MovesService } from '../../generated/api/moves.service';
-import { CellTag } from '../../generated/model/cellTag';
-import { Color } from '../../generated/model/color';
-import { GameState } from '../../generated/model/gameState';
-import { MoveRequest } from '../../generated/model/moveRequest';
-import { MoveType } from '../../generated/model/moveType';
-import { RowState } from '../../generated/model/rowState';
-import { SheetCell } from '../../generated/model/sheetCell';
-import { SheetLayout } from '../../generated/model/sheetLayout';
-import { SheetProgress } from '../../generated/model/sheetProgress';
-import { SheetRow } from '../../generated/model/sheetRow';
-import { TurnPhase } from '../../generated/model/turnPhase';
+import { GamestatesService, MovesService } from '../../generated/api/api';
+import { CellTag, Color, GameState, MoveRequest, MoveType, RowState, SheetCell, SheetLayout, SheetProgress, SheetRow, TurnPhase } from '../../generated/model/models';
 import { DiceComponent } from '../dice/dice.component';
 import { PlayerListComponent } from '../player-list/player-list.component';
 import { RowComponent } from '../row/row.component';
@@ -25,7 +14,7 @@ import { RoomService } from '../services/room.service';
 
 @Component({
   selector: 'app-board',
-  imports: [RouterLink, RowComponent, DiceComponent, PlayerListComponent, TranslateModule],
+  imports: [RowComponent, DiceComponent, PlayerListComponent, TranslateModule],
   templateUrl: './board.component.html',
   styleUrl: './board.component.css'
 })
@@ -55,51 +44,6 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   private moveSub?: Subscription;
   private stateSub?: Subscription;
 
-  // Sync modal state to the service so the modal renders at the root level,
-  // outside the board's CSS transform (which would break position:fixed on mobile).
-  private readonly _modalSync = effect(() => {
-    const myName = this.playerName(this.playerId());
-    const allRequests = this.gameState()?.closureNotifications ?? [];
-    // Show requests from OTHER players only — the declarant never sees their own notification.
-    // All players (active and passive) can receive notifications, not just passives.
-    const requests = allRequests.filter(r => r.playerName !== myName);
-
-    if (requests.length === 0) {
-      // No pending closure from others — reset suppression so the next intent shows fresh.
-      untracked(() => this.suppressModal.set(false));
-      this.rowClosureModal.clear();
-      return;
-    }
-
-    const isPassive = this.isInPassiveQueue();
-    // Keep modal suppressed when the player is awaiting a lock-declaration auto-send
-    // after confirming the YES/NO prompt (Longo second-to-last cell).
-    const lockConfirmInProgress = isPassive && this.pendingAutoLock() !== null;
-    // Active player re-queued for final look: treat as hard-suppress (their pending crosses
-    // are from the active turn, not a passive cross, so auto-unsuppress must not fire).
-    const isActiveFinalReview = this.isMyTurn() && isPassive;
-    // Passive: auto-unsuppress when they make a new cross (so the modal re-appears).
-    // Active (normal or final-review): stay suppressed — they've acknowledged the notification.
-    const suppress = lockConfirmInProgress
-      || (this.suppressModal() && (!isPassive || isActiveFinalReview || this.pendingCellIds().size === 0));
-    if (suppress) {
-      this.rowClosureModal.clear();
-    } else {
-      const wasHidden = untracked(() => this.rowClosureModal.requests().length === 0);
-      this.rowClosureModal.show(
-        requests,
-        () => this.onConfirmRowClosure(),
-        () => this.onChangeRowClosure(),
-        // Show the two-button layout when there is something actionable.
-        // The reQueuedThisTurn flag covers passives who were re-queued mid-turn (e.g. after
-        // already having passed): they see [Change = RESET_TURN][OK = dismiss].
-        // Fresh passives who haven't acted yet see only [OK = dismiss].
-        this.hasPendingPassiveCross() || this.hasPendingActiveCross() || this.hasRevertableEndTurn() || this.hasRevertablePassiveEndTurn() || (this.canPassPassive() && this.reQueuedThisTurn()),
-        this.hasPendingPassiveCross()  // confirmEndsRound: show "Confirm last selection" label
-      );
-      if (wasHidden) this.audio.play(AudioService.ROW_CLOSURE_BELL);
-    }
-  });
   private rollStartTime = 0;
   private readonly pendingAutoLock = signal<{ rowId: string; autoLock: boolean; cellId: string } | null>(null);
 
@@ -111,14 +55,6 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly TurnPhase = TurnPhase;
 
   private gameOverNavigated = false;
-  private _gameOverEffect = effect(() => {
-    if (this.gameState()?.gameOver && !this.gameOverNavigated) {
-      this.gameOverNavigated = true;
-      setTimeout(() => {
-        this.router.navigate(['/score', this.sessionId()], { queryParams: { pid: this.playerId() } });
-      }, 1500);
-    }
-  });
 
   isOffline = computed(() => this.gameState() !== null && this.gameState()!.turnState == null);
 
@@ -285,6 +221,70 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   });
 
 
+  constructor() {
+    // Sync modal state to the service so the modal renders at the root level,
+    // outside the board's CSS transform (which would break position:fixed on mobile).
+    effect(() => {
+      const myName = this.playerName(this.playerId());
+      const allRequests = this.gameState()?.closureNotifications ?? [];
+      // Show requests from OTHER players only — the declarant never sees their own notification.
+      // All players (active and passive) can receive notifications, not just passives.
+      const requests = allRequests.filter(r => r.playerName !== myName);
+
+      if (requests.length === 0) {
+        // No pending closure from others — reset suppression so the next intent shows fresh.
+        untracked(() => this.suppressModal.set(false));
+        this.rowClosureModal.clear();
+        return;
+      }
+
+      const isPassive = this.isInPassiveQueue();
+      // Keep modal suppressed when the player is awaiting a lock-declaration auto-send
+      // after confirming the YES/NO prompt (Longo second-to-last cell).
+      const lockConfirmInProgress = isPassive && this.pendingAutoLock() !== null;
+      // Active player re-queued for final look: treat as hard-suppress (their pending crosses
+      // are from the active turn, not a passive cross, so auto-unsuppress must not fire).
+      const isActiveFinalReview = this.isMyTurn() && isPassive;
+      // Passive: auto-unsuppress when they make a new cross (so the modal re-appears).
+      // Active (normal or final-review): stay suppressed — they've acknowledged the notification.
+      const suppress = lockConfirmInProgress
+        || (this.suppressModal() && (!isPassive || isActiveFinalReview || this.pendingCellIds().size === 0));
+      if (suppress) {
+        this.rowClosureModal.clear();
+      } else {
+        const wasHidden = untracked(() => this.rowClosureModal.requests().length === 0);
+        this.rowClosureModal.show(
+          requests,
+          () => this.onConfirmRowClosure(),
+          () => this.onChangeRowClosure(),
+          // Show the two-button layout when there is something actionable.
+          // The reQueuedThisTurn flag covers passives who were re-queued mid-turn (e.g. after
+          // already having passed): they see [Change = RESET_TURN][OK = dismiss].
+          // Fresh passives who haven't acted yet see only [OK = dismiss].
+          this.hasPendingPassiveCross() || this.hasPendingActiveCross() || this.hasRevertableEndTurn() || this.hasRevertablePassiveEndTurn() || (this.canPassPassive() && this.reQueuedThisTurn()),
+          this.hasPendingPassiveCross()  // confirmEndsRound: show "Confirm last selection" label
+        );
+        if (wasHidden) this.audio.play(AudioService.ROW_CLOSURE_BELL);
+      }
+    });
+
+    effect(() => {
+      if (this.gameState()?.gameOver && !this.gameOverNavigated) {
+        this.gameOverNavigated = true;
+        setTimeout(() => {
+          this.router.navigate(['/score', this.sessionId()], { queryParams: { pid: this.playerId() } });
+        }, 1500);
+      }
+    });
+
+    // Re-measure after every game-state render so Longo's bonus chips (80px each)
+    // are accounted for — the static MOBILE_DESIGN_H only fits the standard sheet.
+    effect(() => {
+      this.gameState(); // depend so we re-run when state arrives
+      untracked(() => setTimeout(() => this.applyMobileScale(), 0));
+    });
+  }
+
   ngOnInit() {
     const sid = this.route.snapshot.paramMap.get('sessionId') ?? '';
     const pid = this.route.snapshot.paramMap.get('playerId') ?? '';
@@ -295,13 +295,6 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.fetchState();
     this.setupSse(sid);
   }
-
-  // Re-measure after every game-state render so Longo's bonus chips (80px each)
-  // are accounted for — the static MOBILE_DESIGN_H only fits the standard sheet.
-  private _scaleEffect = effect(() => {
-    this.gameState(); // depend so we re-run when state arrives
-    untracked(() => setTimeout(() => this.applyMobileScale(), 0));
-  });
 
   ngAfterViewInit() {
     this.applyMobileScale();
@@ -557,7 +550,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.gameState()?.bonusNumbers?.[pid] ?? [];
   }
 
-  isBonusNumberActive(pid: string, n: number): boolean {
+  isBonusNumberActive(_pid: string, n: number): boolean {
     const roll = this.turnState()?.currentRoll;
     if (!roll) return false;
     return roll.white1 + roll.white2 === n;

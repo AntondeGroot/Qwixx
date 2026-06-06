@@ -5,11 +5,8 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { GamesService } from '../../generated/api/games.service';
-import { GamestatesService } from '../../generated/api/gamestates.service';
-import { PlayersService } from '../../generated/api/players.service';
-import { GameOption } from '../../generated/model/gameOption';
-import { SheetLayout } from '../../generated/model/sheetLayout';
+import { GamesService, PlayersService } from '../../generated/api/api';
+import { GameOption, SheetLayout } from '../../generated/model/models';
 import { RowComponent } from '../row/row.component';
 import { LobbyService } from '../services/lobby.service';
 
@@ -21,7 +18,6 @@ import { LobbyService } from '../services/lobby.service';
 })
 export class SettingsComponent implements OnInit, OnDestroy {
   private gamesService      = inject(GamesService);
-  private gameStatesService = inject(GamestatesService);
   private playersService    = inject(PlayersService);
   private lobbyService      = inject(LobbyService);
   private router            = inject(Router);

@@ -1,14 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { App } from './app';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideTranslateService, TranslateLoader, TranslationObject } from '@ngx-translate/core';
-import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { Color } from '../generated/model/color';
+import { Color } from '../generated/model/models';
 import { RowClosureModalService } from './services/row-closure-modal.service';
 
 class MockTranslateLoader implements TranslateLoader {
-  getTranslation(lang: string): Observable<TranslationObject> {
+  getTranslation(_lang: string): Observable<TranslationObject> {
     return of({});
   }
 }
@@ -16,8 +15,9 @@ class MockTranslateLoader implements TranslateLoader {
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [App, HttpClientTestingModule],
+      imports: [App],
       providers: [
+        provideHttpClientTesting(),
         provideTranslateService({
           loader: {
             provide: TranslateLoader,

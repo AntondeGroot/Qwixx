@@ -1,6 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { PlayersService } from '../../generated/api/players.service';
+import { PlayersService } from '../../generated/api/api';
 
 @Injectable({ providedIn: 'root' })
 export class RoomService {

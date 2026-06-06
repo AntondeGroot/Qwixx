@@ -1,4 +1,4 @@
-import { APP_INITIALIZER, ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import { HTTP_INTERCEPTORS, HttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
@@ -37,11 +37,6 @@ export const appConfig: ApplicationConfig = {
     }),
     // Block the app from rendering until the correct locale's translations are loaded.
     // This eliminates the race condition where modals render before translations arrive.
-    {
-      provide: APP_INITIALIZER,
-      useFactory: (translations: TranslationService) => () => lastValueFrom(translations.loadInitialLocale()),
-      deps: [TranslationService],
-      multi: true
-    }
+    provideAppInitializer(() => lastValueFrom(inject(TranslationService).loadInitialLocale()))
   ]
 };

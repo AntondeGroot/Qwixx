@@ -20,7 +20,7 @@ export class TranslationService {
   currentLanguage = signal<string>('en');
 
   constructor() {
-    this.translateService.setDefaultLang('en');
+    this.translateService.setFallbackLang('en');
     this.translateService.addLangs(this.languages.map(l => l.code));
     // No effect here: loadInitialLocale() calls translateService.use() directly,
     // and setLanguage() calls it directly too.  An effect would fire as a microtask

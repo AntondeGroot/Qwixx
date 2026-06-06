@@ -1,6 +1,7 @@
 package nl.adg.qwixx.game;
 
 public class GameNotStartedException extends RuntimeException {
+    @java.io.Serial private static final long serialVersionUID = 1L;
     public GameNotStartedException(String sessionId) {
         super("game not started: " + sessionId);
     }

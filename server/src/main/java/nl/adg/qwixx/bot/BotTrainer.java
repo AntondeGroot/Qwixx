@@ -1,8 +1,6 @@
 package nl.adg.qwixx.bot;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import nl.adg.qwixx.game.GameSettings;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -10,6 +8,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Random;
 import java.util.function.Function;
+import nl.adg.qwixx.game.GameSettings;
 
 /**
  * Hill-climbing trainer for {@link BotProfile}.
@@ -58,6 +57,7 @@ public class BotTrainer {
      *                          guaranteeing that {@code bestFitness} is monotonically non-decreasing
      * @return the best profile found
      */
+    @SuppressWarnings("PMD.CompareObjectsWithEquals")
     public static BotProfile train(BotProfile start,
                                    Objective objective,
                                    int generations,
@@ -162,6 +162,7 @@ public class BotTrainer {
      *
      * <p>Adjust the constants at the top of this method to control training time.
      */
+    @SuppressWarnings("PMD.SystemPrintln")
     public static void main(String[] args) throws IOException {
         int    generations     = 60;
         int    mutationsPerGen = 12;

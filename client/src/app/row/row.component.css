@@ -8,10 +8,18 @@
   width: fit-content;
 }
 
-.row[data-color="RED"]    { background: rgba(211, 47, 47, 0.12); }
-.row[data-color="YELLOW"] { background: rgba(249, 168, 37, 0.15); }
-.row[data-color="GREEN"]  { background: rgba(56, 142, 60, 0.12); }
-.row[data-color="BLUE"]   { background: rgba(21, 101, 192, 0.12); }
+.row[data-color='RED'] {
+  background: rgba(211, 47, 47, 0.12);
+}
+.row[data-color='YELLOW'] {
+  background: rgba(249, 168, 37, 0.15);
+}
+.row[data-color='GREEN'] {
+  background: rgba(56, 142, 60, 0.12);
+}
+.row[data-color='BLUE'] {
+  background: rgba(21, 101, 192, 0.12);
+}
 
 .row.bonus-row {
   background: transparent;
@@ -54,10 +62,22 @@
   flex-shrink: 0;
 }
 
-.lock-cell[data-color="RED"]    { background: #d32f2f; color: white; }
-.lock-cell[data-color="YELLOW"] { background: #f9a825; color: #333; }
-.lock-cell[data-color="GREEN"]  { background: #388e3c; color: white; }
-.lock-cell[data-color="BLUE"]   { background: #1565c0; color: white; }
+.lock-cell[data-color='RED'] {
+  background: #d32f2f;
+  color: white;
+}
+.lock-cell[data-color='YELLOW'] {
+  background: #f9a825;
+  color: #333;
+}
+.lock-cell[data-color='GREEN'] {
+  background: #388e3c;
+  color: white;
+}
+.lock-cell[data-color='BLUE'] {
+  background: #1565c0;
+  color: white;
+}
 
 .lock-icon {
   width: 22px;
@@ -110,8 +130,12 @@
  * extend the line through it: 3 px (half-gap) + 6 px (gap) + 36 px (bonus row) + 3 px (half-gap) = 48 px.
  * The bonus row circles paint on top via DOM order, so they naturally obscure the line where they overlap.
  */
-.auto-cross-line.down.through-bonus { bottom: -45px; }
-.auto-cross-line.up.through-bonus   { top: -45px; }
+.auto-cross-line.down.through-bonus {
+  bottom: -45px;
+}
+.auto-cross-line.up.through-bonus {
+  top: -45px;
+}
 
 /* X-Change row: purple track behind the diamond cells */
 /* Width is set dynamically via [style.width] in the template: 48×cellCount+60 px */
@@ -120,7 +144,7 @@
   background: transparent;
   padding-top: 10px;
   padding-bottom: 10px;
-  gap: 0;                      /* space-evenly handles all spacing; inherited gap would make edges unequal */
+  gap: 0; /* space-evenly handles all spacing; inherited gap would make edges unequal */
   justify-content: space-evenly;
 }
 
@@ -133,7 +157,7 @@
   top: 50%;
   transform: translateY(-50%);
   height: 8px;
-  background: #7B1FA2;
+  background: #7b1fa2;
   border-radius: 4px;
   z-index: 0;
 }
@@ -151,7 +175,7 @@
   padding: 0 40px;
   /* Drop-shadow only — no white outline — so it reads as a separator, not a label */
   text-shadow:
-    0 3px 0 #8B3000,
+    0 3px 0 #8b3000,
     0 5px 8px rgba(60, 15, 0, 0.45);
 }
 
@@ -169,7 +193,7 @@
 .lucky-number-cells {
   position: relative;
   display: flex;
-  width: 252px;         /* 48×4 + padding */
+  width: 252px; /* 48×4 + padding */
   justify-content: space-evenly;
   align-items: center;
   padding: 10px 4px;
@@ -185,7 +209,7 @@
   top: 50%;
   transform: translateY(-50%);
   height: 8px;
-  background: #E65100;
+  background: #e65100;
   border-radius: 4px;
   z-index: 0;
 }

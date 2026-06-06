@@ -1,8 +1,7 @@
 package nl.adg.qwixx.state;
 
-import nl.adg.qwixx.data.Color;
-
 import java.util.UUID;
+import nl.adg.qwixx.data.Color;
 
 public record ClosureNotification(
     UUID playerId,

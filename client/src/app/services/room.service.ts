@@ -1,14 +1,14 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { PlayersService } from '../../generated/api/players.service';
+import { PlayersService } from '../../generated/api/api';
 
 @Injectable({ providedIn: 'root' })
 export class RoomService {
   private readonly playersService = inject(PlayersService);
 
-  readonly roomId    = signal<string | null>(sessionStorage.getItem('qwixx_roomid'));
+  readonly roomId = signal<string | null>(sessionStorage.getItem('qwixx_roomid'));
   readonly sessionId = signal<string | null>(null);
-  readonly playerId  = signal<string | null>(null);
+  readonly playerId = signal<string | null>(null);
 
   setGame(sessionId: string, playerId: string, roomId: string | null) {
     this.sessionId.set(sessionId);
@@ -24,11 +24,12 @@ export class RoomService {
     const pid = this.playerId();
     const exitUrl = this.buildExitUrl();
 
-    const navigate = () => { window.location.href = exitUrl; };
+    const navigate = () => {
+      window.location.href = exitUrl;
+    };
 
     if (sid && pid) {
-      this.playersService.leaveGame(sid, pid)
-        .subscribe({ next: navigate, error: navigate });
+      this.playersService.leaveGame(sid, pid).subscribe({ next: navigate, error: navigate });
     } else {
       navigate();
     }

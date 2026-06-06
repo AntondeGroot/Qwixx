@@ -3,10 +3,10 @@ import { TranslateService } from '@ngx-translate/core';
 import { Observable } from 'rxjs';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class TranslationService {
-  private translateService = inject(TranslateService);
+  private readonly translateService = inject(TranslateService);
 
   readonly languages = [
     { code: 'en', label: 'English' },
@@ -14,14 +14,14 @@ export class TranslationService {
     { code: 'fr', label: 'Français' },
     { code: 'it', label: 'Italiano' },
     { code: 'nl', label: 'Nederlands' },
-    { code: 'nb', label: 'Norsk Bokmål' }
+    { code: 'nb', label: 'Norsk Bokmål' },
   ];
 
   currentLanguage = signal<string>('en');
 
   constructor() {
-    this.translateService.setDefaultLang('en');
-    this.translateService.addLangs(this.languages.map(l => l.code));
+    this.translateService.setFallbackLang('en');
+    this.translateService.addLangs(this.languages.map((l) => l.code));
     // No effect here: loadInitialLocale() calls translateService.use() directly,
     // and setLanguage() calls it directly too.  An effect would fire as a microtask
     // during the APP_INITIALIZER await and start a duplicate HTTP request for the
@@ -34,9 +34,9 @@ export class TranslationService {
   detectLocale(): string {
     const queryLocale = new URLSearchParams(window.location.search).get('locale');
     const browserLang = navigator.language.split('-')[0];
-    return queryLocale && this.languages.find(l => l.code === queryLocale)
+    return queryLocale && this.languages.find((l) => l.code === queryLocale)
       ? queryLocale
-      : (this.languages.find(l => l.code === browserLang)?.code ?? 'en');
+      : (this.languages.find((l) => l.code === browserLang)?.code ?? 'en');
   }
 
   /**
@@ -58,8 +58,8 @@ export class TranslationService {
     // Start background preloads for all other languages (fire-and-forget).
     // use(locale) is called LAST so lastUseLanguage ends up = locale.
     this.languages
-      .filter(l => l.code !== locale)
-      .forEach(l => this.translateService.use(l.code));
+      .filter((l) => l.code !== locale)
+      .forEach((l) => this.translateService.use(l.code));
     return this.translateService.use(locale);
   }
 
@@ -69,7 +69,7 @@ export class TranslationService {
   }
 
   setLanguage(language: string) {
-    if (this.languages.find(l => l.code === language)) {
+    if (this.languages.find((l) => l.code === language)) {
       this.currentLanguage.set(language);
       this.updateUrl(language);
       this.translateService.use(language);
@@ -80,11 +80,13 @@ export class TranslationService {
     const params = new URLSearchParams(window.location.search);
     params.set('locale', language);
     const queryString = params.toString();
-    const newUrl = queryString ? `${window.location.pathname}?${queryString}` : window.location.pathname;
+    const newUrl = queryString
+      ? `${window.location.pathname}?${queryString}`
+      : window.location.pathname;
     window.history.replaceState({}, '', newUrl);
   }
 
   getLanguageLabel(code: string): string {
-    return this.languages.find(l => l.code === code)?.label || code;
+    return this.languages.find((l) => l.code === code)?.label || code;
   }
 }

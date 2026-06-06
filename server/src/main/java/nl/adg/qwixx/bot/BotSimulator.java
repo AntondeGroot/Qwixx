@@ -1,15 +1,14 @@
 package nl.adg.qwixx.bot;
 
-import nl.adg.qwixx.game.GameMode;
-import nl.adg.qwixx.game.GameSession;
-import nl.adg.qwixx.game.GameSettings;
-import nl.adg.qwixx.rules.ScoreCard;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.IntStream;
+import nl.adg.qwixx.game.GameMode;
+import nl.adg.qwixx.game.GameSession;
+import nl.adg.qwixx.game.GameSettings;
+import nl.adg.qwixx.rules.ScoreCard;
 
 /**
  * Runs many fully-automated games between bots to evaluate or compare {@link BotProfile}s.

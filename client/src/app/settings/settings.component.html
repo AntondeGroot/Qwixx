@@ -10,7 +10,6 @@
 }
 
 <form [formGroup]="form" (ngSubmit)="startGame()" [attr.translate]="'no'">
-
   @for (opt of availableGameOptions(); track opt.key) {
     <div [class.option-disabled]="form.get(opt.key)?.disabled">
       <div class="option-header">
@@ -46,8 +45,14 @@
           }
           @case ('bigPoints') {
             <div class="opt-chip">
-              <span class="opt-cell opt-cell--split" style="--split-a:#d32f2f;--split-b:#f9a825"></span>
-              <span class="opt-cell opt-cell--split" style="--split-a:#388e3c;--split-b:#1565c0"></span>
+              <span
+                class="opt-cell opt-cell--split"
+                style="--split-a: #d32f2f; --split-b: #f9a825"
+              ></span>
+              <span
+                class="opt-cell opt-cell--split"
+                style="--split-a: #388e3c; --split-b: #1565c0"
+              ></span>
             </div>
           }
           @case ('connectedCells') {
@@ -93,8 +98,13 @@
             }
           </select>
         } @else {
-          <input [id]="opt.key" type="number" [formControlName]="opt.key"
-                 [min]="opt.minValue ?? null" [max]="effectiveMax(opt)" />
+          <input
+            [id]="opt.key"
+            type="number"
+            [formControlName]="opt.key"
+            [min]="opt.minValue ?? null"
+            [max]="effectiveMax(opt)"
+          />
         }
       }
       @if (opt.descriptionKey) {

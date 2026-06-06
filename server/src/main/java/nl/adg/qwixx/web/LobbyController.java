@@ -1,9 +1,13 @@
 package nl.adg.qwixx.web;
 
+import jakarta.servlet.http.HttpServletResponse;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSession;
+import nl.adg.qwixx.game.QwixxGameOptions;
 import nl.adg.qwixx.game.SessionNotFoundException;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,12 +18,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-
-import nl.adg.qwixx.game.QwixxGameOptions;
-
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Lobby state shared between all players while choosing options for the next game.

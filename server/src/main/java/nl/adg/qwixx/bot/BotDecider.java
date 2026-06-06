@@ -1,5 +1,9 @@
 package nl.adg.qwixx.bot;
 
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
 import nl.adg.qwixx.action.CrossCellAction;
 import nl.adg.qwixx.action.DeclareLockIntentAction;
 import nl.adg.qwixx.action.DiceCombination;
@@ -19,11 +23,6 @@ import nl.adg.qwixx.state.GameState;
 import nl.adg.qwixx.state.RowState;
 import nl.adg.qwixx.state.SheetLayout;
 import nl.adg.qwixx.state.SheetProgress;
-
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
 
 public class BotDecider {
 

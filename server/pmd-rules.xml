@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<ruleset name="Qwixx PMD Rules"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+  <description>PMD rules for Qwixx</description>
+
+  <rule ref="category/java/bestpractices.xml">
+    <exclude name="GuardLogStatement"/>
+    <!-- Compact multi-variable declarations are used for related loop variables and parallel accumulators -->
+    <exclude name="OneDeclarationPerLine"/>
+    <!-- Arrays are passed intentionally (not as variadic args) to preserve explicit sizing at call sites -->
+    <exclude name="UseVarargs"/>
+  </rule>
+
+  <rule ref="category/java/errorprone.xml">
+    <exclude name="MissingSerialVersionUID"/>
+    <exclude name="UseLocaleWithCaseConversions"/>
+    <!-- Record-like accessor pattern: field 'foo' + method 'foo()' is used throughout state/data/game classes -->
+    <exclude name="AvoidFieldNameMatchingMethodName"/>
+    <!-- Magic literals in game geometry (min distances, counts) are more readable inline than as named constants -->
+    <exclude name="AvoidLiteralsInIfCondition"/>
+    <!-- 'return first match' is a common and clear search pattern; flagging return-as-last-in-loop adds noise -->
+    <exclude name="AvoidBranchingStatementAsLastInLoop"/>
+  </rule>
+
+  <rule ref="category/java/performance.xml">
+    <!-- Game layout construction builds many Cell/Row objects in loops; extracting them is unnecessary complexity -->
+    <exclude name="AvoidInstantiatingObjectsInLoops"/>
+  </rule>
+
+</ruleset>

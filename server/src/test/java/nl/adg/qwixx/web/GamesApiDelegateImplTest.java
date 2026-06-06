@@ -1,5 +1,9 @@
 package nl.adg.qwixx.web;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSettings;
 import nl.adg.qwixx.game.Player;
@@ -12,10 +16,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = GamesApiController.class)
 @Import({GamesApiDelegateImpl.class, GlobalExceptionHandler.class, SseEmitterRegistry.class, LobbyController.class, GameFinishedNotifier.class})

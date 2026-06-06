@@ -1,21 +1,34 @@
-import { AfterViewInit, Component, computed, effect, ElementRef, HostListener, inject, OnDestroy, OnInit, signal, untracked } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import {
+  AfterViewInit,
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  HostListener,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+  untracked,
+} from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { TranslateModule } from '@ngx-translate/core';
-import { GamestatesService } from '../../generated/api/gamestates.service';
-import { MovesService } from '../../generated/api/moves.service';
-import { CellTag } from '../../generated/model/cellTag';
-import { Color } from '../../generated/model/color';
-import { GameState } from '../../generated/model/gameState';
-import { MoveRequest } from '../../generated/model/moveRequest';
-import { MoveType } from '../../generated/model/moveType';
-import { RowState } from '../../generated/model/rowState';
-import { SheetCell } from '../../generated/model/sheetCell';
-import { SheetLayout } from '../../generated/model/sheetLayout';
-import { SheetProgress } from '../../generated/model/sheetProgress';
-import { SheetRow } from '../../generated/model/sheetRow';
-import { TurnPhase } from '../../generated/model/turnPhase';
+import { GamestatesService, MovesService } from '../../generated/api/api';
+import {
+  CellTag,
+  Color,
+  GameState,
+  MoveRequest,
+  MoveType,
+  RowState,
+  SheetCell,
+  SheetLayout,
+  SheetProgress,
+  SheetRow,
+  TurnPhase,
+} from '../../generated/model/models';
 import { DiceComponent } from '../dice/dice.component';
 import { PlayerListComponent } from '../player-list/player-list.component';
 import { RowComponent } from '../row/row.component';
@@ -25,24 +38,24 @@ import { RoomService } from '../services/room.service';
 
 @Component({
   selector: 'app-board',
-  imports: [RouterLink, RowComponent, DiceComponent, PlayerListComponent, TranslateModule],
+  imports: [RowComponent, DiceComponent, PlayerListComponent, TranslateModule],
   templateUrl: './board.component.html',
-  styleUrl: './board.component.css'
+  styleUrl: './board.component.css',
 })
 export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
-  private readonly route              = inject(ActivatedRoute);
-  private readonly router             = inject(Router);
-  private readonly gameStatesService  = inject(GamestatesService);
-  private readonly movesService       = inject(MovesService);
-  private readonly host               = inject(ElementRef<HTMLElement>);
-  private readonly rowClosureModal    = inject(RowClosureModalService);
-  private readonly audio              = inject(AudioService);
-  private readonly roomService        = inject(RoomService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly gameStatesService = inject(GamestatesService);
+  private readonly movesService = inject(MovesService);
+  private readonly host = inject(ElementRef<HTMLElement>);
+  private readonly rowClosureModal = inject(RowClosureModalService);
+  private readonly audio = inject(AudioService);
+  private readonly roomService = inject(RoomService);
 
-  sessionId   = signal('');
-  playerId    = signal('');
-  gameState   = signal<GameState | null>(null);
-  error       = signal<string | null>(null);
+  sessionId = signal('');
+  playerId = signal('');
+  gameState = signal<GameState | null>(null);
+  error = signal<string | null>(null);
   rollingDice = signal(false);
   // True while the player dismissed the lock-intent modal to pick a new cell.
   // Suppresses the modal until they cross something (pendingCellIds becomes non-empty).
@@ -55,75 +68,26 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   private moveSub?: Subscription;
   private stateSub?: Subscription;
 
-  // Sync modal state to the service so the modal renders at the root level,
-  // outside the board's CSS transform (which would break position:fixed on mobile).
-  private readonly _modalSync = effect(() => {
-    const myName = this.playerName(this.playerId());
-    const allRequests = this.gameState()?.closureNotifications ?? [];
-    // Show requests from OTHER players only — the declarant never sees their own notification.
-    // All players (active and passive) can receive notifications, not just passives.
-    const requests = allRequests.filter(r => r.playerName !== myName);
-
-    if (requests.length === 0) {
-      // No pending closure from others — reset suppression so the next intent shows fresh.
-      untracked(() => this.suppressModal.set(false));
-      this.rowClosureModal.clear();
-      return;
-    }
-
-    const isPassive = this.isInPassiveQueue();
-    // Keep modal suppressed when the player is awaiting a lock-declaration auto-send
-    // after confirming the YES/NO prompt (Longo second-to-last cell).
-    const lockConfirmInProgress = isPassive && this.pendingAutoLock() !== null;
-    // Active player re-queued for final look: treat as hard-suppress (their pending crosses
-    // are from the active turn, not a passive cross, so auto-unsuppress must not fire).
-    const isActiveFinalReview = this.isMyTurn() && isPassive;
-    // Passive: auto-unsuppress when they make a new cross (so the modal re-appears).
-    // Active (normal or final-review): stay suppressed — they've acknowledged the notification.
-    const suppress = lockConfirmInProgress
-      || (this.suppressModal() && (!isPassive || isActiveFinalReview || this.pendingCellIds().size === 0));
-    if (suppress) {
-      this.rowClosureModal.clear();
-    } else {
-      const wasHidden = untracked(() => this.rowClosureModal.requests().length === 0);
-      this.rowClosureModal.show(
-        requests,
-        () => this.onConfirmRowClosure(),
-        () => this.onChangeRowClosure(),
-        // Show the two-button layout when there is something actionable.
-        // The reQueuedThisTurn flag covers passives who were re-queued mid-turn (e.g. after
-        // already having passed): they see [Change = RESET_TURN][OK = dismiss].
-        // Fresh passives who haven't acted yet see only [OK = dismiss].
-        this.hasPendingPassiveCross() || this.hasPendingActiveCross() || this.hasRevertableEndTurn() || this.hasRevertablePassiveEndTurn() || (this.canPassPassive() && this.reQueuedThisTurn()),
-        this.hasPendingPassiveCross()  // confirmEndsRound: show "Confirm last selection" label
-      );
-      if (wasHidden) this.audio.play(AudioService.ROW_CLOSURE_BELL);
-    }
-  });
   private rollStartTime = 0;
-  private readonly pendingAutoLock = signal<{ rowId: string; autoLock: boolean; cellId: string } | null>(null);
+  private readonly pendingAutoLock = signal<{
+    rowId: string;
+    autoLock: boolean;
+    cellId: string;
+  } | null>(null);
 
   // Fallback design height used before the game state has rendered.
-  private readonly MOBILE_DESIGN_H   = 541;
-  private readonly ROLL_ANIM_MIN_MS  = 2800;
+  private readonly MOBILE_DESIGN_H = 541;
+  private readonly ROLL_ANIM_MIN_MS = 2800;
 
-  readonly emptySet  = new Set<string>();
+  readonly emptySet = new Set<string>();
   readonly TurnPhase = TurnPhase;
 
   private gameOverNavigated = false;
-  private _gameOverEffect = effect(() => {
-    if (this.gameState()?.gameOver && !this.gameOverNavigated) {
-      this.gameOverNavigated = true;
-      setTimeout(() => {
-        this.router.navigate(['/score', this.sessionId()], { queryParams: { pid: this.playerId() } });
-      }, 1500);
-    }
-  });
 
   isOffline = computed(() => this.gameState() !== null && this.gameState()!.turnState == null);
 
-  visibleClickableCellIds = computed((): Set<string> =>
-    this.rollingDice() ? this.emptySet : this.clickableCellIds()
+  visibleClickableCellIds = computed(
+    (): Set<string> => (this.rollingDice() ? this.emptySet : this.clickableCellIds()),
   );
 
   // ── Lucky Number highlight ────────────────────────────────────────────────────
@@ -133,14 +97,14 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   //   - white1 + white2 + any active colored die = row.luckyTarget
   luckyNumberHighlightCellIds = computed((): Set<string> => {
     const state = this.gameState();
-    const pid   = this.playerId();
-    const turn  = this.turnState();
+    const pid = this.playerId();
+    const turn = this.turnState();
     if (!state || !turn?.currentRoll) return this.emptySet;
     if (!this.isMyTurn() || turn.phase !== TurnPhase.ACTIVE_MOVE) return this.emptySet;
     if (turn.whiteWhiteUsed || turn.colorDieUsed || turn.luckyNumberUsed) return this.emptySet;
 
-    const roll     = turn.currentRoll;
-    const layout   = state.sheetLayouts[pid];
+    const roll = turn.currentRoll;
+    const layout = state.sheetLayouts[pid];
     const progress = state.sheetProgress[pid];
     if (!layout) return this.emptySet;
 
@@ -148,15 +112,16 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     for (const row of layout.rows) {
       if (!row.luckyRow) continue;
       const prereqMet = Object.values(roll.coloredDice).some(
-        v => v != null && roll.white1 + roll.white2 + v === row.luckyTarget
+        (v) => v != null && roll.white1 + roll.white2 + v === row.luckyTarget,
       );
       if (!prereqMet) continue;
-      const crossed  = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
-      const lastPos  = crossed.size > 0
-        ? Math.max(...row.cells.filter(c => crossed.has(c.id)).map(c => c.position))
-        : -1;
+      const crossed = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
+      const lastPos =
+        crossed.size > 0
+          ? Math.max(...row.cells.filter((c) => crossed.has(c.id)).map((c) => c.position))
+          : -1;
       const leftmost = row.cells
-        .filter(c => !crossed.has(c.id) && c.position > lastPos)
+        .filter((c) => !crossed.has(c.id) && c.position > lastPos)
         .sort((a, b) => a.position - b.position)[0];
       if (leftmost) result.add(leftmost.id);
     }
@@ -166,12 +131,14 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   // True when the current player's layout contains Lucky Cross fields.
   hasLuckyCross = computed(() => {
     const layout = this.layoutFor(this.playerId());
-    return !!layout?.rows.some(r => r.cells.some(c => c.tags.some(t => t.type === CellTag.TypeEnum.LUCKY_CROSS)));
+    return !!layout?.rows.some((r) =>
+      r.cells.some((c) => c.tags.some((t) => t.type === CellTag.TypeEnum.LUCKY_CROSS)),
+    );
   });
 
   hasLuckyNumberRow = computed(() => {
     const layout = this.layoutFor(this.playerId());
-    return !!layout?.rows.some(r => r.luckyRow);
+    return !!layout?.rows.some((r) => r.luckyRow);
   });
 
   // ── Lucky Cross highlight ─────────────────────────────────────────────────────
@@ -181,15 +148,16 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   //   - available to both the active player and passive players in the queue
   luckyCrossHighlightCellIds = computed((): Set<string> => {
     const state = this.gameState();
-    const pid   = this.playerId();
-    const turn  = this.turnState();
+    const pid = this.playerId();
+    const turn = this.turnState();
     if (!state || !turn?.currentRoll) return this.emptySet;
     const inQueue = this.isMyTurn() || this.isInPassiveQueue();
     if (!inQueue) return this.emptySet;
     if (turn.luckyCrossUsed?.includes(pid)) return this.emptySet;
 
     const roll = turn.currentRoll;
-    const w1 = roll.white1, w2 = roll.white2;
+    const w1 = roll.white1,
+      w2 = roll.white2;
     const coloredEntries = Object.entries(roll.coloredDice) as [string, number][];
 
     // Determine eligible row colors (null = any, empty set = none)
@@ -197,13 +165,19 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const eligibleColors = new Set<string>();
     if (!freeChoice) {
       for (const [color, v] of coloredEntries) {
-        if ((w1 === 1 && v === 5) || (w1 === 5 && v === 1) || (w2 === 1 && v === 5) || (w2 === 5 && v === 1)) {
+        if (
+          (w1 === 1 && v === 5) ||
+          (w1 === 5 && v === 1) ||
+          (w2 === 1 && v === 5) ||
+          (w2 === 5 && v === 1)
+        ) {
           eligibleColors.add(color);
         }
       }
       for (let i = 0; i < coloredEntries.length; i++) {
         for (let j = i + 1; j < coloredEntries.length; j++) {
-          const vi = coloredEntries[i][1], vj = coloredEntries[j][1];
+          const vi = coloredEntries[i][1],
+            vj = coloredEntries[j][1];
           if ((vi === 1 && vj === 5) || (vi === 5 && vj === 1)) {
             eligibleColors.add(coloredEntries[i][0]);
             eligibleColors.add(coloredEntries[j][0]);
@@ -213,7 +187,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       if (eligibleColors.size === 0) return this.emptySet;
     }
 
-    const layout   = state.sheetLayouts[pid];
+    const layout = state.sheetLayouts[pid];
     const progress = state.sheetProgress[pid];
     if (!layout) return this.emptySet;
 
@@ -221,13 +195,18 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const closedRows = state.closedRows ?? {};
     for (const row of layout.rows) {
       if (closedRows[row.id]) continue;
-      const rowColor = row.cells.find(c => !c.tags.some(t => t.type === CellTag.TypeEnum.LUCKY_CROSS))?.color;
+      const rowColor = row.cells.find(
+        (c) => !c.tags.some((t) => t.type === CellTag.TypeEnum.LUCKY_CROSS),
+      )?.color;
       if (!freeChoice && (!rowColor || !eligibleColors.has(rowColor))) continue;
       const crossed = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
-      const lastPos = Math.max(-1, ...row.cells.filter(c => crossed.has(c.id)).map(c => c.position));
+      const lastPos = Math.max(
+        -1,
+        ...row.cells.filter((c) => crossed.has(c.id)).map((c) => c.position),
+      );
       const next = row.cells
-        .filter(c => c.tags.some(t => t.type === CellTag.TypeEnum.LUCKY_CROSS))
-        .filter(c => !crossed.has(c.id) && c.position > lastPos)
+        .filter((c) => c.tags.some((t) => t.type === CellTag.TypeEnum.LUCKY_CROSS))
+        .filter((c) => !crossed.has(c.id) && c.position > lastPos)
         .sort((a, b) => a.position - b.position)[0];
       if (next) result.add(next.id);
     }
@@ -240,18 +219,18 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   // even when their display value also matches a colour-die combination.
   bonusCellIds = computed((): Set<string> => {
     const state = this.gameState();
-    const pid   = this.playerId();
-    const turn  = this.turnState();
+    const pid = this.playerId();
+    const turn = this.turnState();
     if (!state || !turn?.currentRoll || turn.whiteWhiteUsed) return this.emptySet;
     if (!this.isMyTurn() || turn.phase !== TurnPhase.ACTIVE_MOVE) return this.emptySet;
 
-    const roll      = turn.currentRoll;
-    const whiteSum  = roll.white1 + roll.white2;
+    const roll = turn.currentRoll;
+    const whiteSum = roll.white1 + roll.white2;
     const bonusNums: number[] = state.bonusNumbers?.[pid] ?? [];
     if (!bonusNums.includes(whiteSum)) return this.emptySet;
 
-    const layout    = state.sheetLayouts[pid];
-    const progress  = state.sheetProgress[pid];
+    const layout = state.sheetLayouts[pid];
+    const progress = state.sheetProgress[pid];
     if (!layout) return this.emptySet;
     const closedRows = state.closedRows ?? {};
     const result = new Set<string>();
@@ -268,11 +247,12 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       if (closedRows[row.id]) continue;
       const crossed = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
       if (crossed.size !== fewest) continue;
-      const lastPos = crossed.size > 0
-        ? Math.max(...row.cells.filter(c => crossed.has(c.id)).map(c => c.position))
-        : -1;
+      const lastPos =
+        crossed.size > 0
+          ? Math.max(...row.cells.filter((c) => crossed.has(c.id)).map((c) => c.position))
+          : -1;
       const leftmost = row.cells
-        .filter(c => !crossed.has(c.id) && c.position > lastPos)
+        .filter((c) => !crossed.has(c.id) && c.position > lastPos)
         .sort((a, b) => a.position - b.position)[0];
       if (leftmost) result.add(leftmost.id);
     }
@@ -284,6 +264,77 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     return new Set<string>(ids);
   });
 
+  constructor() {
+    // Sync modal state to the service so the modal renders at the root level,
+    // outside the board's CSS transform (which would break position:fixed on mobile).
+    effect(() => {
+      const myName = this.playerName(this.playerId());
+      const allRequests = this.gameState()?.closureNotifications ?? [];
+      // Show requests from OTHER players only — the declarant never sees their own notification.
+      // All players (active and passive) can receive notifications, not just passives.
+      const requests = allRequests.filter((r) => r.playerName !== myName);
+
+      if (requests.length === 0) {
+        // No pending closure from others — reset suppression so the next intent shows fresh.
+        untracked(() => this.suppressModal.set(false));
+        this.rowClosureModal.clear();
+        return;
+      }
+
+      const isPassive = this.isInPassiveQueue();
+      // Keep modal suppressed when the player is awaiting a lock-declaration auto-send
+      // after confirming the YES/NO prompt (Longo second-to-last cell).
+      const lockConfirmInProgress = isPassive && this.pendingAutoLock() !== null;
+      // Active player re-queued for final look: treat as hard-suppress (their pending crosses
+      // are from the active turn, not a passive cross, so auto-unsuppress must not fire).
+      const isActiveFinalReview = this.isMyTurn() && isPassive;
+      // Passive: auto-unsuppress when they make a new cross (so the modal re-appears).
+      // Active (normal or final-review): stay suppressed — they've acknowledged the notification.
+      const suppress =
+        lockConfirmInProgress ||
+        (this.suppressModal() &&
+          (!isPassive || isActiveFinalReview || this.pendingCellIds().size === 0));
+      if (suppress) {
+        this.rowClosureModal.clear();
+      } else {
+        const wasHidden = untracked(() => this.rowClosureModal.requests().length === 0);
+        this.rowClosureModal.show(
+          requests,
+          () => this.onConfirmRowClosure(),
+          () => this.onChangeRowClosure(),
+          // Show the two-button layout when there is something actionable.
+          // The reQueuedThisTurn flag covers passives who were re-queued mid-turn (e.g. after
+          // already having passed): they see [Change = RESET_TURN][OK = dismiss].
+          // Fresh passives who haven't acted yet see only [OK = dismiss].
+          this.hasPendingPassiveCross() ||
+            this.hasPendingActiveCross() ||
+            this.hasRevertableEndTurn() ||
+            this.hasRevertablePassiveEndTurn() ||
+            (this.canPassPassive() && this.reQueuedThisTurn()),
+          this.hasPendingPassiveCross(), // confirmEndsRound: show "Confirm last selection" label
+        );
+        if (wasHidden) this.audio.play(AudioService.ROW_CLOSURE_BELL);
+      }
+    });
+
+    effect(() => {
+      if (this.gameState()?.gameOver && !this.gameOverNavigated) {
+        this.gameOverNavigated = true;
+        setTimeout(() => {
+          void this.router.navigate(['/score', this.sessionId()], {
+            queryParams: { pid: this.playerId() },
+          });
+        }, 1500);
+      }
+    });
+
+    // Re-measure after every game-state render so Longo's bonus chips (80px each)
+    // are accounted for — the static MOBILE_DESIGN_H only fits the standard sheet.
+    effect(() => {
+      this.gameState(); // depend so we re-run when state arrives
+      untracked(() => setTimeout(() => this.applyMobileScale(), 0));
+    });
+  }
 
   ngOnInit() {
     const sid = this.route.snapshot.paramMap.get('sessionId') ?? '';
@@ -295,13 +346,6 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.fetchState();
     this.setupSse(sid);
   }
-
-  // Re-measure after every game-state render so Longo's bonus chips (80px each)
-  // are accounted for — the static MOBILE_DESIGN_H only fits the standard sheet.
-  private _scaleEffect = effect(() => {
-    this.gameState(); // depend so we re-run when state arrives
-    untracked(() => setTimeout(() => this.applyMobileScale(), 0));
-  });
 
   ngAfterViewInit() {
     this.applyMobileScale();
@@ -317,8 +361,10 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const layout = el.querySelector('.board-layout') as HTMLElement | null;
     if (!layout) {
       // Game state not yet rendered — use the fallback constant.
-      el.style.setProperty('--mobile-scale',
-        Math.min((window.innerWidth - 16) / this.MOBILE_DESIGN_H, 1).toFixed(4));
+      el.style.setProperty(
+        '--mobile-scale',
+        Math.min((window.innerWidth - 16) / this.MOBILE_DESIGN_H, 1).toFixed(4),
+      );
       return;
     }
     // Set zoom=1 so offsetHeight gives the natural, unscaled board height.
@@ -334,7 +380,8 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     // scaleH: fit the board's DOM height into the viewport's width (short side).
     // scaleW: fit the board's DOM width into the viewport's height (long side) —
     //         needed when wide variants (e.g. Longo) make the board wider than 100dvh.
-    const scaleH = h > 0 ? (window.innerWidth  - 16) / h : (window.innerWidth  - 16) / this.MOBILE_DESIGN_H;
+    const scaleH =
+      h > 0 ? (window.innerWidth - 16) / h : (window.innerWidth - 16) / this.MOBILE_DESIGN_H;
     const scaleW = w > 0 ? (window.innerHeight - 16) / w : 1;
     el.style.setProperty('--mobile-scale', Math.min(scaleH, scaleW, 1).toFixed(4));
   }
@@ -355,7 +402,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       const s: GameState = JSON.parse(event.data);
       if (s.version !== this.gameState()?.version) {
         const prevRoll = this.gameState()?.turnState?.currentRoll;
-        const newRoll  = s.turnState?.currentRoll;
+        const newRoll = s.turnState?.currentRoll;
         if (this.gameState() !== null && !prevRoll && newRoll) {
           this.rollingDice.set(true);
           this.rollStartTime = Date.now();
@@ -375,55 +422,56 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   turnState = computed(() => this.gameState()?.turnState ?? null);
 
-  isMyTurn = computed(() =>
-    this.turnState()?.activePlayerId === this.playerId()
-  );
+  isMyTurn = computed(() => this.turnState()?.activePlayerId === this.playerId());
 
   isInPassiveQueue = computed(() =>
-    (this.turnState()?.passivePlayerQueue ?? []).includes(this.playerId())
+    (this.turnState()?.passivePlayerQueue ?? []).includes(this.playerId()),
   );
 
-  canRoll = computed(() =>
-    this.isMyTurn() && this.turnState()?.phase === TurnPhase.ROLL
-  );
+  canRoll = computed(() => this.isMyTurn() && this.turnState()?.phase === TurnPhase.ROLL);
 
   canPassActive = computed(() => {
     const turn = this.turnState();
     if (!this.isMyTurn() || turn?.phase !== TurnPhase.ACTIVE_MOVE) return false;
-    if (turn.whiteWhiteUsed === true || turn.colorDieUsed === true || turn.luckyNumberUsed === true) return true;
+    if (turn.whiteWhiteUsed === true || turn.colorDieUsed === true || turn.luckyNumberUsed === true)
+      return true;
     // Allow EndTurn when this player has a pending lock-closure intent (declared without dice).
     const pid = this.playerId();
     const pendingClosures: Record<string, string> = this.gameState()?.pendingClosures ?? {};
-    return Object.values(pendingClosures).some(v => v === pid);
+    return Object.values(pendingClosures).some((v) => v === pid);
   });
 
   canGiveUp = computed(() => {
     const turn = this.turnState();
-    return this.isMyTurn()
-      && turn?.phase === TurnPhase.ACTIVE_MOVE
-      && !turn.whiteWhiteUsed
-      && !turn.colorDieUsed
-      && !turn.luckyNumberUsed;
+    return (
+      this.isMyTurn() &&
+      turn?.phase === TurnPhase.ACTIVE_MOVE &&
+      !turn.whiteWhiteUsed &&
+      !turn.colorDieUsed &&
+      !turn.luckyNumberUsed
+    );
   });
 
-  hasPendingPassiveCross = computed(() =>
-    this.isInPassiveQueue() && !this.isMyTurn() && this.pendingCellIds().size > 0
+  hasPendingPassiveCross = computed(
+    () => this.isInPassiveQueue() && !this.isMyTurn() && this.pendingCellIds().size > 0,
   );
 
   // Active player has a pending cross (in undo buffer) while a passive has declared.
   // Surfaces the Change/OK buttons in the notification modal for the active player too.
-  hasPendingActiveCross = computed(() =>
-    this.isMyTurn()
-    && this.turnState()?.phase === TurnPhase.ACTIVE_MOVE
-    && this.pendingCellIds().size > 0
+  hasPendingActiveCross = computed(
+    () =>
+      this.isMyTurn() &&
+      this.turnState()?.phase === TurnPhase.ACTIVE_MOVE &&
+      this.pendingCellIds().size > 0,
   );
 
   // Active player has already EndTurned (phase=PASSIVE_MOVE) but passives are still acting.
   // Allows them to revert their EndTurn via RESET_TURN and make additional moves.
-  hasRevertableEndTurn = computed(() =>
-    this.isMyTurn()
-    && this.turnState()?.phase === TurnPhase.PASSIVE_MOVE
-    && (this.turnState()?.passivePlayerQueue?.length ?? 0) > 0
+  hasRevertableEndTurn = computed(
+    () =>
+      this.isMyTurn() &&
+      this.turnState()?.phase === TurnPhase.PASSIVE_MOVE &&
+      (this.turnState()?.passivePlayerQueue?.length ?? 0) > 0,
   );
 
   // Passive player has already EndTurned (left the queue) but other passives are still acting.
@@ -431,10 +479,12 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   hasRevertablePassiveEndTurn = computed(() => {
     const turn = this.turnState();
     const phase = turn?.phase;
-    return !this.isMyTurn()
-      && !this.isInPassiveQueue()
-      && (phase === TurnPhase.ACTIVE_MOVE || phase === TurnPhase.PASSIVE_MOVE)
-      && (turn?.passivePlayerQueue?.length ?? 0) > 0;
+    return (
+      !this.isMyTurn() &&
+      !this.isInPassiveQueue() &&
+      (phase === TurnPhase.ACTIVE_MOVE || phase === TurnPhase.PASSIVE_MOVE) &&
+      (turn?.passivePlayerQueue?.length ?? 0) > 0
+    );
   });
 
   // True when this player has declared a lock intent that is currently pending.
@@ -442,7 +492,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   // (e.g. the player clicked the lock button directly).
   isDeclarantInLockPending = computed(() => {
     const myName = this.playerName(this.playerId());
-    return (this.gameState()?.closureNotifications ?? []).some(r => r.playerName === myName);
+    return (this.gameState()?.closureNotifications ?? []).some((r) => r.playerName === myName);
   });
 
   // Row IDs where this player is the pending declarant — used to show the lock ✕
@@ -456,7 +506,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const result = new Set<string>();
     for (const req of state.closureNotifications ?? []) {
       if (req.playerName !== myName) continue;
-      const row = layout.rows.find(r => r.lock?.color === req.rowColor);
+      const row = layout.rows.find((r) => r.lock?.color === req.rowColor);
       if (row) result.add(row.id);
     }
     return result;
@@ -472,27 +522,30 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   canPassPassive = computed(() => {
     const phase = this.turnState()?.phase;
-    return this.isInPassiveQueue()
-      && (phase === TurnPhase.PASSIVE_MOVE
-          || phase === TurnPhase.ACTIVE_MOVE);
+    return (
+      this.isInPassiveQueue() &&
+      (phase === TurnPhase.PASSIVE_MOVE || phase === TurnPhase.ACTIVE_MOVE)
+    );
   });
 
   // True when the active player has no clickable cells and can only take a punishment.
   // pendingCellIds check: after an x-change cross the player can still RESET_TURN.
-  mustGiveUp = computed(() =>
-    !this.rollingDice()
-    && this.canGiveUp()
-    && !this.canPassActive()
-    && this.pendingCellIds().size === 0
-    && this.clickableCellIds().size === 0
+  mustGiveUp = computed(
+    () =>
+      !this.rollingDice() &&
+      this.canGiveUp() &&
+      !this.canPassActive() &&
+      this.pendingCellIds().size === 0 &&
+      this.clickableCellIds().size === 0,
   );
 
   // True when a passive player has no cells to cross and passing is their only option.
-  mustPassPassive = computed(() =>
-    !this.rollingDice()
-    && this.canPassPassive()
-    && !this.hasPendingPassiveCross()
-    && this.clickableCellIds().size === 0
+  mustPassPassive = computed(
+    () =>
+      !this.rollingDice() &&
+      this.canPassPassive() &&
+      !this.hasPendingPassiveCross() &&
+      this.clickableCellIds().size === 0,
   );
 
   gameFaces = computed((): 6 | 8 => {
@@ -504,31 +557,31 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const max = this.gameFaces() * 2;
     return Array.from({ length: max }, (_, i) => {
       const n = i + 1;
-      return { crosses: n, points: n * (n + 1) / 2 };
+      return { crosses: n, points: (n * (n + 1)) / 2 };
     });
   });
 
-  private bigPointsCap = computed((): number | null => {
+  private readonly bigPointsCap = computed((): number | null => {
     const layout = this.gameState()?.sheetLayouts[this.playerId()];
     if (!layout) return null;
-    const hasBonus = layout.rows.some(row =>
-      row.cells.some(c => c.tags?.some(t => t.type === CellTag.TypeEnum.SECONDARY_COLOR))
+    const hasBonus = layout.rows.some((row) =>
+      row.cells.some((c) => c.tags?.some((t) => t.type === CellTag.TypeEnum.SECONDARY_COLOR)),
     );
     if (!hasBonus) return null;
-    const regularRow = layout.rows.find(r => r.lock != null);
+    const regularRow = layout.rows.find((r) => r.lock != null);
     return regularRow ? regularRow.cells.length + 4 : null;
   });
 
   maxedColors = computed((): Set<string> => {
     const cap = this.bigPointsCap();
     if (cap === null) return this.emptySet;
-    const layout   = this.gameState()?.sheetLayouts[this.playerId()];
+    const layout = this.gameState()?.sheetLayouts[this.playerId()];
     const progress = this.gameState()?.sheetProgress[this.playerId()];
     if (!layout) return this.emptySet;
 
     const counts: Record<string, number> = {};
     for (const row of layout.rows) {
-      if (row.luckyRow) continue;  // luckyNumber rows score separately; never count toward colour buckets
+      if (row.luckyRow) continue; // luckyNumber rows score separately; never count toward colour buckets
       const rowState = progress?.rowStates[row.id];
       if (!rowState) continue;
       const crossed = new Set(rowState.crossedCells ?? []);
@@ -557,7 +610,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.gameState()?.bonusNumbers?.[pid] ?? [];
   }
 
-  isBonusNumberActive(pid: string, n: number): boolean {
+  isBonusNumberActive(_pid: string, n: number): boolean {
     const roll = this.turnState()?.currentRoll;
     if (!roll) return false;
     return roll.white1 + roll.white2 === n;
@@ -566,21 +619,21 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   coloredDiceEntries = computed(() => {
     const roll = this.turnState()?.currentRoll;
     const active = this.gameState()?.activeDiceColors ?? [];
-    return active.map(color => ({ color, value: roll?.coloredDice[color] ?? null }));
+    return active.map((color) => ({ color, value: roll?.coloredDice[color] ?? null }));
   });
 
   clickableCellIds = computed((): Set<string> => {
     const state = this.gameState();
-    const pid   = this.playerId();
-    const turn  = this.turnState();
+    const pid = this.playerId();
+    const turn = this.turnState();
     if (!state || !turn?.currentRoll) return this.emptySet;
 
-    const roll     = turn.currentRoll;
-    const layout   = state.sheetLayouts[pid];
+    const roll = turn.currentRoll;
+    const layout = state.sheetLayouts[pid];
     const progress = state.sheetProgress[pid];
     if (!layout) return this.emptySet;
 
-    const result    = new Set<string>();
+    const result = new Set<string>();
     const closedRows = state.closedRows ?? {};
 
     if (turn.phase === TurnPhase.ACTIVE_MOVE && this.isMyTurn()) {
@@ -590,12 +643,20 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       const effectiveWW = turn.effectiveWhiteWhite?.[pid];
       if (!turn.whiteWhiteUsed && !turn.colorDieUsed) {
-        const wwTarget = effectiveWW ?? (roll.white1 + roll.white2);
-        this.collectCells(layout, progress, closedRows, wwTarget, null, result, effectiveWW != null);
+        const wwTarget = effectiveWW ?? roll.white1 + roll.white2;
+        this.collectCells(
+          layout,
+          progress,
+          closedRows,
+          wwTarget,
+          null,
+          result,
+          effectiveWW != null,
+        );
       }
       if (!turn.colorDieUsed) {
         for (const row of layout.rows) {
-          if (row.luckyRow) continue;  // luckyNumber row excluded from regular color-die path
+          if (row.luckyRow) continue; // luckyNumber row excluded from regular color-die path
           if (closedRows[row.id]) continue;
           const rowColor = row.cells[0]?.color as Color;
           const colorVal = roll.coloredDice[rowColor];
@@ -612,14 +673,23 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       // Lucky Cross cells are available independently of the regular move.
       for (const id of this.luckyCrossHighlightCellIds()) result.add(id);
-    } else if ((turn.phase === TurnPhase.PASSIVE_MOVE
-                || turn.phase === TurnPhase.ACTIVE_MOVE)
-               && this.isInPassiveQueue()) {
+    } else if (
+      (turn.phase === TurnPhase.PASSIVE_MOVE || turn.phase === TurnPhase.ACTIVE_MOVE) &&
+      this.isInPassiveQueue()
+    ) {
       const effectiveWW = turn.effectiveWhiteWhite?.[pid];
       // Allow WW cells when no pending cross, OR when the only pending cross is an x-change.
       if (this.pendingCellIds().size === 0 || effectiveWW != null) {
-        const wwTarget = effectiveWW ?? (roll.white1 + roll.white2);
-        this.collectCells(layout, progress, closedRows, wwTarget, null, result, effectiveWW != null);
+        const wwTarget = effectiveWW ?? roll.white1 + roll.white2;
+        this.collectCells(
+          layout,
+          progress,
+          closedRows,
+          wwTarget,
+          null,
+          result,
+          effectiveWW != null,
+        );
       }
       // Lucky Cross cells are available independently of the white+white move.
       for (const id of this.luckyCrossHighlightCellIds()) result.add(id);
@@ -633,23 +703,31 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   whiteWhiteClickableCellIds = computed((): Set<string> => {
     if (this.rollingDice()) return this.emptySet;
     const state = this.gameState();
-    const pid   = this.playerId();
-    const turn  = this.turnState();
+    const pid = this.playerId();
+    const turn = this.turnState();
     if (!state || !turn?.currentRoll) return this.emptySet;
 
-    const roll     = turn.currentRoll;
-    const layout   = state.sheetLayouts[pid];
+    const roll = turn.currentRoll;
+    const layout = state.sheetLayouts[pid];
     const progress = state.sheetProgress[pid];
     if (!layout) return this.emptySet;
 
     const closedRows = state.closedRows ?? {};
-    const result     = new Set<string>();
+    const result = new Set<string>();
 
     if (turn.phase === TurnPhase.ACTIVE_MOVE && this.isMyTurn()) {
       const effectiveWW = turn.effectiveWhiteWhite?.[pid];
       if (!turn.whiteWhiteUsed && !turn.colorDieUsed) {
-        const wwTarget = effectiveWW ?? (roll.white1 + roll.white2);
-        this.collectCells(layout, progress, closedRows, wwTarget, null, result, effectiveWW != null);
+        const wwTarget = effectiveWW ?? roll.white1 + roll.white2;
+        this.collectCells(
+          layout,
+          progress,
+          closedRows,
+          wwTarget,
+          null,
+          result,
+          effectiveWW != null,
+        );
       }
       // LuckyNumber highlight cells glow cyan like white+white cells.
       if (!turn.whiteWhiteUsed && !turn.colorDieUsed && !turn.luckyNumberUsed) {
@@ -657,13 +735,22 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       // Lucky Cross cells also glow cyan.
       for (const id of this.luckyCrossHighlightCellIds()) result.add(id);
-    } else if ((turn.phase === TurnPhase.PASSIVE_MOVE
-                || turn.phase === TurnPhase.ACTIVE_MOVE)
-               && this.isInPassiveQueue()) {
+    } else if (
+      (turn.phase === TurnPhase.PASSIVE_MOVE || turn.phase === TurnPhase.ACTIVE_MOVE) &&
+      this.isInPassiveQueue()
+    ) {
       const effectiveWW = turn.effectiveWhiteWhite?.[pid];
       if (this.pendingCellIds().size === 0 || effectiveWW != null) {
-        const wwTarget = effectiveWW ?? (roll.white1 + roll.white2);
-        this.collectCells(layout, progress, closedRows, wwTarget, null, result, effectiveWW != null);
+        const wwTarget = effectiveWW ?? roll.white1 + roll.white2;
+        this.collectCells(
+          layout,
+          progress,
+          closedRows,
+          wwTarget,
+          null,
+          result,
+          effectiveWW != null,
+        );
       }
       // Lucky Cross cells glow cyan for passive players too.
       for (const id of this.luckyCrossHighlightCellIds()) result.add(id);
@@ -673,50 +760,58 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   });
 
   private collectCells(
-    layout:         SheetLayout,
-    progress:       SheetProgress | undefined,
-    closedRows:     Record<string, string>,
-    targetValue:    number,
-    restrictRow:    string | null,
-    result:         Set<string>,
-    hasXChangeActive = false
+    layout: SheetLayout,
+    progress: SheetProgress | undefined,
+    closedRows: Record<string, string>,
+    targetValue: number,
+    restrictRow: string | null,
+    result: Set<string>,
+    hasXChangeActive = false,
   ) {
     const bonusNums: number[] = this.gameState()?.bonusNumbers?.[this.playerId()] ?? [];
 
     // Build a map from rowId -> Set of crossed displayValues for the bonus prerequisite check.
     const crossedValuesInRow = (rowId: string | undefined): Set<string> => {
       if (!rowId) return new Set();
-      const rowLayout = layout.rows.find(r => r.id === rowId);
+      const rowLayout = layout.rows.find((r) => r.id === rowId);
       if (!rowLayout) return new Set();
       const crossedIds = new Set(progress?.rowStates[rowId]?.crossedCells ?? []);
-      return new Set(rowLayout.cells.filter(c => crossedIds.has(c.id)).map(c => c.displayValue));
+      return new Set(
+        rowLayout.cells.filter((c) => crossedIds.has(c.id)).map((c) => c.displayValue),
+      );
     };
 
     for (const row of layout.rows) {
       if (restrictRow && row.id !== restrictRow) continue;
       if (closedRows[row.id]) continue;
-      if (row.luckyRow) continue;  // luckyNumber cells are only offered via luckyNumberHighlightCellIds
+      if (row.luckyRow) continue; // luckyNumber cells are only offered via luckyNumberHighlightCellIds
       const crossed = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
-      const lastPos = Math.max(-1, ...row.cells.filter(c => crossed.has(c.id)).map(c => c.position));
+      const lastPos = Math.max(
+        -1,
+        ...row.cells.filter((c) => crossed.has(c.id)).map((c) => c.position),
+      );
       for (const cell of row.cells) {
         if (crossed.has(cell.id)) continue;
         if (cell.position <= lastPos) continue;
         // X-change cells: match against their pair values instead of displayValue.
-        const xchangeTag = cell.tags.find(t => t.type === CellTag.TypeEnum.X_CHANGE);
+        const xchangeTag = cell.tags.find((t) => t.type === CellTag.TypeEnum.X_CHANGE);
         if (xchangeTag) {
           if (hasXChangeActive) continue; // x-change already applied; don't offer another
-          if (restrictRow) continue;       // x-change only available via white+white (no restrictRow)
+          if (restrictRow) continue; // x-change only available via white+white (no restrictRow)
           if (xchangeTag.valueA !== targetValue && xchangeTag.valueB !== targetValue) continue;
         } else if (parseInt(cell.displayValue) !== targetValue) continue;
         if (cell.closingEligible && row.lock) {
-          const alreadyCrossedClosing = row.lock.closingCells.filter(id => crossed.has(id)).length;
+          const alreadyCrossedClosing = row.lock.closingCells.filter((id) =>
+            crossed.has(id),
+          ).length;
           const normalCrossed = crossed.size - alreadyCrossedClosing;
           if (normalCrossed + 1 < row.lock.minCrosses) continue;
         }
         if (row.bonusRow) {
           const upperCrossed = crossedValuesInRow(row.upperNeighbourRowId);
           const lowerCrossed = crossedValuesInRow(row.lowerNeighbourRowId);
-          if (!upperCrossed.has(cell.displayValue) && !lowerCrossed.has(cell.displayValue)) continue;
+          if (!upperCrossed.has(cell.displayValue) && !lowerCrossed.has(cell.displayValue))
+            continue;
         }
         result.add(cell.id);
       }
@@ -739,11 +834,12 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
           if (row.luckyRow) continue;
           const crossed = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
           if (crossed.size !== fewest) continue;
-          const lastPos = crossed.size > 0
-            ? Math.max(...row.cells.filter(c => crossed.has(c.id)).map(c => c.position))
-            : -1;
+          const lastPos =
+            crossed.size > 0
+              ? Math.max(...row.cells.filter((c) => crossed.has(c.id)).map((c) => c.position))
+              : -1;
           const leftmost = row.cells
-            .filter(c => !crossed.has(c.id) && c.position > lastPos)
+            .filter((c) => !crossed.has(c.id) && c.position > lastPos)
             .sort((a, b) => a.position - b.position)[0];
           if (leftmost) result.add(leftmost.id);
         }
@@ -782,20 +878,20 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     const state = this.gameState();
-    const turn  = this.turnState();
+    const turn = this.turnState();
     if (!state || !turn?.currentRoll) return;
 
-    const pid    = this.playerId();
+    const pid = this.playerId();
     const layout = state.sheetLayouts[pid];
-    const row    = layout?.rows.find(r => r.id === rowId);
-    const cell   = row?.cells.find(c => c.id === cellId);
+    const row = layout?.rows.find((r) => r.id === rowId);
+    const cell = row?.cells.find((c) => c.id === cellId);
 
     // LONGO: the second-to-last closing cell ("15"/"3") shows a YES/NO modal.
     // YES → cross the cell and send DECLARE_LOCK_INTENT immediately (notifies passives).
     // NO  → just cross the cell; no closure intent.
     // The last closing cell ("16"/"2") is auto-detected at EndTurn — no modal needed.
     if (row && cell?.closingEligible && (row.lock?.closingCells?.length ?? 0) > 1) {
-      const closingCells   = row.lock!.closingCells;
+      const closingCells = row.lock!.closingCells;
       const secondToLastId = closingCells[closingCells.length - 2];
       if (cell.id === secondToLastId) {
         const req = this.buildCrossMoveRequest(row, cell, rowId, cellId);
@@ -815,7 +911,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
               this.rowClosureModal.clearLockConfirm();
               this.audio.play(AudioService.CROSS);
               this.sendMove(req);
-            }
+            },
           );
         }
         return;
@@ -871,25 +967,35 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  private buildCrossMoveRequest(row: SheetRow, cell: SheetCell, rowId: string, cellId: string): MoveRequest | null {
+  private buildCrossMoveRequest(
+    row: SheetRow,
+    cell: SheetCell,
+    rowId: string,
+    cellId: string,
+  ): MoveRequest | null {
     if (this.isInPassiveQueue()) {
       return { moveType: MoveType.CROSS_WHITE_WHITE, rowId, cellId };
     }
     const turn = this.turnState();
     if (!turn?.currentRoll) return null;
-    const roll       = turn.currentRoll;
-    const pid        = this.playerId();
-    const cellValue  = parseInt(cell.displayValue);
-    const rowColor   = row.cells[0]?.color as Color;
-    const colorVal   = roll.coloredDice[rowColor] ?? null;
+    const roll = turn.currentRoll;
+    const pid = this.playerId();
+    const cellValue = parseInt(cell.displayValue);
+    const rowColor = row.cells[0]?.color as Color;
+    const colorVal = roll.coloredDice[rowColor] ?? null;
     const effectiveWW = turn.effectiveWhiteWhite?.[pid];
-    const wwTarget   = effectiveWW ?? (roll.white1 + roll.white2);
-    const isWW    = cellValue === wwTarget && !turn.whiteWhiteUsed && !turn.colorDieUsed;
-    const isColor = colorVal != null &&
+    const wwTarget = effectiveWW ?? roll.white1 + roll.white2;
+    const isWW = cellValue === wwTarget && !turn.whiteWhiteUsed && !turn.colorDieUsed;
+    const isColor =
+      colorVal != null &&
       (cellValue === roll.white1 + colorVal || cellValue === roll.white2 + colorVal) &&
       !turn.colorDieUsed;
     if (!isWW && !isColor) return null;
-    return { moveType: (isColor && !isWW) ? MoveType.CROSS_COLOR_DIE : MoveType.CROSS_WHITE_WHITE, rowId, cellId };
+    return {
+      moveType: isColor && !isWW ? MoveType.CROSS_COLOR_DIE : MoveType.CROSS_WHITE_WHITE,
+      rowId,
+      cellId,
+    };
   }
 
   canTakePunishment(pid: string): boolean {
@@ -923,16 +1029,19 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   offlineClickableCellIds(pid: string): Set<string> {
     const state = this.gameState();
     if (!state) return this.emptySet;
-    const layout   = state.sheetLayouts[pid];
+    const layout = state.sheetLayouts[pid];
     const progress = state.sheetProgress[pid];
-    const closed   = state.closedRows ?? {};
+    const closed = state.closedRows ?? {};
     if (!layout) return this.emptySet;
 
     const result = new Set<string>();
     for (const row of layout.rows) {
       if (closed[row.id]) continue;
-      const crossed  = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
-      const lastPos  = Math.max(-1, ...row.cells.filter(c => crossed.has(c.id)).map(c => c.position));
+      const crossed = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
+      const lastPos = Math.max(
+        -1,
+        ...row.cells.filter((c) => crossed.has(c.id)).map((c) => c.position),
+      );
       for (const cell of row.cells) {
         if (!crossed.has(cell.id) && cell.position > lastPos) result.add(cell.id);
       }
@@ -943,10 +1052,10 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   isLockEligible(pid: string, rowId: string): boolean {
     const state = this.gameState();
     if (!state) return false;
-    const layout   = state.sheetLayouts[pid];
+    const layout = state.sheetLayouts[pid];
     const progress = state.sheetProgress[pid];
     if (!layout) return false;
-    const row = layout.rows.find(r => r.id === rowId);
+    const row = layout.rows.find((r) => r.id === rowId);
     if (!row?.lock) return false;
     const rowState = progress?.rowStates[rowId];
     if (rowState?.lockCrossed) return false;
@@ -956,8 +1065,8 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Mirror LongoTurnRules.canCrossLock / StandardTurnRules.canCrossLock:
     // Any ONE closing cell (permanent or pending) qualifies for the lock.
-    const pending  = this.pendingCellIds();
-    const closing  = row.lock.closingCells;
+    const pending = this.pendingCellIds();
+    const closing = row.lock.closingCells;
     const lastCell = closing[closing.length - 1];
 
     // Last closing cell in any crosses (permanent or pending) → eligible.
@@ -971,9 +1080,12 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     return false;
   }
 
-  private computePendingAutoLock(row: SheetRow, cell: SheetCell): { rowId: string; autoLock: boolean; cellId: string } | null {
+  private computePendingAutoLock(
+    row: SheetRow,
+    cell: SheetCell,
+  ): { rowId: string; autoLock: boolean; cellId: string } | null {
     if (!this.wouldEnableLockDeclaration(row, cell.id)) return null;
-    const closingCells  = row.lock!.closingCells;
+    const closingCells = row.lock!.closingCells;
     const lastClosingId = closingCells[closingCells.length - 1];
     const autoLock = cell.id === lastClosingId;
     return { rowId: row.id, autoLock, cellId: cell.id };
@@ -982,26 +1094,26 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   private wouldEnableLockDeclaration(row: SheetRow, newCellId: string): boolean {
     const state = this.gameState();
     if (!state || !row.lock) return false;
-    const pid       = this.playerId();
+    const pid = this.playerId();
     const permanent = new Set(state.sheetProgress[pid]?.rowStates[row.id]?.crossedCells ?? []);
-    const pending   = new Set([...this.pendingCellIds(), newCellId]);
-    const all       = new Set([...permanent, ...pending]);
+    const pending = new Set([...this.pendingCellIds(), newCellId]);
+    const all = new Set([...permanent, ...pending]);
     // Any ONE closing cell in all crosses is enough to qualify.
-    return row.lock.closingCells.some(id => all.has(id));
+    return row.lock.closingCells.some((id) => all.has(id));
   }
 
   private canDeclareLockForRow(s: GameState, rowId: string): boolean {
-    const pid      = this.playerId();
-    const row      = s.sheetLayouts?.[pid]?.rows.find(r => r.id === rowId);
+    const pid = this.playerId();
+    const row = s.sheetLayouts?.[pid]?.rows.find((r) => r.id === rowId);
     if (!row?.lock) return false;
     if ((s.closedRows ?? {})[rowId]) return false;
     if ((s.pendingClosures ?? {})[rowId]) return false; // already declared
     const rowState = s.sheetProgress?.[pid]?.rowStates?.[rowId];
     if (rowState?.lockCrossed) return false;
     const permanent = new Set(rowState?.crossedCells ?? []);
-    const pending   = new Set(s.turnState?.pendingCrosses?.[pid] ?? []);
-    const closing   = row.lock.closingCells;
-    const last      = closing[closing.length - 1];
+    const pending = new Set(s.turnState?.pendingCrosses?.[pid] ?? []);
+    const closing = row.lock.closingCells;
+    const last = closing[closing.length - 1];
 
     // Last closing cell (permanent or pending) → can declare.
     if (permanent.has(last) || pending.has(last)) return true;
@@ -1029,7 +1141,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Clear stale pendingAutoLock when the triggering cross has been undone.
     const pid = this.playerId();
-    const permanent    = new Set(s.sheetProgress?.[pid]?.rowStates?.[rowId]?.crossedCells ?? []);
+    const permanent = new Set(s.sheetProgress?.[pid]?.rowStates?.[rowId]?.crossedCells ?? []);
     const pendingCrosses = new Set(s.turnState?.pendingCrosses?.[pid] ?? []);
     if (!permanent.has(cellId) && !pendingCrosses.has(cellId)) {
       this.pendingAutoLock.set(null);
@@ -1054,14 +1166,13 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       this.moveSub.unsubscribe();
       this.fetchState();
     }
-    this.moveSub = this.movesService.makeMove(this.sessionId(), pid, req)
-      .subscribe({
-        next: () => this.fetchState(),
-        error: e => {
-          console.error('Move rejected:', e);
-          this.fetchState();
-        }
-      });
+    this.moveSub = this.movesService.makeMove(this.sessionId(), pid, req).subscribe({
+      next: () => this.fetchState(),
+      error: (e) => {
+        console.error('Move rejected:', e);
+        this.fetchState();
+      },
+    });
   }
 
   private sendMove(req: MoveRequest) {
@@ -1069,23 +1180,22 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       this.moveSub.unsubscribe();
       this.fetchState();
     }
-    this.moveSub = this.movesService.makeMove(this.sessionId(), this.playerId(), req)
-      .subscribe({
-        next: (response) => {
-          if (response?.botRolled) {
-            this.rollingDice.set(true);
-            this.rollStartTime = Date.now();
-            setTimeout(() => this.fetchState(), this.ROLL_ANIM_MIN_MS);
-          } else {
-            this.fetchState();
-          }
-        },
-        error: e => {
-          this.rollingDice.set(false);
-          console.error('Move rejected:', e);
+    this.moveSub = this.movesService.makeMove(this.sessionId(), this.playerId(), req).subscribe({
+      next: (response) => {
+        if (response?.botRolled) {
+          this.rollingDice.set(true);
+          this.rollStartTime = Date.now();
+          setTimeout(() => this.fetchState(), this.ROLL_ANIM_MIN_MS);
+        } else {
           this.fetchState();
         }
-      });
+      },
+      error: (e) => {
+        this.rollingDice.set(false);
+        console.error('Move rejected:', e);
+        this.fetchState();
+      },
+    });
   }
 
   private applyState(s: GameState) {
@@ -1095,8 +1205,14 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const prev = this.gameState();
     if (prev) {
-      const prevPunishments = Object.values(prev.sheetProgress ?? {}).reduce((n, p) => n + (p.punishments ?? 0), 0);
-      const newPunishments  = Object.values(s.sheetProgress   ?? {}).reduce((n, p) => n + (p.punishments ?? 0), 0);
+      const prevPunishments = Object.values(prev.sheetProgress ?? {}).reduce(
+        (n, p) => n + (p.punishments ?? 0),
+        0,
+      );
+      const newPunishments = Object.values(s.sheetProgress ?? {}).reduce(
+        (n, p) => n + (p.punishments ?? 0),
+        0,
+      );
       if (newPunishments > prevPunishments) this.audio.play(AudioService.PUNISHMENT);
     }
 
@@ -1130,7 +1246,10 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       this.checkPendingAutoLock(s);
       // If a roll animation is in progress (passive player watching), clear it after the window.
       if (this.rollingDice()) {
-        setTimeout(() => { this.audio.play(AudioService.DICE); this.rollingDice.set(false); }, remaining);
+        setTimeout(() => {
+          this.audio.play(AudioService.DICE);
+          this.rollingDice.set(false);
+        }, remaining);
       }
     }
   }
@@ -1140,7 +1259,9 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.stateSub?.unsubscribe();
     this.stateSub = this.gameStatesService.getGameState(this.sessionId()).subscribe({
       next: (s: GameState) => this.applyState(s),
-      error: () => { window.location.href = environment.lobbyUrl; }
+      error: () => {
+        window.location.href = environment.lobbyUrl;
+      },
     });
   }
 
@@ -1155,41 +1276,49 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   // Formula: 8px left-padding + position * (44px cell + 4px gap) + 22px half-width.
   // When the immediately adjacent row is a bonus row, we also look one step further
   // so that connections spanning across a bonus row are found correctly.
-  myRowConnectors = computed((): Map<string, { above: number[], below: number[], hasBonusRowAbove: boolean, hasBonusRowBelow: boolean }> => {
-    const layout = this.layoutFor(this.playerId());
-    const result = new Map<string, { above: number[], below: number[], hasBonusRowAbove: boolean, hasBonusRowBelow: boolean }>();
-    if (!layout) return result;
-    for (let i = 0; i < layout.rows.length; i++) {
-      const row = layout.rows[i];
+  myRowConnectors = computed(
+    (): Map<
+      string,
+      { above: number[]; below: number[]; hasBonusRowAbove: boolean; hasBonusRowBelow: boolean }
+    > => {
+      const layout = this.layoutFor(this.playerId());
+      const result = new Map<
+        string,
+        { above: number[]; below: number[]; hasBonusRowAbove: boolean; hasBonusRowBelow: boolean }
+      >();
+      if (!layout) return result;
+      for (let i = 0; i < layout.rows.length; i++) {
+        const row = layout.rows[i];
 
-      const rowBelow = layout.rows[i + 1];
-      const hasBonusRowBelow = rowBelow?.bonusRow === true;
-      const belowIds = new Set<string>(rowBelow?.cells.map(c => c.id) ?? []);
-      if (hasBonusRowBelow && i + 2 < layout.rows.length) {
-        for (const id of layout.rows[i + 2].cells.map(c => c.id)) belowIds.add(id);
-      }
-
-      const rowAbove = layout.rows[i - 1];
-      const hasBonusRowAbove = rowAbove?.bonusRow === true;
-      const aboveIds = new Set<string>(rowAbove?.cells.map(c => c.id) ?? []);
-      if (hasBonusRowAbove && i - 2 >= 0) {
-        for (const id of layout.rows[i - 2].cells.map(c => c.id)) aboveIds.add(id);
-      }
-
-      const above: number[] = [];
-      const below: number[] = [];
-      for (const cell of row.cells) {
-        for (const tag of cell.tags ?? []) {
-          if (tag.type !== CellTag.TypeEnum.AUTO_CROSS || !tag.target) continue;
-          const offset = 8 + cell.position * 48 + 22;
-          if (aboveIds.has(tag.target)) above.push(offset);
-          if (belowIds.has(tag.target)) below.push(offset);
+        const rowBelow = layout.rows[i + 1];
+        const hasBonusRowBelow = rowBelow?.bonusRow === true;
+        const belowIds = new Set<string>(rowBelow?.cells.map((c) => c.id) ?? []);
+        if (hasBonusRowBelow && i + 2 < layout.rows.length) {
+          for (const id of layout.rows[i + 2].cells.map((c) => c.id)) belowIds.add(id);
         }
+
+        const rowAbove = layout.rows[i - 1];
+        const hasBonusRowAbove = rowAbove?.bonusRow === true;
+        const aboveIds = new Set<string>(rowAbove?.cells.map((c) => c.id) ?? []);
+        if (hasBonusRowAbove && i - 2 >= 0) {
+          for (const id of layout.rows[i - 2].cells.map((c) => c.id)) aboveIds.add(id);
+        }
+
+        const above: number[] = [];
+        const below: number[] = [];
+        for (const cell of row.cells) {
+          for (const tag of cell.tags ?? []) {
+            if (tag.type !== CellTag.TypeEnum.AUTO_CROSS || !tag.target) continue;
+            const offset = 8 + cell.position * 48 + 22;
+            if (aboveIds.has(tag.target)) above.push(offset);
+            if (belowIds.has(tag.target)) below.push(offset);
+          }
+        }
+        result.set(row.id, { above, below, hasBonusRowAbove, hasBonusRowBelow });
       }
-      result.set(row.id, { above, below, hasBonusRowAbove, hasBonusRowBelow });
-    }
-    return result;
-  });
+      return result;
+    },
+  );
 
   rowStateFor(pid: string, rowId: string): RowState | null {
     return this.gameState()?.sheetProgress?.[pid]?.rowStates?.[rowId] ?? null;
@@ -1200,7 +1329,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   playerName(pid: string): string {
-    return this.gameState()?.players.find(p => p.id === pid)?.name ?? pid;
+    return this.gameState()?.players.find((p) => p.id === pid)?.name ?? pid;
   }
 
   onConfirmRowClosure() {

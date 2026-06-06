@@ -1,5 +1,13 @@
 package nl.adg.qwixx.rules;
 
+import static nl.adg.qwixx.rules.CellCrosser.getRowState;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import nl.adg.qwixx.action.DeclareLockIntentAction;
 import nl.adg.qwixx.action.GameAction;
 import nl.adg.qwixx.data.Color;
@@ -13,15 +21,6 @@ import nl.adg.qwixx.state.SheetLayout;
 import nl.adg.qwixx.state.SheetProgress;
 import nl.adg.qwixx.state.TurnPhase;
 import nl.adg.qwixx.state.TurnState;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-import static nl.adg.qwixx.rules.CellCrosser.getRowState;
 
 /**
  * Static helpers for row-closure and lock-eligibility decisions.

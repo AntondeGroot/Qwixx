@@ -1,23 +1,5 @@
 package nl.adg.qwixx.web;
 
-import nl.adg.qwixx.data.Cell;
-import nl.adg.qwixx.data.CellTag;
-import nl.adg.qwixx.data.LockCell;
-import nl.adg.qwixx.data.RollResult;
-import nl.adg.qwixx.data.Row;
-import nl.adg.qwixx.game.GameSession;
-import nl.adg.qwixx.game.LongoVariantData;
-import nl.adg.qwixx.game.Player;
-import nl.adg.qwixx.state.ActiveTurnState;
-import nl.adg.qwixx.state.BoardState;
-import nl.adg.qwixx.state.GameState;
-import nl.adg.qwixx.state.RowState;
-import nl.adg.qwixx.state.SheetLayout;
-import nl.adg.qwixx.state.SheetProgress;
-import nl.adg.qwixx.state.TurnPhase;
-import nl.adg.qwixx.state.TurnState;
-import nl.adg.qwixx.generated.model.*;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +8,23 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import nl.adg.qwixx.data.Cell;
+import nl.adg.qwixx.data.CellTag;
+import nl.adg.qwixx.data.LockCell;
+import nl.adg.qwixx.data.RollResult;
+import nl.adg.qwixx.data.Row;
+import nl.adg.qwixx.game.GameSession;
+import nl.adg.qwixx.game.LongoVariantData;
+import nl.adg.qwixx.game.Player;
+import nl.adg.qwixx.generated.model.*;
+import nl.adg.qwixx.state.ActiveTurnState;
+import nl.adg.qwixx.state.BoardState;
+import nl.adg.qwixx.state.GameState;
+import nl.adg.qwixx.state.RowState;
+import nl.adg.qwixx.state.SheetLayout;
+import nl.adg.qwixx.state.SheetProgress;
+import nl.adg.qwixx.state.TurnPhase;
+import nl.adg.qwixx.state.TurnState;
 
 class GameStateMapper {
 
@@ -104,6 +103,7 @@ class GameStateMapper {
                 .toList();
     }
 
+    @SuppressWarnings("PMD.ReturnEmptyCollectionRatherThanNull")
     private static Map<String, List<Integer>> mapBonusNumbers(GameState state) {
         if (!(state.variantData() instanceof LongoVariantData longo)) return null;
         Map<String, List<Integer>> result = new HashMap<>();

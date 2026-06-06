@@ -3,9 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { of } from 'rxjs';
 import type { Mocked } from 'vitest';
 import { ScoreComponent } from './score.component';
-import { GamesService } from '../../generated/api/games.service';
-import { GamestatesService } from '../../generated/api/gamestates.service';
-import { PlayersService } from '../../generated/api/players.service';
+import { GamesService, GamestatesService, PlayersService } from '../../generated/api/api';
 import { environment } from '../../environments/environment';
 
 describe('ScoreComponent', () => {
@@ -13,28 +11,33 @@ describe('ScoreComponent', () => {
   let playersService: Mocked<PlayersService>;
 
   beforeEach(() => {
-    playersService = { leaveGame: vi.fn().mockReturnValue(of(void 0)) } as unknown as Mocked<PlayersService>;
+    playersService = {
+      leaveGame: vi.fn().mockReturnValue(of(void 0)),
+    } as unknown as Mocked<PlayersService>;
 
     TestBed.configureTestingModule({
       imports: [ScoreComponent],
       providers: [
-        { provide: GamesService,      useValue: { getScores:     vi.fn().mockReturnValue(of(null)) } },
-        { provide: GamestatesService, useValue: { getGameState:  vi.fn().mockReturnValue(of(null)) } },
-        { provide: PlayersService,    useValue: playersService },
-        { provide: Router,            useValue: { navigate: vi.fn() } },
+        { provide: GamesService, useValue: { getScores: vi.fn().mockReturnValue(of(null)) } },
+        {
+          provide: GamestatesService,
+          useValue: { getGameState: vi.fn().mockReturnValue(of(null)) },
+        },
+        { provide: PlayersService, useValue: playersService },
+        { provide: Router, useValue: { navigate: vi.fn() } },
         {
           provide: ActivatedRoute,
           useValue: {
             snapshot: { paramMap: { get: () => 'session-1' } },
             queryParamMap: of({ get: () => 'player-1' }),
-          }
+          },
         },
-      ]
+      ],
     });
 
     component = TestBed.createComponent(ScoreComponent).componentInstance;
     component.sessionId = 'session-1';
-    component.playerId  = 'player-1';
+    component.playerId = 'player-1';
   });
 
   describe('animationKey cleanup', () => {
@@ -57,9 +60,14 @@ describe('ScoreComponent', () => {
       const mockEventSource = {
         close: vi.fn(),
         onmessage: null as any,
-        onerror:   null as any,
+        onerror: null as any,
       };
-      vi.stubGlobal('EventSource', vi.fn().mockImplementation(function() { return mockEventSource; }));
+      vi.stubGlobal(
+        'EventSource',
+        vi.fn().mockImplementation(function () {
+          return mockEventSource;
+        }),
+      );
 
       (component as any).startRestartSse();
       mockEventSource.onmessage({ data: JSON.stringify({ gameOver: false }) });
@@ -74,7 +82,11 @@ describe('ScoreComponent', () => {
       let navigatedTo = '';
       const locationDescriptor = Object.getOwnPropertyDescriptor(window, 'location');
       Object.defineProperty(window, 'location', {
-        value: { set href(url: string) { navigatedTo = url; } },
+        value: {
+          set href(url: string) {
+            navigatedTo = url;
+          },
+        },
         writable: true,
         configurable: true,
       });

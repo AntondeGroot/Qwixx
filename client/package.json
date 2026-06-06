@@ -8,9 +8,11 @@
     "build": "npm run validate-i18n && ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "generate": "openapi-generator-cli generate",
+    "generate": "openapi-generator-cli generate && node -e \"const fs=require('fs'),path=require('path');function visit(d){for(const f of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,f.name);if(f.isDirectory())visit(p);else if(f.name.endsWith('.ts')){const c=fs.readFileSync(p,'utf8');if(!c.startsWith('// @ts-nocheck'))fs.writeFileSync(p,'// @ts-nocheck\\n'+c);}}}visit('src/generated')\"",
     "e2e": "playwright test",
-    "lint": "ng lint",
+    "lint": "ng lint --max-warnings=0",
+    "format:check": "prettier --check .",
+    "format:write": "prettier --write .",
     "prepare": "[ -n \"$CI\" ] || (cd .. && git config core.hooksPath client/.husky)"
   },
   "private": true,

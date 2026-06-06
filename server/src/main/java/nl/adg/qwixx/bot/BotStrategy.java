@@ -28,7 +28,7 @@ public enum BotStrategy {
     BALANCED;
 
     private static final Logger log = Logger.getLogger(BotStrategy.class.getName());
-    private volatile BotProfile cachedProfile;
+    private transient volatile BotProfile cachedProfile;
 
     public BotProfile profile() {
         if (cachedProfile == null) {

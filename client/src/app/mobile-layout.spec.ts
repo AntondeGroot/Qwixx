@@ -25,16 +25,19 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const dir = dirname(fileURLToPath(import.meta.url));
-function css(rel: string) { return readFileSync(join(dir, rel), 'utf-8'); }
+function css(rel: string) {
+  return readFileSync(join(dir, rel), 'utf-8');
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 /** Returns true if any @media (orientation: portrait) block in cssText
  *  contains `selector { ... prop ... value ... }`. */
 function portraitBlockHas(cssText: string, selector: string, prop: string, value: string): boolean {
-  const portraitBlocks = cssText.match(
-    /@media\s*\([^)]*orientation:\s*portrait[^)]*\)\s*\{([\s\S]*?)(?=@media\s|\s*$)/g
-  ) ?? [];
+  const portraitBlocks =
+    cssText.match(
+      /@media\s*\([^)]*orientation:\s*portrait[^)]*\)\s*\{([\s\S]*?)(?=@media\s|\s*$)/g,
+    ) ?? [];
   for (const block of portraitBlocks) {
     const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const re = new RegExp(escaped + '\\s*\\{([^}]*)\\}', 'g');
@@ -48,9 +51,10 @@ function portraitBlockHas(cssText: string, selector: string, prop: string, value
 
 /** Extracts the value of a CSS property from a selector inside a portrait @media block. */
 function getPortraitPropertyValue(cssText: string, selector: string, prop: string): string | null {
-  const portraitBlocks = cssText.match(
-    /@media\s*\([^)]*orientation:\s*portrait[^)]*\)\s*\{([\s\S]*?)(?=@media\s|\s*$)/g
-  ) ?? [];
+  const portraitBlocks =
+    cssText.match(
+      /@media\s*\([^)]*orientation:\s*portrait[^)]*\)\s*\{([\s\S]*?)(?=@media\s|\s*$)/g,
+    ) ?? [];
   for (const block of portraitBlocks) {
     const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const re = new RegExp(escaped + '\\s*\\{([^}]*)\\}', 'g');
@@ -64,7 +68,12 @@ function getPortraitPropertyValue(cssText: string, selector: string, prop: strin
   return null;
 }
 
-function globalSelectorHas(cssText: string, selector: string, prop: string, value: string): boolean {
+function globalSelectorHas(
+  cssText: string,
+  selector: string,
+  prop: string,
+  value: string,
+): boolean {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const re = new RegExp(escaped + '\\s*\\{([^}]*)\\}', 'g');
   let m: RegExpExecArray | null;

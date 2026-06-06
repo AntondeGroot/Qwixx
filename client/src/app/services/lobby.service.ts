@@ -4,15 +4,15 @@ import { Observable } from 'rxjs';
 import { BASE_PATH } from '../../generated/variables';
 
 export interface LobbyState {
-  players:         { id: string; name: string }[];
+  players: { id: string; name: string }[];
   proposedOptions: Record<string, unknown>;
-  maxPlayers:      number;
+  maxPlayers: number;
 }
 
 @Injectable({ providedIn: 'root' })
 export class LobbyService {
-  private http     = inject(HttpClient);
-  private basePath = inject(BASE_PATH, { optional: true }) ?? '';
+  private readonly http = inject(HttpClient);
+  private readonly basePath = inject(BASE_PATH, { optional: true }) ?? '';
 
   private url(sessionId: string): string {
     return `${this.basePath}/games/${sessionId}/lobby`;

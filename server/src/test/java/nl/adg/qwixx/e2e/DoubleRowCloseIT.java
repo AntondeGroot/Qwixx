@@ -1,5 +1,10 @@
 package nl.adg.qwixx.e2e;
 
+import static nl.adg.qwixx.e2e.helpers.BoardInteractionHelper.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.time.Duration;
+import java.util.List;
 import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
 import nl.adg.qwixx.e2e.utils.TestUtils;
 import org.junit.jupiter.api.AfterAll;
@@ -9,12 +14,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
-
-import java.time.Duration;
-import java.util.List;
-
-import static nl.adg.qwixx.e2e.helpers.BoardInteractionHelper.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * End-to-end tests for the "double row close" feature in standard Qwixx.

@@ -1,17 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { of, Subject, throwError } from 'rxjs';
 import type { Mocked } from 'vitest';
 import { provideTranslateService, TranslateLoader, TranslationObject } from '@ngx-translate/core';
 import { Observable } from 'rxjs';
-import { GamestatesService } from '../../generated/api/gamestates.service';
-import { MovesService } from '../../generated/api/moves.service';
-import { Color } from '../../generated/model/color';
-import { GameState } from '../../generated/model/gameState';
-import { MoveType } from '../../generated/model/moveType';
-import { TurnPhase } from '../../generated/model/turnPhase';
+import { GamestatesService, MovesService } from '../../generated/api/api';
+import { Color, GameState, MoveType, TurnPhase } from '../../generated/model/models';
 import { RowClosureModalService } from '../services/row-closure-modal.service';
 import { DiceSvgService } from '../dice/dice-svg.service';
 import { BoardComponent } from './board.component';
@@ -19,18 +15,23 @@ import { BoardComponent } from './board.component';
 const mockDiceSvgService = { getUrl: () => Promise.resolve('') };
 
 class MockLoader implements TranslateLoader {
-  getTranslation(): Observable<TranslationObject> { return of({}); }
+  getTranslation(): Observable<TranslationObject> {
+    return of({});
+  }
 }
 
 const PLAYER_ID = 'player-1';
-const OTHER_ID  = 'player-2';
+const OTHER_ID = 'player-2';
 
 function makeState(overrides: Partial<GameState> = {}): GameState {
   return {
-    players: [{ id: PLAYER_ID, name: 'P1' }, { id: OTHER_ID, name: 'P2' }],
+    players: [
+      { id: PLAYER_ID, name: 'P1' },
+      { id: OTHER_ID, name: 'P2' },
+    ],
     sheetProgress: {
       [PLAYER_ID]: { punishments: 0, rowStates: {} },
-      [OTHER_ID]:  { punishments: 0, rowStates: {} },
+      [OTHER_ID]: { punishments: 0, rowStates: {} },
     },
     sheetLayouts: { [PLAYER_ID]: { rows: [] }, [OTHER_ID]: { rows: [] } },
     gameOver: false,
@@ -44,15 +45,17 @@ describe('BoardComponent — punishment / pass', () => {
   let movesService: Mocked<MovesService>;
 
   beforeEach(async () => {
-    movesService = { makeMove: vi.fn().mockReturnValue(of({ result: 'ACCEPTED' } as any)) } as unknown as Mocked<MovesService>;
+    movesService = {
+      makeMove: vi.fn().mockReturnValue(of({ result: 'ACCEPTED' } as any)),
+    } as unknown as Mocked<MovesService>;
 
     await TestBed.configureTestingModule({
       imports: [BoardComponent],
       providers: [
-        { provide: ActivatedRoute,      useValue: { snapshot: { paramMap: { get: () => '' } } } },
-        { provide: GamestatesService,   useValue: { getGameState: () => of(makeState()) } },
-        { provide: MovesService,        useValue: movesService },
-        { provide: DiceSvgService,      useValue: mockDiceSvgService },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '' } } } },
+        { provide: GamestatesService, useValue: { getGameState: () => of(makeState()) } },
+        { provide: MovesService, useValue: movesService },
+        { provide: DiceSvgService, useValue: mockDiceSvgService },
       ],
     }).compileComponents();
 
@@ -65,42 +68,52 @@ describe('BoardComponent — punishment / pass', () => {
 
   describe('canTakePunishment', () => {
     it('returns false when player already has 4 punishments', () => {
-      component.gameState.set(makeState({
-        sheetProgress: { [PLAYER_ID]: { punishments: 4, rowStates: {} } },
-        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE },
-      }));
+      component.gameState.set(
+        makeState({
+          sheetProgress: { [PLAYER_ID]: { punishments: 4, rowStates: {} } },
+          turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE },
+        }),
+      );
       expect(component.canTakePunishment(PLAYER_ID)).toBe(false);
     });
 
     it('returns true for own player in ACTIVE_MOVE (give up)', () => {
-      component.gameState.set(makeState({
-        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE },
-      }));
+      component.gameState.set(
+        makeState({
+          turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE },
+        }),
+      );
       expect(component.canTakePunishment(PLAYER_ID)).toBe(true);
     });
 
     it('returns false for another player in ACTIVE_MOVE', () => {
-      component.gameState.set(makeState({
-        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE },
-      }));
+      component.gameState.set(
+        makeState({
+          turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE },
+        }),
+      );
       expect(component.canTakePunishment(OTHER_ID)).toBe(false);
     });
 
-    it('returns false when it is not the player\'s active turn', () => {
-      component.gameState.set(makeState({
-        turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ACTIVE_MOVE },
-      }));
+    it("returns false when it is not the player's active turn", () => {
+      component.gameState.set(
+        makeState({
+          turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ACTIVE_MOVE },
+        }),
+      );
       expect(component.canTakePunishment(PLAYER_ID)).toBe(false);
     });
 
     it('returns false for passive player in PASSIVE_MOVE (use Pass button instead)', () => {
-      component.gameState.set(makeState({
-        turnState: {
-          activePlayerId: OTHER_ID,
-          phase: TurnPhase.PASSIVE_MOVE,
-          passivePlayerQueue: [PLAYER_ID],
-        },
-      }));
+      component.gameState.set(
+        makeState({
+          turnState: {
+            activePlayerId: OTHER_ID,
+            phase: TurnPhase.PASSIVE_MOVE,
+            passivePlayerQueue: [PLAYER_ID],
+          },
+        }),
+      );
       expect(component.canTakePunishment(PLAYER_ID)).toBe(false);
     });
 
@@ -114,16 +127,19 @@ describe('BoardComponent — punishment / pass', () => {
 
   describe('onPunishmentClicked', () => {
     it('sends GIVE_UP when active player clicks punishment box (online)', () => {
-      component.gameState.set(makeState({
-        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE },
-      }));
+      component.gameState.set(
+        makeState({
+          turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE },
+        }),
+      );
       component.sessionId.set('s1');
 
       component.onPunishmentClicked(PLAYER_ID);
 
       expect(movesService.makeMove).toHaveBeenCalledWith(
-        's1', PLAYER_ID,
-        expect.objectContaining({ moveType: MoveType.GIVE_UP })
+        's1',
+        PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.GIVE_UP }),
       );
     });
 
@@ -134,26 +150,31 @@ describe('BoardComponent — punishment / pass', () => {
       component.onPunishmentClicked(PLAYER_ID);
 
       expect(movesService.makeMove).toHaveBeenCalledWith(
-        's1', PLAYER_ID,
-        expect.objectContaining({ moveType: MoveType.TAKE_PUNISHMENT })
+        's1',
+        PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.TAKE_PUNISHMENT }),
       );
     });
 
     it('does nothing when punishment boxes are maxed out', () => {
-      component.gameState.set(makeState({
-        sheetProgress: { [PLAYER_ID]: { punishments: 4, rowStates: {} } },
-        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE },
-      }));
+      component.gameState.set(
+        makeState({
+          sheetProgress: { [PLAYER_ID]: { punishments: 4, rowStates: {} } },
+          turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE },
+        }),
+      );
 
       component.onPunishmentClicked(PLAYER_ID);
 
       expect(movesService.makeMove).not.toHaveBeenCalled();
     });
 
-    it('does nothing when it is not the player\'s turn', () => {
-      component.gameState.set(makeState({
-        turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ACTIVE_MOVE },
-      }));
+    it("does nothing when it is not the player's turn", () => {
+      component.gameState.set(
+        makeState({
+          turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ACTIVE_MOVE },
+        }),
+      );
 
       component.onPunishmentClicked(PLAYER_ID);
 
@@ -165,34 +186,57 @@ describe('BoardComponent — punishment / pass', () => {
 
   describe('canPassActive', () => {
     it('returns false before any cross is made', () => {
-      component.gameState.set(makeState({
-        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE,
-                     passivePlayerQueue: [OTHER_ID] },
-      }));
+      component.gameState.set(
+        makeState({
+          turnState: {
+            activePlayerId: PLAYER_ID,
+            phase: TurnPhase.ACTIVE_MOVE,
+            passivePlayerQueue: [OTHER_ID],
+          },
+        }),
+      );
       expect(component.canPassActive()).toBe(false);
     });
 
     it('returns true after white+white cross', () => {
-      component.gameState.set(makeState({
-        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE,
-                     passivePlayerQueue: [OTHER_ID], whiteWhiteUsed: true },
-      }));
+      component.gameState.set(
+        makeState({
+          turnState: {
+            activePlayerId: PLAYER_ID,
+            phase: TurnPhase.ACTIVE_MOVE,
+            passivePlayerQueue: [OTHER_ID],
+            whiteWhiteUsed: true,
+          },
+        }),
+      );
       expect(component.canPassActive()).toBe(true);
     });
 
     it('returns true after color die cross', () => {
-      component.gameState.set(makeState({
-        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE,
-                     passivePlayerQueue: [OTHER_ID], colorDieUsed: true },
-      }));
+      component.gameState.set(
+        makeState({
+          turnState: {
+            activePlayerId: PLAYER_ID,
+            phase: TurnPhase.ACTIVE_MOVE,
+            passivePlayerQueue: [OTHER_ID],
+            colorDieUsed: true,
+          },
+        }),
+      );
       expect(component.canPassActive()).toBe(true);
     });
 
     it('returns false for a different player even if they are active', () => {
-      component.gameState.set(makeState({
-        turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ACTIVE_MOVE,
-                     passivePlayerQueue: [PLAYER_ID], whiteWhiteUsed: true },
-      }));
+      component.gameState.set(
+        makeState({
+          turnState: {
+            activePlayerId: OTHER_ID,
+            phase: TurnPhase.ACTIVE_MOVE,
+            passivePlayerQueue: [PLAYER_ID],
+            whiteWhiteUsed: true,
+          },
+        }),
+      );
       expect(component.canPassActive()).toBe(false);
     });
   });
@@ -201,23 +245,41 @@ describe('BoardComponent — punishment / pass', () => {
 
   describe('canPassPassive', () => {
     it('returns true for passive player in PASSIVE_MOVE', () => {
-      component.gameState.set(makeState({
-        turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.PASSIVE_MOVE, passivePlayerQueue: [PLAYER_ID] },
-      }));
+      component.gameState.set(
+        makeState({
+          turnState: {
+            activePlayerId: OTHER_ID,
+            phase: TurnPhase.PASSIVE_MOVE,
+            passivePlayerQueue: [PLAYER_ID],
+          },
+        }),
+      );
       expect(component.canPassPassive()).toBe(true);
     });
 
     it('returns true for passive player in ACTIVE_MOVE (simultaneous play)', () => {
-      component.gameState.set(makeState({
-        turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ACTIVE_MOVE, passivePlayerQueue: [PLAYER_ID] },
-      }));
+      component.gameState.set(
+        makeState({
+          turnState: {
+            activePlayerId: OTHER_ID,
+            phase: TurnPhase.ACTIVE_MOVE,
+            passivePlayerQueue: [PLAYER_ID],
+          },
+        }),
+      );
       expect(component.canPassPassive()).toBe(true);
     });
 
     it('returns false when player is not in passive queue during ACTIVE_MOVE', () => {
-      component.gameState.set(makeState({
-        turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ACTIVE_MOVE, passivePlayerQueue: [] },
-      }));
+      component.gameState.set(
+        makeState({
+          turnState: {
+            activePlayerId: OTHER_ID,
+            phase: TurnPhase.ACTIVE_MOVE,
+            passivePlayerQueue: [],
+          },
+        }),
+      );
       expect(component.canPassPassive()).toBe(false);
     });
   });
@@ -226,23 +288,29 @@ describe('BoardComponent — punishment / pass', () => {
 
   describe('canRoll', () => {
     it('returns true for active player in ROLL phase', () => {
-      component.gameState.set(makeState({
-        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ROLL },
-      }));
+      component.gameState.set(
+        makeState({
+          turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ROLL },
+        }),
+      );
       expect(component.canRoll()).toBe(true);
     });
 
     it('returns false for active player in ACTIVE_MOVE phase', () => {
-      component.gameState.set(makeState({
-        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE },
-      }));
+      component.gameState.set(
+        makeState({
+          turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE },
+        }),
+      );
       expect(component.canRoll()).toBe(false);
     });
 
     it('returns false for non-active player in ROLL phase', () => {
-      component.gameState.set(makeState({
-        turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ROLL },
-      }));
+      component.gameState.set(
+        makeState({
+          turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ROLL },
+        }),
+      );
       expect(component.canRoll()).toBe(false);
     });
   });
@@ -251,26 +319,42 @@ describe('BoardComponent — punishment / pass', () => {
 
   describe('canGiveUp', () => {
     it('returns true for active player in ACTIVE_MOVE before any cross', () => {
-      component.gameState.set(makeState({
-        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE,
-                     passivePlayerQueue: [OTHER_ID] },
-      }));
+      component.gameState.set(
+        makeState({
+          turnState: {
+            activePlayerId: PLAYER_ID,
+            phase: TurnPhase.ACTIVE_MOVE,
+            passivePlayerQueue: [OTHER_ID],
+          },
+        }),
+      );
       expect(component.canGiveUp()).toBe(true);
     });
 
     it('returns false after white+white cross (can End Turn instead)', () => {
-      component.gameState.set(makeState({
-        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE,
-                     passivePlayerQueue: [OTHER_ID], whiteWhiteUsed: true },
-      }));
+      component.gameState.set(
+        makeState({
+          turnState: {
+            activePlayerId: PLAYER_ID,
+            phase: TurnPhase.ACTIVE_MOVE,
+            passivePlayerQueue: [OTHER_ID],
+            whiteWhiteUsed: true,
+          },
+        }),
+      );
       expect(component.canGiveUp()).toBe(false);
     });
 
     it('returns false for passive player', () => {
-      component.gameState.set(makeState({
-        turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ACTIVE_MOVE,
-                     passivePlayerQueue: [PLAYER_ID] },
-      }));
+      component.gameState.set(
+        makeState({
+          turnState: {
+            activePlayerId: OTHER_ID,
+            phase: TurnPhase.ACTIVE_MOVE,
+            passivePlayerQueue: [PLAYER_ID],
+          },
+        }),
+      );
       expect(component.canGiveUp()).toBe(false);
     });
   });
@@ -279,29 +363,42 @@ describe('BoardComponent — punishment / pass', () => {
 
   describe('hasPendingPassiveCross', () => {
     it('returns false when not in passive queue', () => {
-      component.gameState.set(makeState({
-        turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE,
-                     passivePlayerQueue: [] },
-      }));
+      component.gameState.set(
+        makeState({
+          turnState: {
+            activePlayerId: PLAYER_ID,
+            phase: TurnPhase.ACTIVE_MOVE,
+            passivePlayerQueue: [],
+          },
+        }),
+      );
       expect(component.hasPendingPassiveCross()).toBe(false);
     });
 
     it('returns false when in passive queue but no pending cross', () => {
-      component.gameState.set(makeState({
-        turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ACTIVE_MOVE,
-                     passivePlayerQueue: [PLAYER_ID] },
-      }));
+      component.gameState.set(
+        makeState({
+          turnState: {
+            activePlayerId: OTHER_ID,
+            phase: TurnPhase.ACTIVE_MOVE,
+            passivePlayerQueue: [PLAYER_ID],
+          },
+        }),
+      );
       expect(component.hasPendingPassiveCross()).toBe(false);
     });
 
     it('returns true when in passive queue and has pending cross', () => {
-      component.gameState.set(makeState({
-        turnState: {
-          activePlayerId: OTHER_ID, phase: TurnPhase.ACTIVE_MOVE,
-          passivePlayerQueue: [PLAYER_ID],
-          pendingCrosses: { [PLAYER_ID]: ['cell-1'] },
-        },
-      }));
+      component.gameState.set(
+        makeState({
+          turnState: {
+            activePlayerId: OTHER_ID,
+            phase: TurnPhase.ACTIVE_MOVE,
+            passivePlayerQueue: [PLAYER_ID],
+            pendingCrosses: { [PLAYER_ID]: ['cell-1'] },
+          },
+        }),
+      );
       expect(component.hasPendingPassiveCross()).toBe(true);
     });
   });
@@ -310,20 +407,23 @@ describe('BoardComponent — punishment / pass', () => {
 
   describe('passPassive', () => {
     it('sends PASS (not TAKE_PUNISHMENT) so the server accepts it', () => {
-      component.gameState.set(makeState({
-        turnState: {
-          activePlayerId: OTHER_ID,
-          phase: TurnPhase.PASSIVE_MOVE,
-          passivePlayerQueue: [PLAYER_ID],
-        },
-      }));
+      component.gameState.set(
+        makeState({
+          turnState: {
+            activePlayerId: OTHER_ID,
+            phase: TurnPhase.PASSIVE_MOVE,
+            passivePlayerQueue: [PLAYER_ID],
+          },
+        }),
+      );
       component.sessionId.set('s1');
 
       component.passPassive();
 
       expect(movesService.makeMove).toHaveBeenCalledWith(
-        's1', PLAYER_ID,
-        expect.objectContaining({ moveType: MoveType.PASS })
+        's1',
+        PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.PASS }),
       );
     });
   });
@@ -332,21 +432,24 @@ describe('BoardComponent — punishment / pass', () => {
 
   describe('onConfirmRowClosure', () => {
     it('sends PASS when the passive player has a pending cross', () => {
-      component.gameState.set(makeState({
-        turnState: {
-          activePlayerId: OTHER_ID,
-          phase: TurnPhase.PASSIVE_MOVE,
-          passivePlayerQueue: [PLAYER_ID],
-          pendingCrosses: { [PLAYER_ID]: ['some-cell'] },
-        },
-      }));
+      component.gameState.set(
+        makeState({
+          turnState: {
+            activePlayerId: OTHER_ID,
+            phase: TurnPhase.PASSIVE_MOVE,
+            passivePlayerQueue: [PLAYER_ID],
+            pendingCrosses: { [PLAYER_ID]: ['some-cell'] },
+          },
+        }),
+      );
       component.sessionId.set('s1');
 
       component.onConfirmRowClosure();
 
       expect(movesService.makeMove).toHaveBeenCalledWith(
-        's1', PLAYER_ID,
-        expect.objectContaining({ moveType: MoveType.PASS })
+        's1',
+        PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.PASS }),
       );
     });
   });
@@ -375,7 +478,9 @@ describe('BoardComponent — punishment / pass', () => {
       component.onCellClicked('any-row', PENDING_CELL);
 
       expect(movesService.makeMove).toHaveBeenCalledWith(
-        's1', PLAYER_ID, expect.objectContaining({ moveType: MoveType.RESET_TURN })
+        's1',
+        PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.RESET_TURN }),
       );
     });
 
@@ -386,7 +491,9 @@ describe('BoardComponent — punishment / pass', () => {
       (component as any).onChangeRowClosure();
 
       expect(movesService.makeMove).toHaveBeenCalledWith(
-        's1', PLAYER_ID, expect.objectContaining({ moveType: MoveType.UNDO_LAST_CROSS })
+        's1',
+        PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.UNDO_LAST_CROSS }),
       );
     });
 
@@ -405,19 +512,29 @@ describe('BoardComponent — punishment / pass', () => {
   // ── onCellClicked (passive player) ────────────────────────────────────────
 
   describe('onCellClicked — passive player', () => {
-    const ROW_ID  = 'row-red';
+    const ROW_ID = 'row-red';
     const CELL_ID = 'cell-2';
 
     function makeStateWithCell(overrides: Record<string, unknown> = {}): GameState {
       return makeState({
         sheetLayouts: {
           [PLAYER_ID]: {
-            rows: [{
-              id: ROW_ID,
-              cells: [{ id: CELL_ID, position: 0, displayValue: '2', color: 'RED',
-                         closingEligible: false, tags: [] }],
-              lock: null,
-            }],
+            rows: [
+              {
+                id: ROW_ID,
+                cells: [
+                  {
+                    id: CELL_ID,
+                    position: 0,
+                    displayValue: '2',
+                    color: 'RED',
+                    closingEligible: false,
+                    tags: [],
+                  },
+                ],
+                lock: null,
+              },
+            ],
           },
           [OTHER_ID]: { rows: [] },
         },
@@ -438,8 +555,9 @@ describe('BoardComponent — punishment / pass', () => {
       component.onCellClicked(ROW_ID, CELL_ID);
 
       expect(movesService.makeMove).toHaveBeenCalledWith(
-        's1', PLAYER_ID,
-        expect.objectContaining({ moveType: MoveType.CROSS_WHITE_WHITE })
+        's1',
+        PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.CROSS_WHITE_WHITE }),
       );
     });
 
@@ -450,8 +568,9 @@ describe('BoardComponent — punishment / pass', () => {
       component.onCellClicked(ROW_ID, CELL_ID);
 
       expect(movesService.makeMove).toHaveBeenCalledWith(
-        's1', PLAYER_ID,
-        expect.objectContaining({ moveType: MoveType.CROSS_WHITE_WHITE })
+        's1',
+        PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.CROSS_WHITE_WHITE }),
       );
     });
 
@@ -464,8 +583,9 @@ describe('BoardComponent — punishment / pass', () => {
       component.onCellClicked(ROW_ID, CELL_ID);
 
       expect(movesService.makeMove).toHaveBeenCalledWith(
-        's1', PLAYER_ID,
-        expect.objectContaining({ moveType: MoveType.CROSS_WHITE_WHITE })
+        's1',
+        PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.CROSS_WHITE_WHITE }),
       );
     });
   });
@@ -480,25 +600,42 @@ describe('BoardComponent — punishment / pass', () => {
       return makeState({
         sheetLayouts: {
           [PLAYER_ID]: {
-            rows: [{
-              id: 'row-red',
-              cells: [
-                ...REGULAR_IDS.map((id, i) => ({
-                  id, position: i, displayValue: String(i + 2),
-                  color: 'RED', closingEligible: false, tags: [],
-                })),
-                { id: CLOSING_ID, position: 10, displayValue: '12',
-                  color: 'RED', closingEligible: true, tags: [] },
-              ],
-              lock: { id: 'lock-1', color: 'RED', minCrosses: 6, closingCells: [CLOSING_ID] },
-            }],
+            rows: [
+              {
+                id: 'row-red',
+                cells: [
+                  ...REGULAR_IDS.map((id, i) => ({
+                    id,
+                    position: i,
+                    displayValue: String(i + 2),
+                    color: 'RED',
+                    closingEligible: false,
+                    tags: [],
+                  })),
+                  {
+                    id: CLOSING_ID,
+                    position: 10,
+                    displayValue: '12',
+                    color: 'RED',
+                    closingEligible: true,
+                    tags: [],
+                  },
+                ],
+                lock: { id: 'lock-1', color: 'RED', minCrosses: 6, closingCells: [CLOSING_ID] },
+              },
+            ],
           },
           [OTHER_ID]: { rows: [] },
         },
         sheetProgress: {
           [PLAYER_ID]: {
             punishments: 0,
-            rowStates: { 'row-red': { crossedCells: REGULAR_IDS.slice(0, existingCrossCount), lockCrossed: false } },
+            rowStates: {
+              'row-red': {
+                crossedCells: REGULAR_IDS.slice(0, existingCrossCount),
+                lockCrossed: false,
+              },
+            },
           },
           [OTHER_ID]: { punishments: 0, rowStates: {} },
         },
@@ -535,13 +672,13 @@ describe('BoardComponent — punishment / pass', () => {
 //                                   refresh for the same reason.
 
 describe('BoardComponent — state-sync race guards', () => {
-  let component:    BoardComponent;
+  let component: BoardComponent;
   let movesService: Mocked<MovesService>;
   let getGameState: ReturnType<typeof vi.fn>;
 
-  const ROW_ID   = 'row-red';
-  const CELL_A   = 'cell-a';
-  const CELL_B   = 'cell-b';
+  const ROW_ID = 'row-red';
+  const CELL_A = 'cell-a';
+  const CELL_B = 'cell-b';
 
   function makeCell(id: string) {
     return { id, position: 0, displayValue: '2', color: 'RED', closingEligible: false, tags: [] };
@@ -550,8 +687,10 @@ describe('BoardComponent — state-sync race guards', () => {
   function stateWithPassiveQueue(): GameState {
     return makeState({
       sheetLayouts: {
-        [PLAYER_ID]: { rows: [{ id: ROW_ID, cells: [makeCell(CELL_A), makeCell(CELL_B)], lock: null }] },
-        [OTHER_ID]:  { rows: [] },
+        [PLAYER_ID]: {
+          rows: [{ id: ROW_ID, cells: [makeCell(CELL_A), makeCell(CELL_B)], lock: null }],
+        },
+        [OTHER_ID]: { rows: [] },
       },
       turnState: {
         activePlayerId: OTHER_ID,
@@ -571,9 +710,9 @@ describe('BoardComponent — state-sync race guards', () => {
     await TestBed.configureTestingModule({
       imports: [BoardComponent],
       providers: [
-        { provide: ActivatedRoute,    useValue: { snapshot: { paramMap: { get: () => '' } } } },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '' } } } },
         { provide: GamestatesService, useValue: { getGameState } },
-        { provide: MovesService,      useValue: movesService },
+        { provide: MovesService, useValue: movesService },
       ],
     }).compileComponents();
 
@@ -609,12 +748,18 @@ describe('BoardComponent — state-sync race guards', () => {
   it('applyState: active player — delays state update while rolling so animation plays first', () => {
     vi.useFakeTimers();
     // Active player's turn, rolling in progress.
-    const preRoll = makeState({ version: 1, turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ROLL } as any });
+    const preRoll = makeState({
+      version: 1,
+      turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ROLL } as any,
+    });
     component.gameState.set(preRoll);
     component.rollingDice.set(true);
     (component as any).rollStartTime = Date.now();
 
-    const postRoll = makeState({ version: 2, turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE } as any });
+    const postRoll = makeState({
+      version: 2,
+      turnState: { activePlayerId: PLAYER_ID, phase: TurnPhase.ACTIVE_MOVE } as any,
+    });
     (component as any).applyState(postRoll);
 
     // State must NOT be applied yet — active player waits for animation.
@@ -631,12 +776,18 @@ describe('BoardComponent — state-sync race guards', () => {
   it('applyState: passive player — applies state immediately so dice area becomes visible', () => {
     vi.useFakeTimers();
     // It is another player's turn; rolling animation is running (triggered by SSE).
-    const preRoll = makeState({ version: 1, turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ROLL } as any });
+    const preRoll = makeState({
+      version: 1,
+      turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ROLL } as any,
+    });
     component.gameState.set(preRoll);
     component.rollingDice.set(true);
     (component as any).rollStartTime = Date.now();
 
-    const postRoll = makeState({ version: 2, turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ACTIVE_MOVE } as any });
+    const postRoll = makeState({
+      version: 2,
+      turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ACTIVE_MOVE } as any,
+    });
     (component as any).applyState(postRoll);
 
     // State IS applied immediately so the dice area can render.
@@ -691,27 +842,39 @@ describe('BoardComponent — state-sync race guards', () => {
 describe('BoardComponent — Longo bonus cells for passive player', () => {
   let component: BoardComponent;
 
-  const RED_CELLS    = ['r0', 'r1', 'r2'].map((id, i) => ({
-    id, position: i, displayValue: String(i + 2), color: 'RED', closingEligible: false, tags: [],
+  const RED_CELLS = ['r0', 'r1', 'r2'].map((id, i) => ({
+    id,
+    position: i,
+    displayValue: String(i + 2),
+    color: 'RED',
+    closingEligible: false,
+    tags: [],
   }));
   const YELLOW_CELLS = ['y0', 'y1', 'y2'].map((id, i) => ({
-    id, position: i, displayValue: String(i + 2), color: 'YELLOW', closingEligible: false, tags: [],
+    id,
+    position: i,
+    displayValue: String(i + 2),
+    color: 'YELLOW',
+    closingEligible: false,
+    tags: [],
   }));
 
-  function makeBonusState(opts: {
-    phase?:         TurnPhase;
-    bonusNums?:     number[];
-    white1?:        number;
-    white2?:        number;
-    redCrosses?:    string[];
-    yellowCrosses?: string[];
-  } = {}): GameState {
+  function makeBonusState(
+    opts: {
+      phase?: TurnPhase;
+      bonusNums?: number[];
+      white1?: number;
+      white2?: number;
+      redCrosses?: string[];
+      yellowCrosses?: string[];
+    } = {},
+  ): GameState {
     const {
-      phase         = TurnPhase.PASSIVE_MOVE,
-      bonusNums     = [5],
-      white1        = 2,
-      white2        = 3,
-      redCrosses    = [],
+      phase = TurnPhase.PASSIVE_MOVE,
+      bonusNums = [5],
+      white1 = 2,
+      white2 = 3,
+      redCrosses = [],
       yellowCrosses = [],
     } = opts;
 
@@ -720,7 +883,7 @@ describe('BoardComponent — Longo bonus cells for passive player', () => {
       sheetLayouts: {
         [PLAYER_ID]: {
           rows: [
-            { id: 'row-red',    cells: RED_CELLS,    lock: null },
+            { id: 'row-red', cells: RED_CELLS, lock: null },
             { id: 'row-yellow', cells: YELLOW_CELLS, lock: null },
           ],
         },
@@ -730,7 +893,7 @@ describe('BoardComponent — Longo bonus cells for passive player', () => {
         [PLAYER_ID]: {
           punishments: 0,
           rowStates: {
-            'row-red':    { crossedCells: redCrosses,    lockCrossed: false },
+            'row-red': { crossedCells: redCrosses, lockCrossed: false },
             'row-yellow': { crossedCells: yellowCrosses, lockCrossed: false },
           },
         },
@@ -749,9 +912,9 @@ describe('BoardComponent — Longo bonus cells for passive player', () => {
     await TestBed.configureTestingModule({
       imports: [BoardComponent],
       providers: [
-        { provide: ActivatedRoute,    useValue: { snapshot: { paramMap: { get: () => '' } } } },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '' } } } },
         { provide: GamestatesService, useValue: { getGameState: () => of(makeState()) } },
-        { provide: MovesService,      useValue: { makeMove: vi.fn().mockReturnValue(of({})) } },
+        { provide: MovesService, useValue: { makeMove: vi.fn().mockReturnValue(of({})) } },
       ],
     }).compileComponents();
 
@@ -764,8 +927,8 @@ describe('BoardComponent — Longo bonus cells for passive player', () => {
     // RED has 0 crosses (fewest), YELLOW has 1 cross → bonus targets RED only.
     component.gameState.set(makeBonusState({ yellowCrosses: ['y0'] }));
     const ids = component.clickableCellIds();
-    expect(ids.has('r0')).toBe(true);   // leftmost uncrossed in RED (fewest)
-    expect(ids.has('y1')).toBe(false);  // YELLOW is not at fewest
+    expect(ids.has('r0')).toBe(true); // leftmost uncrossed in RED (fewest)
+    expect(ids.has('y1')).toBe(false); // YELLOW is not at fewest
   });
 
   it('passive player sees bonus cells for ALL rows tied at fewest crosses', () => {
@@ -793,7 +956,9 @@ describe('BoardComponent — Longo bonus cells for passive player', () => {
 
   it('passive player in ACTIVE_MOVE phase also sees bonus cells', () => {
     // Simultaneous play: passive queue is active while active player is still moving.
-    component.gameState.set(makeBonusState({ phase: TurnPhase.ACTIVE_MOVE, yellowCrosses: ['y0'] }));
+    component.gameState.set(
+      makeBonusState({ phase: TurnPhase.ACTIVE_MOVE, yellowCrosses: ['y0'] }),
+    );
     const ids = component.clickableCellIds();
     expect(ids.has('r0')).toBe(true);
   });
@@ -808,16 +973,30 @@ describe('BoardComponent — Longo bonus number priority over colour die', () =>
   // Yellow row: positions 0..2 with values "2", "13", "14"
   // "13" is also reachable as white(7)+yellow(6) via the colour die.
   const YELLOW_CELLS = [
-    { id: 'y0', position: 0, displayValue: '2',  color: 'YELLOW', closingEligible: false, tags: [] },
-    { id: 'y1', position: 1, displayValue: '13', color: 'YELLOW', closingEligible: false, tags: [] },
-    { id: 'y2', position: 2, displayValue: '14', color: 'YELLOW', closingEligible: false, tags: [] },
+    { id: 'y0', position: 0, displayValue: '2', color: 'YELLOW', closingEligible: false, tags: [] },
+    {
+      id: 'y1',
+      position: 1,
+      displayValue: '13',
+      color: 'YELLOW',
+      closingEligible: false,
+      tags: [],
+    },
+    {
+      id: 'y2',
+      position: 2,
+      displayValue: '14',
+      color: 'YELLOW',
+      closingEligible: false,
+      tags: [],
+    },
   ];
   const RED_CELLS = [
-    { id: 'r0', position: 0, displayValue: '2',  color: 'RED',    closingEligible: false, tags: [] },
-    { id: 'r1', position: 1, displayValue: '13', color: 'RED',    closingEligible: false, tags: [] },
+    { id: 'r0', position: 0, displayValue: '2', color: 'RED', closingEligible: false, tags: [] },
+    { id: 'r1', position: 1, displayValue: '13', color: 'RED', closingEligible: false, tags: [] },
   ];
   const BLUE_CELLS = [
-    { id: 'b0', position: 0, displayValue: '7',  color: 'BLUE',   closingEligible: false, tags: [] },
+    { id: 'b0', position: 0, displayValue: '7', color: 'BLUE', closingEligible: false, tags: [] },
   ];
 
   // Active player, white1=5, white2=7, yellow die=6, blue die=2.
@@ -831,8 +1010,8 @@ describe('BoardComponent — Longo bonus number priority over colour die', () =>
         [PLAYER_ID]: {
           rows: [
             { id: 'row-yellow', cells: YELLOW_CELLS, lock: null },
-            { id: 'row-red',    cells: RED_CELLS,    lock: null },
-            { id: 'row-blue',   cells: BLUE_CELLS,   lock: null },
+            { id: 'row-red', cells: RED_CELLS, lock: null },
+            { id: 'row-blue', cells: BLUE_CELLS, lock: null },
           ],
         },
         [OTHER_ID]: { rows: [] },
@@ -842,8 +1021,8 @@ describe('BoardComponent — Longo bonus number priority over colour die', () =>
           punishments: 0,
           rowStates: {
             'row-yellow': { crossedCells: ['y0'], lockCrossed: false }, // 1 cross
-            'row-red':    { crossedCells: ['r0'], lockCrossed: false }, // 1 cross — tied
-            'row-blue':   { crossedCells: [],     lockCrossed: false }, // 0 crosses
+            'row-red': { crossedCells: ['r0'], lockCrossed: false }, // 1 cross — tied
+            'row-blue': { crossedCells: [], lockCrossed: false }, // 0 crosses
           },
         },
         [OTHER_ID]: { punishments: 0, rowStates: {} },
@@ -865,9 +1044,9 @@ describe('BoardComponent — Longo bonus number priority over colour die', () =>
     await TestBed.configureTestingModule({
       imports: [BoardComponent],
       providers: [
-        { provide: ActivatedRoute,    useValue: { snapshot: { paramMap: { get: () => '' } } } },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '' } } } },
         { provide: GamestatesService, useValue: { getGameState: () => of(makeState()) } },
-        { provide: MovesService,      useValue: mockMoves },
+        { provide: MovesService, useValue: mockMoves },
       ],
     }).compileComponents();
 
@@ -888,47 +1067,51 @@ describe('BoardComponent — Longo bonus number priority over colour die', () =>
 
   it('bonusCellIds targets all rows tied at fewest', () => {
     // Give blue one cross so yellow and red (both 1) are now fewest.
-    component.gameState.set(makeActiveState({ }));
+    component.gameState.set(makeActiveState({}));
     // Override: blue gets one cross too, so all three rows have 1 cross.
-    component.gameState.set(makeState({
-      bonusNumbers: { [PLAYER_ID]: [12] },
-      sheetLayouts: {
-        [PLAYER_ID]: {
-          rows: [
-            { id: 'row-yellow', cells: YELLOW_CELLS, lock: null },
-            { id: 'row-red',    cells: RED_CELLS,    lock: null },
-          ],
-        },
-        [OTHER_ID]: { rows: [] },
-      },
-      sheetProgress: {
-        [PLAYER_ID]: {
-          punishments: 0,
-          rowStates: {
-            'row-yellow': { crossedCells: ['y0'], lockCrossed: false },
-            'row-red':    { crossedCells: ['r0'], lockCrossed: false },
+    component.gameState.set(
+      makeState({
+        bonusNumbers: { [PLAYER_ID]: [12] },
+        sheetLayouts: {
+          [PLAYER_ID]: {
+            rows: [
+              { id: 'row-yellow', cells: YELLOW_CELLS, lock: null },
+              { id: 'row-red', cells: RED_CELLS, lock: null },
+            ],
           },
+          [OTHER_ID]: { rows: [] },
         },
-        [OTHER_ID]: { punishments: 0, rowStates: {} },
-      },
-      turnState: {
-        activePlayerId: PLAYER_ID,
-        phase: TurnPhase.ACTIVE_MOVE,
-        currentRoll: { white1: 5, white2: 7, coloredDice: { YELLOW: 6, BLUE: 2 } },
-        whiteWhiteUsed: false,
-        colorDieUsed: false,
-      },
-    } as unknown as Partial<GameState>));
+        sheetProgress: {
+          [PLAYER_ID]: {
+            punishments: 0,
+            rowStates: {
+              'row-yellow': { crossedCells: ['y0'], lockCrossed: false },
+              'row-red': { crossedCells: ['r0'], lockCrossed: false },
+            },
+          },
+          [OTHER_ID]: { punishments: 0, rowStates: {} },
+        },
+        turnState: {
+          activePlayerId: PLAYER_ID,
+          phase: TurnPhase.ACTIVE_MOVE,
+          currentRoll: { white1: 5, white2: 7, coloredDice: { YELLOW: 6, BLUE: 2 } },
+          whiteWhiteUsed: false,
+          colorDieUsed: false,
+        },
+      } as unknown as Partial<GameState>),
+    );
     const ids = component.bonusCellIds();
-    expect(ids.has('y1')).toBe(true);  // leftmost uncrossed in yellow (tied)
-    expect(ids.has('r1')).toBe(true);  // leftmost uncrossed in red (tied)
+    expect(ids.has('y1')).toBe(true); // leftmost uncrossed in yellow (tied)
+    expect(ids.has('r1')).toBe(true); // leftmost uncrossed in red (tied)
   });
 
   it('bonusCellIds is empty when white sum does not match a bonus number', () => {
     // white1=3, white2=3 → sum=6, not a bonus number
-    component.gameState.set(makeActiveState({
-      currentRoll: { white1: 3, white2: 3, coloredDice: { YELLOW: 6, BLUE: 2 } },
-    }));
+    component.gameState.set(
+      makeActiveState({
+        currentRoll: { white1: 3, white2: 3, coloredDice: { YELLOW: 6, BLUE: 2 } },
+      }),
+    );
     expect(component.bonusCellIds().size).toBe(0);
   });
 
@@ -941,41 +1124,48 @@ describe('BoardComponent — Longo bonus number priority over colour die', () =>
     // white(7)+yellow(6)=13 → yellow "y1" matches colour die.
     // With only blue at fewest crosses, only b0 is in bonusCellIds.
     // Use the 2-row setup (yellow+red tied) so y1 is in bonusCellIds.
-    component.gameState.set(makeState({
-      bonusNumbers: { [PLAYER_ID]: [12] },
-      sheetLayouts: {
-        [PLAYER_ID]: {
-          rows: [
-            { id: 'row-yellow', cells: YELLOW_CELLS, lock: null },
-            { id: 'row-red',    cells: RED_CELLS,    lock: null },
-          ],
-        },
-        [OTHER_ID]: { rows: [] },
-      },
-      sheetProgress: {
-        [PLAYER_ID]: {
-          punishments: 0,
-          rowStates: {
-            'row-yellow': { crossedCells: ['y0'], lockCrossed: false },
-            'row-red':    { crossedCells: ['r0'], lockCrossed: false },
+    component.gameState.set(
+      makeState({
+        bonusNumbers: { [PLAYER_ID]: [12] },
+        sheetLayouts: {
+          [PLAYER_ID]: {
+            rows: [
+              { id: 'row-yellow', cells: YELLOW_CELLS, lock: null },
+              { id: 'row-red', cells: RED_CELLS, lock: null },
+            ],
           },
+          [OTHER_ID]: { rows: [] },
         },
-        [OTHER_ID]: { punishments: 0, rowStates: {} },
-      },
-      turnState: {
-        activePlayerId: PLAYER_ID,
-        phase: TurnPhase.ACTIVE_MOVE,
-        currentRoll: { white1: 5, white2: 7, coloredDice: { YELLOW: 6, BLUE: 2 } },
-        whiteWhiteUsed: false,
-        colorDieUsed: false,
-      },
-    } as unknown as Partial<GameState>));
+        sheetProgress: {
+          [PLAYER_ID]: {
+            punishments: 0,
+            rowStates: {
+              'row-yellow': { crossedCells: ['y0'], lockCrossed: false },
+              'row-red': { crossedCells: ['r0'], lockCrossed: false },
+            },
+          },
+          [OTHER_ID]: { punishments: 0, rowStates: {} },
+        },
+        turnState: {
+          activePlayerId: PLAYER_ID,
+          phase: TurnPhase.ACTIVE_MOVE,
+          currentRoll: { white1: 5, white2: 7, coloredDice: { YELLOW: 6, BLUE: 2 } },
+          whiteWhiteUsed: false,
+          colorDieUsed: false,
+        },
+      } as unknown as Partial<GameState>),
+    );
 
     component.onCellClicked('row-yellow', 'y1');
 
     expect(mockMoves.makeMove).toHaveBeenCalledWith(
-      's1', PLAYER_ID,
-      expect.objectContaining({ moveType: MoveType.CROSS_WHITE_WHITE, rowId: 'row-yellow', cellId: 'y1' }),
+      's1',
+      PLAYER_ID,
+      expect.objectContaining({
+        moveType: MoveType.CROSS_WHITE_WHITE,
+        rowId: 'row-yellow',
+        cellId: 'y1',
+      }),
     );
   });
 });
@@ -985,187 +1175,225 @@ describe('BoardComponent — Longo bonus number priority over colour die', () =>
 // configureTestingModule independently of the describe block above.
 
 describe('BoardComponent — row-closure modal delegation', () => {
-    let fixture: ReturnType<typeof TestBed.createComponent<BoardComponent>>;
-    let component: BoardComponent;
-    let modalService: RowClosureModalService;
-    let movesService: Mocked<MovesService>;
+  let fixture: ReturnType<typeof TestBed.createComponent<BoardComponent>>;
+  let component: BoardComponent;
+  let modalService: RowClosureModalService;
+  let movesService: Mocked<MovesService>;
 
-    beforeEach(async () => {
-      movesService = { makeMove: vi.fn().mockReturnValue(of({ result: 'ACCEPTED' } as any)) } as unknown as Mocked<MovesService>;
+  beforeEach(async () => {
+    movesService = {
+      makeMove: vi.fn().mockReturnValue(of({ result: 'ACCEPTED' } as any)),
+    } as unknown as Mocked<MovesService>;
 
-      // EventSource is not available in jsdom — stub it so ngOnInit → setupSse() does not throw.
-      vi.stubGlobal('EventSource', Object.assign(
-        vi.fn().mockImplementation(function(this: any) { this.close = vi.fn(); this.readyState = 1; }),
-        { CONNECTING: 0, OPEN: 1, CLOSED: 2 }
-      ));
+    // EventSource is not available in jsdom — stub it so ngOnInit → setupSse() does not throw.
+    vi.stubGlobal(
+      'EventSource',
+      Object.assign(
+        vi.fn().mockImplementation(function (this: any) {
+          this.close = vi.fn();
+          this.readyState = 1;
+        }),
+        { CONNECTING: 0, OPEN: 1, CLOSED: 2 },
+      ),
+    );
 
-      await TestBed.configureTestingModule({
-        imports: [BoardComponent, HttpClientTestingModule],
-        providers: [
-          { provide: ActivatedRoute,    useValue: { snapshot: { paramMap: { get: () => '' } } } },
-          { provide: GamestatesService, useValue: { getGameState: () => of(makeState()) } },
-          { provide: MovesService,      useValue: movesService },
-          { provide: DiceSvgService,    useValue: mockDiceSvgService },
-          provideRouter([]),
-          provideTranslateService({ loader: { provide: TranslateLoader, useClass: MockLoader } }),
-        ],
-      }).compileComponents();
+    await TestBed.configureTestingModule({
+      imports: [BoardComponent],
+      providers: [
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '' } } } },
+        { provide: GamestatesService, useValue: { getGameState: () => of(makeState()) } },
+        { provide: MovesService, useValue: movesService },
+        { provide: DiceSvgService, useValue: mockDiceSvgService },
+        provideRouter([]),
+        provideTranslateService({ loader: { provide: TranslateLoader, useClass: MockLoader } }),
+        provideHttpClientTesting(),
+      ],
+    }).compileComponents();
 
-      fixture      = TestBed.createComponent(BoardComponent);
-      component    = fixture.componentInstance;
-      modalService = TestBed.inject(RowClosureModalService);
-      fixture.detectChanges();          // triggers ngOnInit (sets ids from route → '')
-      component.playerId.set(PLAYER_ID); // override after ngOnInit
-    });
+    fixture = TestBed.createComponent(BoardComponent);
+    component = fixture.componentInstance;
+    modalService = TestBed.inject(RowClosureModalService);
+    fixture.detectChanges(); // triggers ngOnInit (sets ids from route → '')
+    component.playerId.set(PLAYER_ID); // override after ngOnInit
+  });
 
-    // Structural: the board must not render the modal in its own DOM tree.
-    // If it did, the modal would be inside the CSS-transformed :host and
-    // position:fixed would anchor to the rotated element, not the viewport.
-    it('does not render app-row-closure-modal inside the board DOM', () => {
-      const modal = fixture.nativeElement.querySelector('app-row-closure-modal');
-      expect(modal).toBeNull();
-    });
+  // Structural: the board must not render the modal in its own DOM tree.
+  // If it did, the modal would be inside the CSS-transformed :host and
+  // position:fixed would anchor to the rotated element, not the viewport.
+  it('does not render app-row-closure-modal inside the board DOM', () => {
+    const modal = fixture.nativeElement.querySelector('app-row-closure-modal');
+    expect(modal).toBeNull();
+  });
 
-    // Testing the effect's output via the service is tricky in a zoneless setup.
-    // Instead we verify the behaviour through the component's public methods,
-    // which are exactly what the service callbacks invoke.
+  // Testing the effect's output via the service is tricky in a zoneless setup.
+  // Instead we verify the behaviour through the component's public methods,
+  // which are exactly what the service callbacks invoke.
 
-    it('onConfirmRowClosure sends a PASS move when there is a pending cross', () => {
-      component.sessionId.set('sess1');
-      // Give the player a pending cross so hasPendingPassiveCross() is true.
-      component.gameState.set(makeState({
+  it('onConfirmRowClosure sends a PASS move when there is a pending cross', () => {
+    component.sessionId.set('sess1');
+    // Give the player a pending cross so hasPendingPassiveCross() is true.
+    component.gameState.set(
+      makeState({
         turnState: {
           activePlayerId: OTHER_ID,
           phase: TurnPhase.PASSIVE_MOVE,
           passivePlayerQueue: [PLAYER_ID],
           pendingCrosses: { [PLAYER_ID]: ['some-cell'] },
         },
-      } as unknown as Partial<GameState>));
-      (component as any).onConfirmRowClosure();
-      expect(movesService.makeMove).toHaveBeenCalledWith(
-        'sess1', PLAYER_ID, expect.objectContaining({ moveType: MoveType.PASS }));
-    });
+      } as unknown as Partial<GameState>),
+    );
+    (component as any).onConfirmRowClosure();
+    expect(movesService.makeMove).toHaveBeenCalledWith(
+      'sess1',
+      PLAYER_ID,
+      expect.objectContaining({ moveType: MoveType.PASS }),
+    );
+  });
 
-    it('onChangeRowClosure with no pending cross dismisses the modal without a server call', () => {
-      // No pending cross (default state) — modal is dismissed locally so the player
-      // can interact with the board. No RESET_TURN should be sent.
-      component.sessionId.set('sess1');
-      (component as any).onChangeRowClosure();
-      expect(movesService.makeMove).not.toHaveBeenCalled();
-    });
+  it('onChangeRowClosure with no pending cross dismisses the modal without a server call', () => {
+    // No pending cross (default state) — modal is dismissed locally so the player
+    // can interact with the board. No RESET_TURN should be sent.
+    component.sessionId.set('sess1');
+    (component as any).onChangeRowClosure();
+    expect(movesService.makeMove).not.toHaveBeenCalled();
+  });
 
-    it('clears the service on destroy', () => {
-      modalService.show([{ playerName: 'P2', rowColor: Color.BLUE }], () => {}, () => {});
-      expect(modalService.requests()).toHaveLength(1);
+  it('clears the service on destroy', () => {
+    modalService.show(
+      [{ playerName: 'P2', rowColor: Color.BLUE }],
+      () => {},
+      () => {},
+    );
+    expect(modalService.requests()).toHaveLength(1);
 
-      fixture.destroy();
+    fixture.destroy();
+    expect(modalService.requests()).toHaveLength(0);
+    expect(modalService.confirmFn).toBeNull();
+  });
+
+  // ── Modal routing: who sees the notification ───────────────────────────────
+
+  describe('notification routing via _modalSync', () => {
+    function stateWithRequests(opts: {
+      declarantName: string;
+      activeId: string;
+      passiveQueue: string[];
+    }): GameState {
+      return makeState({
+        closureNotifications: [{ playerName: opts.declarantName, rowColor: Color.BLUE }],
+        turnState: {
+          activePlayerId: opts.activeId,
+          phase: TurnPhase.ACTIVE_MOVE,
+          passivePlayerQueue: opts.passiveQueue,
+          currentRoll: { white1: 1, white2: 1, coloredDice: {} },
+        },
+      } as unknown as Partial<GameState>);
+    }
+
+    it('does not show the modal to the player who declared the intent', () => {
+      // PLAYER_ID (name 'P1') is the declarant and also in the passive queue.
+      component.gameState.set(
+        stateWithRequests({
+          declarantName: 'P1',
+          activeId: OTHER_ID,
+          passiveQueue: [PLAYER_ID],
+        }),
+      );
+      TestBed.tick();
       expect(modalService.requests()).toHaveLength(0);
-      expect(modalService.confirmFn).toBeNull();
     });
 
-    // ── Modal routing: who sees the notification ───────────────────────────────
-
-    describe('notification routing via _modalSync', () => {
-      function stateWithRequests(opts: {
-        declarantName: string;
-        activeId: string;
-        passiveQueue: string[];
-      }): GameState {
-        return makeState({
-          closureNotifications: [{ playerName: opts.declarantName, rowColor: Color.BLUE }],
-          turnState: {
-            activePlayerId: opts.activeId,
-            phase: TurnPhase.ACTIVE_MOVE,
-            passivePlayerQueue: opts.passiveQueue,
-            currentRoll: { white1: 1, white2: 1, coloredDice: {} },
-          },
-        } as unknown as Partial<GameState>);
-      }
-
-      it('does not show the modal to the player who declared the intent', () => {
-        // PLAYER_ID (name 'P1') is the declarant and also in the passive queue.
-        component.gameState.set(stateWithRequests({
-          declarantName: 'P1',
-          activeId: OTHER_ID,
-          passiveQueue: [PLAYER_ID],
-        }));
-        TestBed.flushEffects();
-        expect(modalService.requests()).toHaveLength(0);
-      });
-
-      it('shows the modal to a passive player who is not the declarant', () => {
-        // OTHER_ID (name 'P2') declared; PLAYER_ID is a passive observer.
-        component.gameState.set(stateWithRequests({
+    it('shows the modal to a passive player who is not the declarant', () => {
+      // OTHER_ID (name 'P2') declared; PLAYER_ID is a passive observer.
+      component.gameState.set(
+        stateWithRequests({
           declarantName: 'P2',
           activeId: OTHER_ID,
           passiveQueue: [PLAYER_ID],
-        }));
-        TestBed.flushEffects();
-        expect(modalService.requests()).toHaveLength(1);
-        expect(modalService.requests()[0].rowColor).toBe(Color.BLUE);
-      });
+        }),
+      );
+      TestBed.tick();
+      expect(modalService.requests()).toHaveLength(1);
+      expect(modalService.requests()[0].rowColor).toBe(Color.BLUE);
+    });
 
-      it('shows the modal to the active player when a passive declares intent', () => {
-        // PLAYER_ID is the active player; OTHER_ID (name 'P2') is the passive declarant.
-        component.gameState.set(stateWithRequests({
+    it('shows the modal to the active player when a passive declares intent', () => {
+      // PLAYER_ID is the active player; OTHER_ID (name 'P2') is the passive declarant.
+      component.gameState.set(
+        stateWithRequests({
           declarantName: 'P2',
           activeId: PLAYER_ID,
           passiveQueue: [OTHER_ID],
-        }));
-        TestBed.flushEffects();
-        expect(modalService.requests()).toHaveLength(1);
-        expect(modalService.requests()[0].rowColor).toBe(Color.BLUE);
-      });
+        }),
+      );
+      TestBed.tick();
+      expect(modalService.requests()).toHaveLength(1);
+      expect(modalService.requests()[0].rowColor).toBe(Color.BLUE);
+    });
 
-      it('active player does not see their own declaration in the modal', () => {
-        // PLAYER_ID (name 'P1') is active and declared intent.
-        component.gameState.set(stateWithRequests({
+    it('active player does not see their own declaration in the modal', () => {
+      // PLAYER_ID (name 'P1') is active and declared intent.
+      component.gameState.set(
+        stateWithRequests({
           declarantName: 'P1',
           activeId: PLAYER_ID,
           passiveQueue: [OTHER_ID],
-        }));
-        TestBed.flushEffects();
-        expect(modalService.requests()).toHaveLength(0);
-      });
-
-      it('suppresses the notification modal while a passive has a pending lock confirmation', () => {
-        // Scenario: active declared BLUE intent. Passive crossed "3" via the YES/NO modal
-        // (pendingAutoLock set). The notification modal must stay suppressed so the passive
-        // can see the lock cross on the board and EndTurn via the board's confirm button.
-        const stateBase = stateWithRequests({ declarantName: 'P2', activeId: OTHER_ID, passiveQueue: [PLAYER_ID] });
-        component.gameState.set({
-          ...stateBase,
-          turnState: {
-            ...stateBase.turnState!,
-            pendingCrosses: { [PLAYER_ID]: ['cell-3'] }, // passive has a pending cross
-          },
-        } as GameState);
-        // Simulate pendingAutoLock being set (passive went through YES/NO modal).
-        (component as any).pendingAutoLock.set({ rowId: 'row-blue', autoLock: true, cellId: 'cell-3' });
-        TestBed.flushEffects();
-        // Modal must be suppressed — passive should see the board (and the lock cross) instead.
-        expect(modalService.requests()).toHaveLength(0);
-      });
-
-      it('re-shows the notification modal after a regular cross (no lock confirmation)', () => {
-        // Passive crossed a regular (non-closing) cell after dismissing the notification.
-        // The modal re-appears so they can confirm their cross.
-        const stateBase = stateWithRequests({ declarantName: 'P2', activeId: OTHER_ID, passiveQueue: [PLAYER_ID] });
-        component.gameState.set({
-          ...stateBase,
-          turnState: {
-            ...stateBase.turnState!,
-            pendingCrosses: { [PLAYER_ID]: ['cell-regular'] },
-          },
-        } as GameState);
-        (component as any).suppressModal.set(true); // simulate prior OK click
-        // No pendingAutoLock — regular cross, not a lock confirmation.
-        (component as any).pendingAutoLock.set(null);
-        TestBed.flushEffects();
-        // Modal re-appears (hasPendingCross=true) so the passive can confirm their cross.
-        expect(modalService.requests()).toHaveLength(1);
-      });
+        }),
+      );
+      TestBed.tick();
+      expect(modalService.requests()).toHaveLength(0);
     });
+
+    it('suppresses the notification modal while a passive has a pending lock confirmation', () => {
+      // Scenario: active declared BLUE intent. Passive crossed "3" via the YES/NO modal
+      // (pendingAutoLock set). The notification modal must stay suppressed so the passive
+      // can see the lock cross on the board and EndTurn via the board's confirm button.
+      const stateBase = stateWithRequests({
+        declarantName: 'P2',
+        activeId: OTHER_ID,
+        passiveQueue: [PLAYER_ID],
+      });
+      component.gameState.set({
+        ...stateBase,
+        turnState: {
+          ...stateBase.turnState!,
+          pendingCrosses: { [PLAYER_ID]: ['cell-3'] }, // passive has a pending cross
+        },
+      } as GameState);
+      // Simulate pendingAutoLock being set (passive went through YES/NO modal).
+      (component as any).pendingAutoLock.set({
+        rowId: 'row-blue',
+        autoLock: true,
+        cellId: 'cell-3',
+      });
+      TestBed.tick();
+      // Modal must be suppressed — passive should see the board (and the lock cross) instead.
+      expect(modalService.requests()).toHaveLength(0);
+    });
+
+    it('re-shows the notification modal after a regular cross (no lock confirmation)', () => {
+      // Passive crossed a regular (non-closing) cell after dismissing the notification.
+      // The modal re-appears so they can confirm their cross.
+      const stateBase = stateWithRequests({
+        declarantName: 'P2',
+        activeId: OTHER_ID,
+        passiveQueue: [PLAYER_ID],
+      });
+      component.gameState.set({
+        ...stateBase,
+        turnState: {
+          ...stateBase.turnState!,
+          pendingCrosses: { [PLAYER_ID]: ['cell-regular'] },
+        },
+      } as GameState);
+      (component as any).suppressModal.set(true); // simulate prior OK click
+      // No pendingAutoLock — regular cross, not a lock confirmation.
+      (component as any).pendingAutoLock.set(null);
+      TestBed.tick();
+      // Modal re-appears (hasPendingCross=true) so the passive can confirm their cross.
+      expect(modalService.requests()).toHaveLength(1);
+    });
+  });
 });
 
 // ── BigPoints bonus cell prerequisite ────────────────────────────────────────
@@ -1186,25 +1414,77 @@ describe('BoardComponent — row-closure modal delegation', () => {
 describe('BoardComponent — BigPoints bonus cell prerequisite', () => {
   let component: BoardComponent;
 
-  const RED_CELL    = { id: 'red-7',      position: 5, displayValue: '7', color: 'RED',    closingEligible: false, tags: [] };
-  const YELLOW_CELL = { id: 'yellow-7',   position: 5, displayValue: '7', color: 'YELLOW', closingEligible: false, tags: [] };
-  const GREEN_CELL  = { id: 'green-7',    position: 4, displayValue: '7', color: 'GREEN',  closingEligible: false, tags: [] };
-  const BLUE_CELL   = { id: 'blue-7',     position: 4, displayValue: '7', color: 'BLUE',   closingEligible: false, tags: [] };
-  const BONUS_RY    = { id: 'bonus-ry-7', position: 0, displayValue: '7', color: 'RED',    closingEligible: false,
-                        tags: [{ type: 'SECONDARY_COLOR', secondaryColor: 'YELLOW' }] };
-  const BONUS_GB    = { id: 'bonus-gb-7', position: 0, displayValue: '7', color: 'GREEN',  closingEligible: false,
-                        tags: [{ type: 'SECONDARY_COLOR', secondaryColor: 'BLUE' }] };
+  const RED_CELL = {
+    id: 'red-7',
+    position: 5,
+    displayValue: '7',
+    color: 'RED',
+    closingEligible: false,
+    tags: [],
+  };
+  const YELLOW_CELL = {
+    id: 'yellow-7',
+    position: 5,
+    displayValue: '7',
+    color: 'YELLOW',
+    closingEligible: false,
+    tags: [],
+  };
+  const GREEN_CELL = {
+    id: 'green-7',
+    position: 4,
+    displayValue: '7',
+    color: 'GREEN',
+    closingEligible: false,
+    tags: [],
+  };
+  const BLUE_CELL = {
+    id: 'blue-7',
+    position: 4,
+    displayValue: '7',
+    color: 'BLUE',
+    closingEligible: false,
+    tags: [],
+  };
+  const BONUS_RY = {
+    id: 'bonus-ry-7',
+    position: 0,
+    displayValue: '7',
+    color: 'RED',
+    closingEligible: false,
+    tags: [{ type: 'SECONDARY_COLOR', secondaryColor: 'YELLOW' }],
+  };
+  const BONUS_GB = {
+    id: 'bonus-gb-7',
+    position: 0,
+    displayValue: '7',
+    color: 'GREEN',
+    closingEligible: false,
+    tags: [{ type: 'SECONDARY_COLOR', secondaryColor: 'BLUE' }],
+  };
 
   const BIG_POINTS_LAYOUT = {
     rows: [
-      { id: 'row-red',      cells: [RED_CELL],    lock: null },
-      { id: 'row-bonus-ry', cells: [BONUS_RY],    lock: null, bonusRow: true,
-        upperNeighbourRowId: 'row-red',   lowerNeighbourRowId: 'row-yellow' },
-      { id: 'row-yellow',   cells: [YELLOW_CELL], lock: null },
-      { id: 'row-green',    cells: [GREEN_CELL],  lock: null },
-      { id: 'row-bonus-gb', cells: [BONUS_GB],    lock: null, bonusRow: true,
-        upperNeighbourRowId: 'row-green', lowerNeighbourRowId: 'row-blue' },
-      { id: 'row-blue',     cells: [BLUE_CELL],   lock: null },
+      { id: 'row-red', cells: [RED_CELL], lock: null },
+      {
+        id: 'row-bonus-ry',
+        cells: [BONUS_RY],
+        lock: null,
+        bonusRow: true,
+        upperNeighbourRowId: 'row-red',
+        lowerNeighbourRowId: 'row-yellow',
+      },
+      { id: 'row-yellow', cells: [YELLOW_CELL], lock: null },
+      { id: 'row-green', cells: [GREEN_CELL], lock: null },
+      {
+        id: 'row-bonus-gb',
+        cells: [BONUS_GB],
+        lock: null,
+        bonusRow: true,
+        upperNeighbourRowId: 'row-green',
+        lowerNeighbourRowId: 'row-blue',
+      },
+      { id: 'row-blue', cells: [BLUE_CELL], lock: null },
     ],
   };
 
@@ -1216,11 +1496,11 @@ describe('BoardComponent — BigPoints bonus cell prerequisite', () => {
     return makeState({
       sheetLayouts: {
         [PLAYER_ID]: BIG_POINTS_LAYOUT as any,
-        [OTHER_ID]:  { rows: [] },
+        [OTHER_ID]: { rows: [] },
       },
       sheetProgress: {
         [PLAYER_ID]: { punishments: 0, rowStates },
-        [OTHER_ID]:  { punishments: 0, rowStates: {} },
+        [OTHER_ID]: { punishments: 0, rowStates: {} },
       },
       turnState: {
         activePlayerId: PLAYER_ID,
@@ -1234,9 +1514,9 @@ describe('BoardComponent — BigPoints bonus cell prerequisite', () => {
     await TestBed.configureTestingModule({
       imports: [BoardComponent],
       providers: [
-        { provide: ActivatedRoute,    useValue: { snapshot: { paramMap: { get: () => '' } } } },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '' } } } },
         { provide: GamestatesService, useValue: { getGameState: () => of(makeState()) } },
-        { provide: MovesService,      useValue: { makeMove: vi.fn().mockReturnValue(of({})) } },
+        { provide: MovesService, useValue: { makeMove: vi.fn().mockReturnValue(of({})) } },
       ],
     }).compileComponents();
 

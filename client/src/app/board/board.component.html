@@ -1,9 +1,7 @@
 @if (error()) {
   <p class="error">{{ error() }}</p>
 } @else if (gameState(); as state) {
-
   <div class="board-layout" [class.offline-layout]="isOffline()">
-
     <!-- Left column: other players (online only) -->
     @if (!isOffline()) {
       <div class="player-list-panel">
@@ -14,29 +12,47 @@
           [turnState]="state.turnState ?? null"
           [sheetLayouts]="state.sheetLayouts"
           [sheetProgress]="state.sheetProgress"
-          [closedRows]="state.closedRows ?? {}" />
+          [closedRows]="state.closedRows ?? {}"
+        />
       </div>
     }
 
     <!-- Right column: turn bar + all player sheets -->
     <div class="right-column">
-
       @if (state.turnState; as turn) {
         <div class="turn-bar" [class.my-turn]="isMyTurn() || isInPassiveQueue()">
           <span class="turn-label">
-            {{ isMyTurn() ? ('yourTurn' | translate) : ('playerTurn' | translate : { name: playerName(turn.activePlayerId) }) }}
+            {{
+              isMyTurn()
+                ? ('yourTurn' | translate)
+                : ('playerTurn' | translate: { name: playerName(turn.activePlayerId) })
+            }}
           </span>
 
           @if (turn.currentRoll || canRoll() || isInPassiveQueue()) {
             <div class="dice-area">
-              <app-dice [value]="turn.currentRoll?.white1 ?? null" color="WHITE" [faces]="gameFaces()" [rolling]="rollingDice()" />
-              <app-dice [value]="turn.currentRoll?.white2 ?? null" color="WHITE" [faces]="gameFaces()" [rolling]="rollingDice()" />
+              <app-dice
+                [value]="turn.currentRoll?.white1 ?? null"
+                color="WHITE"
+                [faces]="gameFaces()"
+                [rolling]="rollingDice()"
+              />
+              <app-dice
+                [value]="turn.currentRoll?.white2 ?? null"
+                color="WHITE"
+                [faces]="gameFaces()"
+                [rolling]="rollingDice()"
+              />
               @for (entry of coloredDiceEntries(); track entry.color) {
-                <app-dice [value]="entry.value" [color]="entry.color" [faces]="gameFaces()" [rolling]="rollingDice()" />
+                <app-dice
+                  [value]="entry.value"
+                  [color]="entry.color"
+                  [faces]="gameFaces()"
+                  [rolling]="rollingDice()"
+                />
               }
             </div>
           }
-
         </div>
       }
 
@@ -48,7 +64,9 @@
                 [row]="row"
                 [rowState]="rowStateFor(playerId(), row.id)"
                 [closed]="isRowClosed(row.id)"
-                [clickableCellIds]="isOffline() ? offlineClickableCellIds(playerId()) : visibleClickableCellIds()"
+                [clickableCellIds]="
+                  isOffline() ? offlineClickableCellIds(playerId()) : visibleClickableCellIds()
+                "
                 [showClickableCellIds]="isOffline() ? emptySet : null"
                 [whiteWhiteClickableCellIds]="isOffline() ? emptySet : whiteWhiteClickableCellIds()"
                 [pendingCellIds]="pendingCellIds()"
@@ -62,7 +80,8 @@
                 [hasBonusRowBelow]="myRowConnectors().get(row.id)?.hasBonusRowBelow ?? false"
                 (cellClicked)="onCellClicked(row.id, $event, playerId())"
                 [showLuckyCrossHint]="row.luckyRow === true && hasLuckyCross()"
-                (lockClicked)="onLockClicked(row.id, playerId())" />
+                (lockClicked)="onLockClicked(row.id, playerId())"
+              />
             }
             @if (hasLuckyCross() && !hasLuckyNumberRow()) {
               <div class="lucky-cross-indicator">
@@ -86,7 +105,10 @@
               @if (bonusNumbersFor(playerId()).length > 0) {
                 <div class="bonus-track">
                   @for (n of bonusNumbersFor(playerId()); track n) {
-                    <div class="bonus-chip" [class.bonus-active]="isBonusNumberActive(playerId(), n)">
+                    <div
+                      class="bonus-chip"
+                      [class.bonus-active]="isBonusNumberActive(playerId(), n)"
+                    >
                       <img src="star_icon.svg" alt="" class="bonus-star" />
                       <span class="bonus-number">{{ n }}</span>
                     </div>
@@ -96,54 +118,81 @@
               <div class="punishment-track">
                 <span class="punishment-label">{{ 'punishment' | translate }} : –5</span>
                 @for (i of [0, 1, 2, 3]; track i) {
-                  <div class="punishment-box"
-                       role="button"
-                       [tabindex]="canTakePunishment(playerId()) ? 0 : -1"
-                       [class.taken]="(state.sheetProgress[playerId()]?.punishments ?? 0) > i"
-                       [class.clickable]="canTakePunishment(playerId())"
-                       [class.must-give-up]="mustGiveUp() && !((state.sheetProgress[playerId()]?.punishments ?? 0) > i)"
-                       (click)="onPunishmentClicked(playerId())"
-                       (keydown.enter)="onPunishmentClicked(playerId())"></div>
+                  <div
+                    class="punishment-box"
+                    role="button"
+                    [tabindex]="canTakePunishment(playerId()) ? 0 : -1"
+                    [class.taken]="(state.sheetProgress[playerId()]?.punishments ?? 0) > i"
+                    [class.clickable]="canTakePunishment(playerId())"
+                    [class.must-give-up]="
+                      mustGiveUp() && !((state.sheetProgress[playerId()]?.punishments ?? 0) > i)
+                    "
+                    (click)="onPunishmentClicked(playerId())"
+                    (keydown.enter)="onPunishmentClicked(playerId())"
+                  ></div>
                 }
               </div>
             </div>
           </div>
         }
       </section>
-
-    </div><!-- /right-column -->
+    </div>
+    <!-- /right-column -->
 
     <!-- Right column: confirm / pass panel -->
     @if (!isOffline()) {
       <div class="confirm-panel">
         @if (canRoll()) {
-          <button class="btn-roll" (click)="sendRoll()" [disabled]="rollingDice()">{{ 'roll' | translate }}</button>
+          <button class="btn-roll" (click)="sendRoll()" [disabled]="rollingDice()">
+            {{ 'roll' | translate }}
+          </button>
         } @else if (canPassActive()) {
           <button class="btn-confirm" (click)="passActive()">
-            <svg class="confirm-check-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 102.97">
-              <path d="M4.82,69.68c-14.89-16,8-39.87,24.52-24.76,5.83,5.32,12.22,11,18.11,16.27L92.81,5.46c15.79-16.33,40.72,7.65,25.13,24.07l-57,68A17.49,17.49,0,0,1,48.26,103a16.94,16.94,0,0,1-11.58-4.39c-9.74-9.1-21.74-20.32-31.86-28.9Z"/>
+            <svg
+              class="confirm-check-icon"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 122.88 102.97"
+            >
+              <path
+                d="M4.82,69.68c-14.89-16,8-39.87,24.52-24.76,5.83,5.32,12.22,11,18.11,16.27L92.81,5.46c15.79-16.33,40.72,7.65,25.13,24.07l-57,68A17.49,17.49,0,0,1,48.26,103a16.94,16.94,0,0,1-11.58-4.39c-9.74-9.1-21.74-20.32-31.86-28.9Z"
+              />
             </svg>
           </button>
         } @else if (canPassPassive()) {
           @if (hasPendingPassiveCross()) {
             <button class="btn-confirm" (click)="passPassive()">
-              <svg class="confirm-check-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 102.97">
-                <path d="M4.82,69.68c-14.89-16,8-39.87,24.52-24.76,5.83,5.32,12.22,11,18.11,16.27L92.81,5.46c15.79-16.33,40.72,7.65,25.13,24.07l-57,68A17.49,17.49,0,0,1,48.26,103a16.94,16.94,0,0,1-11.58-4.39c-9.74-9.1-21.74-20.32-31.86-28.9Z"/>
+              <svg
+                class="confirm-check-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 122.88 102.97"
+              >
+                <path
+                  d="M4.82,69.68c-14.89-16,8-39.87,24.52-24.76,5.83,5.32,12.22,11,18.11,16.27L92.81,5.46c15.79-16.33,40.72,7.65,25.13,24.07l-57,68A17.49,17.49,0,0,1,48.26,103a16.94,16.94,0,0,1-11.58-4.39c-9.74-9.1-21.74-20.32-31.86-28.9Z"
+                />
               </svg>
             </button>
           } @else {
-            <button class="btn-pass-arrow" [class.must-pass]="mustPassPassive()" (click)="passPassive()">
-              <svg class="pass-arrow-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 108.06">
-                <path d="M63.94,24.28a14.28,14.28,0,0,0-20.36-20L4.1,44.42a14.27,14.27,0,0,0,0,20l38.69,39.35a14.27,14.27,0,0,0,20.35-20L48.06,68.41l60.66-.29a14.27,14.27,0,1,0-.23-28.54l-59.85.28,15.3-15.58Z"/>
+            <button
+              class="btn-pass-arrow"
+              [class.must-pass]="mustPassPassive()"
+              (click)="passPassive()"
+            >
+              <svg
+                class="pass-arrow-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 122.88 108.06"
+              >
+                <path
+                  d="M63.94,24.28a14.28,14.28,0,0,0-20.36-20L4.1,44.42a14.27,14.27,0,0,0,0,20l38.69,39.35a14.27,14.27,0,0,0,20.35-20L48.06,68.41l60.66-.29a14.27,14.27,0,1,0-.23-28.54l-59.85.28,15.3-15.58Z"
+                />
               </svg>
             </button>
           }
         }
       </div>
     }
-
-  </div><!-- /board-layout -->
-
+  </div>
+  <!-- /board-layout -->
 } @else {
   <p>Loading…</p>
 }

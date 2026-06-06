@@ -1,5 +1,15 @@
 package nl.adg.qwixx.e2e;
 
+import static nl.adg.qwixx.e2e.helpers.ScoreInteractionHelper.*;
+import static nl.adg.qwixx.e2e.helpers.SettingsInteractionHelper.*;
+import static nl.adg.qwixx.e2e.utils.TestUtils.createDriver;
+import static nl.adg.qwixx.e2e.utils.TestUtils.waitUntilScoreLoaded;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
 import nl.adg.qwixx.e2e.utils.SpringAppTestHelper;
 import org.junit.jupiter.api.AfterEach;
@@ -7,17 +17,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
-
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static nl.adg.qwixx.e2e.helpers.ScoreInteractionHelper.*;
-import static nl.adg.qwixx.e2e.helpers.SettingsInteractionHelper.*;
-import static nl.adg.qwixx.e2e.utils.TestUtils.createDriver;
-import static nl.adg.qwixx.e2e.utils.TestUtils.waitUntilScoreLoaded;
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * End-to-end tests for the post-game lobby flow:

@@ -12,20 +12,18 @@ import { TurnState } from '../../generated';
   selector: 'app-player-list',
   imports: [],
   templateUrl: './player-list.component.html',
-  styleUrl: './player-list.component.css'
+  styleUrl: './player-list.component.css',
 })
 export class PlayerListComponent {
-  players        = input.required<Player[]>();
-  myPlayerId     = input.required<string>();
+  players = input.required<Player[]>();
+  myPlayerId = input.required<string>();
   activePlayerId = input<string | null>(null);
-  turnState      = input<TurnState | null>(null);
-  sheetLayouts   = input<Record<string, SheetLayout>>({});
-  sheetProgress  = input<Record<string, SheetProgress>>({});
-  closedRows     = input<Record<string, string>>({});
+  turnState = input<TurnState | null>(null);
+  sheetLayouts = input<Record<string, SheetLayout>>({});
+  sheetProgress = input<Record<string, SheetProgress>>({});
+  closedRows = input<Record<string, string>>({});
 
-  otherPlayers = computed(() =>
-    this.players().filter(p => p.id !== this.myPlayerId())
-  );
+  otherPlayers = computed(() => this.players().filter((p) => p.id !== this.myPlayerId()));
 
   isActive(pid: string): boolean {
     return pid === this.activePlayerId();
@@ -36,8 +34,7 @@ export class PlayerListComponent {
     if (!turn) return false;
     if (pid === turn.activePlayerId) return true;
     const phase = turn.phase;
-    return phase === TurnPhase.ACTIVE_MOVE
-        || phase === TurnPhase.PASSIVE_MOVE;
+    return phase === TurnPhase.ACTIVE_MOVE || phase === TurnPhase.PASSIVE_MOVE;
   }
 
   playerHasActed(pid: string): boolean {
@@ -70,22 +67,27 @@ export class PlayerListComponent {
   }
 
   initials(name: string): string {
-    return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    return name
+      .split(' ')
+      .map((w) => w[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
   }
 
   readonly colorHex: Record<string, string> = {
-    RED:    '#d32f2f',
+    RED: '#d32f2f',
     YELLOW: '#f9a825',
-    GREEN:  '#388e3c',
-    BLUE:   '#1565c0',
+    GREEN: '#388e3c',
+    BLUE: '#1565c0',
   };
 
   secondaryColorOf(cell: SheetCell | undefined): string | null {
-    return cell?.tags?.find(t => t.type === 'SECONDARY_COLOR')?.secondaryColor ?? null;
+    return cell?.tags?.find((t) => t.type === 'SECONDARY_COLOR')?.secondaryColor ?? null;
   }
 
   isXChange(cell: SheetCell): boolean {
-    return cell.tags?.some(t => t.type === 'X_CHANGE') ?? false;
+    return cell.tags?.some((t) => t.type === 'X_CHANGE') ?? false;
   }
 
   isXChangeRow(row: SheetRow): boolean {
@@ -93,11 +95,11 @@ export class PlayerListComponent {
   }
 
   isLuckyNumber(cell: SheetCell): boolean {
-    return cell.tags?.some(t => t.type === 'LUCKY_NUMBER') ?? false;
+    return cell.tags?.some((t) => t.type === 'LUCKY_NUMBER') ?? false;
   }
 
   isLuckyCross(cell: SheetCell): boolean {
-    return cell.tags?.some(t => t.type === 'LUCKY_CROSS') ?? false;
+    return cell.tags?.some((t) => t.type === 'LUCKY_CROSS') ?? false;
   }
 
   isLuckyRow(row: SheetRow): boolean {

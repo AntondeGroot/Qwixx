@@ -1,14 +1,13 @@
 package nl.adg.qwixx.rules;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.*;
 import nl.adg.qwixx.action.*;
 import nl.adg.qwixx.data.*;
 import nl.adg.qwixx.state.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class StandardTurnRulesTest {
 

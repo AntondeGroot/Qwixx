@@ -1,23 +1,20 @@
 package nl.adg.qwixx.rules;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.CellTag;
 import nl.adg.qwixx.data.Color;
 import nl.adg.qwixx.data.LockCell;
 import nl.adg.qwixx.data.Row;
-import nl.adg.qwixx.rules.ScoreCard;
-import nl.adg.qwixx.rules.StandardScoringEngine;
 import nl.adg.qwixx.state.RowState;
 import nl.adg.qwixx.state.SheetLayout;
 import nl.adg.qwixx.state.SheetProgress;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class StandardScoringEngineTest {
 

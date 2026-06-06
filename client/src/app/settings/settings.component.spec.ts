@@ -2,28 +2,40 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
 import { provideTranslateService } from '@ngx-translate/core';
-import { GamesService } from '../../generated/api/games.service';
-import { PlayersService } from '../../generated/api/players.service';
+import { GamesService, PlayersService } from '../../generated/api/api';
 import { LobbyService } from '../services/lobby.service';
-import { GameOption } from '../../generated/model/gameOption';
+import { GameOption } from '../../generated/model/models';
 import { SettingsComponent } from './settings.component';
 
 function makeOptions(): GameOption[] {
   return [
     {
-      key: 'base', labelKey: 'gameOption.base', type: GameOption.TypeEnum.ENUM,
-      defaultValue: 'STANDARD', choices: ['STANDARD', 'LONGO'],
-      adminOnly: false, incompatibleWith: [],
+      key: 'base',
+      labelKey: 'gameOption.base',
+      type: GameOption.TypeEnum.ENUM,
+      defaultValue: 'STANDARD',
+      choices: ['STANDARD', 'LONGO'],
+      adminOnly: false,
+      incompatibleWith: [],
     },
     {
-      key: 'botCount', labelKey: 'gameOption.botCount', type: GameOption.TypeEnum.INTEGER,
-      defaultValue: '0', minValue: 0, maxValue: 3,
-      adminOnly: false, incompatibleWith: [],
+      key: 'botCount',
+      labelKey: 'gameOption.botCount',
+      type: GameOption.TypeEnum.INTEGER,
+      defaultValue: '0',
+      minValue: 0,
+      maxValue: 3,
+      adminOnly: false,
+      incompatibleWith: [],
     },
     {
-      key: 'botStrategy', labelKey: 'gameOption.botStrategy', type: GameOption.TypeEnum.ENUM,
-      defaultValue: 'BALANCED', choices: ['UNTRAINED', 'MOST_POINTS', 'MOST_WINS', 'BALANCED'],
-      adminOnly: false, incompatibleWith: [],
+      key: 'botStrategy',
+      labelKey: 'gameOption.botStrategy',
+      type: GameOption.TypeEnum.ENUM,
+      defaultValue: 'BALANCED',
+      choices: ['UNTRAINED', 'MOST_POINTS', 'MOST_WINS', 'BALANCED'],
+      adminOnly: false,
+      incompatibleWith: [],
     },
   ];
 }
@@ -31,7 +43,7 @@ function makeOptions(): GameOption[] {
 function createFixture(queryParams: Record<string, string> = {}) {
   const gamesServiceMock = {
     getGameOptions: () => of(makeOptions()) as any,
-    previewLayout:  () => of(null) as any,
+    previewLayout: () => of(null) as any,
   };
 
   return TestBed.configureTestingModule({
@@ -43,9 +55,9 @@ function createFixture(queryParams: Record<string, string> = {}) {
         provide: ActivatedRoute,
         useValue: { snapshot: { queryParamMap: { get: (k: string) => queryParams[k] ?? null } } },
       },
-      { provide: GamesService,   useValue: gamesServiceMock },
+      { provide: GamesService, useValue: gamesServiceMock },
       { provide: PlayersService, useValue: {} },
-      { provide: LobbyService,   useValue: {} },
+      { provide: LobbyService, useValue: {} },
     ],
   })
     .compileComponents()
@@ -75,7 +87,7 @@ describe('SettingsComponent — botCount select', () => {
   });
 
   it('botCount option labels are 0, 1, 2, 3', () => {
-    const texts = Array.from(botCountSelect()!.options).map(o => o.textContent?.trim());
+    const texts = Array.from(botCountSelect()!.options).map((o) => o.textContent?.trim());
     expect(texts).toEqual(['0', '1', '2', '3']);
   });
 
@@ -125,7 +137,7 @@ describe('SettingsComponent — botCount select in embed mode', () => {
   });
 
   it('embed mode: option labels are still 0, 1, 2, 3', () => {
-    const texts = Array.from(botCountSelect()!.options).map(o => o.textContent?.trim());
+    const texts = Array.from(botCountSelect()!.options).map((o) => o.textContent?.trim());
     expect(texts).toEqual(['0', '1', '2', '3']);
   });
 

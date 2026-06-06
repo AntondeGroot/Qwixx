@@ -1,12 +1,11 @@
 package nl.adg.qwixx.game;
 
-import nl.adg.qwixx.state.CardMode;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
+import nl.adg.qwixx.state.CardMode;
+import org.junit.jupiter.api.Test;
 
 class QwixxGameOptionsTest {
 

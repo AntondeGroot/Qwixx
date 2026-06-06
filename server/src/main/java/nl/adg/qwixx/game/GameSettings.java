@@ -1,10 +1,9 @@
 package nl.adg.qwixx.game;
 
+import java.util.List;
 import nl.adg.qwixx.bot.BotProfile;
 import nl.adg.qwixx.bot.BotStrategy;
 import nl.adg.qwixx.state.CardMode;
-
-import java.util.List;
 
 public class GameSettings {
     private final BaseVariant  base;
@@ -66,17 +65,17 @@ public class GameSettings {
 
     public static class Builder {
         private BaseVariant    base           = BaseVariant.STANDARD;
-        private boolean        randomOrder    = false;
-        private boolean        connectedCells = false;
-        private boolean        extraRow       = false;
-        private boolean        bigPoints      = false;
-        private boolean        xChange        = false;
-        private boolean        luckyNumber    = false;
-        private boolean        luckyCross     = false;
-        private boolean        mixedColors    = false;
+        private boolean        randomOrder;
+        private boolean        connectedCells;
+        private boolean        extraRow;
+        private boolean        bigPoints;
+        private boolean        xChange;
+        private boolean        luckyNumber;
+        private boolean        luckyCross;
+        private boolean        mixedColors;
         private CardMode       cardMode       = CardMode.DETERMINISTIC;
         private GameMode       gameMode       = GameMode.ONLINE;
-        private int            botCount       = 0;
+        private int            botCount;
         private BotStrategy    botStrategy    = BotStrategy.BALANCED;
         private List<BotProfile> botProfiles  = List.of();
 

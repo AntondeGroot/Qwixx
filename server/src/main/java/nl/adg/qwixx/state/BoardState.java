@@ -1,10 +1,9 @@
 package nl.adg.qwixx.state;
 
-import nl.adg.qwixx.data.Die;
-
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import nl.adg.qwixx.data.Die;
 
 public class BoardState {
     Map<UUID, SheetProgress> sheetProgress;  // crossing progress per player

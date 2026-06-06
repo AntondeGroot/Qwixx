@@ -1,8 +1,7 @@
 package nl.adg.qwixx.rules;
 
-import nl.adg.qwixx.data.Color;
-
 import java.util.Map;
+import nl.adg.qwixx.data.Color;
 
 public record ScoreCard(
         Map<Color, Integer> crossesPerColor,  // RED, YELLOW, GREEN, BLUE

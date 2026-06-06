@@ -1,7 +1,5 @@
 package nl.adg.qwixx.state;
 
-import nl.adg.qwixx.data.RollResult;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import nl.adg.qwixx.data.RollResult;
 
 // Everything scoped to the turn currently in progress. Rebuilt at the start of each turn.
 public class TurnState {

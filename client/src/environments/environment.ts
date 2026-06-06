@@ -1,5 +1,5 @@
 export const environment = {
   production: false,
   apiBaseUrl: '',
-  lobbyUrl: 'http://localhost:4100'
+  lobbyUrl: 'http://localhost:4100',
 };

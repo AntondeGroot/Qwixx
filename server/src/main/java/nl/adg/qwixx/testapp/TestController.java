@@ -1,5 +1,10 @@
 package nl.adg.qwixx.testapp;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import nl.adg.qwixx.data.Color;
 import nl.adg.qwixx.data.RollResult;
 import nl.adg.qwixx.game.GameRegistry;
@@ -14,12 +19,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 
 @RestController
 @Profile("e2e")

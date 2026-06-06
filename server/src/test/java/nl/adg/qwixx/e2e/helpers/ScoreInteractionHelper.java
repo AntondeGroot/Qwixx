@@ -1,13 +1,12 @@
 package nl.adg.qwixx.e2e.helpers;
 
+import java.time.Duration;
+import java.util.List;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.WebDriverWait;
-
-import java.time.Duration;
-import java.util.List;
 
 public class ScoreInteractionHelper {
 
@@ -170,7 +169,7 @@ public class ScoreInteractionHelper {
     public static boolean isMobileScaleApplied(WebDriver driver) {
         try {
             WebElement host = driver.findElement(By.tagName("app-score"));
-            String style = host.getAttribute("style");
+            String style = host.getDomAttribute("style");
             return style != null && style.contains("--mobile-scale:");
         } catch (Exception e) {
             return false;

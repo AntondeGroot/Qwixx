@@ -1,5 +1,10 @@
 package nl.adg.qwixx.web;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import nl.adg.qwixx.game.GameAlreadyStartedException;
 import nl.adg.qwixx.game.GameNotFinishedException;
 import nl.adg.qwixx.game.GameRegistry;
@@ -21,12 +26,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class GamesApiDelegateImpl implements GamesApiDelegate {
@@ -70,7 +69,7 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
         try {
             session.start(botPics);
         } catch (IllegalStateException ex) {
-            throw new GameAlreadyStartedException(sessionId);
+            throw new GameAlreadyStartedException(sessionId, ex);
         }
         sseRegistry.emit(sessionId, session.currentState(), session);
         return ResponseEntity.ok().build();
@@ -82,7 +81,7 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
         try {
             session.restart(buildSettings(resolveOptions(req, session)));
         } catch (IllegalStateException ex) {
-            throw new GameNotFinishedException(sessionId);
+            throw new GameNotFinishedException(sessionId, ex);
         }
         sseRegistry.emit(sessionId, session.currentState(), session);
         return ResponseEntity.ok().build();
@@ -104,7 +103,7 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
         try {
             session.addPlayer(player);
         } catch (IllegalStateException ex) {
-            throw new GameAlreadyStartedException(sessionId);
+            throw new GameAlreadyStartedException(sessionId, ex);
         }
         lobbyController.emitLobby(sessionId, session);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -129,7 +128,7 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
                 session.removePlayer(UUID.fromString(playerId));
             }
         } catch (IllegalArgumentException ex) {
-            throw new SessionNotFoundException(playerId);
+            throw new SessionNotFoundException(playerId, ex);
         }
         lobbyController.emitLobby(sessionId, session);
         gameFinishedNotifier.checkAndNotify(sessionId, session);

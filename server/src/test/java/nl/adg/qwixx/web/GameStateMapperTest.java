@@ -1,5 +1,9 @@
 package nl.adg.qwixx.web;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.List;
+import java.util.Map;
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSettings;
 import nl.adg.qwixx.game.Player;
@@ -8,11 +12,6 @@ import nl.adg.qwixx.state.CardMode;
 import nl.adg.qwixx.state.GameState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class GameStateMapperTest {
 

@@ -1,5 +1,10 @@
 package nl.adg.qwixx.web;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import nl.adg.qwixx.game.GameSession;
 import nl.adg.qwixx.state.GameState;
 import org.springframework.http.MediaType;
@@ -7,15 +12,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-
 @Component
 public class SseEmitterRegistry {
 
+    @SuppressWarnings("PMD.LooseCoupling")
     private final Map<String, CopyOnWriteArrayList<SseEmitter>> sessions = new ConcurrentHashMap<>();
 
     SseEmitter subscribe(String sessionId) {

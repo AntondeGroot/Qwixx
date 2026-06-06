@@ -13,14 +13,14 @@ describe('PlayerListComponent', () => {
     const fixture = TestBed.createComponent(PlayerListComponent);
     component = fixture.componentInstance;
     TestBed.runInInjectionContext(() => {
-      (component as any).players    = () => [P1, P2, P3];
+      (component as any).players = () => [P1, P2, P3];
       (component as any).myPlayerId = () => 'p1';
     });
   });
 
   describe('otherPlayers', () => {
     it('excludes the current player', () => {
-      const ids = component.otherPlayers().map(p => p.id);
+      const ids = component.otherPlayers().map((p) => p.id);
       expect(ids).not.toContain('p1');
       expect(ids).toContain('p2');
       expect(ids).toContain('p3');
@@ -95,7 +95,7 @@ describe('PlayerListComponent', () => {
     it('returns true when cell is in crossedCells', () => {
       TestBed.runInInjectionContext(() => {
         (component as any).sheetProgress = () => ({
-          p2: { rowStates: { 'r1': { crossedCells: ['c1'], lockCrossed: false } }, punishments: 0 },
+          p2: { rowStates: { r1: { crossedCells: ['c1'], lockCrossed: false } }, punishments: 0 },
         });
       });
       expect(component.isCrossed('p2', 'r1', 'c1')).toBe(true);
@@ -104,7 +104,7 @@ describe('PlayerListComponent', () => {
     it('returns false when cell is not crossed', () => {
       TestBed.runInInjectionContext(() => {
         (component as any).sheetProgress = () => ({
-          p2: { rowStates: { 'r1': { crossedCells: [], lockCrossed: false } }, punishments: 0 },
+          p2: { rowStates: { r1: { crossedCells: [], lockCrossed: false } }, punishments: 0 },
         });
       });
       expect(component.isCrossed('p2', 'r1', 'c1')).toBe(false);

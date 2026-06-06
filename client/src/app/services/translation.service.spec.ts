@@ -9,16 +9,16 @@ describe('TranslationService', () => {
 
   beforeEach(() => {
     const translateServiceMock = {
-      setDefaultLang: vi.fn(),
+      setFallbackLang: vi.fn(),
       addLangs: vi.fn(),
-      use: vi.fn(() => of({}))
+      use: vi.fn(() => of({})),
     };
 
     TestBed.configureTestingModule({
       providers: [
         TranslationService,
-        { provide: TranslateService, useValue: translateServiceMock }
-      ]
+        { provide: TranslateService, useValue: translateServiceMock },
+      ],
     });
 
     service = TestBed.inject(TranslationService);
@@ -36,10 +36,10 @@ describe('TranslationService', () => {
       Object.defineProperty(window, 'location', {
         value: {
           pathname: '/settings',
-          search: '?sessionid=123&playerid=456&locale=en'
+          search: '?sessionid=123&playerid=456&locale=en',
         },
         writable: true,
-        configurable: true
+        configurable: true,
       });
 
       service.setLanguage('de');
@@ -60,10 +60,10 @@ describe('TranslationService', () => {
       Object.defineProperty(window, 'location', {
         value: {
           pathname: '/settings',
-          search: '?locale=en'
+          search: '?locale=en',
         },
         writable: true,
-        configurable: true
+        configurable: true,
       });
 
       service.setLanguage('fr');
@@ -81,10 +81,10 @@ describe('TranslationService', () => {
       Object.defineProperty(window, 'location', {
         value: {
           pathname: '/settings',
-          search: '?sessionid=abc&playerid=def'
+          search: '?sessionid=abc&playerid=def',
         },
         writable: true,
-        configurable: true
+        configurable: true,
       });
 
       service.setLanguage('nl');

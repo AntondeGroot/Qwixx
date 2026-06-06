@@ -1,13 +1,12 @@
 package nl.adg.qwixx.e2e.helpers;
 
+import java.util.List;
+import java.util.Map;
 import nl.adg.qwixx.e2e.utils.SpringAppTestHelper;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestTemplate;
-
-import java.util.List;
-import java.util.Map;
 
 public class ApiHelper {
 

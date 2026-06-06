@@ -15,7 +15,9 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .player-card.active-turn {
@@ -132,10 +134,18 @@
 }
 
 /* Color bands */
-.mini-row[data-color="RED"]    .mini-cell { background: #d32f2f; }
-.mini-row[data-color="YELLOW"] .mini-cell { background: #f9a825; }
-.mini-row[data-color="GREEN"]  .mini-cell { background: #388e3c; }
-.mini-row[data-color="BLUE"]   .mini-cell { background: #1565c0; }
+.mini-row[data-color='RED'] .mini-cell {
+  background: #d32f2f;
+}
+.mini-row[data-color='YELLOW'] .mini-cell {
+  background: #f9a825;
+}
+.mini-row[data-color='GREEN'] .mini-cell {
+  background: #388e3c;
+}
+.mini-row[data-color='BLUE'] .mini-cell {
+  background: #1565c0;
+}
 
 .mini-cell {
   width: 9px;
@@ -156,7 +166,7 @@
   width: 6px;
   height: 6px;
   background: white;
-  border: 1.5px solid #7B1FA2;
+  border: 1.5px solid #7b1fa2;
   border-radius: 1px;
   gap: 5px !important;
   transform: rotate(45deg);
@@ -166,8 +176,8 @@
 .mini-row .mini-cell.mini-cell-lucky-number {
   width: 6px;
   height: 6px;
-  background: #F57C00;
-  border: 1.5px solid #E65100;
+  background: #f57c00;
+  border: 1.5px solid #e65100;
   border-radius: 1px;
   gap: 5px !important;
   transform: rotate(45deg);
@@ -177,8 +187,8 @@
 .mini-row .mini-cell.mini-cell-lucky-cross {
   width: 4px;
   height: 4px;
-  background: #F57C00;
-  border: 1px solid #E65100;
+  background: #f57c00;
+  border: 1px solid #e65100;
   border-radius: 1px;
   transform: rotate(45deg);
 }

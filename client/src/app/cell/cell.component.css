@@ -12,15 +12,39 @@
   flex-shrink: 0;
 }
 
-.cell[data-color="RED"]    { --primary-color: #d32f2f; background: var(--primary-color); color: white; }
-.cell[data-color="YELLOW"] { --primary-color: #f9a825; background: var(--primary-color); color: #333; }
-.cell[data-color="GREEN"]  { --primary-color: #388e3c; background: var(--primary-color); color: white; }
-.cell[data-color="BLUE"]   { --primary-color: #1565c0; background: var(--primary-color); color: white; }
+.cell[data-color='RED'] {
+  --primary-color: #d32f2f;
+  background: var(--primary-color);
+  color: white;
+}
+.cell[data-color='YELLOW'] {
+  --primary-color: #f9a825;
+  background: var(--primary-color);
+  color: #333;
+}
+.cell[data-color='GREEN'] {
+  --primary-color: #388e3c;
+  background: var(--primary-color);
+  color: white;
+}
+.cell[data-color='BLUE'] {
+  --primary-color: #1565c0;
+  background: var(--primary-color);
+  color: white;
+}
 
-.cell[data-secondary-color="RED"]    { --secondary-color: #d32f2f; }
-.cell[data-secondary-color="YELLOW"] { --secondary-color: #f9a825; }
-.cell[data-secondary-color="GREEN"]  { --secondary-color: #388e3c; }
-.cell[data-secondary-color="BLUE"]   { --secondary-color: #1565c0; }
+.cell[data-secondary-color='RED'] {
+  --secondary-color: #d32f2f;
+}
+.cell[data-secondary-color='YELLOW'] {
+  --secondary-color: #f9a825;
+}
+.cell[data-secondary-color='GREEN'] {
+  --secondary-color: #388e3c;
+}
+.cell[data-secondary-color='BLUE'] {
+  --secondary-color: #1565c0;
+}
 
 .cell-value {
   font-size: 20px;
@@ -41,7 +65,6 @@
   pointer-events: none;
   z-index: 2;
 }
-
 
 .cell.pending .cell-value {
   opacity: 0.25;
@@ -72,24 +95,31 @@
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 3px var(--glow-full); }
-  50%       { box-shadow: 0 0 0 6px var(--glow-dim), 0 0 18px 2px var(--glow-mid); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px var(--glow-full);
+  }
+  50% {
+    box-shadow:
+      0 0 0 6px var(--glow-dim),
+      0 0 18px 2px var(--glow-mid);
+  }
 }
 
 /* All clickable cells share one animation; colour is set per-type via custom properties */
 .cell.clickable {
   cursor: pointer;
   --glow-full: rgba(186, 66, 255, 0.95);
-  --glow-dim:  rgba(186, 66, 255, 0.35);
-  --glow-mid:  rgba(186, 66, 255, 0.55);
+  --glow-dim: rgba(186, 66, 255, 0.35);
+  --glow-mid: rgba(186, 66, 255, 0.55);
   animation: pulse-glow 1.4s ease-in-out infinite;
 }
 
 /* White+white cells: swap the glow colour to cyan, keep the same animation */
 .cell.clickable.ww {
   --glow-full: rgba(0, 229, 255, 0.95);
-  --glow-dim:  rgba(0, 229, 255, 0.50);
-  --glow-mid:  rgba(0, 229, 255, 0.75);
+  --glow-dim: rgba(0, 229, 255, 0.5);
+  --glow-mid: rgba(0, 229, 255, 0.75);
 }
 
 .cell.clickable:hover {
@@ -105,8 +135,12 @@
   overflow: visible;
 }
 
-.cell.big-points-cell.primary-maxed   { --primary-color: #bbb; }
-.cell.big-points-cell.secondary-maxed { --secondary-color: #bbb; }
+.cell.big-points-cell.primary-maxed {
+  --primary-color: #bbb;
+}
+.cell.big-points-cell.secondary-maxed {
+  --secondary-color: #bbb;
+}
 
 .big-points-svg {
   position: absolute;
@@ -121,7 +155,7 @@
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: radial-gradient(circle at 38% 32%, rgba(255,255,255,0.45) 0%, transparent 55%);
+  background: radial-gradient(circle at 38% 32%, rgba(255, 255, 255, 0.45) 0%, transparent 55%);
   pointer-events: none;
 }
 
@@ -142,8 +176,8 @@
   height: 32px;
   border-radius: 50%;
   --glow-full: rgba(186, 66, 255, 0.95);
-  --glow-dim:  rgba(186, 66, 255, 0.35);
-  --glow-mid:  rgba(186, 66, 255, 0.55);
+  --glow-dim: rgba(186, 66, 255, 0.35);
+  --glow-mid: rgba(186, 66, 255, 0.55);
   animation: pulse-glow 1.4s ease-in-out infinite;
   pointer-events: none;
   z-index: 3;
@@ -151,8 +185,8 @@
 
 :host.host-big-points-clickable.host-ww::after {
   --glow-full: rgba(0, 229, 255, 0.95);
-  --glow-dim:  rgba(0, 229, 255, 0.50);
-  --glow-mid:  rgba(0, 229, 255, 0.75);
+  --glow-dim: rgba(0, 229, 255, 0.5);
+  --glow-mid: rgba(0, 229, 255, 0.75);
 }
 
 /* X-Change diamond cells */
@@ -160,7 +194,7 @@
   width: 40px;
   height: 40px;
   background: white;
-  border: 2.5px solid #7B1FA2;
+  border: 2.5px solid #7b1fa2;
   border-radius: 7px;
   transform: rotate(45deg);
   overflow: visible;
@@ -187,7 +221,7 @@
 .xchange-bot {
   font-size: 12px;
   font-weight: 700;
-  color: #7B1FA2;
+  color: #7b1fa2;
   line-height: 1.1;
 }
 
@@ -200,7 +234,7 @@
 .cell.x-change-cell .cell-cross {
   transform: rotate(-45deg);
   font-size: 26px;
-  color: #7B1FA2;
+  color: #7b1fa2;
 }
 
 /* Glow on clickable x-change cells — host needs position for ::after */
@@ -212,16 +246,16 @@
 :host.host-xchange-clickable .cell.x-change-cell {
   animation: pulse-glow 1.4s ease-in-out infinite;
   --glow-full: rgba(0, 229, 255, 0.95);
-  --glow-dim:  rgba(0, 229, 255, 0.50);
-  --glow-mid:  rgba(0, 229, 255, 0.75);
+  --glow-dim: rgba(0, 229, 255, 0.5);
+  --glow-mid: rgba(0, 229, 255, 0.75);
 }
 
 /* ── Lucky Number cells: orange diamond (rotated square) ─────────────────────── */
 .cell.lucky-number-cell {
   width: 40px;
   height: 40px;
-  background: #F57C00;
-  border: 2.5px solid #E65100;
+  background: #f57c00;
+  border: 2.5px solid #e65100;
   border-radius: 10px;
   transform: rotate(45deg);
   overflow: visible;
@@ -230,7 +264,7 @@
 
 /* Override any color backgrounds — lucky-number cells are always orange */
 .cell.lucky-number-cell[data-color] {
-  background: #F57C00;
+  background: #f57c00;
   color: white;
 }
 
@@ -247,7 +281,7 @@
   transform: rotate(-45deg);
   font-size: 24px;
   color: white;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 /* Glow on clickable lucky-number cells — always cyan (white+white path) */
@@ -259,14 +293,14 @@
 :host.host-lucky-number-clickable .cell.lucky-number-cell {
   animation: pulse-glow 1.4s ease-in-out infinite;
   --glow-full: rgba(0, 229, 255, 0.95);
-  --glow-dim:  rgba(0, 229, 255, 0.50);
-  --glow-mid:  rgba(0, 229, 255, 0.75);
+  --glow-dim: rgba(0, 229, 255, 0.5);
+  --glow-mid: rgba(0, 229, 255, 0.75);
 }
 
 :host.host-lucky-number-ww .cell.lucky-number-cell {
   --glow-full: rgba(0, 229, 255, 0.95);
-  --glow-dim:  rgba(0, 229, 255, 0.50);
-  --glow-mid:  rgba(0, 229, 255, 0.75);
+  --glow-dim: rgba(0, 229, 255, 0.5);
+  --glow-mid: rgba(0, 229, 255, 0.75);
 }
 
 /* ── Lucky Cross cells: ~75% the width of a regular cell ─────────────────────── */
@@ -290,6 +324,6 @@
 :host.host-lucky-cross-clickable .cell.lucky-number-cell {
   animation: pulse-glow 1.4s ease-in-out infinite;
   --glow-full: rgba(0, 229, 255, 0.95);
-  --glow-dim:  rgba(0, 229, 255, 0.50);
-  --glow-mid:  rgba(0, 229, 255, 0.75);
+  --glow-dim: rgba(0, 229, 255, 0.5);
+  --glow-mid: rgba(0, 229, 255, 0.75);
 }

@@ -1,8 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RowClosureModalComponent, ClosureNotification } from './row-closure-modal.component';
 import { TranslateModule } from '@ngx-translate/core';
-import { Color } from '../../generated/model/color';
-import { DebugElement } from '@angular/core';
+import { Color } from '../../generated/model/models';
 
 describe('RowClosureModalComponent', () => {
   let component: RowClosureModalComponent;
@@ -10,7 +9,7 @@ describe('RowClosureModalComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RowClosureModalComponent, TranslateModule.forRoot()]
+      imports: [RowClosureModalComponent, TranslateModule.forRoot()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RowClosureModalComponent);
@@ -29,9 +28,7 @@ describe('RowClosureModalComponent', () => {
   });
 
   it('should display modal when requests are present', () => {
-    const requests: ClosureNotification[] = [
-      { playerName: 'Player A', rowColor: Color.RED }
-    ];
+    const requests: ClosureNotification[] = [{ playerName: 'Player A', rowColor: Color.RED }];
     component.requests = requests;
     fixture.detectChanges();
     const overlay = fixture.nativeElement.querySelector('.modal-overlay');
@@ -42,7 +39,7 @@ describe('RowClosureModalComponent', () => {
     const requests: ClosureNotification[] = [
       { playerName: 'Player A', rowColor: Color.RED },
       { playerName: 'Player B', rowColor: Color.YELLOW },
-      { playerName: 'Player C', rowColor: Color.GREEN }
+      { playerName: 'Player C', rowColor: Color.GREEN },
     ];
     component.requests = requests;
     fixture.detectChanges();
@@ -68,7 +65,7 @@ describe('RowClosureModalComponent', () => {
       emitted = true;
     });
     component.requests = [{ playerName: 'Player A', rowColor: Color.RED }];
-    component.hasPendingCross = true;  // Change button only shown when there is a pending cross
+    component.hasPendingCross = true; // Change button only shown when there is a pending cross
     fixture.detectChanges();
     const changeBtn = fixture.nativeElement.querySelector('.btn-secondary');
     changeBtn.click();
@@ -85,7 +82,7 @@ describe('RowClosureModalComponent', () => {
   it('should display color cells with correct classes', () => {
     const requests: ClosureNotification[] = [
       { playerName: 'Player A', rowColor: Color.RED },
-      { playerName: 'Player B', rowColor: Color.BLUE }
+      { playerName: 'Player B', rowColor: Color.BLUE },
     ];
     component.requests = requests;
     fixture.detectChanges();
@@ -97,7 +94,7 @@ describe('RowClosureModalComponent', () => {
   it('should display player names correctly', () => {
     const requests: ClosureNotification[] = [
       { playerName: 'Alice', rowColor: Color.RED },
-      { playerName: 'Bob', rowColor: Color.YELLOW }
+      { playerName: 'Bob', rowColor: Color.YELLOW },
     ];
     component.requests = requests;
     fixture.detectChanges();
@@ -111,7 +108,7 @@ describe('RowClosureModalComponent', () => {
       { playerName: 'P1', rowColor: Color.RED },
       { playerName: 'P2', rowColor: Color.YELLOW },
       { playerName: 'P3', rowColor: Color.GREEN },
-      { playerName: 'P4', rowColor: Color.BLUE }
+      { playerName: 'P4', rowColor: Color.BLUE },
     ];
     component.requests = requests;
     fixture.detectChanges();
@@ -123,13 +120,12 @@ describe('RowClosureModalComponent', () => {
     expect(cells[3].classList.contains('cell-blue')).toBeTruthy();
   });
 
-
   it('should display correct number of request items', () => {
     const requests: ClosureNotification[] = [
       { playerName: 'A', rowColor: Color.RED },
       { playerName: 'B', rowColor: Color.YELLOW },
       { playerName: 'C', rowColor: Color.GREEN },
-      { playerName: 'D', rowColor: Color.BLUE }
+      { playerName: 'D', rowColor: Color.BLUE },
     ];
     component.requests = requests;
     fixture.detectChanges();
@@ -154,9 +150,7 @@ describe('RowClosureModalComponent', () => {
   });
 
   it('should render modal with correct CSS classes', () => {
-    const requests: ClosureNotification[] = [
-      { playerName: 'Player A', rowColor: Color.RED }
-    ];
+    const requests: ClosureNotification[] = [{ playerName: 'Player A', rowColor: Color.RED }];
     component.requests = requests;
     fixture.detectChanges();
     const overlay = fixture.nativeElement.querySelector('.modal-overlay');
@@ -191,7 +185,7 @@ describe('RowClosureModalComponent', () => {
     fixture.detectChanges();
     const buttons = fixture.nativeElement.querySelectorAll('.btn');
     expect(buttons.length).toBe(2);
-    const primary   = fixture.nativeElement.querySelector('.btn-primary');
+    const primary = fixture.nativeElement.querySelector('.btn-primary');
     const secondary = fixture.nativeElement.querySelector('.btn-secondary');
     expect(primary).toBeTruthy();
     expect(secondary).toBeTruthy();
@@ -199,7 +193,9 @@ describe('RowClosureModalComponent', () => {
 
   it('should emit lockYes when yes button is clicked', () => {
     let emitted = false;
-    component.lockYes.subscribe(() => { emitted = true; });
+    component.lockYes.subscribe(() => {
+      emitted = true;
+    });
     component.lockConfirmRequest = { rowColor: Color.GREEN };
     fixture.detectChanges();
     fixture.nativeElement.querySelector('.btn-primary').click();
@@ -208,7 +204,9 @@ describe('RowClosureModalComponent', () => {
 
   it('should emit lockNo when no button is clicked', () => {
     let emitted = false;
-    component.lockNo.subscribe(() => { emitted = true; });
+    component.lockNo.subscribe(() => {
+      emitted = true;
+    });
     component.lockConfirmRequest = { rowColor: Color.GREEN };
     fixture.detectChanges();
     fixture.nativeElement.querySelector('.btn-secondary').click();

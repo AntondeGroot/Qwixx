@@ -1,9 +1,6 @@
 package nl.adg.qwixx.game;
 
-import nl.adg.qwixx.data.Cell;
-import nl.adg.qwixx.data.CellTag;
-import nl.adg.qwixx.data.Row;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,8 +10,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
+import nl.adg.qwixx.data.Cell;
+import nl.adg.qwixx.data.CellTag;
+import nl.adg.qwixx.data.Row;
+import org.junit.jupiter.api.Test;
 
 class ConnectedCellsFactoryTest {
 

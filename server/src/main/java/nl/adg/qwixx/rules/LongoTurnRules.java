@@ -3,6 +3,14 @@ package nl.adg.qwixx.rules;
 import static nl.adg.qwixx.rules.CellCrosser.getRowState;
 import static nl.adg.qwixx.rules.CellCrosser.isReachableCell;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.Random;
+import java.util.UUID;
+import java.util.stream.IntStream;
 import nl.adg.qwixx.action.CrossCellAction;
 import nl.adg.qwixx.action.DiceCombination;
 import nl.adg.qwixx.action.GameAction;
@@ -14,15 +22,6 @@ import nl.adg.qwixx.state.RowState;
 import nl.adg.qwixx.state.SheetLayout;
 import nl.adg.qwixx.state.SheetProgress;
 import nl.adg.qwixx.state.TurnPhase;
-
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.OptionalInt;
-import java.util.Random;
-import java.util.UUID;
-import java.util.stream.IntStream;
 
 public class LongoTurnRules extends StandardTurnRules {
 

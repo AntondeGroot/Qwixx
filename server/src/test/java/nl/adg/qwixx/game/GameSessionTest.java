@@ -1,14 +1,12 @@
 package nl.adg.qwixx.game;
 
-import nl.adg.qwixx.action.EndTurnAction;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.UUID;
 import nl.adg.qwixx.action.RollAction;
 import nl.adg.qwixx.state.CardMode;
 import nl.adg.qwixx.state.TurnPhase;
 import org.junit.jupiter.api.Test;
-
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class GameSessionTest {
 

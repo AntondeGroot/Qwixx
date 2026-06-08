@@ -167,6 +167,53 @@ class BigPointsTurnRulesTest {
         assertTrue(hasBonusWW, "bonus cell must be offered when prereq is met in the lower neighbour");
     }
 
+    @Test
+    void bonusCell_notOffered_forValue_whenPrereqMetForDifferentValue() {
+        // RED "5" is crossed — satisfies prereq for bonus "5" only.
+        // WW=7 would match bonus "7" (position 1), but RED "7" is not crossed.
+        GameState state = bigPointsStateInRoll(p1, p1, p2);
+        crossCellWithValue(state, p1, RED_ROW, "5");
+        rules.apply(state, new RollAction(p1));
+
+        String bonus7id = bonusCellId(state, p1, BONUS_RY, "7");
+        assertFalse(rules.getValidActions(state, p1).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction cc
+                                && cc.rowIndex() == BONUS_RY && cc.cellId().equals(bonus7id)),
+                "bonus '7' must not be offered when only RED '5' is crossed (prereq is value-specific)");
+    }
+
+    @Test
+    void bonusCell_offered_whenBothNeighboursCrossed() {
+        // Both red (upper) and yellow (lower) have "7" crossed — two satisfied neighbours is valid.
+        GameState state = bigPointsStateInRoll(p1, p1, p2);
+        crossCellWithValue(state, p1, RED_ROW, "7");
+        crossCellWithValue(state, p1, YELLOW_ROW, "7");
+        rules.apply(state, new RollAction(p1));
+
+        assertTrue(rules.getValidActions(state, p1).stream()
+                        .filter(a -> a instanceof CrossCellAction cc
+                                && cc.combination() == DiceCombination.WHITE_WHITE)
+                        .map(a -> (CrossCellAction) a)
+                        .anyMatch(cc -> cc.rowIndex() == BONUS_RY),
+                "bonus cell must be offered when both neighbours have the value crossed");
+    }
+
+    @Test
+    void bonusCell_progression_leftOfCrossedBonusCell_notOffered() {
+        // Bonus "8" (position 2) already crossed; WW=7 would match bonus "7" (position 1).
+        // Prereq is met (RED "7" crossed), but position 1 < rightmost 2 — progression blocks it.
+        GameState state = bigPointsStateInRoll(p1, p1, p2);
+        crossCellWithValue(state, p1, RED_ROW, "7");
+        crossCellWithValue(state, p1, BONUS_RY, "8");
+        rules.apply(state, new RollAction(p1));
+
+        String bonus7id = bonusCellId(state, p1, BONUS_RY, "7");
+        assertFalse(rules.getValidActions(state, p1).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction cc
+                                && cc.rowIndex() == BONUS_RY && cc.cellId().equals(bonus7id)),
+                "bonus '7' must not be offered when bonus '8' (position 2) is already crossed");
+    }
+
     // -------------------------------------------------------------------------
     // Bonus rows excluded from lock conditions
     // -------------------------------------------------------------------------
@@ -273,6 +320,14 @@ class BigPointsTurnRulesTest {
         Set<String> updated = new HashSet<>(current.crossedCells());
         updated.add(cellId);
         progress.updateRowState(rowIndex, new RowState(updated, false));
+    }
+
+    private String bonusCellId(GameState state, UUID playerId, int rowIndex, String value) {
+        return state.sheetLayouts().get(playerId).rows().get(rowIndex).cells().stream()
+                .filter(c -> c.displayValue().equals(value))
+                .map(Cell::id)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no cell with value=" + value + " in row " + rowIndex));
     }
 
     private CrossCellAction firstCrossAction(GameState state, UUID playerId) {

@@ -391,6 +391,77 @@
       </build>
     </profile>
 
+    <profile>
+      <!-- Run with: mvn -Pmutation pitest:mutationCoverage -->
+      <!-- Compiles to Java 22 bytecode so PIT's bundled ASM (9.7, max Java 23) can instrument it. -->
+      <id>mutation</id>
+      <properties>
+        <maven.compiler.source>22</maven.compiler.source>
+        <maven.compiler.target>22</maven.compiler.target>
+        <maven.compiler.release>22</maven.compiler.release>
+      </properties>
+      <dependencies>
+        <dependency>
+          <groupId>org.junit.platform</groupId>
+          <artifactId>junit-platform-launcher</artifactId>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.junit.platform</groupId>
+          <artifactId>junit-platform-engine</artifactId>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.pitest</groupId>
+            <artifactId>pitest-maven</artifactId>
+            <version>1.25.3</version>
+            <dependencies>
+              <dependency>
+                <groupId>org.pitest</groupId>
+                <artifactId>pitest-junit5-plugin</artifactId>
+                <version>1.2.3</version>
+              </dependency>
+            </dependencies>
+            <configuration>
+              <targetClasses>
+                <param>nl.adg.qwixx.action.*</param>
+                <param>nl.adg.qwixx.data.*</param>
+                <param>nl.adg.qwixx.state.*</param>
+                <param>nl.adg.qwixx.game.*</param>
+                <param>nl.adg.qwixx.rules.*</param>
+                <param>nl.adg.qwixx.bot.*</param>
+              </targetClasses>
+              <excludedClasses>
+                <param>nl.adg.qwixx.bot.BotTrainer</param>
+              </excludedClasses>
+              <targetTests>
+                <param>nl.adg.qwixx.*</param>
+              </targetTests>
+              <excludedTestClasses>
+                <param>nl.adg.qwixx.e2e.*</param>
+                <param>nl.adg.qwixx.QwixxApplicationTests</param>
+              </excludedTestClasses>
+              <mutators>
+                <mutator>DEFAULTS</mutator>
+              </mutators>
+              <timestampedReports>false</timestampedReports>
+              <outputFormats>
+                <outputFormat>HTML</outputFormat>
+              </outputFormats>
+              <jvmArgs>
+                <jvmArg>--add-opens=java.base/java.lang=ALL-UNNAMED</jvmArg>
+                <jvmArg>--add-opens=java.base/java.util=ALL-UNNAMED</jvmArg>
+                <jvmArg>--add-opens=java.base/java.io=ALL-UNNAMED</jvmArg>
+              </jvmArgs>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
   </profiles>
 
 </project>

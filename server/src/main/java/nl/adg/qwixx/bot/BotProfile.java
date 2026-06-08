@@ -27,11 +27,11 @@ public record BotProfile(
      */
     public BotProfile mutate(double magnitude, Random rng) {
         return new BotProfile(
-                clampD(skipPenalty      + rng.nextGaussian() * magnitude,       0.5, 10.0),
-                clampD(rarityBonus      + rng.nextGaussian() * magnitude,       0.0, 20.0),
-                clampD(lockBonus        + rng.nextGaussian() * magnitude,       0.0, 20.0),
-                clampD(punishmentLoss   + rng.nextGaussian() * magnitude * 3.0, 0.0, 60.0),
-                clampD(passiveThreshold + rng.nextGaussian() * magnitude,     -10.0, 10.0),
+                clampD(skipPenalty       + rng.nextGaussian() * magnitude,       0.5, 10.0),
+                clampD(rarityBonus       + rng.nextGaussian() * magnitude,       0.0, 20.0),
+                clampD(lockBonus         + rng.nextGaussian() * magnitude,       0.0, 20.0),
+                clampD(punishmentLoss    + rng.nextGaussian() * magnitude * 3.0, 0.0, 60.0),
+                clampD(passiveThreshold  + rng.nextGaussian() * magnitude,     -10.0, 10.0),
                 clampI(maxPunishments    + rng.nextInt(3) - 1, 1, 5),
                 clampI(nearLockRemaining + rng.nextInt(3) - 1, 1, 7)
         );

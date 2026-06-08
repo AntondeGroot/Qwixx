@@ -1,5 +1,6 @@
 package nl.adg.qwixx.rules;
 
+import static nl.adg.qwixx.rules.CellCrosser.bonusPrerequisiteMet;
 import static nl.adg.qwixx.rules.CellCrosser.getRowState;
 import static nl.adg.qwixx.rules.CellCrosser.isReachableCell;
 import static nl.adg.qwixx.rules.RowClosureEvaluator.*;
@@ -36,7 +37,8 @@ public class OfflineTurnRules extends StandardTurnRules {
             if (!state.isRowClosed(rowIndex)) {
                 int rightmost = rightmostCrossedPosition(row, rowState);
                 for (Cell cell : row.cells()) {
-                    if (isReachableCell(cell, rightmost, rowState.crossedCells())) {
+                    if (isReachableCell(cell, rightmost, rowState.crossedCells())
+                            && (!row.isBonusRow() || bonusPrerequisiteMet(layout, progress, row, cell))) {
                         actions.add(new CrossCellAction(playerId, rowIndex, cell.id(), DiceCombination.WHITE_WHITE));
                     }
                 }
@@ -68,6 +70,17 @@ public class OfflineTurnRules extends StandardTurnRules {
     private void applyOfflineCrossCell(GameState state, CrossCellAction action) {
         if (state.isRowClosed(action.rowIndex()))
             throw new IllegalMoveException("cannot cross a cell in a globally closed row");
+        SheetLayout layout = state.sheetLayouts().get(action.playerId());
+        Row row = layout.rows().get(action.rowIndex());
+        if (row.isBonusRow()) {
+            SheetProgress progress = state.boardState().sheetProgress().get(action.playerId());
+            Cell cell = row.cells().stream()
+                    .filter(c -> c.id().equals(action.cellId()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalMoveException("unknown cell: " + action.cellId()));
+            if (!bonusPrerequisiteMet(layout, progress, row, cell))
+                throw new IllegalMoveException("bonus prerequisite not met");
+        }
         crossCellWithAutoTags(state, action.playerId(), action.rowIndex(), action.cellId());
     }
 

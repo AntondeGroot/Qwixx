@@ -164,7 +164,7 @@ class CellCrosser {
 
     // A bonus cell may only be offered when its display value is permanently crossed
     // in at least one neighbouring coloured row (checked against the pre-turn snapshot).
-    private static boolean bonusPrerequisiteMet(SheetLayout layout, SheetProgress startProgress, Row bonusRow, Cell cell) {
+    static boolean bonusPrerequisiteMet(SheetLayout layout, SheetProgress startProgress, Row bonusRow, Cell cell) {
         if (startProgress == null) return false;
         String value = cell.displayValue();
         for (int neighborIndex : new int[]{bonusRow.upperRowIndex(), bonusRow.lowerRowIndex()}) {

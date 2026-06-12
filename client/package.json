@@ -34,8 +34,8 @@
     "shell-quote": "1.8.4"
   },
   "devDependencies": {
-    "@angular/build": "^21.2.7",
-    "@angular/cli": "^21.2.7",
+    "@angular/build": "^22.0.0",
+    "@angular/cli": "^22.0.0",
     "@angular/compiler-cli": "^21.2.0",
     "@eslint/js": "^10.0.1",
     "@openapitools/openapi-generator-cli": "^2.23.0",

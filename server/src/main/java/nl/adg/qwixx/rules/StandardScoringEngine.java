@@ -42,9 +42,9 @@ public class StandardScoringEngine implements ScoringEngine {
                 crosses.merge(cell.color(), 1, Integer::sum);
                 for (CellTag tag : cell.tags()) {
                     switch (tag) {
-                        case CellTag.ExtraBucket ignored        -> extraCrosses += 1;
+                        case CellTag.ExtraBucket ignored        -> { extraCrosses += 1; }
                         case CellTag.DoubleCross ignored        -> crosses.merge(cell.color(), 1, Integer::sum);
-                        case CellTag.BonusPoints(int amt)       -> bonusPoints += amt;
+                        case CellTag.BonusPoints(int amt)       -> { bonusPoints += amt; }
                         case CellTag.SecondaryColor(Color sc)   -> crosses.merge(sc, 1, Integer::sum);
                         default -> { /* AutoCross is rule-time only; LuckyNumber rows are handled above */ }
                     }

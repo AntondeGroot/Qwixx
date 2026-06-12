@@ -146,27 +146,3 @@
     width: 100%;
   }
 }
-
-/* In portrait mode the board is CSS-rotated 90deg to simulate landscape.
-   Match that rotation here so the modal appears in the same direction.
-   The host covers the screen with landscape dimensions, then rotates;
-   the overlay switches to position:absolute (relative to this host) to
-   avoid re-triggering the position:fixed / transform containing-block issue. */
-@media (orientation: portrait) {
-  :host {
-    position: fixed;
-    top: calc((100dvh - 100dvw) / 2);
-    left: calc((100dvw - 100dvh) / 2);
-    width: 100dvh;
-    height: 100dvw;
-    transform: rotate(90deg);
-    transform-origin: 50% 50%;
-    z-index: 1000;
-    pointer-events: none; /* non-interactive when no modal is showing */
-  }
-
-  .modal-overlay {
-    position: absolute; /* relative to the rotated :host, not the viewport */
-    pointer-events: auto;
-  }
-}

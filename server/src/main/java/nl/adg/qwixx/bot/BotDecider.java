@@ -265,16 +265,19 @@ public class BotDecider {
         double adjust = 0;
         for (CellTag tag : cell.tags()) {
             switch (tag) {
-                case CellTag.AutoCross autoCross ->
-                        adjust += autoCrossLoss(autoCross.target(), layout, prog, center, state, botId, profile);
-                case CellTag.BonusPoints bonus ->
-                        adjust -= bonus.amount();
+                case CellTag.AutoCross autoCross -> {
+                    adjust += autoCrossLoss(autoCross.target(), layout, prog, center, state, botId, profile);
+                }
+                case CellTag.BonusPoints bonus -> {
+                    adjust -= bonus.amount();
+                }
                 case CellTag.DoubleCross ignored -> {
                     int displayValue = parseDisplayValue(cell, center);
                     adjust -= Math.abs(displayValue - center) * profile.rarityBonus();
                 }
-                case CellTag.ExtraBucket ignored ->
-                        adjust -= profile.rarityBonus();
+                case CellTag.ExtraBucket ignored -> {
+                    adjust -= profile.rarityBonus();
+                }
                 case CellTag.SecondaryColor ignored -> {
                     int displayValue = parseDisplayValue(cell, center);
                     adjust -= Math.abs(displayValue - center) * profile.rarityBonus();
@@ -284,9 +287,10 @@ public class BotDecider {
                     int bestMatch = Math.min(Math.abs(xc.a() - center), Math.abs(xc.b() - center));
                     adjust += (profile.rarityBonus() - bestMatch) * 0.5;
                 }
-                case CellTag.LuckyNumber luckyNumber ->
-                        // Treat luckyNumber bonus points like any other bonus: subtract to make cell more attractive.
-                        adjust -= luckyNumber.bonusPoints();
+                case CellTag.LuckyNumber luckyNumber -> {
+                    // Treat luckyNumber bonus points like any other bonus: subtract to make cell more attractive.
+                    adjust -= luckyNumber.bonusPoints();
+                }
                 case CellTag.LuckyCross _ -> {} // no tag-level adjustment; base position score still applies
             }
         }

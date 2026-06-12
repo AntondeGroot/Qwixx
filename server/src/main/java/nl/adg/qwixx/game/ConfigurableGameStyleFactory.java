@@ -372,14 +372,19 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
         int pos = 0, displayVal = 2;
         for (int g = 0; g < gaps.length; g++) {
             for (int n = 0; n < gaps[g]; n++) {
-                Cell cell = new Cell(pos++);
+                Cell cell = new Cell(pos);
+                pos++;
                 cell.setColor(color);
-                cell.setDisplayValue(String.valueOf(displayVal++));
+                cell.setDisplayValue(String.valueOf(displayVal));
+                displayVal++;
                 cell.setTags(List.of());
                 row.addCell(cell);
                 normalCells.add(cell);
             }
-            if (g < gaps.length - 1) row.addCell(buildLuckyCrossCell(color, pos++));
+            if (g < gaps.length - 1) {
+                row.addCell(buildLuckyCrossCell(color, pos));
+                pos++;
+            }
         }
         row.addLock(buildLock(color, normalCells));
         return row;
@@ -393,14 +398,19 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
         int pos = 0, displayVal = max;
         for (int g = 0; g < gaps.length; g++) {
             for (int n = 0; n < gaps[g]; n++) {
-                Cell cell = new Cell(pos++);
+                Cell cell = new Cell(pos);
+                pos++;
                 cell.setColor(color);
-                cell.setDisplayValue(String.valueOf(displayVal--));
+                cell.setDisplayValue(String.valueOf(displayVal));
+                displayVal--;
                 cell.setTags(List.of());
                 row.addCell(cell);
                 normalCells.add(cell);
             }
-            if (g < gaps.length - 1) row.addCell(buildLuckyCrossCell(color, pos++));
+            if (g < gaps.length - 1) {
+                row.addCell(buildLuckyCrossCell(color, pos));
+                pos++;
+            }
         }
         row.addLock(buildLock(color, normalCells));
         return row;

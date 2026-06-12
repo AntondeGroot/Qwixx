@@ -31,7 +31,8 @@
     "tslib": "^2.3.0"
   },
   "overrides": {
-    "shell-quote": "1.8.4"
+    "shell-quote": "1.8.4",
+    "esbuild": "0.28.1"
   },
   "devDependencies": {
     "@angular/build": "^22.0.0",

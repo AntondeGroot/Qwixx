@@ -1,23 +1,26 @@
 /**
  * CSS structure tests for the mobile landscape-rotation pattern.
  *
- * Several components apply  transform: rotate(90deg)  to their :host in
- * portrait mode so the board reads in landscape orientation.  Any element
- * using  position: fixed  inside a CSS-transformed ancestor has its
- * containing block changed to that ancestor — the element ends up anchored
- * to the rotated element and appears off-screen or clipped on mobile.
+ * The orientation lock (`transform: rotate(90deg)` in portrait) now lives on
+ * `app-root:has(app-board)` in the global `styles.css` rather than on the
+ * individual component `:host` elements.  When a CSS `transform` is applied to
+ * an ancestor, that ancestor becomes the containing block for all
+ * `position:fixed` descendants (CSS spec §9.3).  The lock-intent modal's
+ * `.modal-overlay` therefore anchors to the rotated `app-root` viewport and
+ * stays within bounds — no portrait override in the component stylesheet is
+ * needed.
  *
  * These tests read the raw CSS files and assert the structural rules that
- * prevent that bug, acting as a regression guard without needing a real
- * browser or visual comparison.
+ * prevent the mobile layout from regressing, acting as a regression guard
+ * without needing a real browser or visual comparison.
  *
  * dvh / dvw units
  * ───────────────
- * The rotation trick positions :host with  width: 100dvh; height: 100dvw.
- * Using plain  vh / vw  instead causes the right edge of the rotated
- * landscape view to be hidden under the browser's navigation bar, because
- * 100vh includes the navigation-bar area on Android whereas 100dvh is the
- * *dynamic* (usable) viewport height that excludes browser chrome.
+ * The rotation trick positions `app-root` with  width: 100dvh; height: 100dvw.
+ * Using plain  vh / vw  instead causes the right edge of the rotated landscape
+ * view to be hidden under the browser's navigation bar, because 100vh includes
+ * the navigation-bar area on Android whereas 100dvh is the *dynamic* (usable)
+ * viewport height that excludes browser chrome.
  */
 
 import { readFileSync } from 'node:fs';
@@ -31,12 +34,17 @@ function css(rel: string) {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-/** Returns true if any @media (orientation: portrait) block in cssText
- *  contains `selector { ... prop ... value ... }`. */
+/**
+ * Returns true if any @media (orientation: portrait) block in cssText
+ * contains `selector { ... prop ... value ... }`.
+ *
+ * Handles both `@media (orientation: portrait)` and
+ * `@media screen and (orientation: portrait)` syntax.
+ */
 function portraitBlockHas(cssText: string, selector: string, prop: string, value: string): boolean {
   const portraitBlocks =
     cssText.match(
-      /@media\s*\([^)]*orientation:\s*portrait[^)]*\)\s*\{([\s\S]*?)(?=@media\s|\s*$)/g,
+      /@media[^(]*\([^)]*orientation:\s*portrait[^)]*\)\s*\{([\s\S]*?)(?=@media\s|\s*$)/g,
     ) ?? [];
   for (const block of portraitBlocks) {
     const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -49,11 +57,16 @@ function portraitBlockHas(cssText: string, selector: string, prop: string, value
   return false;
 }
 
-/** Extracts the value of a CSS property from a selector inside a portrait @media block. */
+/**
+ * Extracts the value of a CSS property from a selector inside a portrait @media block.
+ *
+ * Handles both `@media (orientation: portrait)` and
+ * `@media screen and (orientation: portrait)` syntax.
+ */
 function getPortraitPropertyValue(cssText: string, selector: string, prop: string): string | null {
   const portraitBlocks =
     cssText.match(
-      /@media\s*\([^)]*orientation:\s*portrait[^)]*\)\s*\{([\s\S]*?)(?=@media\s|\s*$)/g,
+      /@media[^(]*\([^)]*orientation:\s*portrait[^)]*\)\s*\{([\s\S]*?)(?=@media\s|\s*$)/g,
     ) ?? [];
   for (const block of portraitBlocks) {
     const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -92,37 +105,20 @@ describe('row-closure-modal — mobile CSS structure', () => {
     expect(globalSelectorHas(modalCss, '.modal-overlay', 'position', 'fixed')).toBe(true);
   });
 
-  // In portrait mode the :host is itself rotated, so .modal-overlay must switch
-  // to position:absolute (relative to the already-covering rotated :host).
-  // position:fixed inside a CSS transform anchors to the rotated element,
-  // not the real viewport — the modal appears off-screen on mobile.
-  it('.modal-overlay overrides to position:absolute inside the portrait media query', () => {
-    expect(portraitBlockHas(modalCss, '.modal-overlay', 'position', 'absolute')).toBe(true);
+  // The old architecture rotated the modal :host in portrait and switched
+  // .modal-overlay to position:absolute so it anchored to the rotated host.
+  // The new architecture rotates app-root instead: position:fixed on
+  // .modal-overlay now anchors to the transformed app-root, so the modal fills
+  // the rotated viewport correctly — no portrait override is needed or wanted.
+  // Adding position:absolute back would break the modal on mobile.
+  it('.modal-overlay does NOT override to position:absolute in portrait (fixed anchors to rotated app-root)', () => {
+    expect(portraitBlockHas(modalCss, '.modal-overlay', 'position', 'absolute')).toBe(false);
   });
 
-  it(':host is rotated 90deg in portrait mode (matching the board rotation)', () => {
-    expect(portraitBlockHas(modalCss, ':host', 'transform', 'rotate(90deg)')).toBe(true);
-  });
-
-  it(':host uses position:fixed in portrait mode so it covers the full rotated screen', () => {
-    expect(portraitBlockHas(modalCss, ':host', 'position', 'fixed')).toBe(true);
-  });
-
-  // pointer-events:none prevents the invisible host from blocking touches
-  // when no modal content is being shown.
-  it(':host has pointer-events:none in portrait mode', () => {
-    expect(portraitBlockHas(modalCss, ':host', 'pointer-events', 'none')).toBe(true);
-  });
-
-  // Regression: 100vh includes the Android navigation-bar area; 100dvh is the
-  // usable height only. Using vh causes the right edge of the rotated landscape
-  // view to be hidden behind the navigation bar.
-  it(':host uses 100dvh for width (not plain vh) so the nav bar is excluded', () => {
-    expect(portraitBlockHas(modalCss, ':host', 'width', '100dvh')).toBe(true);
-  });
-
-  it(':host uses 100dvw for height (not plain vw) so the nav bar is excluded', () => {
-    expect(portraitBlockHas(modalCss, ':host', 'height', '100dvw')).toBe(true);
+  // Regression guard: if someone adds :host portrait rotation back, the modal
+  // would be double-rotated (once by app-root, once by :host itself).
+  it(':host does NOT have portrait rotation (rotation is on app-root in styles.css)', () => {
+    expect(portraitBlockHas(modalCss, ':host', 'transform', 'rotate(90deg)')).toBe(false);
   });
 });
 
@@ -169,23 +165,34 @@ describe('score component — mobile CSS structure', () => {
 
 describe('board component — mobile CSS structure', () => {
   const boardCss = css('board/board.component.css');
+  // The orientation lock lives on app-root:has(app-board) in the global stylesheet,
+  // not on the board component :host.
+  const globalCss = css('../styles.css');
 
-  it(':host is rotated 90deg in portrait mode', () => {
-    expect(portraitBlockHas(boardCss, ':host', 'transform', 'rotate(90deg)')).toBe(true);
+  it('app-root:has(app-board) is rotated 90deg in portrait mode (global stylesheet)', () => {
+    expect(
+      portraitBlockHas(globalCss, 'app-root:has(app-board)', 'transform', 'rotate(90deg)'),
+    ).toBe(true);
   });
 
-  it(':host has overflow:hidden in portrait mode to clip the rotated content', () => {
-    expect(portraitBlockHas(boardCss, ':host', 'overflow', 'hidden')).toBe(true);
+  it('app-root:has(app-board) has overflow:hidden in portrait mode to clip the rotated content', () => {
+    expect(portraitBlockHas(globalCss, 'app-root:has(app-board)', 'overflow', 'hidden')).toBe(true);
   });
 
   // Regression: 100vh includes the Android navigation-bar area; 100dvh is the
   // usable height only. Using vh causes the right edge of the rotated landscape
   // view to be hidden behind the navigation bar.
-  it(':host uses 100dvh for width (not plain vh) so the nav bar is excluded', () => {
-    expect(portraitBlockHas(boardCss, ':host', 'width', '100dvh')).toBe(true);
+  it('app-root:has(app-board) uses 100dvh for width (not plain vh) so the nav bar is excluded', () => {
+    expect(portraitBlockHas(globalCss, 'app-root:has(app-board)', 'width', '100dvh')).toBe(true);
   });
 
-  it(':host uses 100dvw for height (not plain vw) so the nav bar is excluded', () => {
-    expect(portraitBlockHas(boardCss, ':host', 'height', '100dvw')).toBe(true);
+  it('app-root:has(app-board) uses 100dvw for height (not plain vw) so the nav bar is excluded', () => {
+    expect(portraitBlockHas(globalCss, 'app-root:has(app-board)', 'height', '100dvw')).toBe(true);
+  });
+
+  // Regression guard: board :host must NOT have its own portrait rotation.
+  // Rotation is on app-root in styles.css; adding it here would double-rotate the board.
+  it('board :host does NOT have portrait rotation (rotation is on app-root in styles.css)', () => {
+    expect(portraitBlockHas(boardCss, ':host', 'transform', 'rotate(90deg)')).toBe(false);
   });
 });

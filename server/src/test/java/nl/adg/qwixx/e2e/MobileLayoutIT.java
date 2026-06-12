@@ -23,10 +23,13 @@ import org.openqa.selenium.support.ui.WebDriverWait;
  * Mobile-layout integration tests.
  *
  * Both the lock-intent modal and the score winner modal use {@code position: fixed}
- * for their overlay.  In portrait orientation the board/score host element has
- * {@code transform: rotate(90deg)}, which makes any descendant {@code position: fixed}
- * anchor to the rotated element rather than the real viewport — the overlay ends up
- * clipped or positioned off-screen and the user cannot interact with it.
+ * for their overlay.  In portrait orientation {@code app-root} has
+ * {@code transform: rotate(90deg) translateY(-100%)}, which makes any descendant
+ * {@code position: fixed} anchor to it rather than the real viewport.  Because
+ * {@code app-root} fills the viewport after the rotation the overlays are still
+ * fully visible — but {@code getBoundingClientRect()} returns LOCAL coordinates
+ * (in the 844×390 landscape space of {@code app-root}), not viewport coordinates.
+ * The helper methods below account for this portrait-aware coordinate space.
  *
  * These tests run Chrome at 390×844 (iPhone 14 Pro portrait) to exercise the same
  * CSS path that fires on real mobile devices, and verify that:
@@ -76,7 +79,7 @@ public class MobileLayoutIT extends BaseIntegrationTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * The score-screen host is rotated 90 ° in portrait mode.
+     * The app root is rotated 90 ° in portrait mode.
      * Verifies that the rotation CSS is actually active at 390×844.
      */
     @Test
@@ -85,7 +88,7 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         TestUtils.navigateTo(portraitDriver, sessionId, playerIds.get(0));
 
         assertTrue(isBoardHostRotated(portraitDriver),
-                "Board :host must have transform: rotate(90deg) in portrait mode");
+                "app-root must have transform: rotate(90deg) in portrait mode");
     }
 
     /**
@@ -273,11 +276,23 @@ public class MobileLayoutIT extends BaseIntegrationTest {
                 "Every bonus chip must be displayed on mobile");
 
         // Lock icon: every color row must have a rendered, visible lock cell.
+        // Exclude lock-cell-placeholder (visibility:hidden on bonus rows) so the
+        // XPath matches only the real lock cell with the lock icon.
+        //
+        // Note: Selenium's isDisplayed() can return false for elements inside a
+        // CSS-transformed ancestor (app-root rotate(90deg)) combined with a zoomed
+        // descendant (board-layout zoom:0.6).  Check computed style directly instead.
         for (String color : List.of("RED", "YELLOW", "GREEN", "BLUE")) {
             WebElement lockCell = portraitDriver.findElement(By.xpath(
                     "//section[contains(@class,'current-player')]" +
-                    "//div[@data-color='" + color + "' and contains(@class,'lock-cell')]"));
-            assertTrue(lockCell.isDisplayed(),
+                    "//div[@data-color='" + color + "' and contains(@class,'lock-cell')" +
+                    " and not(contains(@class,'lock-cell-placeholder'))]"));
+            Object shown = ((org.openqa.selenium.JavascriptExecutor) portraitDriver).executeScript(
+                    "const e = arguments[0];" +
+                    "const s = getComputedStyle(e);" +
+                    "return s.display !== 'none' && s.visibility !== 'hidden';",
+                    lockCell);
+            assertTrue(Boolean.TRUE.equals(shown),
                     color + " lock cell must be displayed on mobile");
         }
 
@@ -455,14 +470,14 @@ public class MobileLayoutIT extends BaseIntegrationTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * Returns true when the board component's host element has a 90-degree CSS
-     * transform applied — the signature that portrait-mode rotation is active.
+     * Returns true when app-root has a 90-degree CSS transform applied —
+     * the signature that the portrait-mode orientation lock is active.
      * rotate(90deg) produces matrix(0, 1, -1, 0, tx, ty): a≈0, b≈1.
      */
     private boolean isBoardHostRotated(WebDriver driver) {
         try {
             org.openqa.selenium.WebElement host =
-                    driver.findElement(org.openqa.selenium.By.tagName("app-board"));
+                    driver.findElement(org.openqa.selenium.By.tagName("app-root"));
             String transform = host.getCssValue("transform");
             if (transform == null || transform.equals("none")) return false;
             String[] parts = transform.replace("matrix(", "").replace(")", "").split(",");

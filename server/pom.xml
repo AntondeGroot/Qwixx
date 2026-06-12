@@ -22,7 +22,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <spotbugs.version>4.10.2.0</spotbugs.version>
     <checkstyle-plugin.version>3.6.0</checkstyle-plugin.version>
-    <checkstyle-tool.version>10.26.1</checkstyle-tool.version>
+    <checkstyle-tool.version>13.5.0</checkstyle-tool.version>
     <pmd.version>3.28.0</pmd.version>
     <spotless.version>3.6.0</spotless.version>
   </properties>

@@ -6,27 +6,6 @@
   -webkit-user-select: none;
 }
 
-/* Lock to landscape: when the device is held portrait and the game board is active,
-   rotate the entire app 90° CW.  Works regardless of the OS auto-rotate setting
-   because it uses CSS media queries, not the device orientation sensor.
-   Scoped to app-root:has(app-board) so it only fires on the game board page —
-   the score screen, settings, and rules pages render in their own portrait layouts.
-   app-root having a transform makes it the containing block for all position:fixed
-   children (e.g. the lock-intent modal), so they stay inside the rotated viewport. */
-@media screen and (orientation: portrait) {
-  app-root:has(app-board) {
-    display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100dvh;
-    height: 100dvw;
-    overflow: hidden;
-    transform-origin: top left;
-    transform: rotate(90deg) translateY(-100%);
-  }
-}
-
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;

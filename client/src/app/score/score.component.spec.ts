@@ -70,6 +70,9 @@ describe('ScoreComponent', () => {
       );
 
       (component as any).startRestartSse();
+      // Simulate the server's initial push (game is over) so the latch is set.
+      mockEventSource.onmessage({ data: JSON.stringify({ gameOver: true }) });
+      // Now a restart push arrives — this should trigger cleanup and navigation.
       mockEventSource.onmessage({ data: JSON.stringify({ gameOver: false }) });
 
       expect(sessionStorage.getItem(ANIMATION_KEY)).toBeNull();

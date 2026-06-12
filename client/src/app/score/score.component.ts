@@ -325,7 +325,8 @@ export class ScoreComponent implements OnInit {
       this.allDone.set(true);
       this.showActionBar.set(true);
       this.startRestartSse();
-    } catch {
+    } catch (e) {
+      console.error('[score] showFinalState failed:', e);
       void this.router.navigate(['/']);
     }
   }
@@ -424,19 +425,29 @@ export class ScoreComponent implements OnInit {
       // After the winner modal appears, poll for a game restart so all players
       // are redirected automatically when any player starts a new game.
       this.startRestartSse();
-    } catch {
+    } catch (e) {
+      console.error('[score] runAnimation failed:', e);
       void this.router.navigate(['/']);
     }
   }
 
   // Subscribes to the SSE stream. When another player triggers a restart the
   // server pushes a state with gameOver: false, and we navigate automatically.
+  //
+  // The server always sends the current state immediately on connection. We must
+  // NOT act on that initial push — the game may still be marked gameOver:false
+  // in a brief race between the subscription and the first emit. Only navigate
+  // after we have seen gameOver:true at least once, confirming the game really
+  // ended; a subsequent gameOver:false then means a player triggered a restart.
   private startRestartSse(): void {
     const es = new EventSource(`${environment.apiBaseUrl}/gamestates/${this.sessionId}/stream`);
     this.destroyRef.onDestroy(() => es.close());
+    let seenGameOver = false;
     es.onmessage = (event: MessageEvent) => {
       const state = JSON.parse(event.data);
-      if (!state.gameOver) {
+      if (state.gameOver) {
+        seenGameOver = true;
+      } else if (seenGameOver) {
         es.close();
         sessionStorage.removeItem(`qwixx_score_shown_${this.sessionId}`);
         void this.router.navigate(['/game', this.sessionId, this.playerId]);

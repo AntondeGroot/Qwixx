@@ -354,16 +354,13 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   @HostListener('window:resize')
   applyMobileScale() {
     const el = this.host.nativeElement as HTMLElement;
-    if (window.innerHeight <= window.innerWidth) {
-      el.style.removeProperty('--mobile-scale');
-      return;
-    }
+    const isPortrait = window.innerHeight > window.innerWidth;
     const layout = el.querySelector('.board-layout') as HTMLElement | null;
     if (!layout) {
-      // Game state not yet rendered — use the fallback constant.
+      // Game state not yet rendered — use the fallback constant (portrait only).
       el.style.setProperty(
         '--mobile-scale',
-        Math.min((window.innerWidth - 16) / this.MOBILE_DESIGN_H, 1).toFixed(4),
+        isPortrait ? Math.min((window.innerWidth - 16) / this.MOBILE_DESIGN_H, 1).toFixed(4) : '1',
       );
       return;
     }
@@ -375,15 +372,24 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     el.style.setProperty('--mobile-scale', '1');
     const h = layout.offsetHeight;
     const w = layout.offsetWidth;
-    // In portrait the board is rotated 90°: DOM height → visual width, DOM width → visual height.
-    // Subtract 16px (host padding) from each available dimension.
-    // scaleH: fit the board's DOM height into the viewport's width (short side).
-    // scaleW: fit the board's DOM width into the viewport's height (long side) —
-    //         needed when wide variants (e.g. Longo) make the board wider than 100dvh.
-    const scaleH =
-      h > 0 ? (window.innerWidth - 16) / h : (window.innerWidth - 16) / this.MOBILE_DESIGN_H;
-    const scaleW = w > 0 ? (window.innerHeight - 16) / w : 1;
-    el.style.setProperty('--mobile-scale', Math.min(scaleH, scaleW, 1).toFixed(4));
+    let scale: number;
+    if (isPortrait) {
+      // Board is rotated 90°: DOM height → visual width, DOM width → visual height.
+      // scaleH: fit the board's DOM height into the viewport's width (short side).
+      // scaleW: fit the board's DOM width into the viewport's height (long side) —
+      //         needed when wide variants (e.g. Longo) exceed 100dvh.
+      const scaleH =
+        h > 0 ? (window.innerWidth - 16) / h : (window.innerWidth - 16) / this.MOBILE_DESIGN_H;
+      const scaleW = w > 0 ? (window.innerHeight - 16) / w : 1;
+      scale = Math.min(scaleH, scaleW, 1);
+    } else {
+      // Landscape (or desktop): DOM dimensions map directly to visual dimensions.
+      // Only zoom when the content overflows — on a large desktop Math.min clips to 1.
+      const scaleH = h > 0 ? (window.innerHeight - 16) / h : 1;
+      const scaleW = w > 0 ? (window.innerWidth - 16) / w : 1;
+      scale = Math.min(scaleH, scaleW, 1);
+    }
+    el.style.setProperty('--mobile-scale', scale.toFixed(4));
   }
 
   ngOnDestroy() {

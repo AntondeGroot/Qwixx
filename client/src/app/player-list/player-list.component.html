@@ -29,7 +29,7 @@
             [class.mini-row-lucky-number]="isLuckyRow(row)"
             [class.row-closed]="isRowClosed(row.id)"
             [attr.data-color]="isXChangeRow(row) || isLuckyRow(row) ? null : row.cells[0]?.color"
-            [style.--mini-primary]="colorHex[row.cells[0]?.color ?? '']"
+            [style.--mini-primary]="colorHex[row.cells[0].color]"
             [style.--mini-secondary]="colorHex[secondaryColorOf(row.cells[0]) ?? '']"
           >
             @for (cell of row.cells; track cell.id; let idx = $index) {
@@ -52,9 +52,7 @@
                   src="lock_icon.svg"
                   alt=""
                   class="mini-lock-icon"
-                  [class.lock-crossed]="
-                    sheetProgress()[player.id]?.rowStates?.[row.id]?.lockCrossed
-                  "
+                  [class.lock-crossed]="sheetProgress()[player.id]?.rowStates[row.id].lockCrossed"
                 />
               </div>
             }

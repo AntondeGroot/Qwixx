@@ -3,9 +3,25 @@
   padding: 16px;
 }
 
+/* zoom is applied in any orientation — applyMobileScale() sets --mobile-scale
+   whenever the board content overflows the viewport (portrait or landscape). */
+.board-layout {
+  zoom: var(--mobile-scale, 1);
+}
+
 @media (orientation: portrait) {
+  :host {
+    position: fixed;
+    top: calc((100dvh - 100dvw) / 2);
+    left: calc((100dvw - 100dvh) / 2);
+    width: 100dvh;
+    height: 100dvw;
+    overflow: hidden;
+    transform: rotate(90deg);
+    transform-origin: 50% 50%;
+  }
+
   .board-layout {
-    zoom: var(--mobile-scale, 1);
     /* width:fit-content caps at the available space (100dvh = 844px in portrait),
        which squeezes the auto column too narrow for wide variants like Longo.
        min-width:max-content overrides that cap so the 3-column grid can expand

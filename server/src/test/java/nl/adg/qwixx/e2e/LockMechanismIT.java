@@ -899,6 +899,8 @@ public class LockMechanismIT extends BaseIntegrationTest {
     // ── Scenario 10: Longo active player can close two rows in one turn ────────
 
     @Test
+    @ExtendWith(RetryOnChromeFailure.Extension.class)
+    @RetryOnChromeFailure
     void longo_activeEndsTurn_passiveDeclares_activeGetsModalAndReverts() {
         // The exact scenario that was impossible before:
         // Player0 crosses RED "16" and EndTurns.  Player1 passes (no cross).

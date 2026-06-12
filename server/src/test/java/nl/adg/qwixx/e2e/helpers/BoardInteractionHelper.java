@@ -244,36 +244,21 @@ public class BoardInteractionHelper {
     // ── Viewport-bounds check ──────────────────────────────────────────────────
 
     /**
-     * Returns true if the given element's bounding rect is fully inside the effective
-     * rendering area (allowing 1 px rounding tolerance on each edge).
+     * Returns true if the given element's bounding rect is fully inside the browser
+     * viewport (allowing 1 px rounding tolerance on each edge).
      *
-     * When app-root has a CSS transform (the game board in portrait orientation),
-     * Chrome anchors position:fixed descendants to app-root and reports
-     * getBoundingClientRect() in app-root's LOCAL coordinate space (landscape
-     * 844×390 rather than the visual portrait 390×844).  The check detects whether
-     * app-root has a transform and swaps the effective dimensions accordingly, so it
-     * works correctly on the board page (rotated), the score page (not rotated), and
-     * landscape viewports.
+     * This is the key assertion for the position:fixed / CSS-transform regression:
+     * when a fixed element is inside a transformed ancestor its containing block
+     * becomes the ancestor rather than the viewport, and the element can end up
+     * partially or fully outside the visible area.
      */
     public static boolean isElementWithinViewport(WebDriver driver, WebElement element) {
         return (boolean) ((JavascriptExecutor) driver).executeScript(
                 "const rect = arguments[0].getBoundingClientRect();" +
-                "const appRoot = document.querySelector('app-root');" +
-                "const t = appRoot ? window.getComputedStyle(appRoot).transform : 'none';" +
-                "const isRotated = t !== 'none' && t !== '';" +
-                // When app-root is rotated, getBoundingClientRect() may return LOCAL coordinates
-                // (landscape 844×390) or VIEWPORT coordinates (portrait 390×844) depending on
-                // the Chrome version and the element's CSS (position:fixed vs. static).  Using
-                // Math.max for both dimensions accepts whichever coordinate system Chrome uses.
-                "const effectiveSize = isRotated" +
-                "  ? Math.max(window.innerWidth, window.innerHeight)" +
-                "  : null;" +
-                "const effectiveW = effectiveSize ?? window.innerWidth;" +
-                "const effectiveH = effectiveSize ?? window.innerHeight;" +
                 "return rect.width > 0 && rect.height > 0" +
                 "  && rect.top    >= -1 && rect.left   >= -1" +
-                "  && rect.bottom <= effectiveH + 1" +
-                "  && rect.right  <= effectiveW + 1;",
+                "  && rect.bottom <= window.innerHeight + 1" +
+                "  && rect.right  <= window.innerWidth  + 1;",
                 element);
     }
 

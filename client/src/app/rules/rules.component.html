@@ -1,0 +1,173 @@
+<div class="page" [class.has-bar]="isFirstTime()">
+  <header class="page-header">
+    <button class="back-btn" (click)="back()" [attr.aria-label]="'rules.back' | translate">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M15 18l-6-6 6-6" />
+      </svg>
+    </button>
+    <h1>{{ 'rules.title' | translate }}</h1>
+  </header>
+
+  <div class="content">
+    <section>
+      <h2>
+        <span class="section-icon">🎲</span>
+        {{ 'rules.endOfGame.heading' | translate }}
+      </h2>
+      <ul class="conditions">
+        <li [innerHTML]="t('rules.endOfGame.li1')"></li>
+      </ul>
+      <p class="or-text">{{ 'rules.endOfGame.or' | translate }}</p>
+      <ul class="conditions">
+        <li [innerHTML]="t('rules.endOfGame.li2')"></li>
+      </ul>
+      <p class="winner-text">{{ 'rules.endOfGame.p2' | translate }}</p>
+    </section>
+
+    <section>
+      <h2>
+        <span class="section-icon">🔄</span>
+        {{ 'rules.turns.heading' | translate }}
+      </h2>
+      <ul class="conditions">
+        <li>
+          <div class="li-row">
+            <span [innerHTML]="t('rules.turns.li1')"></span>
+            <span class="demo-cells">
+              <span class="demo-cell demo-ww" title="white+white"></span>
+              <span class="demo-cell demo-wc" title="white+color"></span>
+            </span>
+          </div>
+        </li>
+        <li>
+          <div class="li-row">
+            <span [innerHTML]="t('rules.turns.li2')"></span>
+            <span class="demo-cells">
+              <span class="demo-cell demo-ww" title="white+white"></span>
+            </span>
+          </div>
+        </li>
+      </ul>
+      <p class="highlight" [innerHTML]="t('rules.turns.p3')"></p>
+    </section>
+
+    <section>
+      <h2>
+        <span class="section-icon">⛔</span>
+        {{ 'rules.punishments.heading' | translate }}
+      </h2>
+      <p [innerHTML]="t('rules.punishments.p1')"></p>
+      <div class="punishment-demo">
+        <span class="punishment-demo-label">{{ 'punishment' | translate }} : –5</span>
+        <div class="punishment-demo-box taken"></div>
+        <div class="punishment-demo-box taken"></div>
+        <div class="punishment-demo-box"></div>
+        <div class="punishment-demo-box"></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>
+        <span class="section-icon">✖️</span>
+        {{ 'rules.closing.heading' | translate }}
+      </h2>
+      <p [innerHTML]="t('rules.closing.p1')"></p>
+      <div class="tip" [innerHTML]="t('rules.closing.longoTip')"></div>
+      <div class="longo-rows">
+        <!-- Standard section -->
+        <span class="longo-label">Standard</span>
+        <div class="lock-zone longo-zone">
+          <div class="longo-cell blue" [class.cell-crossed]="stdCell2()">
+            <span class="cell-num">2</span>
+            @if (stdCell2()) {
+              <span class="anim-cross">✕</span>
+            }
+          </div>
+          <div class="longo-lock blue" [class.lock-active]="stdLock()">
+            <img src="lock_icon.svg" alt="lock" class="longo-lock-icon" />
+            @if (stdLock()) {
+              <span class="anim-cross">✕</span>
+            }
+          </div>
+        </div>
+
+        <!-- Longo section -->
+        <span class="longo-label" style="margin-top: 6px">Longo</span>
+        <!-- Red: shows 15, 16, lock — crosses 15 then lock (skips 16) -->
+        <div class="lock-zone longo-zone">
+          <div class="longo-cell red" [class.cell-crossed]="rCell15()">
+            <span class="cell-num">15</span>
+            @if (rCell15()) {
+              <span class="anim-cross">✕</span>
+            }
+          </div>
+          <div class="longo-cell red">
+            <span class="cell-num">16</span>
+          </div>
+          <div class="longo-lock red" [class.lock-active]="rLock()">
+            <img src="lock_icon.svg" alt="lock" class="longo-lock-icon" />
+            @if (rLock()) {
+              <span class="anim-cross">✕</span>
+            }
+          </div>
+        </div>
+        <!-- Yellow: shows 15, 16, lock — crosses 16 then lock (skips 15) -->
+        <div class="lock-zone longo-zone">
+          <div class="longo-cell yellow">
+            <span class="cell-num">15</span>
+          </div>
+          <div class="longo-cell yellow" [class.cell-crossed]="yCell16()">
+            <span class="cell-num">16</span>
+            @if (yCell16()) {
+              <span class="anim-cross dark">✕</span>
+            }
+          </div>
+          <div class="longo-lock yellow" [class.lock-active]="yLock()">
+            <img src="lock_icon.svg" alt="lock" class="longo-lock-icon yellow-lock" />
+            @if (yLock()) {
+              <span class="anim-cross dark">✕</span>
+            }
+          </div>
+        </div>
+        <!-- Green: cross both closing cells (3 and 2), then close -->
+        <div class="lock-zone longo-zone">
+          <div class="longo-cell green" [class.cell-crossed]="bCell3()">
+            <span class="cell-num">3</span>
+            @if (bCell3()) {
+              <span class="anim-cross">✕</span>
+            }
+          </div>
+          <div class="longo-cell green" [class.cell-crossed]="bCell2()">
+            <span class="cell-num">2</span>
+            @if (bCell2()) {
+              <span class="anim-cross">✕</span>
+            }
+          </div>
+          <div class="longo-lock green" [class.lock-active]="bLock()">
+            <img src="lock_icon.svg" alt="lock" class="longo-lock-icon" />
+            @if (bLock()) {
+              <span class="anim-cross">✕</span>
+            }
+          </div>
+        </div>
+      </div>
+      <p class="lock-cross-note" [innerHTML]="t('rules.lockCross.p1')"></p>
+      <p class="highlight" [innerHTML]="t('rules.lockCross.example')"></p>
+    </section>
+  </div>
+</div>
+
+@if (isFirstTime()) {
+  <div class="first-time-bar">
+    <button class="go-btn" (click)="goToGame()">
+      {{ 'rules.goToGame' | translate }}
+    </button>
+  </div>
+}

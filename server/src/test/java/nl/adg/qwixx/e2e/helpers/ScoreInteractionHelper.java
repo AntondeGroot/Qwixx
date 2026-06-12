@@ -201,23 +201,32 @@ public class ScoreInteractionHelper {
     // ── Viewport-bounds check ──────────────────────────────────────────────────
 
     /**
-     * Returns true if the winner modal overlay is fully inside the browser viewport.
+     * Returns true if the winner modal overlay is fully inside the effective rendering area.
      *
-     * Regression guard: when position:fixed was inside the score :host's CSS
-     * transform, the overlay anchored to the rotated element rather than the
-     * real viewport and its bounding rect sat outside the 390×844 mobile bounds.
-     * The modal is now a direct child of :host (outside the zoom-scaled
-     * .score-screen) so its bounding rect maps cleanly to the full viewport.
+     * Regression guard: when position:fixed was inside a rotated CSS-transform ancestor
+     * the overlay anchored to that ancestor rather than the real viewport and sat outside
+     * the 390×844 mobile bounds.
+     *
+     * When app-root has a CSS transform (board page in portrait) Chrome reports
+     * getBoundingClientRect() in app-root's LOCAL coordinate space (landscape 844×390).
+     * When app-root has no transform (score screen and other pages) Chrome reports
+     * normal viewport coordinates.  The check detects the actual transform state so it
+     * works correctly on both pages.
      */
     public static boolean isWinnerModalWithinViewport(WebDriver driver) {
         try {
             WebElement overlay = driver.findElement(By.className("modal-overlay"));
             return (boolean) ((JavascriptExecutor) driver).executeScript(
                     "const rect = arguments[0].getBoundingClientRect();" +
+                    "const appRoot = document.querySelector('app-root');" +
+                    "const t = appRoot ? window.getComputedStyle(appRoot).transform : 'none';" +
+                    "const isRotated = t !== 'none' && t !== '';" +
+                    "const effectiveW = isRotated ? window.innerHeight : window.innerWidth;" +
+                    "const effectiveH = isRotated ? window.innerWidth  : window.innerHeight;" +
                     "return rect.width > 0 && rect.height > 0" +
                     "  && rect.top    >= -1 && rect.left   >= -1" +
-                    "  && rect.bottom <= window.innerHeight + 1" +
-                    "  && rect.right  <= window.innerWidth  + 1;",
+                    "  && rect.bottom <= effectiveH + 1" +
+                    "  && rect.right  <= effectiveW + 1;",
                     overlay);
         } catch (Exception e) {
             return false;
@@ -228,23 +237,30 @@ public class ScoreInteractionHelper {
 
     /**
      * Returns true when every {@code .player-row} element is fully inside the
-     * browser viewport (1 px rounding tolerance on each edge).
+     * effective rendering area (1 px rounding tolerance on each edge).
      *
-     * Uses {@code getBoundingClientRect()} which accounts for all CSS transforms
-     * (including the portrait-mode 90° rotation on the score host) so the check
-     * is correct on both desktop and mobile viewports.
+     * When app-root has a CSS transform (board page in portrait) Chrome reports
+     * getBoundingClientRect() in app-root's LOCAL coordinate space (landscape 844×390).
+     * When app-root has no transform (score screen in portrait) Chrome reports normal
+     * viewport coordinates (portrait 390×844).  The check detects the actual transform
+     * state and sizes effective dimensions accordingly.
      */
     public static boolean areAllPlayerRowsWithinViewport(WebDriver driver) {
         return (boolean) ((JavascriptExecutor) driver).executeScript(
                 "const rows = document.querySelectorAll('.player-row');" +
                 "if (!rows.length) return false;" +
+                "const appRoot = document.querySelector('app-root');" +
+                "const t = appRoot ? window.getComputedStyle(appRoot).transform : 'none';" +
+                "const isRotated = t !== 'none' && t !== '';" +
+                "const effectiveW = isRotated ? window.innerHeight : window.innerWidth;" +
+                "const effectiveH = isRotated ? window.innerWidth  : window.innerHeight;" +
                 "for (const row of rows) {" +
                 "  const r = row.getBoundingClientRect();" +
-                "  if (r.width <= 0 || r.height <= 0)        return false;" +
-                "  if (r.top    < -1)                         return false;" +
-                "  if (r.left   < -1)                         return false;" +
-                "  if (r.bottom > window.innerHeight + 1)     return false;" +
-                "  if (r.right  > window.innerWidth  + 1)     return false;" +
+                "  if (r.width <= 0 || r.height <= 0)  return false;" +
+                "  if (r.top    < -1)                   return false;" +
+                "  if (r.left   < -1)                   return false;" +
+                "  if (r.bottom > effectiveH + 1)       return false;" +
+                "  if (r.right  > effectiveW + 1)       return false;" +
                 "}" +
                 "return true;");
     }

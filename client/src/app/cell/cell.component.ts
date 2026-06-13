@@ -10,8 +10,7 @@ import { CellTag, SheetCell } from '../../generated/model/models';
     '[class.host-big-points-clickable]': '!!secondaryColor() && !!(showClickable() ?? clickable())',
     '[class.host-ww]': '!!secondaryColor() && showDieHint()',
     '[class.host-xchange-clickable]': '!!xChangeValues() && !!(showClickable() ?? clickable())',
-    '[class.host-lucky-number-clickable]':
-      '!!luckyNumberBonusPoints() && !!(showClickable() ?? clickable())',
+    '[class.host-lucky-number-clickable]': '!!luckyNumberBonusPoints() && !!(showClickable() ?? clickable())',
     '[class.host-lucky-number-ww]': '!!luckyNumberBonusPoints() && showDieHint()',
     '[class.host-lucky-cross]': 'isLuckyCross()',
     '[class.host-lucky-cross-clickable]': 'isLuckyCross() && !!(showClickable() ?? clickable())',
@@ -29,16 +28,12 @@ export class CellComponent {
 
   clicked = output<void>();
 
-  hasTag = computed(
-    () => (type: CellTag.TypeEnum) => this.cell().tags.some((t) => t.type === type),
-  );
+  hasTag = computed(() => (type: CellTag.TypeEnum) => this.cell().tags.some((t) => t.type === type));
 
   readonly TagEnum = CellTag.TypeEnum;
 
   secondaryColor = computed(
-    () =>
-      this.cell().tags.find((t) => t.type === CellTag.TypeEnum.SECONDARY_COLOR)?.secondaryColor ??
-      null,
+    () => this.cell().tags.find((t) => t.type === CellTag.TypeEnum.SECONDARY_COLOR)?.secondaryColor ?? null,
   );
 
   xChangeValues = computed(() => {
@@ -51,13 +46,9 @@ export class CellComponent {
     return tag ? tag.amount! : null;
   });
 
-  isLuckyCross = computed(() =>
-    this.cell().tags.some((t) => t.type === CellTag.TypeEnum.LUCKY_CROSS),
-  );
+  isLuckyCross = computed(() => this.cell().tags.some((t) => t.type === CellTag.TypeEnum.LUCKY_CROSS));
 
-  primaryMaxed = computed(
-    () => !!this.secondaryColor() && this.maxedColors().has(this.cell().color),
-  );
+  primaryMaxed = computed(() => !!this.secondaryColor() && this.maxedColors().has(this.cell().color));
   secondaryMaxed = computed(() => {
     const sc = this.secondaryColor();
     return sc !== null && this.maxedColors().has(sc);

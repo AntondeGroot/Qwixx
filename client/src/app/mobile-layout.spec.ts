@@ -35,9 +35,7 @@ function css(rel: string) {
  *  contains `selector { ... prop ... value ... }`. */
 function portraitBlockHas(cssText: string, selector: string, prop: string, value: string): boolean {
   const portraitBlocks =
-    cssText.match(
-      /@media[^(]*\([^)]*orientation:\s*portrait[^)]*\)\s*\{([\s\S]*?)(?=@media\s|\s*$)/g,
-    ) ?? [];
+    cssText.match(/@media[^(]*\([^)]*orientation:\s*portrait[^)]*\)\s*\{([\s\S]*?)(?=@media\s|\s*$)/g) ?? [];
   for (const block of portraitBlocks) {
     const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const re = new RegExp(escaped + '\\s*\\{([^}]*)\\}', 'g');
@@ -52,9 +50,7 @@ function portraitBlockHas(cssText: string, selector: string, prop: string, value
 /** Extracts the value of a CSS property from a selector inside a portrait @media block. */
 function getPortraitPropertyValue(cssText: string, selector: string, prop: string): string | null {
   const portraitBlocks =
-    cssText.match(
-      /@media[^(]*\([^)]*orientation:\s*portrait[^)]*\)\s*\{([\s\S]*?)(?=@media\s|\s*$)/g,
-    ) ?? [];
+    cssText.match(/@media[^(]*\([^)]*orientation:\s*portrait[^)]*\)\s*\{([\s\S]*?)(?=@media\s|\s*$)/g) ?? [];
   for (const block of portraitBlocks) {
     const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const re = new RegExp(escaped + '\\s*\\{([^}]*)\\}', 'g');
@@ -68,12 +64,7 @@ function getPortraitPropertyValue(cssText: string, selector: string, prop: strin
   return null;
 }
 
-function globalSelectorHas(
-  cssText: string,
-  selector: string,
-  prop: string,
-  value: string,
-): boolean {
+function globalSelectorHas(cssText: string, selector: string, prop: string, value: string): boolean {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const re = new RegExp(escaped + '\\s*\\{([^}]*)\\}', 'g');
   let m: RegExpExecArray | null;

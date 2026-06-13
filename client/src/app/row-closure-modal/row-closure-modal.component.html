@@ -27,9 +27,7 @@
         <div class="closure-requests">
           @for (request of requests; track request.rowColor + request.playerName) {
             <div class="request-item">
-              <span class="request-text"
-                >{{ request.playerName }} {{ 'rowClosure.wantsToCloseThe' | translate }}</span
-              >
+              <span class="request-text">{{ request.playerName }} {{ 'rowClosure.wantsToCloseThe' | translate }}</span>
               <div [class]="getRowColorClass(request.rowColor)" class="color-cell"></div>
               <span class="request-text">{{ 'rowClosure.row' | translate }}</span>
             </div>
@@ -46,9 +44,7 @@
             {{ 'rowClosure.changeButton' | translate }}
           </button>
           <button class="btn btn-primary btn-notification-ok" (click)="onConfirm()">
-            {{
-              (confirmEndsRound ? 'rowClosure.confirmButton' : 'rowClosure.okButton') | translate
-            }}
+            {{ (confirmEndsRound ? 'rowClosure.confirmButton' : 'rowClosure.okButton') | translate }}
           </button>
         } @else {
           <button class="btn btn-primary btn-notification-ok" (click)="onConfirm()">

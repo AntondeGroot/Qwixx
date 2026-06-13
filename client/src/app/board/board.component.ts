@@ -86,9 +86,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   isOffline = computed(() => this.gameState() !== null && this.gameState()!.turnState == null);
 
-  visibleClickableCellIds = computed(
-    (): Set<string> => (this.rollingDice() ? this.emptySet : this.clickableCellIds()),
-  );
+  visibleClickableCellIds = computed((): Set<string> => (this.rollingDice() ? this.emptySet : this.clickableCellIds()));
 
   // ── Lucky Number highlight ────────────────────────────────────────────────────
   // The leftmost uncrossed Lucky Number cell is highlighted cyan (WW glow) when:
@@ -117,9 +115,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       if (!prereqMet) continue;
       const crossed = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
       const lastPos =
-        crossed.size > 0
-          ? Math.max(...row.cells.filter((c) => crossed.has(c.id)).map((c) => c.position))
-          : -1;
+        crossed.size > 0 ? Math.max(...row.cells.filter((c) => crossed.has(c.id)).map((c) => c.position)) : -1;
       const leftmost = row.cells
         .filter((c) => !crossed.has(c.id) && c.position > lastPos)
         .sort((a, b) => a.position - b.position)[0];
@@ -131,9 +127,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   // True when the current player's layout contains Lucky Cross fields.
   hasLuckyCross = computed(() => {
     const layout = this.layoutFor(this.playerId());
-    return !!layout?.rows.some((r) =>
-      r.cells.some((c) => c.tags.some((t) => t.type === CellTag.TypeEnum.LUCKY_CROSS)),
-    );
+    return !!layout?.rows.some((r) => r.cells.some((c) => c.tags.some((t) => t.type === CellTag.TypeEnum.LUCKY_CROSS)));
   });
 
   hasLuckyNumberRow = computed(() => {
@@ -165,12 +159,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const eligibleColors = new Set<string>();
     if (!freeChoice) {
       for (const [color, v] of coloredEntries) {
-        if (
-          (w1 === 1 && v === 5) ||
-          (w1 === 5 && v === 1) ||
-          (w2 === 1 && v === 5) ||
-          (w2 === 5 && v === 1)
-        ) {
+        if ((w1 === 1 && v === 5) || (w1 === 5 && v === 1) || (w2 === 1 && v === 5) || (w2 === 5 && v === 1)) {
           eligibleColors.add(color);
         }
       }
@@ -195,15 +184,10 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const closedRows = state.closedRows ?? {};
     for (const row of layout.rows) {
       if (closedRows[row.id]) continue;
-      const rowColor = row.cells.find(
-        (c) => !c.tags.some((t) => t.type === CellTag.TypeEnum.LUCKY_CROSS),
-      )?.color;
+      const rowColor = row.cells.find((c) => !c.tags.some((t) => t.type === CellTag.TypeEnum.LUCKY_CROSS))?.color;
       if (!freeChoice && (!rowColor || !eligibleColors.has(rowColor))) continue;
       const crossed = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
-      const lastPos = Math.max(
-        -1,
-        ...row.cells.filter((c) => crossed.has(c.id)).map((c) => c.position),
-      );
+      const lastPos = Math.max(-1, ...row.cells.filter((c) => crossed.has(c.id)).map((c) => c.position));
       const next = row.cells
         .filter((c) => c.tags.some((t) => t.type === CellTag.TypeEnum.LUCKY_CROSS))
         .filter((c) => !crossed.has(c.id) && c.position > lastPos)
@@ -248,9 +232,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       const crossed = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
       if (crossed.size !== fewest) continue;
       const lastPos =
-        crossed.size > 0
-          ? Math.max(...row.cells.filter((c) => crossed.has(c.id)).map((c) => c.position))
-          : -1;
+        crossed.size > 0 ? Math.max(...row.cells.filter((c) => crossed.has(c.id)).map((c) => c.position)) : -1;
       const leftmost = row.cells
         .filter((c) => !crossed.has(c.id) && c.position > lastPos)
         .sort((a, b) => a.position - b.position)[0];
@@ -292,8 +274,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       // Active (normal or final-review): stay suppressed — they've acknowledged the notification.
       const suppress =
         lockConfirmInProgress ||
-        (this.suppressModal() &&
-          (!isPassive || isActiveFinalReview || this.pendingCellIds().size === 0));
+        (this.suppressModal() && (!isPassive || isActiveFinalReview || this.pendingCellIds().size === 0));
       if (suppress) {
         this.rowClosureModal.clear();
       } else {
@@ -378,8 +359,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       // scaleH: fit the board's DOM height into the viewport's width (short side).
       // scaleW: fit the board's DOM width into the viewport's height (long side) —
       //         needed when wide variants (e.g. Longo) exceed 100dvh.
-      const scaleH =
-        h > 0 ? (window.innerWidth - 16) / h : (window.innerWidth - 16) / this.MOBILE_DESIGN_H;
+      const scaleH = h > 0 ? (window.innerWidth - 16) / h : (window.innerWidth - 16) / this.MOBILE_DESIGN_H;
       const scaleW = w > 0 ? (window.innerHeight - 16) / w : 1;
       scale = Math.min(scaleH, scaleW, 1);
     } else {
@@ -430,17 +410,14 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   isMyTurn = computed(() => this.turnState()?.activePlayerId === this.playerId());
 
-  isInPassiveQueue = computed(() =>
-    (this.turnState()?.passivePlayerQueue ?? []).includes(this.playerId()),
-  );
+  isInPassiveQueue = computed(() => (this.turnState()?.passivePlayerQueue ?? []).includes(this.playerId()));
 
   canRoll = computed(() => this.isMyTurn() && this.turnState()?.phase === TurnPhase.ROLL);
 
   canPassActive = computed(() => {
     const turn = this.turnState();
     if (!this.isMyTurn() || turn?.phase !== TurnPhase.ACTIVE_MOVE) return false;
-    if (turn.whiteWhiteUsed === true || turn.colorDieUsed === true || turn.luckyNumberUsed === true)
-      return true;
+    if (turn.whiteWhiteUsed === true || turn.colorDieUsed === true || turn.luckyNumberUsed === true) return true;
     // Allow EndTurn when this player has a pending lock-closure intent (declared without dice).
     const pid = this.playerId();
     const pendingClosures: Record<string, string> = this.gameState()?.pendingClosures ?? {};
@@ -465,10 +442,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   // Active player has a pending cross (in undo buffer) while a passive has declared.
   // Surfaces the Change/OK buttons in the notification modal for the active player too.
   hasPendingActiveCross = computed(
-    () =>
-      this.isMyTurn() &&
-      this.turnState()?.phase === TurnPhase.ACTIVE_MOVE &&
-      this.pendingCellIds().size > 0,
+    () => this.isMyTurn() && this.turnState()?.phase === TurnPhase.ACTIVE_MOVE && this.pendingCellIds().size > 0,
   );
 
   // Active player has already EndTurned (phase=PASSIVE_MOVE) but passives are still acting.
@@ -528,10 +502,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   canPassPassive = computed(() => {
     const phase = this.turnState()?.phase;
-    return (
-      this.isInPassiveQueue() &&
-      (phase === TurnPhase.PASSIVE_MOVE || phase === TurnPhase.ACTIVE_MOVE)
-    );
+    return this.isInPassiveQueue() && (phase === TurnPhase.PASSIVE_MOVE || phase === TurnPhase.ACTIVE_MOVE);
   });
 
   // True when the active player has no clickable cells and can only take a punishment.
@@ -650,15 +621,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       const effectiveWW = turn.effectiveWhiteWhite?.[pid];
       if (!turn.whiteWhiteUsed && !turn.colorDieUsed) {
         const wwTarget = effectiveWW ?? roll.white1 + roll.white2;
-        this.collectCells(
-          layout,
-          progress,
-          closedRows,
-          wwTarget,
-          null,
-          result,
-          effectiveWW != null,
-        );
+        this.collectCells(layout, progress, closedRows, wwTarget, null, result, effectiveWW != null);
       }
       if (!turn.colorDieUsed) {
         for (const row of layout.rows) {
@@ -687,15 +650,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       // Allow WW cells when no pending cross, OR when the only pending cross is an x-change.
       if (this.pendingCellIds().size === 0 || effectiveWW != null) {
         const wwTarget = effectiveWW ?? roll.white1 + roll.white2;
-        this.collectCells(
-          layout,
-          progress,
-          closedRows,
-          wwTarget,
-          null,
-          result,
-          effectiveWW != null,
-        );
+        this.collectCells(layout, progress, closedRows, wwTarget, null, result, effectiveWW != null);
       }
       // Lucky Cross cells are available independently of the white+white move.
       for (const id of this.luckyCrossHighlightCellIds()) result.add(id);
@@ -725,15 +680,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       const effectiveWW = turn.effectiveWhiteWhite?.[pid];
       if (!turn.whiteWhiteUsed && !turn.colorDieUsed) {
         const wwTarget = effectiveWW ?? roll.white1 + roll.white2;
-        this.collectCells(
-          layout,
-          progress,
-          closedRows,
-          wwTarget,
-          null,
-          result,
-          effectiveWW != null,
-        );
+        this.collectCells(layout, progress, closedRows, wwTarget, null, result, effectiveWW != null);
       }
       // LuckyNumber highlight cells glow cyan like white+white cells.
       if (!turn.whiteWhiteUsed && !turn.colorDieUsed && !turn.luckyNumberUsed) {
@@ -748,15 +695,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       const effectiveWW = turn.effectiveWhiteWhite?.[pid];
       if (this.pendingCellIds().size === 0 || effectiveWW != null) {
         const wwTarget = effectiveWW ?? roll.white1 + roll.white2;
-        this.collectCells(
-          layout,
-          progress,
-          closedRows,
-          wwTarget,
-          null,
-          result,
-          effectiveWW != null,
-        );
+        this.collectCells(layout, progress, closedRows, wwTarget, null, result, effectiveWW != null);
       }
       // Lucky Cross cells glow cyan for passive players too.
       for (const id of this.luckyCrossHighlightCellIds()) result.add(id);
@@ -782,9 +721,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       const rowLayout = layout.rows.find((r) => r.id === rowId);
       if (!rowLayout) return new Set();
       const crossedIds = new Set(progress?.rowStates[rowId]?.crossedCells ?? []);
-      return new Set(
-        rowLayout.cells.filter((c) => crossedIds.has(c.id)).map((c) => c.displayValue),
-      );
+      return new Set(rowLayout.cells.filter((c) => crossedIds.has(c.id)).map((c) => c.displayValue));
     };
 
     for (const row of layout.rows) {
@@ -792,10 +729,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       if (closedRows[row.id]) continue;
       if (row.luckyRow) continue; // luckyNumber cells are only offered via luckyNumberHighlightCellIds
       const crossed = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
-      const lastPos = Math.max(
-        -1,
-        ...row.cells.filter((c) => crossed.has(c.id)).map((c) => c.position),
-      );
+      const lastPos = Math.max(-1, ...row.cells.filter((c) => crossed.has(c.id)).map((c) => c.position));
       for (const cell of row.cells) {
         if (crossed.has(cell.id)) continue;
         if (cell.position <= lastPos) continue;
@@ -807,17 +741,14 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
           if (xchangeTag.valueA !== targetValue && xchangeTag.valueB !== targetValue) continue;
         } else if (parseInt(cell.displayValue) !== targetValue) continue;
         if (cell.closingEligible && row.lock) {
-          const alreadyCrossedClosing = row.lock.closingCells.filter((id) =>
-            crossed.has(id),
-          ).length;
+          const alreadyCrossedClosing = row.lock.closingCells.filter((id) => crossed.has(id)).length;
           const normalCrossed = crossed.size - alreadyCrossedClosing;
           if (normalCrossed + 1 < row.lock.minCrosses) continue;
         }
         if (row.bonusRow) {
           const upperCrossed = crossedValuesInRow(row.upperNeighbourRowId);
           const lowerCrossed = crossedValuesInRow(row.lowerNeighbourRowId);
-          if (!upperCrossed.has(cell.displayValue) && !lowerCrossed.has(cell.displayValue))
-            continue;
+          if (!upperCrossed.has(cell.displayValue) && !lowerCrossed.has(cell.displayValue)) continue;
         }
         result.add(cell.id);
       }
@@ -841,9 +772,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
           const crossed = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
           if (crossed.size !== fewest) continue;
           const lastPos =
-            crossed.size > 0
-              ? Math.max(...row.cells.filter((c) => crossed.has(c.id)).map((c) => c.position))
-              : -1;
+            crossed.size > 0 ? Math.max(...row.cells.filter((c) => crossed.has(c.id)).map((c) => c.position)) : -1;
           const leftmost = row.cells
             .filter((c) => !crossed.has(c.id) && c.position > lastPos)
             .sort((a, b) => a.position - b.position)[0];
@@ -973,12 +902,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  private buildCrossMoveRequest(
-    row: SheetRow,
-    cell: SheetCell,
-    rowId: string,
-    cellId: string,
-  ): MoveRequest | null {
+  private buildCrossMoveRequest(row: SheetRow, cell: SheetCell, rowId: string, cellId: string): MoveRequest | null {
     if (this.isInPassiveQueue()) {
       return { moveType: MoveType.CROSS_WHITE_WHITE, rowId, cellId };
     }
@@ -1044,10 +968,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     for (const row of layout.rows) {
       if (closed[row.id]) continue;
       const crossed = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
-      const lastPos = Math.max(
-        -1,
-        ...row.cells.filter((c) => crossed.has(c.id)).map((c) => c.position),
-      );
+      const lastPos = Math.max(-1, ...row.cells.filter((c) => crossed.has(c.id)).map((c) => c.position));
       for (const cell of row.cells) {
         if (!crossed.has(cell.id) && cell.position > lastPos) result.add(cell.id);
       }
@@ -1211,14 +1132,8 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const prev = this.gameState();
     if (prev) {
-      const prevPunishments = Object.values(prev.sheetProgress ?? {}).reduce(
-        (n, p) => n + (p.punishments ?? 0),
-        0,
-      );
-      const newPunishments = Object.values(s.sheetProgress ?? {}).reduce(
-        (n, p) => n + (p.punishments ?? 0),
-        0,
-      );
+      const prevPunishments = Object.values(prev.sheetProgress ?? {}).reduce((n, p) => n + (p.punishments ?? 0), 0);
+      const newPunishments = Object.values(s.sheetProgress ?? {}).reduce((n, p) => n + (p.punishments ?? 0), 0);
       if (newPunishments > prevPunishments) this.audio.play(AudioService.PUNISHMENT);
     }
 
@@ -1283,10 +1198,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   // When the immediately adjacent row is a bonus row, we also look one step further
   // so that connections spanning across a bonus row are found correctly.
   myRowConnectors = computed(
-    (): Map<
-      string,
-      { above: number[]; below: number[]; hasBonusRowAbove: boolean; hasBonusRowBelow: boolean }
-    > => {
+    (): Map<string, { above: number[]; below: number[]; hasBonusRowAbove: boolean; hasBonusRowBelow: boolean }> => {
       const layout = this.layoutFor(this.playerId());
       const result = new Map<
         string,

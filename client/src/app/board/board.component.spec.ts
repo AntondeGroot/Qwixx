@@ -956,9 +956,7 @@ describe('BoardComponent — Longo bonus cells for passive player', () => {
 
   it('passive player in ACTIVE_MOVE phase also sees bonus cells', () => {
     // Simultaneous play: passive queue is active while active player is still moving.
-    component.gameState.set(
-      makeBonusState({ phase: TurnPhase.ACTIVE_MOVE, yellowCrosses: ['y0'] }),
-    );
+    component.gameState.set(makeBonusState({ phase: TurnPhase.ACTIVE_MOVE, yellowCrosses: ['y0'] }));
     const ids = component.clickableCellIds();
     expect(ids.has('r0')).toBe(true);
   });
@@ -995,9 +993,7 @@ describe('BoardComponent — Longo bonus number priority over colour die', () =>
     { id: 'r0', position: 0, displayValue: '2', color: 'RED', closingEligible: false, tags: [] },
     { id: 'r1', position: 1, displayValue: '13', color: 'RED', closingEligible: false, tags: [] },
   ];
-  const BLUE_CELLS = [
-    { id: 'b0', position: 0, displayValue: '7', color: 'BLUE', closingEligible: false, tags: [] },
-  ];
+  const BLUE_CELLS = [{ id: 'b0', position: 0, displayValue: '7', color: 'BLUE', closingEligible: false, tags: [] }];
 
   // Active player, white1=5, white2=7, yellow die=6, blue die=2.
   // white+white = 12 = bonus number.
@@ -1274,11 +1270,7 @@ describe('BoardComponent — row-closure modal delegation', () => {
   // ── Modal routing: who sees the notification ───────────────────────────────
 
   describe('notification routing via _modalSync', () => {
-    function stateWithRequests(opts: {
-      declarantName: string;
-      activeId: string;
-      passiveQueue: string[];
-    }): GameState {
+    function stateWithRequests(opts: { declarantName: string; activeId: string; passiveQueue: string[] }): GameState {
       return makeState({
         closureNotifications: [{ playerName: opts.declarantName, rowColor: Color.BLUE }],
         turnState: {

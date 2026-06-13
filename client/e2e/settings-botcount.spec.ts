@@ -175,9 +175,7 @@ test.describe('Settings page — full form with chips and descriptions', () => {
     expect(descCount).toBeGreaterThan(0);
   });
 
-  test('botCount select has options 0, 1, 2, 3 even with chips and descriptions rendered', async ({
-    page,
-  }) => {
+  test('botCount select has options 0, 1, 2, 3 even with chips and descriptions rendered', async ({ page }) => {
     const sel = await findBotCountSelect(page);
     expect(sel).not.toBeNull();
     const texts = await sel!.locator('option').allTextContents();
@@ -194,9 +192,7 @@ test.describe('Settings page — full form with chips and descriptions', () => {
     const sel = await findBotCountSelect(page);
     expect(sel).not.toBeNull();
     const idx = await sel!.evaluate((el: HTMLSelectElement) => el.selectedIndex);
-    const text = await sel!.evaluate((el: HTMLSelectElement) =>
-      el.options[el.selectedIndex]?.text.trim(),
-    );
+    const text = await sel!.evaluate((el: HTMLSelectElement) => el.options[el.selectedIndex]?.text.trim());
     expect(idx).toBe(0);
     expect(text).toBe('0');
   });
@@ -205,9 +201,7 @@ test.describe('Settings page — full form with chips and descriptions', () => {
     const sel = await findBotCountSelect(page);
     expect(sel).not.toBeNull();
     await sel!.selectOption({ index: 3 });
-    const text = await sel!.evaluate((el: HTMLSelectElement) =>
-      el.options[el.selectedIndex]?.text.trim(),
-    );
+    const text = await sel!.evaluate((el: HTMLSelectElement) => el.options[el.selectedIndex]?.text.trim());
     expect(text).toBe('3');
   });
 

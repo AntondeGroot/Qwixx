@@ -191,9 +191,7 @@ test.describe('Board layout on portrait phone (OnePlus Nord / Pixel 6 class)', (
 test.describe('Board layout after active→passive state transition', () => {
   test.use({ viewport: { width: PHONE_W, height: PHONE_H } });
 
-  test('all elements stay within viewport after player transitions from active to passive', async ({
-    page,
-  }) => {
+  test('all elements stay within viewport after player transitions from active to passive', async ({ page }) => {
     // Phase 1: PLAYER_ID is active, waiting to roll (no dice yet)
     const rollPhaseState = {
       ...MOCK_STATE,
@@ -277,9 +275,7 @@ test.describe('Board layout after active→passive state transition', () => {
 
     const scaleDuringActiveMovePhase = await page
       .locator('app-board')
-      .evaluate((el: HTMLElement) =>
-        parseFloat(getComputedStyle(el).getPropertyValue('--mobile-scale') || '0'),
-      );
+      .evaluate((el: HTMLElement) => parseFloat(getComputedStyle(el).getPropertyValue('--mobile-scale') || '0'));
 
     // ── Step 3: turn ends → PLAYER_ID is now passive, OTHER_ID in ROLL phase ──
     currentState = passiveWaitState;
@@ -304,9 +300,7 @@ test.describe('Board layout after active→passive state transition', () => {
     // --mobile-scale must be set to a valid fraction.
     const scaleAfter = await page
       .locator('app-board')
-      .evaluate((el: HTMLElement) =>
-        parseFloat(getComputedStyle(el).getPropertyValue('--mobile-scale') || '0'),
-      );
+      .evaluate((el: HTMLElement) => parseFloat(getComputedStyle(el).getPropertyValue('--mobile-scale') || '0'));
     expect(scaleAfter, '--mobile-scale should be > 0 after transition').toBeGreaterThan(0);
     expect(scaleAfter, '--mobile-scale should be ≤ 1').toBeLessThanOrEqual(1);
 

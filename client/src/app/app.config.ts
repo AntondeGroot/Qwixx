@@ -1,9 +1,4 @@
-import {
-  ApplicationConfig,
-  inject,
-  provideAppInitializer,
-  provideBrowserGlobalErrorListeners,
-} from '@angular/core';
+import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import { HTTP_INTERCEPTORS, HttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';

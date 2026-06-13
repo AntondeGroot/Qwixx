@@ -264,9 +264,7 @@ export class ScoreComponent implements OnInit {
   ngOnInit() {
     this.sessionId = this.route.snapshot.paramMap.get('sessionId') ?? '';
     this.playerId =
-      this.route.snapshot.queryParamMap.get('pid') ??
-      sessionStorage.getItem(`qwixx_pid_${this.sessionId}`) ??
-      '';
+      this.route.snapshot.queryParamMap.get('pid') ?? sessionStorage.getItem(`qwixx_pid_${this.sessionId}`) ?? '';
     const animationKey = `qwixx_score_shown_${this.sessionId}`;
     if (sessionStorage.getItem(animationKey)) {
       void this.showFinalState();
@@ -359,8 +357,7 @@ export class ScoreComponent implements OnInit {
       ];
 
       // Initialise all player rows at zero
-      const initDisplayed = (): Record<string, number> =>
-        Object.fromEntries(cols.map((c) => [c.key, 0]));
+      const initDisplayed = (): Record<string, number> => Object.fromEntries(cols.map((c) => [c.key, 0]));
 
       const rows: PlayerRow[] = state.players.map((p, i) => ({
         id: p.id,

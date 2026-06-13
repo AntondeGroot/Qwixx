@@ -57,9 +57,7 @@ export class TranslationService {
     this.updateUrl(locale);
     // Start background preloads for all other languages (fire-and-forget).
     // use(locale) is called LAST so lastUseLanguage ends up = locale.
-    this.languages
-      .filter((l) => l.code !== locale)
-      .forEach((l) => this.translateService.use(l.code));
+    this.languages.filter((l) => l.code !== locale).forEach((l) => this.translateService.use(l.code));
     return this.translateService.use(locale);
   }
 
@@ -80,9 +78,7 @@ export class TranslationService {
     const params = new URLSearchParams(window.location.search);
     params.set('locale', language);
     const queryString = params.toString();
-    const newUrl = queryString
-      ? `${window.location.pathname}?${queryString}`
-      : window.location.pathname;
+    const newUrl = queryString ? `${window.location.pathname}?${queryString}` : window.location.pathname;
     window.history.replaceState({}, '', newUrl);
   }
 

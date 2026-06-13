@@ -24,9 +24,7 @@ export class RulesComponent implements OnDestroy {
   private static readonly MAX_AGE = 400 * 24 * 60 * 60;
 
   /** True when the player arrives here for the first time (cookie not yet set). */
-  readonly isFirstTime = signal(
-    !document.cookie.split(';').some((c) => c.trim().startsWith(RULES_COOKIE + '=')),
-  );
+  readonly isFirstTime = signal(!document.cookie.split(';').some((c) => c.trim().startsWith(RULES_COOKIE + '=')));
 
   // Animation state — standard demo
   readonly stdCell2 = signal(false);

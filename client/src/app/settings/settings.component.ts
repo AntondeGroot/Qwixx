@@ -1,4 +1,15 @@
-import { Component, computed, DestroyRef, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  afterEveryRender,
+  Component,
+  computed,
+  DestroyRef,
+  ElementRef,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../environments/environment';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -9,6 +20,7 @@ import { GamesService, PlayersService } from '../../generated/api/api';
 import { GameOption, SheetLayout } from '../../generated/model/models';
 import { RowComponent } from '../row/row.component';
 import { LobbyService } from '../services/lobby.service';
+import { EmbedModeService } from '../services/embed-mode.service';
 
 @Component({
   selector: 'app-settings',
@@ -25,6 +37,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
+  readonly embedMode = inject(EmbedModeService);
   private previewSub?: Subscription;
 
   // Present when navigating here from the score screen after a game ends.
@@ -36,11 +49,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
     return !!this.sessionId() && !!this.playerId();
   }
 
-  isAdmin = signal(false);
   gameOptions = signal<GameOption[]>([]);
-  availableGameOptions = computed(() =>
-    this.gameOptions().filter((o) => !o.adminOnly || this.isAdmin()),
-  );
+  availableGameOptions = computed(() => this.gameOptions().filter((o) => !o.adminOnly || this.embedMode.isAdmin()));
   lobbyPlayers = signal<{ id: string; name: string }[]>([]);
   maxPlayers = signal<number>(99);
   previewLayout = signal<SheetLayout | null>(null);
@@ -55,51 +65,49 @@ export class SettingsComponent implements OnInit, OnDestroy {
   // Suppress lobby → form updates while the player is actively editing
   private suppressLobbySync = false;
 
-  isEmbedMode = signal(false);
+  private readonly boardPreviewOuter = viewChild<ElementRef>('boardPreviewOuter');
+  readonly previewScale = signal(1);
+  private previewResizeObserver?: ResizeObserver;
 
   form!: FormGroup;
 
   readonly TypeEnum = GameOption.TypeEnum;
 
+  constructor() {
+    afterEveryRender(() => {
+      this.updatePreviewScale();
+      const outer = this.boardPreviewOuter()?.nativeElement;
+      if (outer && !this.previewResizeObserver) {
+        this.previewResizeObserver = new ResizeObserver(() => this.updatePreviewScale());
+        this.previewResizeObserver.observe(outer);
+      }
+    });
+  }
+
+  private updatePreviewScale(): void {
+    const outer = this.boardPreviewOuter()?.nativeElement as HTMLElement | undefined;
+    if (!outer) return;
+    const inner = outer.firstElementChild as HTMLElement | null;
+    if (!inner) return;
+    const currentZoom = parseFloat(inner.style.zoom) || 1;
+    const naturalW = inner.getBoundingClientRect().width / currentZoom;
+    const containerW = outer.clientWidth;
+    const scale = naturalW > containerW ? containerW / naturalW : 1;
+    if (scale !== this.previewScale()) this.previewScale.set(scale);
+  }
+
   ngOnInit() {
     const params = this.route.snapshot.queryParamMap;
 
-    this.isAdmin.set(params.get('admin') === '1');
-
     // Query params are authoritative; fall back to sessionStorage written by newGame().
-    this.sessionId.set(
-      params.get('sessionId') || sessionStorage.getItem('qwixx_lobby_sid') || null,
-    );
+    this.sessionId.set(params.get('sessionId') || sessionStorage.getItem('qwixx_lobby_sid') || null);
     this.playerId.set(params.get('playerId') || sessionStorage.getItem('qwixx_lobby_pid') || null);
 
     // Embed mode: hosted inside another app's iframe (e.g. GWT GameRoom).
-    // The Start button is hidden; option changes are pushed to the parent via postMessage.
+    // Option changes are pushed to the parent via postMessage; the service handles transport.
     const isEmbed = params.get('embed') === '1';
-    this.isEmbedMode.set(isEmbed);
-
     if (isEmbed) {
-      // The GWT GameRoom manages botCount/botStrategy through its own widgets and
-      // may not include them in the ?options= JSON. Listen for a postMessage from
-      // the parent that carries individual option overrides after the iframe loads.
-      window.addEventListener('message', (event: MessageEvent) => {
-        const data = event.data;
-        if (!data || data.type !== 'qwixx-options-set') return;
-        const overrides = data.options as Record<string, unknown>;
-        if (!overrides) return;
-        for (const [key, value] of Object.entries(overrides)) {
-          const ctrl = this.form?.get(key);
-          if (!ctrl) continue;
-          const opt = this.gameOptions().find((o) => o.key === key);
-          const coerced =
-            opt?.type === GameOption.TypeEnum.BOOLEAN
-              ? Boolean(value)
-              : opt?.type === GameOption.TypeEnum.INTEGER
-                ? Number(value)
-                : value;
-          ctrl.setValue(coerced, { emitEvent: false });
-        }
-        this.fetchPreview();
-      });
+      this.embedMode.enable((overrides) => this.applyLobbyOptions(overrides), this.destroyRef);
     }
 
     // Allow the host app to set the UI language via ?lang=
@@ -181,11 +189,11 @@ export class SettingsComponent implements OnInit, OnDestroy {
         // Immediately post the current options so the host has them even before
         // the user changes anything.
         this.postOptionsToParent();
-
-        // Push every subsequent change to the parent frame.
-        this.form.valueChanges
-          .pipe(debounceTime(100), takeUntilDestroyed(this.destroyRef))
-          .subscribe(() => this.postOptionsToParent());
+        // Push every subsequent change to the parent frame and refresh the preview.
+        this.form.valueChanges.pipe(debounceTime(100), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+          this.postOptionsToParent();
+          this.fetchPreview();
+        });
       } else if (this.isRestartMode) {
         this.startLobbySync();
         this.startGameStartSse();
@@ -212,17 +220,14 @@ export class SettingsComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Serialise current options as stringified values and postMessage them to the parent window. */
   private postOptionsToParent(): void {
     const raw = this.buildGameOptions();
-    const stringOpts: Record<string, string> = {};
-    for (const [k, v] of Object.entries(raw)) {
-      stringOpts[k] = String(v);
-    }
-    window.parent.postMessage({ type: 'qwixx-options-changed', options: stringOpts }, '*');
+    const stringOpts = Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, String(v)]));
+    this.embedMode.postOptions(stringOpts);
   }
 
   ngOnDestroy() {
+    this.previewResizeObserver?.disconnect();
     this.previewSub?.unsubscribe();
   }
 
@@ -285,12 +290,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
     this.mutualExclusionPairs.push([keyA, keyB]);
     this.enforceMutualExclusions();
 
-    ctrlA.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.enforceMutualExclusions());
-    ctrlB.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.enforceMutualExclusions());
+    ctrlA.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.enforceMutualExclusions());
+    ctrlB.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.enforceMutualExclusions());
   }
 
   // Applies all registered mutual exclusions based on current control values.
@@ -348,28 +349,24 @@ export class SettingsComponent implements OnInit, OnDestroy {
         });
       });
     } else {
-      this.gamesService
-        .createNewGame({ roomName: 'Offline', maxPlayers: 1, gameOptions })
-        .subscribe({
-          next: (res) => {
-            const sessionId = res.sessionId!;
-            this.playersService
-              .addPlayerToGame(sessionId, { id: this.playerId()!, name: 'Offline' })
-              .subscribe({
-                next: (joined) => {
-                  this.gamesService.startGame(sessionId).subscribe({
-                    next: () => {
-                      this.loading.set(false);
-                      void this.router.navigate(['/game', sessionId, joined.playerId]);
-                    },
-                    error: (e) => this.handleError(e),
-                  });
+      this.gamesService.createNewGame({ roomName: 'Offline', maxPlayers: 1, gameOptions }).subscribe({
+        next: (res) => {
+          const sessionId = res.sessionId!;
+          this.playersService.addPlayerToGame(sessionId, { id: this.playerId()!, name: 'Offline' }).subscribe({
+            next: (joined) => {
+              this.gamesService.startGame(sessionId).subscribe({
+                next: () => {
+                  this.loading.set(false);
+                  void this.router.navigate(['/game', sessionId, joined.playerId]);
                 },
                 error: (e) => this.handleError(e),
               });
-          },
-          error: (e) => this.handleError(e),
-        });
+            },
+            error: (e) => this.handleError(e),
+          });
+        },
+        error: (e) => this.handleError(e),
+      });
     }
   }
 

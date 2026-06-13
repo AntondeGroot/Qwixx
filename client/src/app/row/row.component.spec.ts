@@ -43,8 +43,7 @@ describe('RowComponent', () => {
   describe('regularCells / closingEligibleCells', () => {
     it('separates regular from closing-eligible cells', () => {
       TestBed.runInInjectionContext(() => {
-        (component as any).row = () =>
-          makeRow([makeCell('a', false), makeCell('b', true), makeCell('c', false)]);
+        (component as any).row = () => makeRow([makeCell('a', false), makeCell('b', true), makeCell('c', false)]);
       });
       expect(component.regularCells().map((c) => c.id)).toEqual(['a', 'c']);
       expect(component.closingEligibleCells().map((c) => c.id)).toEqual(['b']);
@@ -111,9 +110,7 @@ describe('RowComponent — bonus row zone placement', () => {
     const bonusZone = el.querySelector('.bonus-lock-zone')!;
     expect(bonusZone).not.toBeNull();
     expect(bonusZone.querySelectorAll('app-cell').length).toBe(1);
-    const mainCells = Array.from(el.querySelectorAll('app-cell')).filter(
-      (c) => !bonusZone.contains(c),
-    );
+    const mainCells = Array.from(el.querySelectorAll('app-cell')).filter((c) => !bonusZone.contains(c));
     expect(mainCells.length).toBe(10);
   });
 
@@ -125,9 +122,7 @@ describe('RowComponent — bonus row zone placement', () => {
     const bonusZone = el.querySelector('.bonus-lock-zone')!;
     expect(bonusZone).not.toBeNull();
     expect(bonusZone.querySelectorAll('app-cell').length).toBe(2);
-    const mainCells = Array.from(el.querySelectorAll('app-cell')).filter(
-      (c) => !bonusZone.contains(c),
-    );
+    const mainCells = Array.from(el.querySelectorAll('app-cell')).filter((c) => !bonusZone.contains(c));
     expect(mainCells.length).toBe(13);
   });
 

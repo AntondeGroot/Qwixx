@@ -1,5 +1,4 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { Color } from '../../generated/model/models';
 
@@ -11,7 +10,7 @@ export interface ClosureNotification {
 @Component({
   selector: 'app-row-closure-modal',
   standalone: true,
-  imports: [CommonModule, TranslateModule],
+  imports: [TranslateModule],
   templateUrl: './row-closure-modal.component.html',
   styleUrl: './row-closure-modal.component.css',
 })

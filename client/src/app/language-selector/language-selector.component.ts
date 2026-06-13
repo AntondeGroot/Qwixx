@@ -3,7 +3,6 @@ import { TranslationService } from '../services/translation.service';
 
 @Component({
   selector: 'app-language-selector',
-  standalone: true,
   imports: [],
   templateUrl: './language-selector.component.html',
   styleUrl: './language-selector.component.css',

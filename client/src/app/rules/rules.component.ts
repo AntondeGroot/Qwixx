@@ -8,7 +8,6 @@ import { RULES_COOKIE } from './rules-version';
 
 @Component({
   selector: 'app-rules',
-  standalone: true,
   imports: [TranslateModule],
   templateUrl: './rules.component.html',
   styleUrl: './rules.component.css',

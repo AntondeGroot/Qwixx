@@ -2,12 +2,16 @@ package nl.adg.qwixx.web;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import nl.adg.qwixx.action.CrossCellAction;
+import nl.adg.qwixx.action.DiceCombination;
+import nl.adg.qwixx.action.GameAction;
 import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.CellTag;
 import nl.adg.qwixx.data.LockCell;
@@ -56,7 +60,65 @@ class GameStateMapper {
                 .activeDiceColors(mapActiveDiceColors(board))
                 .bonusNumbers(mapBonusNumbers(state))
                 .closureNotifications(mapClosureNotifications(state, session))
-                .pendingClosures(mapPendingClosures(state));
+                .pendingClosures(mapPendingClosures(state))
+                .availableMoves(mapAvailableMoves(state, session));
+    }
+
+    @SuppressWarnings("PMD.ReturnEmptyCollectionRatherThanNull")
+    private static Map<String, List<nl.adg.qwixx.generated.model.AvailableMove>> mapAvailableMoves(
+            GameState state, GameSession session) {
+        if (state.turnState() == null || state.gameOver()) return null;
+
+        Map<String, List<nl.adg.qwixx.generated.model.AvailableMove>> result = new HashMap<>();
+        for (UUID playerId : state.players()) {
+            List<GameAction> actions = session.rules().getValidActions(state, playerId);
+            nl.adg.qwixx.state.SheetLayout layout = state.sheetLayouts().get(playerId);
+            List<nl.adg.qwixx.generated.model.AvailableMove> moves = new ArrayList<>();
+            Set<String> seen = new HashSet<>();
+
+            // White+white moves first (preferred when a cell matches both WW and color die).
+            for (GameAction action : actions) {
+                if (!(action instanceof CrossCellAction cross)) continue;
+                if (cross.combination() != DiceCombination.WHITE_WHITE) continue;
+                Cell cell = findCellInLayout(layout, cross.rowIndex(), cross.cellId());
+                nl.adg.qwixx.generated.model.MoveType moveType = isLuckyCrossCell(cell)
+                        ? nl.adg.qwixx.generated.model.MoveType.CROSS_LUCKY_CROSS
+                        : nl.adg.qwixx.generated.model.MoveType.CROSS_WHITE_WHITE;
+                String key = cross.cellId() + ':' + moveType;
+                if (seen.add(key)) {
+                    moves.add(new nl.adg.qwixx.generated.model.AvailableMove(cross.cellId(), moveType));
+                }
+            }
+
+            // Color die moves second.
+            for (GameAction action : actions) {
+                if (!(action instanceof CrossCellAction cross)) continue;
+                if (cross.combination() != DiceCombination.WHITE_COLOR) continue;
+                String key = cross.cellId() + ':' + nl.adg.qwixx.generated.model.MoveType.CROSS_COLOR_DIE;
+                if (seen.add(key)) {
+                    moves.add(new nl.adg.qwixx.generated.model.AvailableMove(
+                            cross.cellId(), nl.adg.qwixx.generated.model.MoveType.CROSS_COLOR_DIE));
+                }
+            }
+
+            result.put(playerId.toString(), moves);
+        }
+        return result;
+    }
+
+    private static Cell findCellInLayout(nl.adg.qwixx.state.SheetLayout layout, int rowIndex, String cellId) {
+        if (layout == null) return null;
+        List<Row> rows = layout.rows();
+        if (rowIndex < 0 || rowIndex >= rows.size()) return null;
+        return rows.get(rowIndex).cells().stream()
+                .filter(c -> c.id().equals(cellId))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static boolean isLuckyCrossCell(Cell cell) {
+        return cell != null && cell.tags() != null
+                && cell.tags().stream().anyMatch(t -> t instanceof CellTag.LuckyCross);
     }
 
     private static Map<String, nl.adg.qwixx.generated.model.SheetProgress> mapSheetProgress(GameState state) {

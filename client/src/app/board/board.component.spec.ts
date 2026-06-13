@@ -545,6 +545,7 @@ describe('BoardComponent — punishment / pass', () => {
           currentRoll: { white1: 1, white2: 1, coloredDice: { RED: 1 } },
           ...overrides,
         },
+        availableMoves: { [PLAYER_ID]: [{ cellId: CELL_ID, moveType: MoveType.CROSS_WHITE_WHITE }] },
       } as unknown as Partial<GameState>);
     }
 
@@ -578,6 +579,94 @@ describe('BoardComponent — punishment / pass', () => {
       // Dice: white=1+1=2, RED=1 → value 2 matches BOTH white+white AND white+RED.
       // Without the passive-player guard, onCellClicked would incorrectly send CROSS_COLOR_DIE.
       component.gameState.set(makeStateWithCell({ whiteWhiteUsed: true }));
+      component.sessionId.set('s1');
+
+      component.onCellClicked(ROW_ID, CELL_ID);
+
+      expect(movesService.makeMove).toHaveBeenCalledWith(
+        's1',
+        PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.CROSS_WHITE_WHITE }),
+      );
+    });
+  });
+
+  // ── onCellClicked (active player — colour die) ────────────────────────────
+
+  describe('onCellClicked — active player colour die', () => {
+    const ROW_ID = 'row-red';
+    const CELL_ID = 'cell-7';
+
+    it('sends CROSS_COLOR_DIE when the cell is only reachable via the colour die', () => {
+      // white1=3, white2=4 (sum=7), RED die=4 → value 7 matches white+RED but not white+white.
+      // Server provides this cell only as CROSS_COLOR_DIE.
+      component.gameState.set(
+        makeState({
+          sheetLayouts: {
+            [PLAYER_ID]: {
+              rows: [
+                {
+                  id: ROW_ID,
+                  cells: [
+                    { id: CELL_ID, position: 0, displayValue: '7', color: 'RED', closingEligible: false, tags: [] },
+                  ],
+                  lock: null,
+                },
+              ],
+            },
+            [OTHER_ID]: { rows: [] },
+          },
+          turnState: {
+            activePlayerId: PLAYER_ID,
+            phase: TurnPhase.ACTIVE_MOVE,
+            currentRoll: { white1: 3, white2: 4, coloredDice: { RED: 4 } },
+          },
+          availableMoves: { [PLAYER_ID]: [{ cellId: CELL_ID, moveType: MoveType.CROSS_COLOR_DIE }] },
+        } as unknown as Partial<GameState>),
+      );
+      component.sessionId.set('s1');
+
+      component.onCellClicked(ROW_ID, CELL_ID);
+
+      expect(movesService.makeMove).toHaveBeenCalledWith(
+        's1',
+        PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.CROSS_COLOR_DIE }),
+      );
+    });
+
+    it('prefers CROSS_WHITE_WHITE over CROSS_COLOR_DIE when both are available for the same cell', () => {
+      // white1=3, white2=4 (sum=7), RED die=3 → value 7 matches both white+white AND white+RED.
+      // Server provides both; CROSS_WHITE_WHITE must win.
+      component.gameState.set(
+        makeState({
+          sheetLayouts: {
+            [PLAYER_ID]: {
+              rows: [
+                {
+                  id: ROW_ID,
+                  cells: [
+                    { id: CELL_ID, position: 0, displayValue: '7', color: 'RED', closingEligible: false, tags: [] },
+                  ],
+                  lock: null,
+                },
+              ],
+            },
+            [OTHER_ID]: { rows: [] },
+          },
+          turnState: {
+            activePlayerId: PLAYER_ID,
+            phase: TurnPhase.ACTIVE_MOVE,
+            currentRoll: { white1: 3, white2: 4, coloredDice: { RED: 3 } },
+          },
+          availableMoves: {
+            [PLAYER_ID]: [
+              { cellId: CELL_ID, moveType: MoveType.CROSS_WHITE_WHITE },
+              { cellId: CELL_ID, moveType: MoveType.CROSS_COLOR_DIE },
+            ],
+          },
+        } as unknown as Partial<GameState>),
+      );
       component.sessionId.set('s1');
 
       component.onCellClicked(ROW_ID, CELL_ID);
@@ -653,7 +742,10 @@ describe('BoardComponent — punishment / pass', () => {
     });
 
     it('closing cell IS in clickableCellIds when exactly 5 existing crosses are present (5+1=6=minCrosses)', () => {
-      component.gameState.set(makeClosingCellState(5));
+      component.gameState.set({
+        ...makeClosingCellState(5),
+        availableMoves: { [PLAYER_ID]: [{ cellId: CLOSING_ID, moveType: MoveType.CROSS_WHITE_WHITE }] },
+      } as GameState);
       expect(component.visibleClickableCellIds().has(CLOSING_ID)).toBe(true);
     });
   });
@@ -697,6 +789,12 @@ describe('BoardComponent — state-sync race guards', () => {
         phase: TurnPhase.PASSIVE_MOVE,
         passivePlayerQueue: [PLAYER_ID],
         currentRoll: { white1: 1, white2: 1, coloredDice: { RED: 1 } },
+      },
+      availableMoves: {
+        [PLAYER_ID]: [
+          { cellId: CELL_A, moveType: MoveType.CROSS_WHITE_WHITE },
+          { cellId: CELL_B, moveType: MoveType.CROSS_WHITE_WHITE },
+        ],
       },
     } as unknown as Partial<GameState>);
   }
@@ -925,7 +1023,10 @@ describe('BoardComponent — Longo bonus cells for passive player', () => {
 
   it('passive player sees leftmost bonus cell when white sum matches bonus number', () => {
     // RED has 0 crosses (fewest), YELLOW has 1 cross → bonus targets RED only.
-    component.gameState.set(makeBonusState({ yellowCrosses: ['y0'] }));
+    component.gameState.set({
+      ...makeBonusState({ yellowCrosses: ['y0'] }),
+      availableMoves: { [PLAYER_ID]: [{ cellId: 'r0', moveType: MoveType.CROSS_WHITE_WHITE }] },
+    } as GameState);
     const ids = component.clickableCellIds();
     expect(ids.has('r0')).toBe(true); // leftmost uncrossed in RED (fewest)
     expect(ids.has('y1')).toBe(false); // YELLOW is not at fewest
@@ -933,7 +1034,15 @@ describe('BoardComponent — Longo bonus cells for passive player', () => {
 
   it('passive player sees bonus cells for ALL rows tied at fewest crosses', () => {
     // RED and YELLOW both have 1 cross → both offer their leftmost uncrossed cell.
-    component.gameState.set(makeBonusState({ redCrosses: ['r0'], yellowCrosses: ['y0'] }));
+    component.gameState.set({
+      ...makeBonusState({ redCrosses: ['r0'], yellowCrosses: ['y0'] }),
+      availableMoves: {
+        [PLAYER_ID]: [
+          { cellId: 'r1', moveType: MoveType.CROSS_WHITE_WHITE },
+          { cellId: 'y1', moveType: MoveType.CROSS_WHITE_WHITE },
+        ],
+      },
+    } as GameState);
     const ids = component.clickableCellIds();
     expect(ids.has('r1')).toBe(true);
     expect(ids.has('y1')).toBe(true);
@@ -949,14 +1058,20 @@ describe('BoardComponent — Longo bonus cells for passive player', () => {
   });
 
   it('bonus cells also appear in whiteWhiteClickableCellIds', () => {
-    component.gameState.set(makeBonusState({ yellowCrosses: ['y0'] }));
+    component.gameState.set({
+      ...makeBonusState({ yellowCrosses: ['y0'] }),
+      availableMoves: { [PLAYER_ID]: [{ cellId: 'r0', moveType: MoveType.CROSS_WHITE_WHITE }] },
+    } as GameState);
     const wwIds = component.whiteWhiteClickableCellIds();
     expect(wwIds.has('r0')).toBe(true);
   });
 
   it('passive player in ACTIVE_MOVE phase also sees bonus cells', () => {
     // Simultaneous play: passive queue is active while active player is still moving.
-    component.gameState.set(makeBonusState({ phase: TurnPhase.ACTIVE_MOVE, yellowCrosses: ['y0'] }));
+    component.gameState.set({
+      ...makeBonusState({ phase: TurnPhase.ACTIVE_MOVE, yellowCrosses: ['y0'] }),
+      availableMoves: { [PLAYER_ID]: [{ cellId: 'r0', moveType: MoveType.CROSS_WHITE_WHITE }] },
+    } as GameState);
     const ids = component.clickableCellIds();
     expect(ids.has('r0')).toBe(true);
   });
@@ -993,47 +1108,6 @@ describe('BoardComponent — Longo bonus number priority over colour die', () =>
     { id: 'r0', position: 0, displayValue: '2', color: 'RED', closingEligible: false, tags: [] },
     { id: 'r1', position: 1, displayValue: '13', color: 'RED', closingEligible: false, tags: [] },
   ];
-  const BLUE_CELLS = [{ id: 'b0', position: 0, displayValue: '7', color: 'BLUE', closingEligible: false, tags: [] }];
-
-  // Active player, white1=5, white2=7, yellow die=6, blue die=2.
-  // white+white = 12 = bonus number.
-  // yellow "13" = white(7)+yellow(6) → also a valid colour-die cross.
-  // blue "7" = white(5)+blue(2) → must remain available after bonus cross.
-  function makeActiveState(overrides: Record<string, unknown> = {}): GameState {
-    return makeState({
-      bonusNumbers: { [PLAYER_ID]: [12] },
-      sheetLayouts: {
-        [PLAYER_ID]: {
-          rows: [
-            { id: 'row-yellow', cells: YELLOW_CELLS, lock: null },
-            { id: 'row-red', cells: RED_CELLS, lock: null },
-            { id: 'row-blue', cells: BLUE_CELLS, lock: null },
-          ],
-        },
-        [OTHER_ID]: { rows: [] },
-      },
-      sheetProgress: {
-        [PLAYER_ID]: {
-          punishments: 0,
-          rowStates: {
-            'row-yellow': { crossedCells: ['y0'], lockCrossed: false }, // 1 cross
-            'row-red': { crossedCells: ['r0'], lockCrossed: false }, // 1 cross — tied
-            'row-blue': { crossedCells: [], lockCrossed: false }, // 0 crosses
-          },
-        },
-        [OTHER_ID]: { punishments: 0, rowStates: {} },
-      },
-      turnState: {
-        activePlayerId: PLAYER_ID,
-        phase: TurnPhase.ACTIVE_MOVE,
-        currentRoll: { white1: 5, white2: 7, coloredDice: { YELLOW: 6, BLUE: 2 } },
-        whiteWhiteUsed: false,
-        colorDieUsed: false,
-        ...overrides,
-      },
-    } as unknown as Partial<GameState>);
-  }
-
   beforeEach(async () => {
     mockMoves = { makeMove: vi.fn().mockReturnValue(of({})) };
 
@@ -1052,74 +1126,9 @@ describe('BoardComponent — Longo bonus number priority over colour die', () =>
     component.sessionId.set('s1');
   });
 
-  it('bonusCellIds contains the leftmost uncrossed cell in each tied-fewest row', () => {
-    component.gameState.set(makeActiveState());
-    // blue has 0 crosses (fewest), yellow and red have 1 → only blue is bonus target
-    const ids = component.bonusCellIds();
-    expect(ids.has('b0')).toBe(true);
-    expect(ids.has('y1')).toBe(false);
-    expect(ids.has('r1')).toBe(false);
-  });
-
-  it('bonusCellIds targets all rows tied at fewest', () => {
-    // Give blue one cross so yellow and red (both 1) are now fewest.
-    component.gameState.set(makeActiveState({}));
-    // Override: blue gets one cross too, so all three rows have 1 cross.
-    component.gameState.set(
-      makeState({
-        bonusNumbers: { [PLAYER_ID]: [12] },
-        sheetLayouts: {
-          [PLAYER_ID]: {
-            rows: [
-              { id: 'row-yellow', cells: YELLOW_CELLS, lock: null },
-              { id: 'row-red', cells: RED_CELLS, lock: null },
-            ],
-          },
-          [OTHER_ID]: { rows: [] },
-        },
-        sheetProgress: {
-          [PLAYER_ID]: {
-            punishments: 0,
-            rowStates: {
-              'row-yellow': { crossedCells: ['y0'], lockCrossed: false },
-              'row-red': { crossedCells: ['r0'], lockCrossed: false },
-            },
-          },
-          [OTHER_ID]: { punishments: 0, rowStates: {} },
-        },
-        turnState: {
-          activePlayerId: PLAYER_ID,
-          phase: TurnPhase.ACTIVE_MOVE,
-          currentRoll: { white1: 5, white2: 7, coloredDice: { YELLOW: 6, BLUE: 2 } },
-          whiteWhiteUsed: false,
-          colorDieUsed: false,
-        },
-      } as unknown as Partial<GameState>),
-    );
-    const ids = component.bonusCellIds();
-    expect(ids.has('y1')).toBe(true); // leftmost uncrossed in yellow (tied)
-    expect(ids.has('r1')).toBe(true); // leftmost uncrossed in red (tied)
-  });
-
-  it('bonusCellIds is empty when white sum does not match a bonus number', () => {
-    // white1=3, white2=3 → sum=6, not a bonus number
-    component.gameState.set(
-      makeActiveState({
-        currentRoll: { white1: 3, white2: 3, coloredDice: { YELLOW: 6, BLUE: 2 } },
-      }),
-    );
-    expect(component.bonusCellIds().size).toBe(0);
-  });
-
-  it('bonusCellIds is empty when whiteWhiteUsed is true', () => {
-    component.gameState.set(makeActiveState({ whiteWhiteUsed: true }));
-    expect(component.bonusCellIds().size).toBe(0);
-  });
-
   it('onCellClicked sends CROSS_WHITE_WHITE for a bonus cell even when it also matches a colour die', () => {
-    // white(7)+yellow(6)=13 → yellow "y1" matches colour die.
-    // With only blue at fewest crosses, only b0 is in bonusCellIds.
-    // Use the 2-row setup (yellow+red tied) so y1 is in bonusCellIds.
+    // white(7)+yellow(6)=13 → yellow "y1" matches colour die but server provides it as CROSS_WHITE_WHITE
+    // because the bonus number takes priority.  availableMoves drives the move type now.
     component.gameState.set(
       makeState({
         bonusNumbers: { [PLAYER_ID]: [12] },
@@ -1148,6 +1157,9 @@ describe('BoardComponent — Longo bonus number priority over colour die', () =>
           currentRoll: { white1: 5, white2: 7, coloredDice: { YELLOW: 6, BLUE: 2 } },
           whiteWhiteUsed: false,
           colorDieUsed: false,
+        },
+        availableMoves: {
+          [PLAYER_ID]: [{ cellId: 'y1', moveType: MoveType.CROSS_WHITE_WHITE }],
         },
       } as unknown as Partial<GameState>),
     );
@@ -1353,7 +1365,7 @@ describe('BoardComponent — row-closure modal delegation', () => {
         },
       } as GameState);
       // Simulate pendingAutoLock being set (passive went through YES/NO modal).
-      (component as any).pendingAutoLock.set({
+      (component as any).autoLock.pending.set({
         rowId: 'row-blue',
         autoLock: true,
         cellId: 'cell-3',
@@ -1380,7 +1392,7 @@ describe('BoardComponent — row-closure modal delegation', () => {
       } as GameState);
       (component as any).suppressModal.set(true); // simulate prior OK click
       // No pendingAutoLock — regular cross, not a lock confirmation.
-      (component as any).pendingAutoLock.set(null);
+      (component as any).autoLock.pending.set(null);
       TestBed.tick();
       // Modal re-appears (hasPendingCross=true) so the passive can confirm their cross.
       expect(modalService.requests()).toHaveLength(1);
@@ -1526,35 +1538,55 @@ describe('BoardComponent — BigPoints bonus cell prerequisite', () => {
   });
 
   it('BONUS-RY lights up when its upper neighbour (RED) has the value crossed, BONUS-GB does not', () => {
-    component.gameState.set(makeBigPointsState({ 'row-red': ['red-7'] }));
+    component.gameState.set({
+      ...makeBigPointsState({ 'row-red': ['red-7'] }),
+      availableMoves: { [PLAYER_ID]: [{ cellId: 'bonus-ry-7', moveType: MoveType.CROSS_WHITE_WHITE }] },
+    } as GameState);
     const ids = component.clickableCellIds();
     expect(ids.has('bonus-ry-7')).toBe(true);
     expect(ids.has('bonus-gb-7')).toBe(false);
   });
 
   it('BONUS-RY lights up when its lower neighbour (YELLOW) has the value crossed, BONUS-GB does not', () => {
-    component.gameState.set(makeBigPointsState({ 'row-yellow': ['yellow-7'] }));
+    component.gameState.set({
+      ...makeBigPointsState({ 'row-yellow': ['yellow-7'] }),
+      availableMoves: { [PLAYER_ID]: [{ cellId: 'bonus-ry-7', moveType: MoveType.CROSS_WHITE_WHITE }] },
+    } as GameState);
     const ids = component.clickableCellIds();
     expect(ids.has('bonus-ry-7')).toBe(true);
     expect(ids.has('bonus-gb-7')).toBe(false);
   });
 
   it('BONUS-GB lights up when its upper neighbour (GREEN) has the value crossed, BONUS-RY does not', () => {
-    component.gameState.set(makeBigPointsState({ 'row-green': ['green-7'] }));
+    component.gameState.set({
+      ...makeBigPointsState({ 'row-green': ['green-7'] }),
+      availableMoves: { [PLAYER_ID]: [{ cellId: 'bonus-gb-7', moveType: MoveType.CROSS_WHITE_WHITE }] },
+    } as GameState);
     const ids = component.clickableCellIds();
     expect(ids.has('bonus-gb-7')).toBe(true);
     expect(ids.has('bonus-ry-7')).toBe(false);
   });
 
   it('BONUS-GB lights up when its lower neighbour (BLUE) has the value crossed, BONUS-RY does not', () => {
-    component.gameState.set(makeBigPointsState({ 'row-blue': ['blue-7'] }));
+    component.gameState.set({
+      ...makeBigPointsState({ 'row-blue': ['blue-7'] }),
+      availableMoves: { [PLAYER_ID]: [{ cellId: 'bonus-gb-7', moveType: MoveType.CROSS_WHITE_WHITE }] },
+    } as GameState);
     const ids = component.clickableCellIds();
     expect(ids.has('bonus-gb-7')).toBe(true);
     expect(ids.has('bonus-ry-7')).toBe(false);
   });
 
   it('both bonus cells light up when both pairs of neighbours satisfy the prerequisite', () => {
-    component.gameState.set(makeBigPointsState({ 'row-red': ['red-7'], 'row-green': ['green-7'] }));
+    component.gameState.set({
+      ...makeBigPointsState({ 'row-red': ['red-7'], 'row-green': ['green-7'] }),
+      availableMoves: {
+        [PLAYER_ID]: [
+          { cellId: 'bonus-ry-7', moveType: MoveType.CROSS_WHITE_WHITE },
+          { cellId: 'bonus-gb-7', moveType: MoveType.CROSS_WHITE_WHITE },
+        ],
+      },
+    } as GameState);
     const ids = component.clickableCellIds();
     expect(ids.has('bonus-ry-7')).toBe(true);
     expect(ids.has('bonus-gb-7')).toBe(true);
@@ -1562,7 +1594,15 @@ describe('BoardComponent — BigPoints bonus cell prerequisite', () => {
 
   it('a regular cell with value 7 is still highlighted regardless of bonus prerequisites', () => {
     // The prerequisite check must not accidentally gate regular (non-bonus) rows.
-    component.gameState.set(makeBigPointsState());
+    component.gameState.set({
+      ...makeBigPointsState(),
+      availableMoves: {
+        [PLAYER_ID]: [
+          { cellId: 'red-7', moveType: MoveType.CROSS_WHITE_WHITE },
+          { cellId: 'yellow-7', moveType: MoveType.CROSS_WHITE_WHITE },
+        ],
+      },
+    } as GameState);
     const ids = component.clickableCellIds();
     expect(ids.has('red-7')).toBe(true);
     expect(ids.has('yellow-7')).toBe(true);

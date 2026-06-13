@@ -377,6 +377,33 @@ class LongoTurnRulesTest {
     }
 
     @Test
+    void bonusActionOfferedToPassivePlayerWhenWhiteSumMatchesBonusNumber() {
+        // Passive player's bonus number matches the white sum → they must see the bonus cell.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        state.setVariantData(new LongoVariantData(Map.of(p2, List.of(FIXED_WHITE_SUM)))); // p2 bonus = 7
+        SheetLayout layout = state.sheetLayouts().get(p2);
+        String firstCellId = layout.rows().get(0).cells().get(0).id();
+        assertTrue(rules.getValidActions(state, p2).stream()
+                .anyMatch(a -> a instanceof CrossCellAction cc
+                        && cc.rowIndex() == 0 && cc.cellId().equals(firstCellId)),
+                "Passive player must see bonus cell when white sum matches their bonus number");
+    }
+
+    @Test
+    void bonusActionNotOfferedToPassivePlayerAfterTheyHaveAlreadyActed() {
+        // Once a passive player has made their white+white cross they may not use the bonus again.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        state.setVariantData(new LongoVariantData(Map.of(p2, List.of(FIXED_WHITE_SUM))));
+        SheetLayout layout = state.sheetLayouts().get(p2);
+        String firstCellId = layout.rows().get(0).cells().get(0).id();
+        // p2 makes their white+white cross → passivesActed now contains p2
+        rules.apply(state, new CrossCellAction(p2, 0, firstCellId, DiceCombination.WHITE_WHITE));
+        assertFalse(rules.getValidActions(state, p2).stream()
+                .anyMatch(a -> a instanceof CrossCellAction cc && cc.combination() == DiceCombination.WHITE_WHITE),
+                "Passive player must not see bonus cell after having already made a cross");
+    }
+
+    @Test
     void bonusCrossDoesNotConsumeColorDieEvenWhenCellValueMatchesWhiteColorSum() {
         // Scenario from the bug report:
         //   white1=3, white2=4 (sum=7=bonus number), yellow die=3.

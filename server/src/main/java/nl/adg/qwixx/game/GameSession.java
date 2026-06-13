@@ -316,6 +316,7 @@ public class GameSession {
     public synchronized GameSettings settings()    { return settings; }
     public synchronized List<Player> players()     { return List.copyOf(players); }
     public synchronized SessionStatus status()     { return status; }
+    public synchronized TurnRules rules()          { return rules; }
 
     public Map<String, Object> proposedOptions()                    { return Map.copyOf(proposedOptions); }
     public void setProposedOptions(Map<String, Object> opts)        { proposedOptions = new HashMap<>(opts); }

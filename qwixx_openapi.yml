@@ -403,6 +403,17 @@ components:
         - UNDO_LAST_CROSS
         - CROSS_LUCKY_CROSS
 
+    AvailableMove:
+      type: object
+      required:
+        - cellId
+        - moveType
+      properties:
+        cellId:
+          type: string
+        moveType:
+          $ref: '#/components/schemas/MoveType'
+
     GameStatus:
       type: string
       enum:
@@ -654,6 +665,13 @@ components:
           description: Map of rowId to the playerId who declared closing intent; rows in this map close at EVALUATE.
           additionalProperties:
             type: string
+        availableMoves:
+          type: object
+          description: Map of playerId to available cross-cell moves for this state; absent in offline mode.
+          additionalProperties:
+            type: array
+            items:
+              $ref: '#/components/schemas/AvailableMove'
         gameOver:
           type: boolean
         version:

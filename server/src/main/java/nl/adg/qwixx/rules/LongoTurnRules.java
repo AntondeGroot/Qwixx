@@ -22,6 +22,7 @@ import nl.adg.qwixx.state.RowState;
 import nl.adg.qwixx.state.SheetLayout;
 import nl.adg.qwixx.state.SheetProgress;
 import nl.adg.qwixx.state.TurnPhase;
+import nl.adg.qwixx.state.TurnState;
 
 public class LongoTurnRules extends StandardTurnRules {
 
@@ -41,16 +42,20 @@ public class LongoTurnRules extends StandardTurnRules {
     @Override
     public List<GameAction> getValidActions(GameState state, UUID playerId) {
         List<GameAction> actions = new ArrayList<>(super.getValidActions(state, playerId));
-        if (activePlayerHasNotActed(state, playerId)) {
+        if (mayUseBonusNumber(state, playerId)) {
             actions.addAll(bonusCellActions(state, playerId, actions));
         }
         return actions;
     }
 
-    private boolean activePlayerHasNotActed(GameState state, UUID playerId) {
-        return state.turnState().phase() == TurnPhase.ACTIVE_MOVE
-                && playerId.equals(state.turnState().activePlayerId())
-                && !state.turnState().activeTurnState().hasActed();
+    private boolean mayUseBonusNumber(GameState state, UUID playerId) {
+        TurnState turn = state.turnState();
+        if (playerId.equals(turn.activePlayerId())) {
+            return turn.phase() == TurnPhase.ACTIVE_MOVE && !turn.activeTurnState().hasActed();
+        }
+        // Passive player: offered bonus cell when they haven't yet acted this turn.
+        return TurnHelper.isPassiveInQueue(turn, playerId)
+                && !TurnHelper.hasAlreadyActed(turn, playerId);
     }
 
     private List<GameAction> bonusCellActions(GameState state, UUID playerId, List<GameAction> existing) {

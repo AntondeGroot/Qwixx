@@ -13,9 +13,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../environments/environment';
 import { firstValueFrom, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { TranslateModule } from '@ngx-translate/core';
 import { GamesService, GamestatesService, PlayersService } from '../../generated/api/api';
 import { CellTag, GameState, RowState, ScoreCard, SheetRow } from '../../generated/model/models';
+import { TranslateService } from '@ngx-translate/core';
 import { RowComponent } from '../row/row.component';
 import { Col, PlayerRow, ScoreAnimationService } from '../services/score-animation.service';
 
@@ -25,7 +25,7 @@ const isLuckyRow = (r: SheetRow): boolean => r.luckyRow === true;
 
 @Component({
   selector: 'app-score',
-  imports: [TranslateModule, RowComponent],
+  imports: [RowComponent],
   templateUrl: './score.component.html',
   styleUrl: './score.component.css',
 })
@@ -38,6 +38,7 @@ export class ScoreComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly _host = inject(ElementRef<HTMLElement>);
   private readonly animation = inject(ScoreAnimationService);
+  private readonly translate = inject(TranslateService);
 
   // Re-expose animation state for the template
   readonly playerRows = this.animation.playerRows;
@@ -341,6 +342,10 @@ export class ScoreComponent implements OnInit {
   }
 
   /** Dismiss the winner modal and keep the score table in view. */
+  t(key: string): string {
+    return this.translate.instant(key);
+  }
+
   viewScores() {
     this._initPortraitRowH(this.playerRows().length);
     this.showModal.set(false);

@@ -4,7 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { of, Subject, throwError } from 'rxjs';
 import type { Mocked } from 'vitest';
-import { provideTranslateService, TranslateLoader, TranslationObject } from '@ngx-translate/core';
+import { provideTranslateService, TranslateLoader, TranslateService, TranslationObject } from '@ngx-translate/core';
 import { Observable } from 'rxjs';
 import { GamestatesService, MovesService } from '../../generated/api/api';
 import { Color, GameState, MoveType, TurnPhase } from '../../generated/model/models';
@@ -56,6 +56,7 @@ describe('BoardComponent — punishment / pass', () => {
         { provide: GamestatesService, useValue: { getGameState: () => of(makeState()) } },
         { provide: MovesService, useValue: movesService },
         { provide: DiceSvgService, useValue: mockDiceSvgService },
+        { provide: TranslateService, useValue: { instant: (key: string) => key } },
       ],
     }).compileComponents();
 
@@ -811,6 +812,7 @@ describe('BoardComponent — state-sync race guards', () => {
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '' } } } },
         { provide: GamestatesService, useValue: { getGameState } },
         { provide: MovesService, useValue: movesService },
+        { provide: TranslateService, useValue: { instant: (key: string) => key } },
       ],
     }).compileComponents();
 
@@ -1013,6 +1015,7 @@ describe('BoardComponent — Longo bonus cells for passive player', () => {
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '' } } } },
         { provide: GamestatesService, useValue: { getGameState: () => of(makeState()) } },
         { provide: MovesService, useValue: { makeMove: vi.fn().mockReturnValue(of({})) } },
+        { provide: TranslateService, useValue: { instant: (key: string) => key } },
       ],
     }).compileComponents();
 
@@ -1117,6 +1120,7 @@ describe('BoardComponent — Longo bonus number priority over colour die', () =>
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '' } } } },
         { provide: GamestatesService, useValue: { getGameState: () => of(makeState()) } },
         { provide: MovesService, useValue: mockMoves },
+        { provide: TranslateService, useValue: { instant: (key: string) => key } },
       ],
     }).compileComponents();
 
@@ -1521,6 +1525,7 @@ describe('BoardComponent — BigPoints bonus cell prerequisite', () => {
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '' } } } },
         { provide: GamestatesService, useValue: { getGameState: () => of(makeState()) } },
         { provide: MovesService, useValue: { makeMove: vi.fn().mockReturnValue(of({})) } },
+        { provide: TranslateService, useValue: { instant: (key: string) => key } },
       ],
     }).compileComponents();
 

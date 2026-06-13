@@ -14,7 +14,6 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { TranslateModule } from '@ngx-translate/core';
 import { GamestatesService, MovesService } from '../../generated/api/api';
 import {
   AvailableMove,
@@ -35,10 +34,11 @@ import { AudioService } from '../services/audio.service';
 import { RoomService } from '../services/room.service';
 import { CellHighlightService } from '../services/cell-highlight.service';
 import { AutoLockService } from '../services/auto-lock.service';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-board',
-  imports: [RowComponent, DiceComponent, PlayerListComponent, TranslateModule],
+  imports: [RowComponent, DiceComponent, PlayerListComponent],
   templateUrl: './board.component.html',
   styleUrl: './board.component.css',
 })
@@ -53,6 +53,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly roomService = inject(RoomService);
   private readonly highlight = inject(CellHighlightService);
   private readonly autoLock = inject(AutoLockService);
+  private readonly translate = inject(TranslateService);
 
   sessionId = signal('');
   playerId = signal('');
@@ -793,6 +794,10 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       this.suppressModal.set(true);
       this.rowClosureModal.clear();
     }
+  }
+
+  t(key: string, params?: object): string {
+    return this.translate.instant(key, params);
   }
 
   protected readonly DiceComponent = DiceComponent;

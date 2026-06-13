@@ -1,6 +1,6 @@
 <div class="page" [class.has-bar]="isFirstTime()">
   <header class="page-header">
-    <button class="back-btn" (click)="back()" [attr.aria-label]="'rules.back' | translate">
+    <button class="back-btn" (click)="back()" [attr.aria-label]="t('rules.back')">
       <svg
         viewBox="0 0 24 24"
         fill="none"
@@ -12,34 +12,34 @@
         <path d="M15 18l-6-6 6-6" />
       </svg>
     </button>
-    <h1>{{ 'rules.title' | translate }}</h1>
+    <h1>{{ t('rules.title') }}</h1>
   </header>
 
   <div class="content">
     <section>
       <h2>
         <span class="section-icon">🎲</span>
-        {{ 'rules.endOfGame.heading' | translate }}
+        {{ t('rules.endOfGame.heading') }}
       </h2>
       <ul class="conditions">
-        <li [innerHTML]="t('rules.endOfGame.li1')"></li>
+        <li [innerHTML]="html('rules.endOfGame.li1')"></li>
       </ul>
-      <p class="or-text">{{ 'rules.endOfGame.or' | translate }}</p>
+      <p class="or-text">{{ t('rules.endOfGame.or') }}</p>
       <ul class="conditions">
-        <li [innerHTML]="t('rules.endOfGame.li2')"></li>
+        <li [innerHTML]="html('rules.endOfGame.li2')"></li>
       </ul>
-      <p class="winner-text">{{ 'rules.endOfGame.p2' | translate }}</p>
+      <p class="winner-text">{{ t('rules.endOfGame.p2') }}</p>
     </section>
 
     <section>
       <h2>
         <span class="section-icon">🔄</span>
-        {{ 'rules.turns.heading' | translate }}
+        {{ t('rules.turns.heading') }}
       </h2>
       <ul class="conditions">
         <li>
           <div class="li-row">
-            <span [innerHTML]="t('rules.turns.li1')"></span>
+            <span [innerHTML]="html('rules.turns.li1')"></span>
             <span class="demo-cells">
               <span class="demo-cell demo-ww" title="white+white"></span>
               <span class="demo-cell demo-wc" title="white+color"></span>
@@ -48,24 +48,24 @@
         </li>
         <li>
           <div class="li-row">
-            <span [innerHTML]="t('rules.turns.li2')"></span>
+            <span [innerHTML]="html('rules.turns.li2')"></span>
             <span class="demo-cells">
               <span class="demo-cell demo-ww" title="white+white"></span>
             </span>
           </div>
         </li>
       </ul>
-      <p class="highlight" [innerHTML]="t('rules.turns.p3')"></p>
+      <p class="highlight" [innerHTML]="html('rules.turns.p3')"></p>
     </section>
 
     <section>
       <h2>
         <span class="section-icon">⛔</span>
-        {{ 'rules.punishments.heading' | translate }}
+        {{ t('rules.punishments.heading') }}
       </h2>
-      <p [innerHTML]="t('rules.punishments.p1')"></p>
+      <p [innerHTML]="html('rules.punishments.p1')"></p>
       <div class="punishment-demo">
-        <span class="punishment-demo-label">{{ 'punishment' | translate }} : –5</span>
+        <span class="punishment-demo-label">{{ t('punishment') }} : –5</span>
         <div class="punishment-demo-box taken"></div>
         <div class="punishment-demo-box taken"></div>
         <div class="punishment-demo-box"></div>
@@ -76,10 +76,10 @@
     <section>
       <h2>
         <span class="section-icon">✖️</span>
-        {{ 'rules.closing.heading' | translate }}
+        {{ t('rules.closing.heading') }}
       </h2>
-      <p [innerHTML]="t('rules.closing.p1')"></p>
-      <div class="tip" [innerHTML]="t('rules.closing.longoTip')"></div>
+      <p [innerHTML]="html('rules.closing.p1')"></p>
+      <div class="tip" [innerHTML]="html('rules.closing.longoTip')"></div>
       <div class="longo-rows">
         <!-- Standard section -->
         <span class="longo-label">Standard</span>
@@ -158,8 +158,8 @@
           </div>
         </div>
       </div>
-      <p class="lock-cross-note" [innerHTML]="t('rules.lockCross.p1')"></p>
-      <p class="highlight" [innerHTML]="t('rules.lockCross.example')"></p>
+      <p class="lock-cross-note" [innerHTML]="html('rules.lockCross.p1')"></p>
+      <p class="highlight" [innerHTML]="html('rules.lockCross.example')"></p>
     </section>
   </div>
 </div>
@@ -167,7 +167,7 @@
 @if (isFirstTime()) {
   <div class="first-time-bar">
     <button class="go-btn" (click)="goToGame()">
-      {{ 'rules.goToGame' | translate }}
+      {{ t('rules.goToGame') }}
     </button>
   </div>
 }

@@ -1,16 +1,18 @@
-import { Component, computed, input, output } from '@angular/core';
-import { TranslateModule } from '@ngx-translate/core';
+import { Component, computed, inject, input, output } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
 
 import { CellTag, RowState, SheetRow } from '../../generated/model/models';
 import { CellComponent } from '../cell/cell.component';
 
 @Component({
   selector: 'app-row',
-  imports: [CellComponent, TranslateModule],
+  imports: [CellComponent],
   templateUrl: './row.component.html',
   styleUrl: './row.component.css',
 })
 export class RowComponent {
+  private readonly translate = inject(TranslateService);
+
   row = input.required<SheetRow>();
   rowState = input<RowState | null>(null);
   closed = input(false);
@@ -71,6 +73,10 @@ export class RowComponent {
       .cells.filter((c) => !c.closingEligible)
       .slice(-n);
   });
+
+  t(key: string): string {
+    return this.translate.instant(key);
+  }
 
   isCrossed(cellId: string): boolean {
     return this.rowState()?.crossedCells.includes(cellId) ?? false;

@@ -7,22 +7,22 @@
       <div class="action-bar">
         <button class="btn btn-ghost" (click)="shareScores()" [disabled]="sharing()">
           @if (canNativeShare) {
-            {{ 'score.share' | translate }}
+            {{ t('score.share') }}
           } @else {
-            {{ 'score.download' | translate }}
+            {{ t('score.download') }}
           }
         </button>
         <button class="btn btn-secondary" (click)="leaveGame()">
-          {{ 'score.leaveGame' | translate }}
+          {{ t('score.leaveGame') }}
         </button>
         <button class="btn btn-primary" (click)="newGame()">
-          {{ 'score.newGame' | translate }}
+          {{ t('score.newGame') }}
         </button>
       </div>
     }
 
     <div #scoreCapture>
-      <h1 class="title">{{ 'score.finalScores' | translate }}</h1>
+      <h1 class="title">{{ t('score.finalScores') }}</h1>
 
       <div class="score-table">
         <!-- Column headers -->
@@ -48,7 +48,7 @@
             <span class="pun-symbol">−5</span>
           </div>
 
-          <div class="total-cell header-total">{{ 'score.total' | translate }}</div>
+          <div class="total-cell header-total">{{ t('score.total') }}</div>
         </div>
 
         <!-- Player rows — absolutely positioned so rank drives top via CSS transition -->
@@ -91,7 +91,7 @@
        Scaled to fit the viewport width; the player can compare crosses and points. -->
   @if (myLayout(); as layout) {
     <div class="final-board" [attr.translate]="'no'">
-      <h2 class="final-board-title">{{ 'score.yourCard' | translate }}</h2>
+      <h2 class="final-board-title">{{ t('score.yourCard') }}</h2>
       <div class="final-board-outer">
         <div class="final-board-inner">
           <div class="final-sheet">
@@ -100,8 +100,8 @@
             }
             <div class="score-strip">
               <div class="score-labels">
-                <span>{{ 'crosses' | translate }}</span>
-                <span>{{ 'points' | translate }}</span>
+                <span>{{ t('crosses') }}</span>
+                <span>{{ t('points') }}</span>
               </div>
               @for (col of myScoreRows(); track col.crosses) {
                 <div class="score-box">
@@ -124,26 +124,26 @@
         @if (isTie()) {
           @if (playerRows().length === 2) {
             <h2 class="winner-name">{{ winnerNames() }}</h2>
-            <p class="winner-sub">{{ 'score.tied' | translate }}</p>
+            <p class="winner-sub">{{ t('score.tied') }}</p>
           } @else {
             <div class="trophy">🏆</div>
-            <p class="winner-sub">{{ 'score.winners' | translate }}</p>
+            <p class="winner-sub">{{ t('score.winners') }}</p>
             <h2 class="winner-name">{{ winnerNames() }}</h2>
           }
         } @else {
           <div class="trophy">🏆</div>
           <h2 class="winner-name">{{ winner()?.name }}</h2>
-          <p class="winner-sub">{{ 'score.winner' | translate }}</p>
+          <p class="winner-sub">{{ t('score.winner') }}</p>
         }
         <div class="modal-actions">
           <button class="btn btn-ghost" (click)="viewScores()">
-            {{ 'score.viewScores' | translate }}
+            {{ t('score.viewScores') }}
           </button>
           <button class="btn btn-secondary" (click)="leaveGame()">
-            {{ 'score.leaveGame' | translate }}
+            {{ t('score.leaveGame') }}
           </button>
           <button class="btn btn-primary" (click)="newGame()">
-            {{ 'score.newGame' | translate }}
+            {{ t('score.newGame') }}
           </button>
         </div>
       </div>

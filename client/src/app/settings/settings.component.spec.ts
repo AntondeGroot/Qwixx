@@ -50,7 +50,7 @@ function createFixture(queryParams: Record<string, string> = {}) {
     imports: [SettingsComponent],
     providers: [
       provideRouter([]),
-      provideTranslateService({ defaultLanguage: 'en' }),
+      provideTranslateService({ fallbackLang: 'en' }),
       {
         provide: ActivatedRoute,
         useValue: { snapshot: { queryParamMap: { get: (k: string) => queryParams[k] ?? null } } },

@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { TranslateService } from '@ngx-translate/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { of } from 'rxjs';
 import type { Mocked } from 'vitest';
@@ -24,6 +25,7 @@ describe('ScoreComponent', () => {
           useValue: { getGameState: vi.fn().mockReturnValue(of(null)) },
         },
         { provide: PlayersService, useValue: playersService },
+        { provide: TranslateService, useValue: { instant: (key: string) => key } },
         { provide: Router, useValue: { navigate: vi.fn() } },
         {
           provide: ActivatedRoute,

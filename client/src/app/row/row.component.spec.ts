@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { TranslateService } from '@ngx-translate/core';
 import { CellTag } from '../../generated';
 import { SheetCell } from '../../generated';
 import { SheetRow } from '../../generated';
@@ -35,7 +36,10 @@ describe('RowComponent', () => {
   let component: RowComponent;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({ imports: [RowComponent] }).compileComponents();
+    await TestBed.configureTestingModule({
+      imports: [RowComponent],
+      providers: [{ provide: TranslateService, useValue: { instant: (key: string) => key } }],
+    }).compileComponents();
     const fixture = TestBed.createComponent(RowComponent);
     component = fixture.componentInstance;
   });
@@ -99,7 +103,10 @@ describe('RowComponent', () => {
 
 describe('RowComponent — bonus row zone placement', () => {
   beforeEach(async () => {
-    await TestBed.configureTestingModule({ imports: [RowComponent] }).compileComponents();
+    await TestBed.configureTestingModule({
+      imports: [RowComponent],
+      providers: [{ provide: TranslateService, useValue: { instant: (key: string) => key } }],
+    }).compileComponents();
   });
 
   it('puts the last cell into .bonus-lock-zone for a standard bonus row (11 cells)', () => {

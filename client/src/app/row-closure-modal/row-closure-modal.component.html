@@ -6,14 +6,14 @@
           <div [class]="getRowColorClass(lockConfirmRequest.rowColor)" class="color-cell"></div>
         </div>
         <div class="separator"></div>
-        <p class="confirm-question">{{ 'rowClosure.selfClose' | translate }}</p>
+        <p class="confirm-question">{{ t('rowClosure.selfClose') }}</p>
       </div>
       <div class="modal-actions">
         <button class="btn btn-secondary btn-lock-no" (click)="onLockNo()">
-          {{ 'rowClosure.no' | translate }}
+          {{ t('rowClosure.no') }}
         </button>
         <button class="btn btn-primary btn-lock-yes" (click)="onLockYes()">
-          {{ 'rowClosure.yes' | translate }}
+          {{ t('rowClosure.yes') }}
         </button>
       </div>
     </div>
@@ -27,28 +27,28 @@
         <div class="closure-requests">
           @for (request of requests; track request.rowColor + request.playerName) {
             <div class="request-item">
-              <span class="request-text">{{ request.playerName }} {{ 'rowClosure.wantsToCloseThe' | translate }}</span>
+              <span class="request-text">{{ request.playerName }} {{ t('rowClosure.wantsToCloseThe') }}</span>
               <div [class]="getRowColorClass(request.rowColor)" class="color-cell"></div>
-              <span class="request-text">{{ 'rowClosure.row' | translate }}</span>
+              <span class="request-text">{{ t('rowClosure.row') }}</span>
             </div>
           }
         </div>
         @if (hasPendingCross && confirmEndsRound) {
           <div class="separator"></div>
-          <p class="confirm-question">{{ 'rowClosure.confirmQuestion' | translate }}</p>
+          <p class="confirm-question">{{ t('rowClosure.confirmQuestion') }}</p>
         }
       </div>
       <div class="modal-actions">
         @if (hasPendingCross) {
           <button class="btn btn-secondary btn-notification-change" (click)="onChangeSelection()">
-            {{ 'rowClosure.changeButton' | translate }}
+            {{ t('rowClosure.changeButton') }}
           </button>
           <button class="btn btn-primary btn-notification-ok" (click)="onConfirm()">
-            {{ (confirmEndsRound ? 'rowClosure.confirmButton' : 'rowClosure.okButton') | translate }}
+            {{ t(confirmEndsRound ? 'rowClosure.confirmButton' : 'rowClosure.okButton') }}
           </button>
         } @else {
           <button class="btn btn-primary btn-notification-ok" (click)="onConfirm()">
-            {{ 'rowClosure.okButton' | translate }}
+            {{ t('rowClosure.okButton') }}
           </button>
         }
       </div>

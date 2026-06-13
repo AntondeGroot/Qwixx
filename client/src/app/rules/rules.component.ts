@@ -2,13 +2,13 @@ import { Component, DestroyRef, inject, OnDestroy, signal } from '@angular/core'
 import { Location } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslateService } from '@ngx-translate/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RULES_COOKIE } from './rules-version';
 
 @Component({
   selector: 'app-rules',
-  imports: [TranslateModule],
+  imports: [],
   templateUrl: './rules.component.html',
   styleUrl: './rules.component.css',
 })
@@ -111,9 +111,14 @@ export class RulesComponent implements OnDestroy {
     this.tick(3700, () => this.runBlue());
   }
 
+  t(key: string): string {
+    void this._lang();
+    return this.translateService.instant(key);
+  }
+
   /** Returns the translated value as trusted HTML (renders <strong>, <em>, etc.). */
-  t(key: string): SafeHtml {
-    void this._lang(); // track signal so Angular re-evaluates on language change
+  html(key: string): SafeHtml {
+    void this._lang();
     return this.sanitizer.bypassSecurityTrustHtml(this.translateService.instant(key));
   }
 

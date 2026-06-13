@@ -1,7 +1,7 @@
 <div class="app-container">
   <div class="top-controls">
     @if (isOnGame() && roomService.roomId()) {
-      <button class="exit-btn" (click)="showExitConfirm.set(true)" aria-label="Back to room">
+      <button class="exit-btn" (click)="exitConfirm.prompt()" aria-label="Back to room">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
@@ -61,15 +61,15 @@
     (lockNo)="modal.lockConfirmNoFn?.()"
   >
   </app-row-closure-modal>
-  @if (showExitConfirm()) {
+  @if (exitConfirm.visible()) {
     <div class="exit-confirm-overlay">
       <div class="exit-confirm-dialog">
         <p>{{ t('leaveGameConfirm') }}</p>
         <div class="exit-confirm-buttons">
-          <button class="exit-confirm-yes" (click)="confirmExit()">
+          <button class="exit-confirm-yes" (click)="exitConfirm.confirm()">
             {{ t('rowClosure.yes') }}
           </button>
-          <button class="exit-confirm-no" (click)="showExitConfirm.set(false)">
+          <button class="exit-confirm-no" (click)="exitConfirm.cancel()">
             {{ t('rowClosure.no') }}
           </button>
         </div>

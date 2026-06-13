@@ -17,27 +17,11 @@ import { TranslateModule } from '@ngx-translate/core';
 import { GamesService, GamestatesService, PlayersService } from '../../generated/api/api';
 import { CellTag, GameState, RowState, ScoreCard, SheetRow } from '../../generated/model/models';
 import { RowComponent } from '../row/row.component';
-
-const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+import { Col, PlayerRow, ScoreAnimationService } from '../services/score-animation.service';
 
 const isXChangeRow = (r: SheetRow): boolean =>
   r.cells.some((c) => c.tags.some((t) => t.type === CellTag.TypeEnum.X_CHANGE));
 const isLuckyRow = (r: SheetRow): boolean => r.luckyRow === true;
-
-interface PlayerRow {
-  id: string;
-  name: string;
-  scoreCard: ScoreCard;
-  displayed: Record<string, number>; // colorKey -> animated points
-  displayedPunishment: number;
-  rank: number; // 0 = first place (top)
-  lifting: boolean; // plays the lift-and-drop CSS animation
-}
-
-interface Col {
-  key: string;
-  getValue: (sc: ScoreCard) => number;
-}
 
 @Component({
   selector: 'app-score',
@@ -53,6 +37,24 @@ export class ScoreComponent implements OnInit {
   private readonly playersService = inject(PlayersService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly _host = inject(ElementRef<HTMLElement>);
+  private readonly animation = inject(ScoreAnimationService);
+
+  // Re-expose animation state for the template
+  readonly playerRows = this.animation.playerRows;
+  readonly activeKey = this.animation.activeKey;
+  readonly doneKeys = this.animation.doneKeys;
+  readonly punishActive = this.animation.punishActive;
+  readonly punishDone = this.animation.punishDone;
+  readonly allDone = this.animation.allDone;
+  readonly showModal = this.animation.showModal;
+  readonly showActionBar = this.animation.showActionBar;
+  readonly winner = this.animation.winner;
+  readonly isTie = this.animation.isTie;
+  readonly winnerNames = this.animation.winnerNames;
+  readonly displayedTotal = (p: PlayerRow) => this.animation.displayedTotal(p);
+  readonly isWinner = (p: PlayerRow) => this.animation.isWinner(p);
+
+  // ── Layout measurement ────────────────────────────────────────────────────
 
   // Measured row stride — updated after every render by _measureRowH().
   // Defaults to 80 (the landscape value) so the first render is correct on desktop.
@@ -118,7 +120,6 @@ export class ScoreComponent implements OnInit {
     }
   }
 
-  // Public accessors read by the template.
   get rowH(): number {
     return this._rowH();
   }
@@ -126,14 +127,38 @@ export class ScoreComponent implements OnInit {
     return Math.max(this.rowH - 8, 20);
   }
 
-  // When ?fast=1 is in the URL every delay collapses to ~1 ms so E2E tests
-  // finish in under 2 s instead of ~18 s without touching production logic.
-  private readonly fast = new URLSearchParams(window.location.search).has('fast');
-  private ms(normal: number): number {
-    return this.fast ? 1 : normal;
+  /** Scale the final board to fit the available width after it has rendered. */
+  private _updateBoardLayout(): void {
+    const host = this._host.nativeElement as HTMLElement;
+    const inner = host.querySelector('.final-board-inner') as HTMLElement | null;
+    const outer = host.querySelector('.final-board-outer') as HTMLElement | null;
+    if (!inner || !outer) return;
+
+    inner.style.transform = 'none';
+    const naturalW = inner.scrollWidth;
+    const naturalH = inner.scrollHeight;
+    const availW = outer.clientWidth;
+    const scale = availW > 0 && naturalW > 0 ? Math.min(availW / naturalW, 1) : 1;
+
+    inner.style.transformOrigin = 'top left';
+    inner.style.transform = scale < 1 ? `scale(${scale})` : 'none';
+    outer.style.height = scale < 1 ? `${Math.ceil(naturalH * scale)}px` : '';
   }
 
-  @ViewChild('scoreCapture') private readonly scoreCaptureRef!: ElementRef<HTMLElement>;
+  // ── Column display state ──────────────────────────────────────────────────
+
+  colorCols = signal<string[]>([]);
+  showExtra = signal(false);
+  showBonus = signal(false);
+
+  allCols = computed(() => {
+    const cols = [...this.colorCols()];
+    if (this.showExtra()) cols.push('EXTRA');
+    if (this.showBonus()) cols.push('BONUS');
+    return cols;
+  });
+
+  // ── Player board display (score verification) ─────────────────────────────
 
   sessionId = '';
   playerId = '';
@@ -163,76 +188,16 @@ export class ScoreComponent implements OnInit {
     return rowId in this.myClosedRows();
   }
 
-  /** Scale the final board to fit the available width after it has rendered. */
-  private _updateBoardLayout(): void {
-    const host = this._host.nativeElement as HTMLElement;
-    const inner = host.querySelector('.final-board-inner') as HTMLElement | null;
-    const outer = host.querySelector('.final-board-outer') as HTMLElement | null;
-    if (!inner || !outer) return;
-
-    inner.style.transform = 'none';
-    const naturalW = inner.scrollWidth;
-    const naturalH = inner.scrollHeight;
-    const availW = outer.clientWidth;
-    const scale = availW > 0 && naturalW > 0 ? Math.min(availW / naturalW, 1) : 1;
-
-    inner.style.transformOrigin = 'top left';
-    inner.style.transform = scale < 1 ? `scale(${scale})` : 'none';
-    outer.style.height = scale < 1 ? `${Math.ceil(naturalH * scale)}px` : '';
-  }
-
-  // Column descriptors (colour order from server layout)
-  colorCols = signal<string[]>([]); // e.g. ['RED','YELLOW','GREEN','BLUE']
-  showExtra = signal(false);
-  showBonus = signal(false);
-
-  // All non-punishment column keys in display order (drives @for in template)
-  allCols = computed(() => {
-    const cols = [...this.colorCols()];
-    if (this.showExtra()) cols.push('EXTRA');
-    if (this.showBonus()) cols.push('BONUS');
-    return cols;
-  });
-
-  // Player rows — DOM order is fixed; `rank` drives absolute `top` position
-  playerRows = signal<PlayerRow[]>([]);
-
-  // Animation bookkeeping
-  activeKey = signal<string | null>(null); // column currently counting up
-  doneKeys = signal<Set<string>>(new Set()); // columns finished (gold tint)
-  punishActive = signal(false);
-  punishDone = signal(false);
-  allDone = signal(false);
-  showModal = signal(false);
-  showActionBar = signal(false); // true after the winner modal is dismissed via "View Scores"
-  sharing = signal(false);
-  readonly canNativeShare = navigator.maxTouchPoints > 0;
-
-  winner = computed(() => this.playerRows().find((r) => r.rank === 0));
-  winners = computed(() => {
-    const rows = this.playerRows();
-    if (rows.length === 0) return [];
-    const top = rows.reduce((max, r) => Math.max(max, this.displayedTotal(r)), -Infinity);
-    return rows.filter((r) => this.displayedTotal(r) === top);
-  });
-  isTie = computed(() => this.winners().length > 1);
-  winnerNames = computed(() =>
-    this.winners()
-      .map((w) => w.name)
-      .join(' & '),
-  );
-
-  displayedTotal(p: PlayerRow): number {
-    return Object.values(p.displayed).reduce((s, v) => s + v, 0) + p.displayedPunishment;
-  }
-
-  isWinner(p: PlayerRow): boolean {
-    return this.allDone() && this.winners().some((w) => w.id === p.id);
-  }
-
   topPx(p: PlayerRow): number {
     return p.rank * this.rowH;
   }
+
+  // ── Sharing ───────────────────────────────────────────────────────────────
+
+  @ViewChild('scoreCapture') private readonly scoreCaptureRef!: ElementRef<HTMLElement>;
+
+  sharing = signal(false);
+  readonly canNativeShare = navigator.maxTouchPoints > 0;
 
   async shareScores(): Promise<void> {
     if (this.sharing()) return;
@@ -261,7 +226,17 @@ export class ScoreComponent implements OnInit {
     }
   }
 
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+  // When ?fast=1 is in the URL every delay collapses to ~1 ms so E2E tests
+  // finish in under 2 s instead of ~18 s without touching production logic.
+  private readonly fast = new URLSearchParams(window.location.search).has('fast');
+  private ms(normal: number): number {
+    return this.fast ? 1 : normal;
+  }
+
   ngOnInit() {
+    this.animation.reset();
     this.sessionId = this.route.snapshot.paramMap.get('sessionId') ?? '';
     this.playerId =
       this.route.snapshot.queryParamMap.get('pid') ?? sessionStorage.getItem(`qwixx_pid_${this.sessionId}`) ?? '';
@@ -281,46 +256,9 @@ export class ScoreComponent implements OnInit {
         firstValueFrom(this.gamesService.getScores(this.sessionId)),
       ]);
       this.finalState.set(state);
-
-      const layout = Object.values(state.sheetLayouts)[0];
-      const colors = layout.rows
-        .filter((r) => !r.bonusRow && !isXChangeRow(r) && !isLuckyRow(r))
-        .map((r) => r.cells[0]!.color as string);
-      const hasExtra = Object.values(scores).some((s) => s.extraPoints > 0);
-      const hasBonus = Object.values(scores).some((s) => s.bonusPoints > 0);
-      this.colorCols.set(colors);
-      this.showExtra.set(hasExtra);
-      this.showBonus.set(hasBonus);
-
-      const cols: Col[] = [
-        ...colors.map((c) => ({ key: c, getValue: (sc: ScoreCard) => sc.pointsPerColor[c] ?? 0 })),
-        ...(hasExtra ? [{ key: 'EXTRA', getValue: (sc: ScoreCard) => sc.extraPoints }] : []),
-        ...(hasBonus ? [{ key: 'BONUS', getValue: (sc: ScoreCard) => sc.bonusPoints }] : []),
-      ];
-
-      const rows: PlayerRow[] = state.players.map((p, i) => ({
-        id: p.id,
-        name: p.name,
-        scoreCard: scores[p.id],
-        displayed: Object.fromEntries(cols.map((c) => [c.key, c.getValue(scores[p.id])])),
-        displayedPunishment: scores[p.id].punishmentPoints,
-        rank: i,
-        lifting: false,
-      }));
-
-      // Sort into final rank order immediately
-      const sorted = [...rows].sort((a, b) => this.displayedTotal(b) - this.displayedTotal(a));
-      const newRank = new Map(sorted.map((r, i) => [r.id, i]));
-      rows.forEach((r) => {
-        r.rank = newRank.get(r.id) ?? r.rank;
-      });
-
+      const { cols, rows } = this.buildScoreData(state, scores);
       this._initPortraitRowH(rows.length);
-      this.playerRows.set(rows);
-      this.doneKeys.set(new Set(cols.map((c) => c.key)));
-      this.punishDone.set(true);
-      this.allDone.set(true);
-      this.showActionBar.set(true);
+      this.animation.showInstant(cols, rows);
       this.startRestartSse();
     } catch (e) {
       console.error('[score] showFinalState failed:', e);
@@ -335,97 +273,48 @@ export class ScoreComponent implements OnInit {
         firstValueFrom(this.gamesService.getScores(this.sessionId)),
       ]);
       this.finalState.set(state);
-
-      // Derive column structure from any player's layout.
-      // Bonus rows are excluded: their points are already in scoreCard.bonusPoints.
-      const layout = Object.values(state.sheetLayouts)[0];
-      const colors = layout.rows
-        .filter((r) => !r.bonusRow && !isXChangeRow(r) && !isLuckyRow(r))
-        .map((r) => r.cells[0]!.color as string);
-      const hasExtra = Object.values(scores).some((s) => s.extraPoints > 0);
-      const hasBonus = Object.values(scores).some((s) => s.bonusPoints > 0);
-
-      this.colorCols.set(colors);
-      this.showExtra.set(hasExtra);
-      this.showBonus.set(hasBonus);
-
-      // Build ordered column list for the animation sequence
-      const cols: Col[] = [
-        ...colors.map((c) => ({ key: c, getValue: (sc: ScoreCard) => sc.pointsPerColor[c] ?? 0 })),
-        ...(hasExtra ? [{ key: 'EXTRA', getValue: (sc: ScoreCard) => sc.extraPoints }] : []),
-        ...(hasBonus ? [{ key: 'BONUS', getValue: (sc: ScoreCard) => sc.bonusPoints }] : []),
-      ];
-
-      // Initialise all player rows at zero
-      const initDisplayed = (): Record<string, number> => Object.fromEntries(cols.map((c) => [c.key, 0]));
-
-      const rows: PlayerRow[] = state.players.map((p, i) => ({
-        id: p.id,
-        name: p.name,
-        scoreCard: scores[p.id],
-        displayed: initDisplayed(),
-        displayedPunishment: 0,
-        rank: i,
-        lifting: false,
-      }));
+      const { cols, rows } = this.buildScoreData(state, scores);
       this._initPortraitRowH(rows.length);
-      this.playerRows.set(rows);
-
-      await delay(this.ms(700));
-
-      // ── Animate each column one by one ──────────────────────────────────
-      for (const col of cols) {
-        this.activeKey.set(col.key);
-
-        const targets = new Map(rows.map((r) => [r.id, col.getValue(r.scoreCard)]));
-        await this.animate(this.ms(1400), (eased) =>
-          this.playerRows.update((rs) =>
-            rs.map((r) => ({
-              ...r,
-              displayed: {
-                ...r.displayed,
-                [col.key]: Math.round((targets.get(r.id) ?? 0) * eased),
-              },
-            })),
-          ),
-        );
-
-        this.activeKey.set(null);
-        this.doneKeys.update((s) => new Set([...s, col.key]));
-        await delay(this.ms(350));
-        await this.sort();
-        await delay(this.ms(450));
-      }
-
-      // ── Punishment column ────────────────────────────────────────────────
-      this.punishActive.set(true);
-      const punishTargets = new Map(rows.map((r) => [r.id, r.scoreCard.punishmentPoints]));
-      await this.animate(this.ms(900), (eased) =>
-        this.playerRows.update((rs) =>
-          rs.map((r) => ({
-            ...r,
-            displayedPunishment: Math.round((punishTargets.get(r.id) ?? 0) * eased),
-          })),
-        ),
-      );
-      this.punishActive.set(false);
-      this.punishDone.set(true);
-      await delay(this.ms(350));
-      await this.sort();
-      await delay(this.ms(900));
-
-      this.allDone.set(true);
-      await delay(this.ms(1400));
-      this.showModal.set(true);
-
-      // After the winner modal appears, poll for a game restart so all players
-      // are redirected automatically when any player starts a new game.
+      await this.animation.runSequence(cols, rows, (n) => this.ms(n));
       this.startRestartSse();
     } catch (e) {
       console.error('[score] runAnimation failed:', e);
       void this.router.navigate(['/']);
     }
   }
+
+  private buildScoreData(state: GameState, scores: Record<string, ScoreCard>): { cols: Col[]; rows: PlayerRow[] } {
+    const layout = Object.values(state.sheetLayouts)[0];
+    const colors = layout.rows
+      .filter((r) => !r.bonusRow && !isXChangeRow(r) && !isLuckyRow(r))
+      .map((r) => r.cells[0]!.color as string);
+    const hasExtra = Object.values(scores).some((s) => s.extraPoints > 0);
+    const hasBonus = Object.values(scores).some((s) => s.bonusPoints > 0);
+
+    this.colorCols.set(colors);
+    this.showExtra.set(hasExtra);
+    this.showBonus.set(hasBonus);
+
+    const cols: Col[] = [
+      ...colors.map((c) => ({ key: c, getValue: (sc: ScoreCard) => sc.pointsPerColor[c] ?? 0 })),
+      ...(hasExtra ? [{ key: 'EXTRA', getValue: (sc: ScoreCard) => sc.extraPoints }] : []),
+      ...(hasBonus ? [{ key: 'BONUS', getValue: (sc: ScoreCard) => sc.bonusPoints }] : []),
+    ];
+
+    const rows: PlayerRow[] = state.players.map((p, i) => ({
+      id: p.id,
+      name: p.name,
+      scoreCard: scores[p.id],
+      displayed: Object.fromEntries(cols.map((c) => [c.key, 0])),
+      displayedPunishment: 0,
+      rank: i,
+      lifting: false,
+    }));
+
+    return { cols, rows };
+  }
+
+  // ── SSE & navigation ──────────────────────────────────────────────────────
 
   // Subscribes to the SSE stream. When another player triggers a restart the
   // server pushes a state with gameOver: false, and we navigate automatically.
@@ -449,42 +338,6 @@ export class ScoreComponent implements OnInit {
         void this.router.navigate(['/game', this.sessionId, this.playerId]);
       }
     };
-  }
-
-  private animate(duration: number, onTick: (eased: number) => void): Promise<void> {
-    return new Promise((resolve) => {
-      const start = performance.now();
-      const frame = (now: number) => {
-        const t = Math.min(1, (now - start) / duration);
-        const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
-        onTick(eased);
-        if (t < 1) {
-          requestAnimationFrame(frame);
-        } else {
-          resolve();
-        }
-      };
-      requestAnimationFrame(frame);
-    });
-  }
-
-  private async sort(): Promise<void> {
-    const rows = this.playerRows();
-    const sorted = [...rows].sort((a, b) => this.displayedTotal(b) - this.displayedTotal(a));
-    const newRank = new Map(sorted.map((r, i) => [r.id, i]));
-
-    if (rows.every((r) => newRank.get(r.id) === r.rank)) return;
-
-    this.playerRows.update((rs) =>
-      rs.map((r) => ({
-        ...r,
-        rank: newRank.get(r.id) ?? r.rank,
-        lifting: newRank.get(r.id) !== r.rank,
-      })),
-    );
-
-    await delay(this.ms(900));
-    this.playerRows.update((rs) => rs.map((r) => ({ ...r, lifting: false })));
   }
 
   /** Dismiss the winner modal and keep the score table in view. */

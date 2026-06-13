@@ -6,9 +6,27 @@
   "packageRules": [
     {
       "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "all minor and patch updates",
       "automerge": true,
       "automergeType": "pr",
       "automergeStrategy": "squash"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "matchPackageNames": [
+        "@angular/**",
+        "angular-eslint",
+        "typescript",
+        "typescript-eslint",
+        "eslint",
+        "@eslint/js"
+      ],
+      "groupName": "Angular ecosystem"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "matchPackageNames": ["@ngx-translate/**"],
+      "groupName": "ngx-translate"
     }
   ]
 }

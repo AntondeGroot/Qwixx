@@ -27,6 +27,27 @@
       "matchUpdateTypes": ["major"],
       "matchPackageNames": ["@ngx-translate/**"],
       "groupName": "ngx-translate"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "matchPackageNames": ["org.springframework.boot:**"],
+      "groupName": "Spring Boot"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "matchPackageNames": [
+        "io.swagger.core.v3:**",
+        "org.openapitools:**"
+      ],
+      "groupName": "OpenAPI"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "matchPackageNames": [
+        "org.seleniumhq.selenium:**",
+        "io.github.bonigarcia:webdrivermanager"
+      ],
+      "groupName": "Selenium"
     }
   ]
 }

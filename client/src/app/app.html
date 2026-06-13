@@ -64,13 +64,13 @@
   @if (showExitConfirm()) {
     <div class="exit-confirm-overlay">
       <div class="exit-confirm-dialog">
-        <p>{{ 'leaveGameConfirm' | translate }}</p>
+        <p>{{ t('leaveGameConfirm') }}</p>
         <div class="exit-confirm-buttons">
           <button class="exit-confirm-yes" (click)="confirmExit()">
-            {{ 'rowClosure.yes' | translate }}
+            {{ t('rowClosure.yes') }}
           </button>
           <button class="exit-confirm-no" (click)="showExitConfirm.set(false)">
-            {{ 'rowClosure.no' | translate }}
+            {{ t('rowClosure.no') }}
           </button>
         </div>
       </div>

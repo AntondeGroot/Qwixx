@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TranslateService } from '@ngx-translate/core';
 import { RowClosureModalComponent, ClosureNotification } from './row-closure-modal.component';
-import { TranslateModule } from '@ngx-translate/core';
 import { Color } from '../../generated/model/models';
 
 describe('RowClosureModalComponent', () => {
@@ -9,7 +9,8 @@ describe('RowClosureModalComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RowClosureModalComponent, TranslateModule.forRoot()],
+      imports: [RowClosureModalComponent],
+      providers: [{ provide: TranslateService, useValue: { instant: (key: string) => key } }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RowClosureModalComponent);

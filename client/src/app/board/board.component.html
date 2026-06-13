@@ -22,11 +22,7 @@
       @if (state.turnState; as turn) {
         <div class="turn-bar" [class.my-turn]="isMyTurn() || isInPassiveQueue()">
           <span class="turn-label">
-            {{
-              isMyTurn()
-                ? ('yourTurn' | translate)
-                : ('playerTurn' | translate: { name: playerName(turn.activePlayerId) })
-            }}
+            {{ isMyTurn() ? t('yourTurn') : t('playerTurn', { name: playerName(turn.activePlayerId) }) }}
           </span>
 
           @if (turn.currentRoll || canRoll() || isInPassiveQueue()) {
@@ -84,8 +80,8 @@
             }
             <div class="score-strip">
               <div class="score-labels">
-                <span>{{ 'crosses' | translate }}</span>
-                <span>{{ 'points' | translate }}</span>
+                <span>{{ t('crosses') }}</span>
+                <span>{{ t('points') }}</span>
               </div>
               @for (col of scoreRows(); track col.crosses) {
                 <div class="score-box">
@@ -106,7 +102,7 @@
                 </div>
               }
               <div class="punishment-track">
-                <span class="punishment-label">{{ 'punishment' | translate }} : –5</span>
+                <span class="punishment-label">{{ t('punishment') }} : –5</span>
                 @for (i of [0, 1, 2, 3]; track i) {
                   <div
                     class="punishment-box"
@@ -132,7 +128,7 @@
       <div class="confirm-panel">
         @if (canRoll()) {
           <button class="btn-roll" (click)="sendRoll()" [disabled]="rollingDice()">
-            {{ 'roll' | translate }}
+            {{ t('roll') }}
           </button>
         } @else if (canPassActive()) {
           <button class="btn-confirm" (click)="passActive()">

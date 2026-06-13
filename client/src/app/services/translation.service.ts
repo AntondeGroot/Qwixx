@@ -85,4 +85,8 @@ export class TranslationService {
   getLanguageLabel(code: string): string {
     return this.languages.find((l) => l.code === code)?.label || code;
   }
+
+  instant(key: string, params?: object): string {
+    return this.translateService.instant(key, params);
+  }
 }

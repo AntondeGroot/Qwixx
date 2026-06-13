@@ -9,10 +9,10 @@ import { RowClosureModalComponent } from './row-closure-modal/row-closure-modal.
 import { RowClosureModalService } from './services/row-closure-modal.service';
 import { TranslationService } from './services/translation.service';
 import { RoomService } from './services/room.service';
-import { TranslateModule } from '@ngx-translate/core';
+
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, LanguageSelectorComponent, RowClosureModalComponent, TranslateModule],
+  imports: [RouterOutlet, LanguageSelectorComponent, RowClosureModalComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
@@ -69,6 +69,10 @@ export class App implements OnInit {
     } else {
       void this.router.navigate(['/rules']);
     }
+  }
+
+  t(key: string): string {
+    return this.translationService.instant(key);
   }
 
   confirmExit() {

@@ -15,7 +15,7 @@ import { environment } from '../../environments/environment';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslateService } from '@ngx-translate/core';
 import { GamesService, PlayersService } from '../../generated/api/api';
 import { GameOption, SheetLayout } from '../../generated/model/models';
 import { RowComponent } from '../row/row.component';
@@ -24,7 +24,7 @@ import { EmbedModeService } from '../services/embed-mode.service';
 
 @Component({
   selector: 'app-settings',
-  imports: [ReactiveFormsModule, RowComponent, TranslateModule],
+  imports: [ReactiveFormsModule, RowComponent],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.css',
 })
@@ -35,7 +35,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
-  private readonly translate = inject(TranslateService);
+  protected readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
   readonly embedMode = inject(EmbedModeService);
   private previewSub?: Subscription;
@@ -374,6 +374,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
     this.loading.set(false);
     this.error.set('Could not start game. Is the server running?');
     console.error(err);
+  }
+
+  t(key: string): string {
+    return this.translate.instant(key);
   }
 
   getGameOptionLabel(key: string): string {

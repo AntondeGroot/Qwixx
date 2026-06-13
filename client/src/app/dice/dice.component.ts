@@ -1,13 +1,4 @@
-import {
-  Component,
-  computed,
-  effect,
-  ElementRef,
-  inject,
-  input,
-  OnDestroy,
-  signal,
-} from '@angular/core';
+import { Component, computed, effect, ElementRef, inject, input, OnDestroy, signal } from '@angular/core';
 import { NgClass, NgStyle } from '@angular/common';
 import { DiceColor, DiceSvgService } from './dice-svg.service';
 

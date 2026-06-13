@@ -15,10 +15,7 @@ describe('TranslationService', () => {
     };
 
     TestBed.configureTestingModule({
-      providers: [
-        TranslationService,
-        { provide: TranslateService, useValue: translateServiceMock },
-      ],
+      providers: [TranslationService, { provide: TranslateService, useValue: translateServiceMock }],
     });
 
     service = TestBed.inject(TranslationService);

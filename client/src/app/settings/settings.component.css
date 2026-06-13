@@ -55,6 +55,11 @@ div.option-disabled input {
   pointer-events: none;
 }
 
+.board-preview-outer {
+  width: 100%;
+  overflow: hidden;
+}
+
 .board-preview {
   display: flex;
   flex-direction: column;
@@ -63,7 +68,8 @@ div.option-disabled input {
   background: #f5f5f5;
   border-radius: 8px;
   border: 1px solid #e0e0e0;
-  overflow-x: auto;
+  width: fit-content;
+  transform-origin: top left;
 }
 
 button[type='submit'] {

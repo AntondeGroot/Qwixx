@@ -45,14 +45,8 @@
           }
           @case ('bigPoints') {
             <div class="opt-chip">
-              <span
-                class="opt-cell opt-cell--split"
-                style="--split-a: #d32f2f; --split-b: #f9a825"
-              ></span>
-              <span
-                class="opt-cell opt-cell--split"
-                style="--split-a: #388e3c; --split-b: #1565c0"
-              ></span>
+              <span class="opt-cell opt-cell--split" style="--split-a: #d32f2f; --split-b: #f9a825"></span>
+              <span class="opt-cell opt-cell--split" style="--split-a: #388e3c; --split-b: #1565c0"></span>
             </div>
           }
           @case ('connectedCells') {
@@ -114,10 +108,12 @@
   }
 
   @if (previewLayout(); as layout) {
-    <div class="board-preview">
-      @for (row of layout.rows; track row.id) {
-        <app-row [row]="row" />
-      }
+    <div class="board-preview-outer" #boardPreviewOuter>
+      <div class="board-preview" [style.zoom]="previewScale() < 1 ? previewScale() : null">
+        @for (row of layout.rows; track row.id) {
+          <app-row [row]="row" />
+        }
+      </div>
     </div>
   }
 
@@ -125,7 +121,9 @@
     <p>{{ error() }}</p>
   }
 
-  <button type="submit" [disabled]="form.invalid || loading()">
-    {{ loading() ? ('starting' | translate) : ('startGame' | translate) }}
-  </button>
+  @if (!embedMode.isActive()) {
+    <button type="submit" [disabled]="form.invalid || loading()">
+      {{ loading() ? ('starting' | translate) : ('startGame' | translate) }}
+    </button>
+  }
 </form>

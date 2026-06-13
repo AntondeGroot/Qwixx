@@ -9,18 +9,10 @@
   [style.width]="xChangeRowWidth()"
 >
   @for (offset of connectorOffsetsAbove(); track offset) {
-    <div
-      class="auto-cross-line up"
-      [class.through-bonus]="hasBonusRowAbove()"
-      [style.left.px]="offset"
-    ></div>
+    <div class="auto-cross-line up" [class.through-bonus]="hasBonusRowAbove()" [style.left.px]="offset"></div>
   }
   @for (offset of connectorOffsetsBelow(); track offset) {
-    <div
-      class="auto-cross-line down"
-      [class.through-bonus]="hasBonusRowBelow()"
-      [style.left.px]="offset"
-    ></div>
+    <div class="auto-cross-line down" [class.through-bonus]="hasBonusRowBelow()" [style.left.px]="offset"></div>
   }
   @if (isLuckyRow()) {
     <span class="lucky-number-label">{{ luckyLabel() }}</span>
@@ -100,10 +92,7 @@
             (clicked)="cellClicked.emit(cell.id)"
           />
         }
-        <div
-          class="lock-cell lock-cell-placeholder"
-          [attr.data-color]="row().cells[0]?.color"
-        ></div>
+        <div class="lock-cell lock-cell-placeholder" [attr.data-color]="row().cells[0]?.color"></div>
       </div>
     }
   }

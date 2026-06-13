@@ -39,18 +39,14 @@ export class RowComponent {
 
   closingEligibleCells = computed(() => this.row().cells.filter((c) => c.closingEligible));
 
-  isXChangeRow = computed(() =>
-    this.row().cells.some((c) => c.tags.some((t) => t.type === CellTag.TypeEnum.X_CHANGE)),
-  );
+  isXChangeRow = computed(() => this.row().cells.some((c) => c.tags.some((t) => t.type === CellTag.TypeEnum.X_CHANGE)));
 
   isLuckyRow = computed(() => this.row().luckyRow === true);
   luckyTarget = computed(() => this.row().luckyTarget);
   luckyLabel = computed(() => `LUCKY ${this.luckyTarget()}`);
 
   // Formula: (n+1)×44 + n×4 + 16 = 48n+60  →  Standard 9 cells = 492px, Longo 13 cells = 684px
-  xChangeRowWidth = computed(() =>
-    this.isXChangeRow() ? `${48 * this.row().cells.length + 60}px` : null,
-  );
+  xChangeRowWidth = computed(() => (this.isXChangeRow() ? `${48 * this.row().cells.length + 60}px` : null));
 
   // For bonus rows (no lock), the last 1 (Standard) or 2 (Longo) cells are pulled into a
   // visual alignment zone so they line up with the closing cells of adjacent regular rows.

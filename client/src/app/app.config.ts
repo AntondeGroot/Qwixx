@@ -1,7 +1,7 @@
 import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import { HTTP_INTERCEPTORS, HttpClient } from '@angular/common/http';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withRouterConfig } from '@angular/router';
 import { provideTranslateService, TranslateLoader, TranslationObject } from '@ngx-translate/core';
 import { Observable, lastValueFrom } from 'rxjs';
 
@@ -24,7 +24,7 @@ export class HttpLoaderFactory implements TranslateLoader {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes),
+    provideRouter(routes, withRouterConfig({ canceledNavigationResolution: 'computed' })),
     provideHttpClient(),
     { provide: HTTP_INTERCEPTORS, useClass: LocaleInterceptor, multi: true },
     provideApi(environment.apiBaseUrl),

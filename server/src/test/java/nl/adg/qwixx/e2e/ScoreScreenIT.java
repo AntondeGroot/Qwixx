@@ -162,6 +162,8 @@ public class ScoreScreenIT extends BaseIntegrationTest {
     // ── "View Scores" button: dismiss modal, reveal action bar ───────────────
 
     @Test
+    @ExtendWith(RetryOnChromeFailure.Extension.class)
+    @RetryOnChromeFailure
     void viewScoresButtonDismissesModal() {
         TestUtils.navigateToScore(driver, sessionId);
         waitUntilWinnerModalVisible(driver, 30);

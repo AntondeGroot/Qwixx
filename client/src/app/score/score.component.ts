@@ -41,7 +41,6 @@ interface Col {
 
 @Component({
   selector: 'app-score',
-  standalone: true,
   imports: [TranslateModule, RowComponent],
   templateUrl: './score.component.html',
   styleUrl: './score.component.css',

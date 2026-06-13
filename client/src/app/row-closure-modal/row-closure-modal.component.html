@@ -3,7 +3,7 @@
     <div class="modal-content">
       <div class="modal-body">
         <div class="request-item">
-          <div [ngClass]="getRowColorClass(lockConfirmRequest.rowColor)" class="color-cell"></div>
+          <div [class]="getRowColorClass(lockConfirmRequest.rowColor)" class="color-cell"></div>
         </div>
         <div class="separator"></div>
         <p class="confirm-question">{{ 'rowClosure.selfClose' | translate }}</p>
@@ -30,7 +30,7 @@
               <span class="request-text"
                 >{{ request.playerName }} {{ 'rowClosure.wantsToCloseThe' | translate }}</span
               >
-              <div [ngClass]="getRowColorClass(request.rowColor)" class="color-cell"></div>
+              <div [class]="getRowColorClass(request.rowColor)" class="color-cell"></div>
               <span class="request-text">{{ 'rowClosure.row' | translate }}</span>
             </div>
           }

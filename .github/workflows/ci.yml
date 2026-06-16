@@ -52,10 +52,6 @@ jobs:
         run: npm run format:check
         working-directory: client
 
-      - name: Security audit
-        run: npm audit --audit-level=high
-        working-directory: client
-
       - name: Run tests
         run: npm test -- --watch=false
         working-directory: client

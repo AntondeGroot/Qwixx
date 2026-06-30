@@ -24,7 +24,7 @@
     <checkstyle-plugin.version>3.6.0</checkstyle-plugin.version>
     <checkstyle-tool.version>13.7.0</checkstyle-tool.version>
     <pmd.version>3.28.0</pmd.version>
-    <spotless.version>3.7.0</spotless.version>
+    <spotless.version>3.8.0</spotless.version>
   </properties>
 
   <repositories>

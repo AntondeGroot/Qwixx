@@ -744,6 +744,11 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   isBonusNumberActive(_pid: string, n: number): boolean {
+    // Don't reveal the highlight until the dice animation has finished. For a
+    // passive watcher the game state (and thus currentRoll) is applied while the
+    // dice are still spinning, so gate on rollingDice() to avoid showing the
+    // bonus mid-animation.
+    if (this.rollingDice()) return false;
     const roll = this.turnState()?.currentRoll;
     if (!roll) return false;
     return roll.white1 + roll.white2 === n;

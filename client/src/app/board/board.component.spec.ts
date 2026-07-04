@@ -1078,6 +1078,39 @@ describe('BoardComponent — Longo bonus cells for passive player', () => {
     const ids = component.clickableCellIds();
     expect(ids.has('r0')).toBe(true);
   });
+
+  // ── Bonus indicator gated on the dice animation ───────────────────────────
+  // Default makeBonusState: bonus number 5, roll 2+3 = 5 → a match.
+
+  it('highlights the bonus number once the dice animation is done', () => {
+    component.gameState.set(makeBonusState());
+    component.rollingDice.set(false);
+    expect(component.isBonusNumberActive(PLAYER_ID, 5)).toBe(true);
+  });
+
+  it('does not highlight the bonus number while the dice are still rolling', () => {
+    // Passive watcher: state (and currentRoll) is applied immediately, but the
+    // dice are still spinning — the bonus must stay dark until they settle.
+    component.gameState.set(makeBonusState());
+    component.rollingDice.set(true);
+    expect(component.isBonusNumberActive(PLAYER_ID, 5)).toBe(false);
+  });
+
+  it('reveals the bonus number when rolling finishes', () => {
+    component.gameState.set(makeBonusState());
+    component.rollingDice.set(true);
+    expect(component.isBonusNumberActive(PLAYER_ID, 5)).toBe(false);
+
+    component.rollingDice.set(false);
+    expect(component.isBonusNumberActive(PLAYER_ID, 5)).toBe(true);
+  });
+
+  it('never highlights a bonus number the white sum does not match', () => {
+    // Bonus number 5 but roll 6+6 = 12.
+    component.gameState.set(makeBonusState({ white1: 6, white2: 6 }));
+    component.rollingDice.set(false);
+    expect(component.isBonusNumberActive(PLAYER_ID, 5)).toBe(false);
+  });
 });
 
 // ── Bonus number takes priority over white+colour (active player) ─────────────

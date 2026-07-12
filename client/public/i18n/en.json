@@ -27,6 +27,8 @@
     "extraRowDescription": "Add a bonus row of cells forming a wave across the four rows.",
     "connectedCells": "Connected cells",
     "connectedCellsDescription": "Link cells between adjacent rows: crossing one auto-crosses the connected cell in the next row.",
+    "seeOtherCards": "See other players' cards",
+    "seeOtherCardsDescription": "Show a miniature of each other player's sheet. Turn off to hide the other players' cards.",
     "xchange": "X-Change",
     "xchangeDescription": "Adds an extra row with the option to change your white+white combination for the other number in that cell.",
     "botCount": "Computer opponents",

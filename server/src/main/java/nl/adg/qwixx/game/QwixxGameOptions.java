@@ -22,6 +22,7 @@ public class QwixxGameOptions {
     private static final String X_CHANGE     = "xChange";
     private static final String LUCKY_NUMBER = "luckyNumber";
     private static final String LUCKY_CROSS  = "luckyCross";
+    private static final String SEE_OTHER_CARDS = "seeOtherCards";
 
     private QwixxGameOptions() {}
 
@@ -39,6 +40,7 @@ public class QwixxGameOptions {
                     .withIncompatibleWith(List.of(BIG_POINTS)),
             GameOption.boolOption(EXTRA_ROW, "gameOption.extraRow", "gameOption.extraRowDescription"),
             GameOption.boolOption(CONNECTED_CELLS, "gameOption.connectedCells", "gameOption.connectedCellsDescription"),
+            GameOption.boolOption(SEE_OTHER_CARDS, "gameOption.seeOtherCards", "gameOption.seeOtherCardsDescription", true),
             GameOption.adminBoolOption(X_CHANGE, "gameOption.xchange", "gameOption.xchangeDescription"),
             GameOption.adminBoolOption(LUCKY_NUMBER, "gameOption.luckyNumber", "gameOption.luckyNumberDescription"),
             GameOption.adminBoolOption(LUCKY_CROSS,  "gameOption.luckyCross",  "gameOption.luckyCrossDescription")
@@ -60,6 +62,7 @@ public class QwixxGameOptions {
         map.put(RANDOM_ORDER,    s.randomOrder());
         map.put(EXTRA_ROW,       s.extraRow());
         map.put(CONNECTED_CELLS, s.connectedCells());
+        map.put(SEE_OTHER_CARDS, s.seeOtherCards());
         map.put(X_CHANGE,        s.xChange());
         map.put(LUCKY_NUMBER,    s.luckyNumber());
         map.put(LUCKY_CROSS,     s.luckyCross());
@@ -80,6 +83,7 @@ public class QwixxGameOptions {
                 case RANDOM_ORDER    -> builder.randomOrder(bool(entry.getValue()));
                 case EXTRA_ROW       -> builder.extraRow(bool(entry.getValue()));
                 case CONNECTED_CELLS -> builder.connectedCells(bool(entry.getValue()));
+                case SEE_OTHER_CARDS -> builder.seeOtherCards(bool(entry.getValue()));
                 case X_CHANGE        -> builder.xChange(bool(entry.getValue()));
                 case LUCKY_NUMBER    -> builder.luckyNumber(bool(entry.getValue()));
                 case LUCKY_CROSS     -> builder.luckyCross(bool(entry.getValue()));

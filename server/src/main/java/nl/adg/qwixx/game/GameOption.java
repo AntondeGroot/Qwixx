@@ -25,8 +25,13 @@ public record GameOption(
     }
 
     public static GameOption boolOption(String key, String labelKey, String descriptionKey) {
-        return new GameOption(key, labelKey, descriptionKey, OptionType.BOOLEAN, "false",
-                List.of(), null, null, false, List.of());
+        return boolOption(key, labelKey, descriptionKey, false);
+    }
+
+    public static GameOption boolOption(String key, String labelKey, String descriptionKey,
+                                        boolean defaultValue) {
+        return new GameOption(key, labelKey, descriptionKey, OptionType.BOOLEAN,
+                Boolean.toString(defaultValue), List.of(), null, null, false, List.of());
     }
 
     public static GameOption adminBoolOption(String key, String labelKey, String descriptionKey) {

@@ -15,6 +15,7 @@ public class GameSettings {
     private final boolean      luckyNumber;
     private final boolean      luckyCross;
     private final boolean      mixedColors;
+    private final boolean      seeOtherCards;
     private final CardMode     cardMode;
     private final GameMode     gameMode;
     private final int          botCount;
@@ -33,6 +34,7 @@ public class GameSettings {
         this.luckyNumber = builder.luckyNumber;
         this.luckyCross  = builder.luckyCross;
         this.mixedColors = builder.mixedColors;
+        this.seeOtherCards = builder.seeOtherCards;
         this.cardMode    = builder.cardMode;
         this.gameMode    = builder.gameMode;
         this.botCount    = builder.botCount;
@@ -49,6 +51,7 @@ public class GameSettings {
     public boolean         luckyNumber()    { return luckyNumber; }
     public boolean         luckyCross()     { return luckyCross; }
     public boolean         mixedColors()    { return mixedColors; }
+    public boolean         seeOtherCards()  { return seeOtherCards; }
     public CardMode        cardMode()       { return cardMode; }
     public GameMode        gameMode()       { return gameMode; }
     public int             botCount()       { return botCount; }
@@ -73,6 +76,7 @@ public class GameSettings {
         private boolean        luckyNumber;
         private boolean        luckyCross;
         private boolean        mixedColors;
+        private boolean        seeOtherCards  = true;
         private CardMode       cardMode       = CardMode.DETERMINISTIC;
         private GameMode       gameMode       = GameMode.ONLINE;
         private int            botCount;
@@ -88,6 +92,7 @@ public class GameSettings {
         public Builder luckyNumber(boolean v)              { this.luckyNumber = v; return this; }
         public Builder luckyCross(boolean v)               { this.luckyCross = v; return this; }
         public Builder mixedColors(boolean v)              { this.mixedColors = v; return this; }
+        public Builder seeOtherCards(boolean v)            { this.seeOtherCards = v; return this; }
         public Builder cardMode(CardMode cardMode)         { this.cardMode = cardMode; return this; }
         public Builder gameMode(GameMode gameMode)         { this.gameMode = gameMode; return this; }
         public Builder botCount(int v)                     { this.botCount = v; return this; }

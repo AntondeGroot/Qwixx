@@ -27,6 +27,8 @@
     "extraRowDescription": "Legg til en bonusrad med celler som danner en bølge over fire rader.",
     "connectedCells": "Forbundne celler",
     "connectedCellsDescription": "Kobler celler mellom tilstøtende rader: å krysse én celle krysser automatisk den forbundne cellen i neste rad.",
+    "seeOtherCards": "Se andres kort",
+    "seeOtherCardsDescription": "Viser en miniatyr av hver av de andre spillernes ark. Slå av for å skjule de andre spillernes kort.",
     "xchange": "X-Bytte",
     "xchangeDescription": "Legger til en ekstra rad med muligheten til å bytte din hvit+hvit-kombinasjon mot det andre tallet i den ruten.",
     "botCount": "Datamotstandere",

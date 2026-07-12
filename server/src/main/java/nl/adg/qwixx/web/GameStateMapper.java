@@ -61,7 +61,8 @@ class GameStateMapper {
                 .bonusNumbers(mapBonusNumbers(state))
                 .closureNotifications(mapClosureNotifications(state, session))
                 .pendingClosures(mapPendingClosures(state))
-                .availableMoves(mapAvailableMoves(state, session));
+                .availableMoves(mapAvailableMoves(state, session))
+                .seeOtherCards(session.settings().seeOtherCards());
     }
 
     @SuppressWarnings("PMD.ReturnEmptyCollectionRatherThanNull")

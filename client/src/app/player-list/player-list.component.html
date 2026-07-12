@@ -21,50 +21,52 @@
         }
       </div>
 
-      <div class="mini-sheet">
-        @for (row of rowsFor(player.id); track row.id) {
-          <div
-            class="mini-row"
-            [class.mini-row-xchange]="isXChangeRow(row)"
-            [class.mini-row-lucky-number]="isLuckyRow(row)"
-            [class.row-closed]="isRowClosed(row.id)"
-            [attr.data-color]="isXChangeRow(row) || isLuckyRow(row) ? null : row.cells[0]?.color"
-            [style.--mini-primary]="colorHex[row.cells[0].color]"
-            [style.--mini-secondary]="colorHex[secondaryColorOf(row.cells[0]) ?? '']"
-          >
-            @for (cell of row.cells; track cell.id; let idx = $index) {
-              @if (cell.closingEligible && !row.cells[idx - 1]?.closingEligible) {
-                <div class="mini-closing-divider"></div>
+      @if (showOtherCards()) {
+        <div class="mini-sheet">
+          @for (row of rowsFor(player.id); track row.id) {
+            <div
+              class="mini-row"
+              [class.mini-row-xchange]="isXChangeRow(row)"
+              [class.mini-row-lucky-number]="isLuckyRow(row)"
+              [class.row-closed]="isRowClosed(row.id)"
+              [attr.data-color]="isXChangeRow(row) || isLuckyRow(row) ? null : row.cells[0]?.color"
+              [style.--mini-primary]="colorHex[row.cells[0].color]"
+              [style.--mini-secondary]="colorHex[secondaryColorOf(row.cells[0]) ?? '']"
+            >
+              @for (cell of row.cells; track cell.id; let idx = $index) {
+                @if (cell.closingEligible && !row.cells[idx - 1]?.closingEligible) {
+                  <div class="mini-closing-divider"></div>
+                }
+                <div
+                  class="mini-cell"
+                  [class.mini-cell-big-points]="row.bonusRow"
+                  [class.mini-cell-xchange]="isXChange(cell)"
+                  [class.mini-cell-lucky-number]="isLuckyNumber(cell)"
+                  [class.mini-cell-lucky-cross]="isLuckyCross(cell)"
+                  [class.crossed]="isCrossed(player.id, row.id, cell.id)"
+                  [class.closing-eligible]="cell.closingEligible"
+                ></div>
               }
-              <div
-                class="mini-cell"
-                [class.mini-cell-big-points]="row.bonusRow"
-                [class.mini-cell-xchange]="isXChange(cell)"
-                [class.mini-cell-lucky-number]="isLuckyNumber(cell)"
-                [class.mini-cell-lucky-cross]="isLuckyCross(cell)"
-                [class.crossed]="isCrossed(player.id, row.id, cell.id)"
-                [class.closing-eligible]="cell.closingEligible"
-              ></div>
-            }
-            @if (row.lock) {
-              <div class="mini-lock">
-                <img
-                  src="lock_icon.svg"
-                  alt=""
-                  class="mini-lock-icon"
-                  [class.lock-crossed]="sheetProgress()[player.id]?.rowStates[row.id].lockCrossed"
-                />
-              </div>
-            }
-          </div>
-        }
-      </div>
+              @if (row.lock) {
+                <div class="mini-lock">
+                  <img
+                    src="lock_icon.svg"
+                    alt=""
+                    class="mini-lock-icon"
+                    [class.lock-crossed]="sheetProgress()[player.id]?.rowStates[row.id].lockCrossed"
+                  />
+                </div>
+              }
+            </div>
+          }
+        </div>
 
-      <div class="mini-punishments">
-        @for (i of [0, 1, 2, 3]; track i) {
-          <div class="mini-punishment-box" [class.taken]="punishmentsFor(player.id) > i"></div>
-        }
-      </div>
+        <div class="mini-punishments">
+          @for (i of [0, 1, 2, 3]; track i) {
+            <div class="mini-punishment-box" [class.taken]="punishmentsFor(player.id) > i"></div>
+          }
+        </div>
+      }
     </div>
   }
 

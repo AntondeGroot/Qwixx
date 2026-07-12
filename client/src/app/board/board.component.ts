@@ -60,6 +60,10 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   gameState = signal<GameState | null>(null);
   error = signal<string | null>(null);
   rollingDice = signal(false);
+  // True from the instant a move is sent until the next authoritative state arrives.
+  // Drives the "move sent" greyed-out button state so play feels responsive even while
+  // the server is busy (e.g. running bot turns) before the buttons update.
+  movePending = signal(false);
   // True while the player dismissed the lock-intent modal to pick a new cell.
   // Suppresses the modal until they cross something (pendingCellIds becomes non-empty).
   private readonly suppressModal = signal(false);
@@ -581,9 +585,11 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       this.moveSub.unsubscribe();
       this.fetchState();
     }
+    this.movePending.set(true);
     this.moveSub = this.movesService.makeMove(this.sessionId(), pid, req).subscribe({
       next: () => this.fetchState(),
       error: (e) => {
+        this.movePending.set(false);
         console.error('Move rejected:', e);
         this.fetchState();
       },
@@ -595,18 +601,16 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       this.moveSub.unsubscribe();
       this.fetchState();
     }
+    this.movePending.set(true);
     this.moveSub = this.movesService.makeMove(this.sessionId(), this.playerId(), req).subscribe({
-      next: (response) => {
-        if (response?.botRolled) {
-          this.rollingDice.set(true);
-          this.rollStartTime = Date.now();
-          setTimeout(() => this.fetchState(), this.ROLL_ANIM_MIN_MS);
-        } else {
-          this.fetchState();
-        }
+      next: () => {
+        // A bot roll triggered by this move animates via the SSE no-roll -> roll
+        // transition (see setupSse), so we just sync the final state here.
+        this.fetchState();
       },
       error: (e) => {
         this.rollingDice.set(false);
+        this.movePending.set(false);
         console.error('Move rejected:', e);
         this.fetchState();
       },
@@ -617,6 +621,9 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     // Never let an out-of-order response overwrite a newer state.
     const curr = this.gameState()?.version;
     if (curr !== undefined && s.version !== undefined && s.version < curr) return;
+
+    // A newer authoritative state has arrived, so any in-flight move is now resolved.
+    this.movePending.set(false);
 
     const prev = this.gameState();
     if (prev) {

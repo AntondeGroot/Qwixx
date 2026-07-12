@@ -119,8 +119,10 @@
 }
 
 .btn-roll:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  background: #aab4bc;
+  transform: none;
+  cursor: progress;
+  animation: btn-sent-pulse 1.15s ease-in-out infinite;
 }
 
 .confirm-panel {
@@ -345,6 +347,39 @@ h2 {
 
 .btn-pass-arrow.must-pass {
   animation: golden-glow 1.4s ease-in-out infinite;
+}
+
+/* "Move sent": grey the action buttons the instant a move is dispatched, so play feels
+   responsive while the server finishes (e.g. running bot turns) before the buttons update.
+   The gentle pulse reads as "working…" instead of a dead, still-coloured button. Declared
+   after .must-pass so it wins when a forced-pass button has its move sent. */
+.btn-confirm.sent,
+.btn-pass-arrow.sent {
+  background: #aab4bc;
+  transform: none;
+  cursor: progress;
+  animation: btn-sent-pulse 1.15s ease-in-out infinite;
+}
+
+.btn-confirm.sent:hover,
+.btn-pass-arrow.sent:hover {
+  background: #aab4bc;
+  transform: none;
+}
+
+.btn-confirm.sent .confirm-check-icon,
+.btn-pass-arrow.sent .pass-arrow-icon {
+  fill: #e4e8ea;
+}
+
+@keyframes btn-sent-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.66;
+  }
 }
 
 .punishment-box.taken::before,

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 import nl.adg.qwixx.action.GameAction;
@@ -29,8 +30,17 @@ import nl.adg.qwixx.state.TurnState;
 
 public class GameSession {
 
+    /** A bot "thinks" for a random spell in this range before rolling, so its turn feels human. */
+    private static final long BOT_PRE_ROLL_MIN_MS = 1_000;
+    private static final long BOT_PRE_ROLL_MAX_MS = 2_000;
+
     /** How long to pause after a bot rolls dice so the client animation can play. */
     private static final long BOT_ROLL_DELAY_MS = 3_000;
+
+    /** A short, random beat after each non-roll bot move (cross, punishment, lock, pass) so moves
+     *  don't land instantaneously. Kept brief so several crosses in one turn stay snappy. */
+    private static final long BOT_MOVE_MIN_MS = 800;
+    private static final long BOT_MOVE_MAX_MS = 1_600;
 
     private static final Logger log = Logger.getLogger(GameSession.class.getName());
 
@@ -85,6 +95,16 @@ public class GameSession {
     }
 
     public synchronized void start(List<Integer> availableBotPics) {
+        start(availableBotPics, true);
+    }
+
+    /**
+     * @param runInitialBotTurns when {@code true} (headless/simulation) any bots that act
+     *     first play immediately and synchronously. Live games pass {@code false} and drive
+     *     the initial bot turns via {@link #runPendingBotTurns} once clients have subscribed,
+     *     so a bot going first still plays its dice animation.
+     */
+    public synchronized void start(List<Integer> availableBotPics, boolean runInitialBotTurns) {
         if (status != SessionStatus.WAITING)
             throw new IllegalStateException("game already started");
 
@@ -151,8 +171,10 @@ public class GameSession {
         state = new GameState(settings.cardMode(), playerIds, factory.buildVariantData(playerIds), layouts, board, turn);
         rules = factory.buildTurnRules();
         status = SessionStatus.IN_PROGRESS;
-        state = runBotTurns(state);
-        if (state.gameOver()) status = SessionStatus.FINISHED;
+        if (runInitialBotTurns) {
+            state = runBotTurns(state);
+            if (state.gameOver()) status = SessionStatus.FINISHED;
+        }
     }
 
     public synchronized GameState applyAction(GameAction action) {
@@ -193,6 +215,11 @@ public class GameSession {
     }
 
     public synchronized void restart(GameSettings newSettings) {
+        restart(newSettings, true);
+    }
+
+    /** @see #start(List, boolean) for the meaning of {@code runInitialBotTurns}. */
+    public synchronized void restart(GameSettings newSettings, boolean runInitialBotTurns) {
         if (status != SessionStatus.FINISHED)
             throw new IllegalStateException("can only restart a finished game");
 
@@ -248,8 +275,10 @@ public class GameSession {
         state = new GameState(newSettings.cardMode(), playerIds, factory.buildVariantData(playerIds), layouts, board, turn);
         rules = factory.buildTurnRules();
         status = SessionStatus.IN_PROGRESS;
-        state = runBotTurns(state);
-        if (state.gameOver()) status = SessionStatus.FINISHED;
+        if (runInitialBotTurns) {
+            state = runBotTurns(state);
+            if (state.gameOver()) status = SessionStatus.FINISHED;
+        }
     }
 
     public synchronized void forceFinish() {
@@ -260,6 +289,24 @@ public class GameSession {
 
     private GameState runBotTurns(GameState state) {
         return runBotTurns(state, null);
+    }
+
+    /** True when a bot is next to act at the current state (e.g. a bot rolls first). */
+    public synchronized boolean isBotToAct() {
+        return nextBotToAct(state) != null;
+    }
+
+    /**
+     * Runs any bot turns pending at the current state, emitting each intermediate state
+     * through {@code botStateListener}. Live games call this (typically off the request
+     * thread, once clients have subscribed) so a bot acting first still plays its dice
+     * animation instead of having the roll baked into the initial state.
+     */
+    public synchronized GameState runPendingBotTurns(Consumer<GameState> botStateListener) {
+        if (status != SessionStatus.IN_PROGRESS) return state;
+        state = runBotTurns(state, botStateListener);
+        if (state.gameOver()) status = SessionStatus.FINISHED;
+        return state;
     }
 
     private GameState runBotTurns(GameState state, Consumer<GameState> botStateListener) {
@@ -274,19 +321,48 @@ public class GameSession {
             if (valid.isEmpty()) break;
             GameAction action = BotDecider.decide(current, bot, valid,
                     botProfiles.getOrDefault(bot, nl.adg.qwixx.bot.BotProfile.DEFAULT));
+
+            // Live games only (botStateListener != null): pace bot actions so they feel human.
+            // The decision above is instantaneous; only the applied move is paced. Simulation and
+            // training pass a null listener and stay fast.
+            boolean liveGame = botStateListener != null;
+            boolean isRoll   = action instanceof RollAction;
+
+            if (liveGame && isRoll) {
+                // Emit the bot's cleared, pre-roll board and let it "think" before rolling. Clients
+                // drive the dice animation off the no-roll -> roll transition, so this pre-roll emit
+                // is what makes the animation play for a bot.
+                botStateListener.accept(current);
+                pauseBot(randomPreRollDelayMs());
+            }
             current = rules.apply(current, action);
 
-            if (action instanceof RollAction && botStateListener != null) {
+            if (liveGame) {
                 botStateListener.accept(current);
-                try {
-                    Thread.sleep(BOT_ROLL_DELAY_MS);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    log.warning("Bot roll delay interrupted");
-                }
+                // The roll gets a long, fixed pause for the dice animation; every other move
+                // (cross, punishment, lock intent, pass) gets a short random beat so it doesn't
+                // land instantaneously.
+                pauseBot(isRoll ? BOT_ROLL_DELAY_MS : randomMoveDelayMs());
             }
         }
         return current;
+    }
+
+    private static long randomPreRollDelayMs() {
+        return ThreadLocalRandom.current().nextLong(BOT_PRE_ROLL_MIN_MS, BOT_PRE_ROLL_MAX_MS + 1);
+    }
+
+    private static long randomMoveDelayMs() {
+        return ThreadLocalRandom.current().nextLong(BOT_MOVE_MIN_MS, BOT_MOVE_MAX_MS + 1);
+    }
+
+    private void pauseBot(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warning("Bot roll delay interrupted");
+        }
     }
 
     private UUID nextBotToAct(GameState state) {

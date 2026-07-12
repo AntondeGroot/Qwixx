@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import nl.adg.qwixx.game.GameAlreadyStartedException;
 import nl.adg.qwixx.game.GameNotFinishedException;
@@ -30,6 +32,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class GamesApiDelegateImpl implements GamesApiDelegate {
 
+    /** How long the initial bot-turn runner waits for a client to subscribe before rolling anyway. */
+    private static final long SUBSCRIBER_WAIT_MS = 5_000;
+
     @Autowired
     private SseEmitterRegistry sseRegistry;
 
@@ -38,6 +43,9 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
 
     @Autowired
     private GameFinishedNotifier gameFinishedNotifier;
+
+    /** Runs initial bot turns off the request thread so the roll can animate on connected clients. */
+    private final ExecutorService botTurnExecutor = Executors.newCachedThreadPool();
 
     @Override
     public ResponseEntity<CreateNewGame201Response> createNewGame(NewGameRequest req) {
@@ -67,11 +75,14 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
             gameFinishedNotifier.register(sessionId, req.getCallbackUrl());
         }
         try {
-            session.start(botPics);
+            // Defer initial bot turns (see runInitialBotTurnsAsync) so a bot going first plays
+            // its dice animation once clients have subscribed, rather than the roll being baked in.
+            session.start(botPics, false);
         } catch (IllegalStateException ex) {
             throw new GameAlreadyStartedException(sessionId, ex);
         }
         sseRegistry.emit(sessionId, session.currentState(), session);
+        runInitialBotTurnsAsync(sessionId, session);
         return ResponseEntity.ok().build();
     }
 
@@ -79,12 +90,43 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
     public ResponseEntity<Void> restartGame(String sessionId, RestartGameRequest req) {
         GameSession session = require(sessionId);
         try {
-            session.restart(buildSettings(resolveOptions(req, session)));
+            session.restart(buildSettings(resolveOptions(req, session)), false);
         } catch (IllegalStateException ex) {
             throw new GameNotFinishedException(sessionId, ex);
         }
         sseRegistry.emit(sessionId, session.currentState(), session);
+        runInitialBotTurnsAsync(sessionId, session);
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Runs any bot turns pending at the start of a game on a background thread, after waiting
+     * (briefly) for a client to subscribe to the SSE stream. This lets a bot that acts first
+     * play its dice-roll animation instead of the roll appearing pre-rolled in the initial state.
+     * No-op when a human acts first.
+     */
+    private void runInitialBotTurnsAsync(String sessionId, GameSession session) {
+        if (!session.isBotToAct()) return;
+        botTurnExecutor.submit(() -> {
+            awaitSubscriber(sessionId);
+            session.runPendingBotTurns(
+                    intermediate -> sseRegistry.emit(sessionId, intermediate, session));
+            sseRegistry.emit(sessionId, session.currentState(), session);
+            gameFinishedNotifier.checkAndNotify(sessionId, session);
+        });
+    }
+
+    private void awaitSubscriber(String sessionId) {
+        long deadline = System.currentTimeMillis() + SUBSCRIBER_WAIT_MS;
+        while (sseRegistry.subscriberCount(sessionId) == 0
+                && System.currentTimeMillis() < deadline) {
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
     }
 
     @Override

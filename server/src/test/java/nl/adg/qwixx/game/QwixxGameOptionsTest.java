@@ -76,6 +76,25 @@ class QwixxGameOptionsTest {
     }
 
     @Test
+    void seeOtherCardsOptionDefaultsToTrue() {
+        GameOption opt = optionByKey("seeOtherCards");
+        assertEquals(OptionType.BOOLEAN, opt.type());
+        assertEquals("true", opt.defaultValue());
+    }
+
+    @Test
+    void gameSettingsDefaultsSeeOtherCardsToTrue() {
+        assertTrue(GameSettings.builder().build().seeOtherCards());
+    }
+
+    @Test
+    void applySeeOtherCardsFalse() {
+        GameSettings.Builder builder = GameSettings.builder();
+        QwixxGameOptions.apply(builder, Map.of("seeOtherCards", false));
+        assertFalse(builder.build().seeOtherCards());
+    }
+
+    @Test
     void applyUnknownKeyIsIgnored() {
         GameSettings.Builder builder = GameSettings.builder();
         assertDoesNotThrow(() -> QwixxGameOptions.apply(builder, Map.of("bogus", "value")));

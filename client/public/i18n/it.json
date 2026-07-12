@@ -27,6 +27,8 @@
     "extraRowDescription": "Aggiungi una riga bonus di celle che forma un'onda su quattro righe.",
     "connectedCells": "Celle collegate",
     "connectedCellsDescription": "Collega celle tra righe adiacenti: segnare una cella segna automaticamente la cella collegata nella riga successiva.",
+    "seeOtherCards": "Vedi le carte degli altri",
+    "seeOtherCardsDescription": "Mostra una miniatura della scheda di ogni altro giocatore. Disattiva per nascondere le carte degli altri giocatori.",
     "xchange": "X-Cambio",
     "xchangeDescription": "Aggiunge una riga extra con la possibilità di cambiare la tua combinazione bianco+bianco con l'altro numero in quella cella.",
     "botCount": "Avversari computer",

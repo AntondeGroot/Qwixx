@@ -27,6 +27,8 @@
     "extraRowDescription": "Voeg een bonusrij cellen toe die een golf over vier rijen vormt.",
     "connectedCells": "Verbonden cellen",
     "connectedCellsDescription": "Verbindt cellen tussen aangrenzende rijen: het aankruisen van één cel kruist automatisch de verbonden cel in de volgende rij.",
+    "seeOtherCards": "Kaarten van anderen zien",
+    "seeOtherCardsDescription": "Toont een miniatuur van het spelblad van elke andere speler. Schakel uit om de kaarten van de andere spelers te verbergen.",
     "xchange": "X-Wissel",
     "xchangeDescription": "Voegt een extra rij toe met de optie om je wit+wit-combinatie te wisselen voor het andere getal in die cel.",
     "botCount": "Computertegenstanders",

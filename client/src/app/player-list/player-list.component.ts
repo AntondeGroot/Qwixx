@@ -22,6 +22,7 @@ export class PlayerListComponent {
   sheetLayouts = input<Record<string, SheetLayout>>({});
   sheetProgress = input<Record<string, SheetProgress>>({});
   closedRows = input<Record<string, string>>({});
+  showOtherCards = input<boolean>(true);
 
   otherPlayers = computed(() => this.players().filter((p) => p.id !== this.myPlayerId()));
 

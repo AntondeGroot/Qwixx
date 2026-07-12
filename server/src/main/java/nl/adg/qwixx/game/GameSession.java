@@ -93,7 +93,8 @@ public class GameSession {
             GameSettings.Builder builder = GameSettings.builder()
                     .base(settings.base()).randomOrder(settings.randomOrder())
                     .connectedCells(settings.connectedCells()).extraRow(settings.extraRow())
-                    .mixedColors(settings.mixedColors()).cardMode(settings.cardMode())
+                    .mixedColors(settings.mixedColors()).seeOtherCards(settings.seeOtherCards())
+                    .cardMode(settings.cardMode())
                     .gameMode(settings.gameMode()).botCount(settings.botCount())
                     .botStrategy(settings.botStrategy());
             QwixxGameOptions.apply(builder, proposedOptions);

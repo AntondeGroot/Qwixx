@@ -672,6 +672,9 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/AvailableMove'
+        seeOtherCards:
+          type: boolean
+          description: When false, clients hide the miniature sheets of other players. Defaults to true.
         gameOver:
           type: boolean
         version:

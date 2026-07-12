@@ -62,6 +62,12 @@ public class SseEmitterRegistry {
         list.removeAll(dead);
     }
 
+    /** Number of active SSE subscribers currently connected for a session key. */
+    public int subscriberCount(String sessionId) {
+        List<SseEmitter> list = sessions.get(sessionId);
+        return list == null ? 0 : list.size();
+    }
+
     void completeAll(String sessionId) {
         List<SseEmitter> list = sessions.remove(sessionId);
         if (list != null) list.forEach(SseEmitter::complete);

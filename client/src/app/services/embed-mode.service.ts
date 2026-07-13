@@ -20,6 +20,11 @@ export class EmbedModeService {
     };
     window.addEventListener('message', handler);
     destroyRef.onDestroy(() => window.removeEventListener('message', handler));
+
+    // Handshake: tell the host we're now listening so it (re)sends state such as
+    // the admin status. Without this, the host's on-load post can arrive before
+    // Angular has bootstrapped and registered the listener above, and be lost.
+    window.parent.postMessage({ type: 'qwixx-embed-ready' }, '*');
   }
 
   postOptions(options: Record<string, string>): void {

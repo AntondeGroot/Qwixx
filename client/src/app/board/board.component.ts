@@ -385,6 +385,15 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   });
 
+  // Crosses required in a row before its lock cell can be crossed (5 standard, 6 Longo).
+  // The server's minCrosses counts the lock cross itself, so subtract 1 for the display.
+  // Null when the current sheet has no lockable rows, so the legend is hidden.
+  lockCrossesRequired = computed((): number | null => {
+    const layout = this.gameState()?.sheetLayouts[this.playerId()];
+    const min = layout?.rows.find((r) => r.lock)?.lock?.minCrosses;
+    return min == null ? null : min - 1;
+  });
+
   pendingCellIds = computed(() => {
     const ids = this.gameState()?.turnState?.pendingCrosses?.[this.playerId()] ?? [];
     return new Set<string>(ids);

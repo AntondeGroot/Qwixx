@@ -79,15 +79,36 @@
                 <span class="lucky-number-label">1+5</span>
               </div>
             }
-            <div class="score-strip">
-              <div class="score-labels">
-                <span>{{ t('crosses') }}</span>
-                <span>{{ t('points') }}</span>
+            <div class="score-row">
+              <div class="score-strip">
+                <div class="score-labels">
+                  <span>{{ t('crosses') }}</span>
+                  <span>{{ t('points') }}</span>
+                </div>
+                @for (col of scoreRows(); track col.crosses) {
+                  <div class="score-box">
+                    <div class="score-box__top">{{ col.crosses }}×</div>
+                    <div class="score-box__bottom">{{ col.points }}</div>
+                  </div>
+                }
               </div>
-              @for (col of scoreRows(); track col.crosses) {
-                <div class="score-box">
-                  <div class="score-box__top">{{ col.crosses }}×</div>
-                  <div class="score-box__bottom">{{ col.points }}</div>
+              @if (lockCrossesRequired(); as crossesToLock) {
+                <div class="lock-legend">
+                  <span class="legend-cross-cell">
+                    <span class="legend-cross-num">{{ crossesToLock }}</span>
+                    <span class="legend-cross-mark">✕</span>
+                  </span>
+                  <svg class="legend-arrow" viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M3 12 H19 M13 6 L19 12 L13 18"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                  <span class="legend-lock-cell"></span>
                 </div>
               }
             </div>

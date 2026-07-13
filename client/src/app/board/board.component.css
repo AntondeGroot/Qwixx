@@ -409,6 +409,14 @@ a {
   font-size: 14px;
 }
 
+.score-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 4px;
+  width: fit-content;
+}
+
 .score-strip {
   display: flex;
   align-items: stretch;
@@ -417,8 +425,54 @@ a {
   border: 1.5px solid #e0e0e0;
   border-radius: 10px;
   padding: 6px 10px;
-  margin-top: 4px;
   width: fit-content;
+}
+
+/* Legend diagram: an outlined cell "N ✕" → an empty dashed lock cell. Reads as "reach N
+   crosses to be able to cross the lock cell" (5 standard / 6 Longo), matching the tiles above. */
+.lock-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #555;
+  user-select: none;
+}
+
+.legend-cross-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  height: 30px;
+  min-width: 30px;
+  padding: 0 0px;
+  border: 2px solid rgba(0, 0, 0, 0.45);
+  border-radius: 6px;
+  line-height: 1;
+}
+
+.legend-cross-num {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.legend-cross-mark {
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.legend-arrow {
+  width: 24px;
+  height: 24px;
+  color: #888;
+  flex-shrink: 0;
+}
+
+.legend-lock-cell {
+  width: 30px;
+  height: 30px;
+  border: 2.5px dashed rgba(0, 0, 0, 0.55);
+  border-radius: 6px;
 }
 
 .score-labels {

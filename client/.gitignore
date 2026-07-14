@@ -7,6 +7,12 @@
 /.angular/
 .angular/
 
+# Playwright e2e output (generated on every run)
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 # Node modules and dependency files
 /node_modules/
 /yarn.lock

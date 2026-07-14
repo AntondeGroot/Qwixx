@@ -70,6 +70,7 @@
                 [hasBonusRowBelow]="myRowConnectors().get(row.id)?.hasBonusRowBelow ?? false"
                 (cellClicked)="onCellClicked(row.id, $event, playerId())"
                 [showLuckyCrossHint]="row.luckyRow === true && hasLuckyCross()"
+                [doubleVariant]="state.doubleA ? 'A' : state.doubleB ? 'B' : null"
                 (lockClicked)="onLockClicked(row.id, playerId())"
               />
             }

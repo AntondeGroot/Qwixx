@@ -672,6 +672,12 @@ components:
         seeOtherCards:
           type: boolean
           description: When false, clients hide the miniature sheets of other players. Defaults to true.
+        doubleA:
+          type: boolean
+          description: Double A variant — every coloured cell has a twin cell below it. Clients render two-tier cells.
+        doubleB:
+          type: boolean
+          description: Double B variant — some cells can be crossed twice. Clients render diagonal double cells.
         gameOver:
           type: boolean
         version:
@@ -731,10 +737,10 @@ components:
       properties:
         type:
           type: string
-          enum: [EXTRA_BUCKET, AUTO_CROSS, BONUS_POINTS, DOUBLE_CROSS, SECONDARY_COLOR, X_CHANGE, LUCKY_NUMBER, LUCKY_CROSS]
+          enum: [EXTRA_BUCKET, AUTO_CROSS, BONUS_POINTS, DOUBLE_CROSS, DOUBLE_TWIN, SECONDARY_COLOR, X_CHANGE, LUCKY_NUMBER, LUCKY_CROSS]
         target:
           type: string
-          description: Target cell ID — only present for AUTO_CROSS.
+          description: Cell ID this tag references — the auto-cross target for AUTO_CROSS, or the primary cell for DOUBLE_TWIN.
         amount:
           type: integer
           description: Bonus point amount — only present for BONUS_POINTS.

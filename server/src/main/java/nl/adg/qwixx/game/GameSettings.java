@@ -15,6 +15,8 @@ public class GameSettings {
     private final boolean      luckyNumber;
     private final boolean      luckyCross;
     private final boolean      mixedColors;
+    private final boolean      doubleA;
+    private final boolean      doubleB;
     private final boolean      seeOtherCards;
     private final CardMode     cardMode;
     private final GameMode     gameMode;
@@ -34,6 +36,8 @@ public class GameSettings {
         this.luckyNumber = builder.luckyNumber;
         this.luckyCross  = builder.luckyCross;
         this.mixedColors = builder.mixedColors;
+        this.doubleA     = builder.doubleA;
+        this.doubleB     = builder.doubleB;
         this.seeOtherCards = builder.seeOtherCards;
         this.cardMode    = builder.cardMode;
         this.gameMode    = builder.gameMode;
@@ -51,6 +55,8 @@ public class GameSettings {
     public boolean         luckyNumber()    { return luckyNumber; }
     public boolean         luckyCross()     { return luckyCross; }
     public boolean         mixedColors()    { return mixedColors; }
+    public boolean         doubleA()        { return doubleA; }
+    public boolean         doubleB()        { return doubleB; }
     public boolean         seeOtherCards()  { return seeOtherCards; }
     public CardMode        cardMode()       { return cardMode; }
     public GameMode        gameMode()       { return gameMode; }
@@ -76,6 +82,8 @@ public class GameSettings {
         private boolean        luckyNumber;
         private boolean        luckyCross;
         private boolean        mixedColors;
+        private boolean        doubleA;
+        private boolean        doubleB;
         private boolean        seeOtherCards  = true;
         private CardMode       cardMode       = CardMode.DETERMINISTIC;
         private GameMode       gameMode       = GameMode.ONLINE;
@@ -92,6 +100,8 @@ public class GameSettings {
         public Builder luckyNumber(boolean v)              { this.luckyNumber = v; return this; }
         public Builder luckyCross(boolean v)               { this.luckyCross = v; return this; }
         public Builder mixedColors(boolean v)              { this.mixedColors = v; return this; }
+        public Builder doubleA(boolean v)                  { this.doubleA = v; return this; }
+        public Builder doubleB(boolean v)                  { this.doubleB = v; return this; }
         public Builder seeOtherCards(boolean v)            { this.seeOtherCards = v; return this; }
         public Builder cardMode(CardMode cardMode)         { this.cardMode = cardMode; return this; }
         public Builder gameMode(GameMode gameMode)         { this.gameMode = gameMode; return this; }
@@ -108,6 +118,15 @@ public class GameSettings {
                 throw new IllegalArgumentException(
                     "luckyCross and bigPoints cannot be combined: lucky cross fields are " +
                     "interleaved in the coloured rows, which is incompatible with the bonus row layout");
+            }
+            if (doubleA && doubleB) {
+                throw new IllegalArgumentException(
+                    "doubleA and doubleB cannot be combined: they are alternative double-variant layouts");
+            }
+            if ((doubleA || doubleB) && (bigPoints || luckyCross || connectedCells)) {
+                throw new IllegalArgumentException(
+                    "the double variants cannot be combined with bigPoints, luckyCross or connectedCells: " +
+                    "each restructures the coloured rows in an incompatible way");
             }
             return new GameSettings(this);
         }

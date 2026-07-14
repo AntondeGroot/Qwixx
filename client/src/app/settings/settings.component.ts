@@ -54,6 +54,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
   lobbyPlayers = signal<{ id: string; name: string }[]>([]);
   maxPlayers = signal<number>(99);
   previewLayout = signal<SheetLayout | null>(null);
+  // Which double variant the preview should render (derived from the doubleA/doubleB options),
+  // since the previewLayout payload itself doesn't carry the flags.
+  previewDoubleVariant = signal<'A' | 'B' | null>(null);
   error = signal<string | null>(null);
   loading = signal(false);
 
@@ -325,7 +328,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   private fetchPreview() {
     this.previewSub?.unsubscribe();
-    this.previewSub = this.gamesService.previewLayout(this.buildGameOptions()).subscribe({
+    const opts = this.buildGameOptions();
+    this.previewDoubleVariant.set(opts['doubleA'] ? 'A' : opts['doubleB'] ? 'B' : null);
+    this.previewSub = this.gamesService.previewLayout(opts).subscribe({
       next: (layout) => this.previewLayout.set(layout),
       error: () => this.previewLayout.set(null),
     });

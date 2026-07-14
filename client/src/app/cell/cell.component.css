@@ -57,6 +57,14 @@
   opacity: 0.25;
 }
 
+/* Double A twin: a small hollow cell — white fill, coloured border, dark cross. */
+.cell.outline {
+  background: #fff;
+  color: #333;
+  border-color: var(--primary-color);
+  border-width: 2.5px;
+}
+
 .cell-cross {
   position: absolute;
   font-size: 22px;

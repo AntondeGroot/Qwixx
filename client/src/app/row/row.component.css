@@ -219,3 +219,154 @@
   position: relative;
   z-index: 1;
 }
+
+/* ── Double A: full primary cell with a small hollow twin cell below it ───── */
+
+/* Align primaries to the top of the row so their twins hang beneath them. */
+.row.row-double-a {
+  align-items: flex-start;
+}
+
+.double-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.double-slot app-cell {
+  display: block;
+}
+
+/* The twin is a smaller hollow cell directly below its primary. */
+.row-double-a .double-twin {
+  zoom: 0.62;
+}
+
+/* ── Double B: one diagonal cell, the same number twice, one click target ──── */
+
+.double-b-cell {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--db-color);
+}
+
+.double-b-cell[data-color='RED'] {
+  --db-color: #d32f2f;
+}
+.double-b-cell[data-color='YELLOW'] {
+  --db-color: #f9a825;
+}
+.double-b-cell[data-color='GREEN'] {
+  --db-color: #388e3c;
+}
+.double-b-cell[data-color='BLUE'] {
+  --db-color: #1565c0;
+}
+
+/* Two triangular halves — visual only; the whole cell is one click target.
+   Top-left is the primary (full colour); bottom-right is a permanently lighter twin. */
+.db-tri {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: #fff;
+}
+.db-tl {
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+.db-br {
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  background: rgba(255, 255, 255, 0.34);
+  color: rgba(0, 0, 0, 0.74);
+}
+/* Yellow's primary half is already light, so its text is dark too. */
+.double-b-cell[data-color='YELLOW'] .db-tl {
+  color: #333;
+}
+
+/* White diagonal slash separating the two marks. */
+.double-b-cell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom right,
+    transparent calc(50% - 1.25px),
+    rgba(255, 255, 255, 0.9) 50%,
+    transparent calc(50% + 1.25px)
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.double-b-cell.db-interactive {
+  cursor: pointer;
+}
+
+/* Same glow language as the rest of the board: purple = colour-die move, cyan = white+white.
+   Driven by db-clickable (a legal move that isn't already placed), not by pending marks. */
+.double-b-cell.db-clickable {
+  --glow-full: rgba(186, 66, 255, 0.95);
+  --glow-dim: rgba(186, 66, 255, 0.35);
+  --glow-mid: rgba(186, 66, 255, 0.55);
+  animation: db-glow 1.4s ease-in-out infinite;
+}
+.double-b-cell.db-clickable.db-ww {
+  --glow-full: rgba(0, 229, 255, 0.95);
+  --glow-dim: rgba(0, 229, 255, 0.5);
+  --glow-mid: rgba(0, 229, 255, 0.75);
+}
+.double-b-cell:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 1px;
+}
+
+@keyframes db-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px var(--glow-full);
+  }
+  50% {
+    box-shadow:
+      0 0 0 6px var(--glow-dim),
+      0 0 18px 2px var(--glow-mid);
+  }
+}
+
+.db-num {
+  position: absolute;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  z-index: 2;
+}
+.db-tl .db-num {
+  top: 3px;
+  left: 5px;
+}
+.db-br .db-num {
+  bottom: 3px;
+  right: 5px;
+}
+
+.db-cross {
+  position: absolute;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1;
+  z-index: 2;
+}
+.db-tl .db-cross {
+  top: 1px;
+  left: 4px;
+}
+.db-br .db-cross {
+  bottom: 1px;
+  right: 4px;
+}

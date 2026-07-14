@@ -254,6 +254,20 @@ class GameSessionTest {
     }
 
     @Test
+    void doubleA_botsPlayWithoutError() {
+        GameSession s = new GameSession(UUID.randomUUID().toString(), "test", 4,
+                GameSettings.builder().doubleA(true).botCount(2).build());
+        assertDoesNotThrow(() -> s.start(), "bots must play a Double A layout (with twin cells) without error");
+    }
+
+    @Test
+    void doubleB_botsPlayWithoutError() {
+        GameSession s = new GameSession(UUID.randomUUID().toString(), "test", 4,
+                GameSettings.builder().doubleB(true).botCount(2).build());
+        assertDoesNotThrow(() -> s.start(), "bots must play a Double B layout (with twin cells) without error");
+    }
+
+    @Test
     void exitGame_unknownPlayer_throwsIllegalArgumentException() {
         GameSession s = session(4);
         s.addPlayer(Player.of("Alice"));

@@ -71,6 +71,7 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
                         : buildStandardRows();
                 if (settings.randomOrder()) shuffleDisplayValues(shared);
                 if (settings.connectedCells()) applyConnectedCells(shared);
+                applyDoubleVariants(shared);
                 if (settings.xChange()) shared.add(buildXChangeRow());
                 if (settings.luckyNumber()) shared.add(buildLuckyRow());
                 for (UUID player : players) result.put(player, shared);
@@ -84,6 +85,7 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
                     if (settings.randomOrder()) shuffleDisplayValues(playerRows);
                     if (settings.extraRow()) applyExtraRow(playerRows);
                     if (settings.connectedCells()) applyConnectedCells(playerRows);
+                    applyDoubleVariants(playerRows);
                     result.put(player, playerRows);
                 }
             }
@@ -528,6 +530,46 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
         List<CellTag> tags = new ArrayList<>(cell.tags());
         tags.add(new CellTag.AutoCross(targetId));
         cell.setTags(tags);
+    }
+
+    /**
+     * Double A / Double B: attach a "twin" mark to selected coloured cells. Double A twins every
+     * non-closing cell; Double B twins a fixed subset (see {@link #doubleBPositions}). Each twin
+     * shares its primary's colour and value, lives in the same {@link Row}, and is crossable only
+     * after its primary is crossed and nothing to the primary's right is crossed yet (enforced in
+     * {@code CellCrosser} via the {@link CellTag.DoubleTwin} tag). Twins share the primary's
+     * position so a crossed twin never advances the row's left-to-right progression.
+     */
+    private void applyDoubleVariants(List<Row> rows) {
+        if (!settings.doubleA() && !settings.doubleB()) return;
+        Set<Integer> bPositions = doubleBPositions();
+        for (Row row : rows) {
+            // Snapshot the primaries first — we append twins to the same cell list below.
+            List<Cell> primaries = new ArrayList<>(row.cells());
+            for (Cell primary : primaries) {
+                if (primary.isClosingEligible()) continue; // the closing cell's twin is unreachable
+                if (settings.doubleB() && !bPositions.contains(primary.position())) continue;
+                row.addCell(buildTwin(primary));
+            }
+        }
+    }
+
+    private Cell buildTwin(Cell primary) {
+        Cell twin = new Cell(primary.position());
+        twin.setColor(primary.color());
+        twin.setDisplayValue(primary.displayValue());
+        twin.setClosingEligible(false);
+        twin.setTags(List.of(new CellTag.DoubleTwin(primary.id())));
+        return twin;
+    }
+
+    // Fixed columns that gain a twin under Double B (avoid position 0 and the closing cells).
+    private Set<Integer> doubleBPositions() {
+        if (!settings.doubleB()) return Set.of();
+        return switch (settings.base()) {
+            case STANDARD -> Set.of(2, 5, 8);
+            case LONGO    -> Set.of(3, 7, 11);
+        };
     }
 
     private LockCell buildLock(Color color, List<Cell> cells) {

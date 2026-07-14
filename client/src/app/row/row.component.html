@@ -4,6 +4,7 @@
   [class.bonus-row]="!row().lock && !isXChangeRow() && !isLuckyRow()"
   [class.xchange-row]="isXChangeRow()"
   [class.lucky-number-row]="isLuckyRow()"
+  [class.row-double-a]="doubleVariant() === 'A'"
   [attr.data-color]="row().cells[0]?.color"
   [attr.translate]="'no'"
   [style.width]="xChangeRowWidth()"
@@ -37,16 +38,75 @@
     }
   } @else {
     @for (cell of regularCells(); track cell.id) {
-      <app-cell
-        [cell]="cell"
-        [crossed]="isCrossed(cell.id)"
-        [pending]="pendingCellIds().has(cell.id)"
-        [clickable]="clickableCellIds().has(cell.id)"
-        [showClickable]="showClickableCellIds()?.has(cell.id)"
-        [showDieHint]="whiteWhiteClickableCellIds().has(cell.id)"
-        [maxedColors]="maxedColors()"
-        (clicked)="cellClicked.emit(cell.id)"
-      />
+      @if (twinByPrimaryId().get(cell.id); as twin) {
+        @if (doubleVariant() === 'B') {
+          <!-- Double B: one diagonal cell, the same number twice, one click target.
+               Clicking anywhere crosses the primary (top-left) first, then the twin. -->
+          <div
+            class="double-b-cell"
+            [attr.data-color]="cell.color"
+            [class.db-clickable]="dbClickable(cell.id, twin.id)"
+            [class.db-interactive]="dbActionable(cell.id, twin.id)"
+            [class.db-ww]="dbIsWhiteWhite(cell.id, twin.id)"
+            [attr.role]="dbActionable(cell.id, twin.id) ? 'button' : null"
+            [tabindex]="dbActionable(cell.id, twin.id) ? 0 : -1"
+            (click)="dbActionable(cell.id, twin.id) && onDoubleBClick(cell.id, twin.id)"
+            (keydown.enter)="dbActionable(cell.id, twin.id) && onDoubleBClick(cell.id, twin.id)"
+            [attr.translate]="'no'"
+          >
+            <span class="db-tri db-tl">
+              <span class="db-num">{{ cell.displayValue }}</span>
+              @if (isCrossed(cell.id) || pendingCellIds().has(cell.id)) {
+                <span class="db-cross">✕</span>
+              }
+            </span>
+            <span class="db-tri db-br">
+              <span class="db-num">{{ twin.displayValue }}</span>
+              @if (isCrossed(twin.id) || pendingCellIds().has(twin.id)) {
+                <span class="db-cross">✕</span>
+              }
+            </span>
+          </div>
+        } @else {
+          <!-- Double A: full primary cell with a small hollow twin cell below it. -->
+          <div class="double-slot">
+            <app-cell
+              class="double-primary"
+              [cell]="cell"
+              [crossed]="isCrossed(cell.id)"
+              [pending]="pendingCellIds().has(cell.id)"
+              [clickable]="clickableCellIds().has(cell.id)"
+              [showClickable]="showClickableCellIds()?.has(cell.id)"
+              [showDieHint]="whiteWhiteClickableCellIds().has(cell.id)"
+              [maxedColors]="maxedColors()"
+              (clicked)="cellClicked.emit(cell.id)"
+            />
+            <app-cell
+              class="double-twin"
+              [cell]="twin"
+              [outline]="true"
+              [crossed]="isCrossed(twin.id)"
+              [pending]="pendingCellIds().has(twin.id)"
+              [clickable]="clickableCellIds().has(twin.id)"
+              [showClickable]="showClickableCellIds()?.has(twin.id)"
+              [showDieHint]="whiteWhiteClickableCellIds().has(twin.id)"
+              [maxedColors]="maxedColors()"
+              (clicked)="cellClicked.emit(twin.id)"
+            />
+          </div>
+        }
+      } @else {
+        <app-cell
+          [cell]="cell"
+          [crossed]="isCrossed(cell.id)"
+          [pending]="pendingCellIds().has(cell.id)"
+          [clickable]="clickableCellIds().has(cell.id)"
+          [showClickable]="showClickableCellIds()?.has(cell.id)"
+          [showDieHint]="whiteWhiteClickableCellIds().has(cell.id)"
+          [maxedColors]="maxedColors()"
+          (clicked)="cellClicked.emit(cell.id)"
+        />
+      }
     }
     @if (row().lock) {
       <div class="lock-zone" [class.lock-zone-crossed]="rowState()?.lockCrossed">

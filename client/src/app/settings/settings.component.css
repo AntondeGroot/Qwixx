@@ -238,3 +238,29 @@ p {
   font-size: 9px;
   font-weight: 700;
 }
+
+/* Double A: a coloured cell with a small hollow twin cell below it. */
+.opt-double {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.opt-cell--twin {
+  width: 13px;
+  height: 13px;
+  background: #fff;
+  border-width: 2px;
+}
+
+/* Double B: one cell split on a diagonal — full colour, white slash, lighter half. */
+.opt-cell--double-b {
+  background: linear-gradient(
+    to bottom right,
+    var(--db) 47%,
+    #fff 47%,
+    #fff 53%,
+    color-mix(in srgb, var(--db) 55%, #fff) 53%
+  );
+  border-color: rgba(0, 0, 0, 0.15);
+}

@@ -13,6 +13,7 @@
   [class.primary-maxed]="primaryMaxed()"
   [class.secondary-maxed]="secondaryMaxed()"
   [class.clickable]="showClickable() ?? clickable()"
+  [class.outline]="outline()"
   [class.ww]="showDieHint()"
   [attr.data-color]="cell().color"
   [attr.data-secondary-color]="secondaryColor()"
@@ -69,7 +70,7 @@
     <span class="lucky-number-value">{{ luckyNumberBonusPoints() }}</span>
   } @else if (isLuckyCross()) {
     <span class="lucky-number-value lucky-cross-value">✦</span>
-  } @else {
+  } @else if (!outline()) {
     <span class="cell-value">{{ cell().displayValue }}</span>
   }
   @if (crossed() || pending()) {

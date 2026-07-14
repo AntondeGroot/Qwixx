@@ -169,6 +169,10 @@ export class ScoreComponent implements OnInit {
   readonly finalState = signal<GameState | null>(null);
 
   myLayout = computed(() => this.finalState()?.sheetLayouts?.[this.playerId] ?? null);
+  myDoubleVariant = computed<'A' | 'B' | null>(() => {
+    const s = this.finalState();
+    return s?.doubleA ? 'A' : s?.doubleB ? 'B' : null;
+  });
   myProgress = computed(() => this.finalState()?.sheetProgress?.[this.playerId] ?? null);
   myClosedRows = computed(() => this.finalState()?.closedRows ?? {});
 

@@ -72,6 +72,7 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
                 if (settings.randomOrder()) shuffleDisplayValues(shared);
                 if (settings.connectedCells()) applyConnectedCells(shared);
                 applyDoubleVariants(shared);
+                if (settings.bonusA()) { applyBonusBoxes(shared); shared.add(buildBonusBar(false)); }
                 if (settings.xChange()) shared.add(buildXChangeRow());
                 if (settings.luckyNumber()) shared.add(buildLuckyRow());
                 for (UUID player : players) result.put(player, shared);
@@ -86,6 +87,7 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
                     if (settings.extraRow()) applyExtraRow(playerRows);
                     if (settings.connectedCells()) applyConnectedCells(playerRows);
                     applyDoubleVariants(playerRows);
+                    if (settings.bonusA()) { applyBonusBoxes(playerRows); playerRows.add(buildBonusBar(true)); }
                     result.put(player, playerRows);
                 }
             }
@@ -570,6 +572,69 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
             case STANDARD -> Set.of(2, 5, 8);
             case LONGO    -> Set.of(3, 7, 11);
         };
+    }
+
+    // ── Bonus A ────────────────────────────────────────────────────────────────
+
+    /** Left-to-right colours of the 12-cell bonus bar (3 of each colour). */
+    private static final Color[] BONUS_BAR_SEQUENCE = {
+        Color.RED, Color.YELLOW, Color.GREEN, Color.BLUE, Color.GREEN, Color.RED,
+        Color.BLUE, Color.YELLOW, Color.RED, Color.YELLOW, Color.BLUE, Color.GREEN
+    };
+
+    /** Tags the 3 fixed bonus-box numbers in each coloured row with {@link CellTag.BonusBox}. */
+    private void applyBonusBoxes(List<Row> colored) {
+        for (Row row : colored) {
+            if (row.cells().isEmpty()) continue;
+            Set<String> targets = new HashSet<>();
+            for (int v : bonusBoxValues(row.cells().get(0).color())) targets.add(String.valueOf(v));
+            for (Cell cell : row.cells()) {
+                if (targets.contains(cell.displayValue())) {
+                    List<CellTag> tags = new ArrayList<>(cell.tags());
+                    tags.add(new CellTag.BonusBox());
+                    cell.setTags(tags);
+                }
+            }
+        }
+    }
+
+    // Fixed bonus-box display values per colour (Standard as given; Longo spread analogously,
+    // always clear of the lock cells).
+    private int[] bonusBoxValues(Color color) {
+        return switch (settings.base()) {
+            case STANDARD -> switch (color) {
+                case RED    -> new int[]{3, 6, 9};
+                case YELLOW -> new int[]{5, 8, 11};
+                case GREEN  -> new int[]{10, 7, 4};
+                case BLUE   -> new int[]{11, 7, 4};
+                default     -> new int[]{};
+            };
+            case LONGO -> switch (color) {
+                case RED    -> new int[]{4, 8, 12};
+                case YELLOW -> new int[]{6, 10, 14};
+                case GREEN  -> new int[]{14, 10, 6};
+                case BLUE   -> new int[]{13, 9, 5};
+                default     -> new int[]{};
+            };
+        };
+    }
+
+    /** Builds the bonus-bar row (12 coloured cells). {@code shuffle} randomises the colour order
+     *  (unique cards); otherwise the fixed official sequence is used (shared card). */
+    private Row buildBonusBar(boolean shuffle) {
+        List<Color> seq = new ArrayList<>(Arrays.asList(BONUS_BAR_SEQUENCE));
+        if (shuffle) Collections.shuffle(seq, random);
+        Row row = new Row();
+        row.setBonusBar();
+        for (int i = 0; i < seq.size(); i++) {
+            Cell cell = new Cell(i);
+            cell.setColor(seq.get(i));
+            cell.setDisplayValue("");
+            cell.setClosingEligible(false);
+            cell.setTags(List.of());
+            row.addCell(cell);
+        }
+        return row;
     }
 
     private LockCell buildLock(Color color, List<Cell> cells) {

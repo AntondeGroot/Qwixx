@@ -1,8 +1,9 @@
 package nl.adg.qwixx.data;
 
-public sealed interface CellTag permits CellTag.AutoCross, CellTag.ExtraBucket, CellTag.BonusPoints, CellTag.DoubleCross, CellTag.DoubleTwin, CellTag.SecondaryColor, CellTag.XChange, CellTag.LuckyNumber, CellTag.LuckyCross {
+public sealed interface CellTag permits CellTag.AutoCross, CellTag.ExtraBucket, CellTag.BonusPoints, CellTag.DoubleCross, CellTag.DoubleTwin, CellTag.BonusBox, CellTag.SecondaryColor, CellTag.XChange, CellTag.LuckyNumber, CellTag.LuckyCross {
   record AutoCross(String target)    implements CellTag {}  // rule-time: auto-crosses target when this cell is crossed
   record DoubleTwin(String primary)  implements CellTag {}  // rule-time: Double A/B twin mark; crossable once its primary is crossed and is the row's rightmost crossed cell
+  record BonusBox()                  implements CellTag {}  // rule-time: Bonus A trigger; crossing it consumes the next bonus-bar cell and forces a cross in that colour's row (may chain)
   record ExtraBucket()               implements CellTag {}  // score-time: cell also contributes +1 to the EXTRA scoring bucket
   record BonusPoints(int amount)     implements CellTag {}  // score-time: crossing awards flat bonus points
   record DoubleCross()               implements CellTag {}  // score-time: cell counts twice in its primary color bucket

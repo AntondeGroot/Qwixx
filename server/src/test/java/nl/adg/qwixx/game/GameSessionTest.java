@@ -268,6 +268,13 @@ class GameSessionTest {
     }
 
     @Test
+    void bonusA_botsPlayWithoutError() {
+        GameSession s = new GameSession(UUID.randomUUID().toString(), "test", 4,
+                GameSettings.builder().bonusA(true).botCount(2).build());
+        assertDoesNotThrow(() -> s.start(), "bots must play a Bonus A layout (chains + forfeits) without error");
+    }
+
+    @Test
     void exitGame_unknownPlayer_throwsIllegalArgumentException() {
         GameSession s = session(4);
         s.addPlayer(Player.of("Alice"));

@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.UUID;
 import nl.adg.qwixx.action.DeclareLockIntentAction;
 import nl.adg.qwixx.action.GameAction;
+import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.Color;
 import nl.adg.qwixx.data.LockCell;
 import nl.adg.qwixx.data.Row;
@@ -192,7 +193,31 @@ class RowClosureEvaluator {
     static void closeRowGlobally(GameState state, UUID playerId, int rowIndex) {
         BoardState board = state.boardState();
         board.closedRows().put(rowIndex, playerId);
-        board.activeDice().removeIf(d -> d.color() == getLockColor(state, playerId, rowIndex));
+        Color lockColor = getLockColor(state, playerId, rowIndex);
+        board.activeDice().removeIf(d -> d.color() == lockColor);
+        // Bonus A: once a colour's row is locked, every player forfeits their still-open
+        // bonus-bar cells of that colour (crossed out, skipped, no longer trigger a chain).
+        forfeitBonusBarColour(state, lockColor);
+    }
+
+    private static void forfeitBonusBarColour(GameState state, Color color) {
+        for (UUID pid : state.players()) {
+            SheetLayout layout = state.sheetLayouts().get(pid);
+            if (layout == null) continue;
+            for (int i = 0; i < layout.rows().size(); i++) {
+                Row row = layout.rows().get(i);
+                if (!row.isBonusBar()) continue;
+                SheetProgress prog = getProgress(state, pid);
+                RowState barState = getRowState(prog, i);
+                Set<String> crossed = new HashSet<>(barState.crossedCells());
+                boolean changed = false;
+                for (Cell c : row.cells()) {
+                    if (c.color() == color && crossed.add(c.id())) changed = true;
+                }
+                if (changed) prog.updateRowState(i, new RowState(crossed, barState.lockCrossed()));
+                break; // at most one bonus bar per player
+            }
+        }
     }
 
     // ── Closure intent ────────────────────────────────────────────────────────

@@ -33,6 +33,8 @@
     "doubleADescription": "Chaque case colorée gagne une petite case jumelle en dessous, dans la même rangée. Vous pouvez cocher la jumelle une fois la case du dessus cochée et si rien n'est coché à sa droite — une croix supplémentaire pour le même numéro.",
     "doubleB": "Double B",
     "doubleBDescription": "Certaines cases affichent leur numéro deux fois en diagonale et peuvent être cochées deux fois. La seconde croix est permise une fois la première faite et si rien n'est coché à sa droite — une croix supplémentaire pour le même numéro.",
+    "bonusA": "Bonus A",
+    "bonusADescription": "12 cases bonus (anneau doré) sont réparties dans les rangées colorées. En cocher une force à cocher la case suivante de la barre bonus en dessous ; sa couleur force une croix dans la case suivante de cette rangée — ce qui peut s'enchaîner. Quand une rangée est fermée, ses cases bonus restantes sont perdues.",
     "xchange": "X-Échange",
     "xchangeDescription": "Ajoute une rangée supplémentaire avec la possibilité d'échanger votre combinaison blanc+blanc contre l'autre nombre de cette case.",
     "botCount": "Adversaires ordinateur",

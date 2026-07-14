@@ -1,11 +1,12 @@
 <div
   class="row"
   [class.closed]="closed()"
-  [class.bonus-row]="!row().lock && !isXChangeRow() && !isLuckyRow()"
+  [class.bonus-row]="!row().lock && !isXChangeRow() && !isLuckyRow() && !isBonusBar()"
   [class.xchange-row]="isXChangeRow()"
   [class.lucky-number-row]="isLuckyRow()"
+  [class.bonus-bar-row]="isBonusBar()"
   [class.row-double-a]="doubleVariant() === 'A'"
-  [attr.data-color]="row().cells[0]?.color"
+  [attr.data-color]="isBonusBar() ? null : row().cells[0]?.color"
   [attr.translate]="'no'"
   [style.width]="xChangeRowWidth()"
 >
@@ -15,7 +16,16 @@
   @for (offset of connectorOffsetsBelow(); track offset) {
     <div class="auto-cross-line down" [class.through-bonus]="hasBonusRowBelow()" [style.left.px]="offset"></div>
   }
-  @if (isLuckyRow()) {
+  @if (isBonusBar()) {
+    <!-- Bonus A bonus bar: 12 small coloured cells, crossed automatically by the chain. -->
+    @for (cell of row().cells; track cell.id) {
+      <span class="bonus-bar-cell" [attr.data-color]="cell.color">
+        @if (isCrossed(cell.id)) {
+          <span class="cell-cross">✕</span>
+        }
+      </span>
+    }
+  } @else if (isLuckyRow()) {
     <span class="lucky-number-label">{{ luckyLabel() }}</span>
     <div class="lucky-number-cells">
       @for (cell of regularCells(); track cell.id) {

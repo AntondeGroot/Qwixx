@@ -33,6 +33,8 @@
     "doubleADescription": "Ogni cella colorata ottiene sotto di sé una cella gemella più piccola nella stessa riga. Puoi sbarrare la gemella una volta sbarrata la cella sopra e se nulla è sbarrato alla sua destra — una croce extra per lo stesso numero.",
     "doubleB": "Doppio B",
     "doubleBDescription": "Alcune caselle mostrano il loro numero due volte in diagonale e possono essere sbarrate due volte. La seconda croce è consentita dopo la prima e se nulla è sbarrato alla sua destra — una croce extra per lo stesso numero.",
+    "bonusA": "Bonus A",
+    "bonusADescription": "12 caselle bonus (anello dorato) si trovano nelle righe colorate. Sbarrarne una obbliga a sbarrare la casella successiva della barra bonus in basso; il suo colore forza una croce nella casella successiva di quella riga — e può concatenarsi. Quando una riga viene chiusa, le sue caselle bonus rimanenti sono perdute.",
     "xchange": "X-Cambio",
     "xchangeDescription": "Aggiunge una riga extra con la possibilità di cambiare la tua combinazione bianco+bianco con l'altro numero in quella cella.",
     "botCount": "Avversari computer",

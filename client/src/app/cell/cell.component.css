@@ -102,6 +102,19 @@
   pointer-events: none;
 }
 
+/* Bonus A bonus box: a gold inset ring (with a dark hairline so it reads on any colour). */
+.cell.bonus-box::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 5px;
+  border: 2.5px solid #ffcf3f;
+  box-shadow:
+    inset 0 0 0 1px rgba(90, 60, 0, 0.55),
+    0 0 0 1px rgba(90, 60, 0, 0.35);
+  pointer-events: none;
+}
+
 @keyframes pulse-glow {
   0%,
   100% {

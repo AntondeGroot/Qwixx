@@ -260,6 +260,7 @@ class GameStateMapper {
         SheetRow dto = new SheetRow(row.id(), cells, mapLock(row.lock()))
                 .bonusRow(row.isBonusRow())
                 .luckyRow(row.isLuckyRow())
+                .bonusBar(row.isBonusBar())
                 .luckyTarget(row.isLuckyRow() ? row.luckyTarget() : null);
         if (row.isBonusRow()) {
             int upper = row.upperRowIndex();
@@ -304,6 +305,9 @@ class GameStateMapper {
                     new nl.adg.qwixx.generated.model.CellTag(
                             nl.adg.qwixx.generated.model.CellTag.TypeEnum.DOUBLE_TWIN)
                             .target(dt.primary());
+            case CellTag.BonusBox ignored ->
+                    new nl.adg.qwixx.generated.model.CellTag(
+                            nl.adg.qwixx.generated.model.CellTag.TypeEnum.BONUS_BOX);
             case CellTag.BonusPoints b ->
                     new nl.adg.qwixx.generated.model.CellTag(
                             nl.adg.qwixx.generated.model.CellTag.TypeEnum.BONUS_POINTS)

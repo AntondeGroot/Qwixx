@@ -293,6 +293,7 @@ public class BotDecider {
                 }
                 case CellTag.LuckyCross _ -> {} // no tag-level adjustment; base position score still applies
                 case CellTag.DoubleTwin _ -> {} // twin is just an extra normal cross; valued via its base position score
+                case CellTag.BonusBox _ -> {} // bonus-box chain value is emergent; valued via its base position score
             }
         }
         return adjust;

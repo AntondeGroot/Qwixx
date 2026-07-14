@@ -23,6 +23,9 @@ public class StandardScoringEngine implements ScoringEngine {
         for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
             Row row           = layout.rows().get(rowIndex);
             if (isXChangeRow(row)) continue;
+            // Bonus A bar cells are pure triggers — the crosses they force already score in the
+            // colour rows, so the bar itself must not add points (and forfeited cells even less).
+            if (row.isBonusBar()) continue;
             RowState rowState = progress.rowStates().get(rowIndex);
             if (rowState == null) continue;
 

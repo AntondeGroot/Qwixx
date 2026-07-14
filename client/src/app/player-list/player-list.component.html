@@ -28,8 +28,9 @@
               class="mini-row"
               [class.mini-row-xchange]="isXChangeRow(row)"
               [class.mini-row-lucky-number]="isLuckyRow(row)"
+              [class.mini-row-bonus-bar]="row.bonusBar"
               [class.row-closed]="isRowClosed(row.id)"
-              [attr.data-color]="isXChangeRow(row) || isLuckyRow(row) ? null : row.cells[0]?.color"
+              [attr.data-color]="isXChangeRow(row) || isLuckyRow(row) || row.bonusBar ? null : row.cells[0]?.color"
               [style.--mini-primary]="colorHex[row.cells[0].color]"
               [style.--mini-secondary]="colorHex[secondaryColorOf(row.cells[0]) ?? '']"
             >
@@ -39,6 +40,7 @@
                 }
                 <div
                   class="mini-cell"
+                  [attr.data-color]="cell.color"
                   [class.mini-cell-big-points]="row.bonusRow"
                   [class.mini-cell-xchange]="isXChange(cell)"
                   [class.mini-cell-lucky-number]="isLuckyNumber(cell)"

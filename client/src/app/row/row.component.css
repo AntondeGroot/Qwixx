@@ -370,3 +370,59 @@
   bottom: 1px;
   right: 4px;
 }
+
+/* ── Bonus A: the bonus bar (row of small coloured cells with a gold ring) ──── */
+.row.bonus-bar-row {
+  gap: 3px;
+  padding: 5px 8px;
+  background: transparent;
+  align-items: center;
+}
+
+.bonus-bar-cell {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bonus-bar-cell[data-color='RED'] {
+  background: #d32f2f;
+  color: #fff;
+}
+.bonus-bar-cell[data-color='YELLOW'] {
+  background: #f9a825;
+  color: #333;
+}
+.bonus-bar-cell[data-color='GREEN'] {
+  background: #388e3c;
+  color: #fff;
+}
+.bonus-bar-cell[data-color='BLUE'] {
+  background: #1565c0;
+  color: #fff;
+}
+
+/* Gold ring — same accent as the bonus boxes in the coloured rows. */
+.bonus-bar-cell::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 3px;
+  border: 2px solid #ffcf3f;
+  box-shadow: inset 0 0 0 1px rgba(90, 60, 0, 0.5);
+  pointer-events: none;
+}
+
+.bonus-bar-cell .cell-cross {
+  position: absolute;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
+  z-index: 2;
+}

@@ -148,6 +148,20 @@
   background: #1565c0;
 }
 
+/* Bonus A bonus bar: colour each mini-cell by its own colour, not the row's first cell. */
+.mini-row-bonus-bar .mini-cell[data-color='RED'] {
+  background: #d32f2f;
+}
+.mini-row-bonus-bar .mini-cell[data-color='YELLOW'] {
+  background: #f9a825;
+}
+.mini-row-bonus-bar .mini-cell[data-color='GREEN'] {
+  background: #388e3c;
+}
+.mini-row-bonus-bar .mini-cell[data-color='BLUE'] {
+  background: #1565c0;
+}
+
 .mini-cell {
   width: 9px;
   height: 9px;

@@ -9,6 +9,7 @@ public class Row {
   private List<Cell> cells = new ArrayList<>();
   private LockCell lock;
   private boolean bonusRow;
+  private boolean bonusBar;   // Bonus A: the row of coloured bonus-bar cells below the four colour rows
   private int upperRowIndex   = -1;
   private int lowerRowIndex   = -1;
   private int luckyTarget;   // 0 = not a lucky row; >0 = target sum for the lucky move
@@ -33,10 +34,13 @@ public class Row {
 
   public void setLuckyRow(int target) { this.luckyTarget = target; }
 
+  public void setBonusBar() { this.bonusBar = true; }
+
   public String id()              { return id; }
   public List<Cell> cells()       { return cells; }
   public LockCell lock()          { return lock; }
   public boolean isBonusRow()     { return bonusRow; }
+  public boolean isBonusBar()     { return bonusBar; }
   public int upperRowIndex()      { return upperRowIndex; }
   public int lowerRowIndex()      { return lowerRowIndex; }
   public boolean isLuckyRow()     { return luckyTarget > 0; }

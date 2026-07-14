@@ -33,6 +33,8 @@
     "doubleADescription": "Hver farget rute får en mindre tvillingrute under seg i samme rad. Du kan krysse av tvillingen når ruten over den er krysset av og ingenting til høyre for den er krysset ennå – et ekstra kryss for samme tall.",
     "doubleB": "Dobbel B",
     "doubleBDescription": "Noen ruter viser tallet sitt to ganger på diagonalen og kan krysses av to ganger. Det andre krysset er tillatt når det første er satt og ingenting til høyre for det er krysset ennå – et ekstra kryss for samme tall.",
+    "bonusA": "Bonus A",
+    "bonusADescription": "12 bonusruter (gullring) ligger i de fargede radene. Krysser du av én, må du krysse av neste rute i bonuslinjen under; fargen tvinger fram et kryss i neste rute i den raden – som kan gi kjedetrekk. Når en rad låses, går de resterende bonuslinje-rutene tapt.",
     "xchange": "X-Bytte",
     "xchangeDescription": "Legger til en ekstra rad med muligheten til å bytte din hvit+hvit-kombinasjon mot det andre tallet i den ruten.",
     "botCount": "Datamotstandere",

@@ -60,6 +60,7 @@ export class RowComponent {
   isXChangeRow = computed(() => this.row().cells.some((c) => c.tags.some((t) => t.type === CellTag.TypeEnum.X_CHANGE)));
 
   isLuckyRow = computed(() => this.row().luckyRow === true);
+  isBonusBar = computed(() => this.row().bonusBar === true);
   luckyTarget = computed(() => this.row().luckyTarget);
   luckyLabel = computed(() => `LUCKY ${this.luckyTarget()}`);
 

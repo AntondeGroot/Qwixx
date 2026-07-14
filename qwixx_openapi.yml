@@ -737,7 +737,7 @@ components:
       properties:
         type:
           type: string
-          enum: [EXTRA_BUCKET, AUTO_CROSS, BONUS_POINTS, DOUBLE_CROSS, DOUBLE_TWIN, SECONDARY_COLOR, X_CHANGE, LUCKY_NUMBER, LUCKY_CROSS]
+          enum: [EXTRA_BUCKET, AUTO_CROSS, BONUS_POINTS, DOUBLE_CROSS, DOUBLE_TWIN, BONUS_BOX, SECONDARY_COLOR, X_CHANGE, LUCKY_NUMBER, LUCKY_CROSS]
         target:
           type: string
           description: Cell ID this tag references — the auto-cross target for AUTO_CROSS, or the primary cell for DOUBLE_TWIN.
@@ -829,6 +829,10 @@ components:
           type: boolean
           default: false
           description: True when this row is the Lucky Number bonus row.
+        bonusBar:
+          type: boolean
+          default: false
+          description: True when this row is the Bonus A bonus bar (12 coloured cells below the four colour rows).
         luckyTarget:
           type: integer
           description: >

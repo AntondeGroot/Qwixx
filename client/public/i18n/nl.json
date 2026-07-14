@@ -33,6 +33,8 @@
     "doubleADescription": "Elke gekleurde cel krijgt eronder een kleinere tweelingcel in dezelfde rij. Je mag de tweeling kruisen zodra de cel erboven is gekruist en er nog niets rechts ervan is gekruist — een extra kruis voor hetzelfde getal.",
     "doubleB": "Dubbel B",
     "doubleBDescription": "Sommige vakjes tonen hun getal twee keer op een diagonaal en mogen twee keer worden gekruist. Het tweede kruis mag zodra het eerste is gezet en er nog niets rechts ervan is gekruist — een extra kruis voor hetzelfde getal.",
+    "bonusA": "Bonus A",
+    "bonusADescription": "12 bonusvakjes (gouden ring) staan in de gekleurde rijen. Kruis je er één, dan moet je het volgende vakje van de bonusbalk eronder kruisen; de kleur ervan dwingt een kruis in het volgende vakje van die rij — wat kan doorschakelen. Wanneer een rij wordt gesloten, vervallen de resterende bonusbalk-vakjes.",
     "xchange": "X-Wissel",
     "xchangeDescription": "Voegt een extra rij toe met de optie om je wit+wit-combinatie te wisselen voor het andere getal in die cel.",
     "botCount": "Computertegenstanders",

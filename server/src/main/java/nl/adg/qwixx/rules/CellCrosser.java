@@ -13,6 +13,7 @@ import nl.adg.qwixx.action.DiceCombination;
 import nl.adg.qwixx.action.GameAction;
 import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.CellTag;
+import nl.adg.qwixx.data.Color;
 import nl.adg.qwixx.data.RollResult;
 import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.state.ActiveTurnState;
@@ -50,6 +51,9 @@ class CellCrosser {
 
             // Lucky Number and Lucky Cross rows/cells are handled by the turn-rules layer.
             if (row.isLuckyRow()) continue;
+
+            // Bonus A bar cells are never directly clickable — they are auto-crossed by the chain.
+            if (row.isBonusBar()) continue;
 
             // Bonus rows are never globally closed, but skip closed normal rows.
             if (!row.isBonusRow() && state.isRowClosed(rowIndex)) continue;
@@ -259,11 +263,17 @@ class CellCrosser {
         prog.updateRowState(rowIndex, new RowState(newCrossed, rowState.lockCrossed()));
         crossed.computeIfAbsent(rowIndex, k -> new HashSet<>()).add(cellId);
 
+        boolean isBonusBox = false;
         for (CellTag tag : cell.tags()) {
             if (tag instanceof CellTag.AutoCross autoCross) {
                 findAndCrossAutoTarget(state, playerId, autoCross.target(), crossed);
+            } else if (tag instanceof CellTag.BonusBox) {
+                isBonusBox = true;
             }
         }
+        // Bonus A: crossing a bonus box consumes the next bonus-bar cell and forces a cross in
+        // that colour's row. Done after the cell is recorded so the chain sees the updated state.
+        if (isBonusBox) triggerBonusBar(state, playerId, crossed);
     }
 
     private void findAndCrossAutoTarget(GameState state, UUID playerId, String targetCellId,
@@ -271,5 +281,59 @@ class CellCrosser {
         SheetLayout layout = state.sheetLayouts().get(playerId);
         findCellById(layout, targetCellId).ifPresent(e ->
                 crossRecursive(state, playerId, e.getKey(), targetCellId, crossed, true));
+    }
+
+    // Consume the next open bonus-bar cell; its colour forces a cross of the next box in that row.
+    // Forced crosses recurse through crossRecursive, so a bonus box crossed this way chains again.
+    private void triggerBonusBar(GameState state, UUID playerId, Map<Integer, Set<String>> crossed) {
+        SheetLayout layout = state.sheetLayouts().get(playerId);
+        SheetProgress prog = state.boardState().sheetProgress().get(playerId);
+
+        int barIndex = -1;
+        Row bar = null;
+        for (int i = 0; i < layout.rows().size(); i++) {
+            if (layout.rows().get(i).isBonusBar()) { barIndex = i; bar = layout.rows().get(i); break; }
+        }
+        if (bar == null) return;
+
+        // The bonus bar follows the normal row-progression rule: only the next cell to the RIGHT
+        // of the right-most crossed cell can be consumed. Forfeits crossed further right therefore
+        // make the cells between them unavailable (skipped), exactly like a regular colour row.
+        RowState barState = getRowState(prog, barIndex);
+        int rightmost = rightmostCrossedPosition(bar, barState);
+        Cell barCell = bar.cells().stream()
+                .filter(c -> c.position() > rightmost && !barState.crossedCells().contains(c.id()))
+                .findFirst().orElse(null);
+        if (barCell == null) return; // no cell left to the right of the right-most cross
+
+        Set<String> newBar = new HashSet<>(barState.crossedCells());
+        newBar.add(barCell.id());
+        prog.updateRowState(barIndex, new RowState(newBar, barState.lockCrossed()));
+        crossed.computeIfAbsent(barIndex, k -> new HashSet<>()).add(barCell.id());
+
+        // The bonus-bar cell's colour picks the row that receives the forced cross.
+        Color color = barCell.color();
+        for (int i = 0; i < layout.rows().size(); i++) {
+            Row row = layout.rows().get(i);
+            if (row.isBonusBar() || row.lock() == null || row.cells().isEmpty()) continue;
+            if (row.cells().get(0).color() != color) continue;
+            if (state.isRowClosed(i)) return; // row locked → forfeited already, nothing to cross
+            Cell forced = nextForcedBox(row, getRowState(prog, i));
+            if (forced != null) crossRecursive(state, playerId, i, forced.id(), crossed, true);
+            return;
+        }
+    }
+
+    // The next box a forced bonus cross lands on: the left-most reachable, non-closing cell.
+    // (The lock cell is excluded so row-closing stays with the turn-rules layer.)
+    private static Cell nextForcedBox(Row row, RowState rowState) {
+        int rightmost = rightmostCrossedPosition(row, rowState);
+        Cell best = null;
+        for (Cell c : row.cells()) {
+            if (c.isClosingEligible() || findTwinTag(c) != null) continue;
+            if (c.position() <= rightmost || rowState.crossedCells().contains(c.id())) continue;
+            if (best == null || c.position() < best.position()) best = c;
+        }
+        return best;
     }
 }

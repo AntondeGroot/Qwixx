@@ -33,6 +33,8 @@
     "doubleADescription": "Every colored cell gains a smaller twin cell below it in the same row. You may cross the twin once the cell above it is crossed and nothing to its right is crossed yet — an extra cross for the same number.",
     "doubleB": "Double B",
     "doubleBDescription": "Some cells show their number twice on a diagonal and can be crossed twice. The second cross is allowed once the first is made and nothing to its right is crossed yet — an extra cross for the same number.",
+    "bonusA": "Bonus A",
+    "bonusADescription": "12 bonus boxes (gold ring) sit in the coloured rows. Crossing one forces you to cross the next cell of the bonus bar below; its colour forces a cross in that row's next box — which can chain. When a row locks, its remaining bonus-bar cells are forfeited.",
     "xchange": "X-Change",
     "xchangeDescription": "Adds an extra row with the option to change your white+white combination for the other number in that cell.",
     "botCount": "Computer opponents",

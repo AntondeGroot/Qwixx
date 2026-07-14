@@ -73,6 +73,24 @@
               </div>
             </div>
           }
+          @case ('doubleA') {
+            <div class="opt-chip">
+              <span class="opt-double">
+                <span class="opt-cell opt-cell--red"></span>
+                <span class="opt-cell opt-cell--twin" style="border-color: #d32f2f"></span>
+              </span>
+              <span class="opt-double">
+                <span class="opt-cell opt-cell--green"></span>
+                <span class="opt-cell opt-cell--twin" style="border-color: #388e3c"></span>
+              </span>
+            </div>
+          }
+          @case ('doubleB') {
+            <div class="opt-chip">
+              <span class="opt-cell opt-cell--double-b" style="--db: #d32f2f"></span>
+              <span class="opt-cell opt-cell--double-b" style="--db: #388e3c"></span>
+            </div>
+          }
         }
       </div>
 
@@ -111,7 +129,7 @@
     <div class="board-preview-outer" #boardPreviewOuter>
       <div class="board-preview" [style.zoom]="previewScale() < 1 ? previewScale() : null">
         @for (row of layout.rows; track row.id) {
-          <app-row [row]="row" />
+          <app-row [row]="row" [doubleVariant]="previewDoubleVariant()" />
         }
       </div>
     </div>

@@ -60,6 +60,14 @@ jobs:
         run: npm run build
         working-directory: client
 
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+        working-directory: client
+
+      - name: Playwright e2e tests
+        run: npm run e2e
+        working-directory: client
+
   e2e:
     runs-on: ubuntu-latest
     steps:

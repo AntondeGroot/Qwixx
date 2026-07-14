@@ -62,7 +62,9 @@ class GameStateMapper {
                 .closureNotifications(mapClosureNotifications(state, session))
                 .pendingClosures(mapPendingClosures(state))
                 .availableMoves(mapAvailableMoves(state, session))
-                .seeOtherCards(session.settings().seeOtherCards());
+                .seeOtherCards(session.settings().seeOtherCards())
+                .doubleA(session.settings().doubleA())
+                .doubleB(session.settings().doubleB());
     }
 
     @SuppressWarnings("PMD.ReturnEmptyCollectionRatherThanNull")
@@ -298,6 +300,10 @@ class GameStateMapper {
                     new nl.adg.qwixx.generated.model.CellTag(
                             nl.adg.qwixx.generated.model.CellTag.TypeEnum.AUTO_CROSS)
                             .target(a.target());
+            case CellTag.DoubleTwin dt ->
+                    new nl.adg.qwixx.generated.model.CellTag(
+                            nl.adg.qwixx.generated.model.CellTag.TypeEnum.DOUBLE_TWIN)
+                            .target(dt.primary());
             case CellTag.BonusPoints b ->
                     new nl.adg.qwixx.generated.model.CellTag(
                             nl.adg.qwixx.generated.model.CellTag.TypeEnum.BONUS_POINTS)

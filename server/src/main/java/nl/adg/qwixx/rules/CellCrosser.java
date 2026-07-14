@@ -58,7 +58,13 @@ class CellCrosser {
             int rightmost     = rightmostCrossedPosition(row, rowState);
 
             for (Cell cell : row.cells()) {
-                if (!isReachableCell(cell, rightmost, rowState.crossedCells())) continue;
+                // Double A/B twin cells are not part of the left-to-right progression; they are
+                // offered only once their primary is crossed and is the row's rightmost cross.
+                CellTag.DoubleTwin twinTag = findTwinTag(cell);
+                boolean reachable = twinTag != null
+                        ? twinReachable(row, rowState, cell)
+                        : isReachableCell(cell, rightmost, rowState.crossedCells());
+                if (!reachable) continue;
 
                 // Lock-eligibility guard (only for normal rows with a lock).
                 if (cell.isClosingEligible() && row.lock() != null) {
@@ -181,6 +187,28 @@ class CellCrosser {
         return cell.position() > rightmost && !crossedCells.contains(cell.id());
     }
 
+    static CellTag.DoubleTwin findTwinTag(Cell cell) {
+        if (cell == null || cell.tags() == null) return null;
+        for (CellTag tag : cell.tags()) {
+            if (tag instanceof CellTag.DoubleTwin dt) return dt;
+        }
+        return null;
+    }
+
+    // A Double A/B twin is crossable only when: it isn't already crossed, its primary IS crossed,
+    // and the primary is the row's right-most crossed cell (nothing to the primary's right crossed).
+    static boolean twinReachable(Row row, RowState rowState, Cell twin) {
+        Set<String> crossed = rowState.crossedCells();
+        if (crossed.contains(twin.id())) return false;
+        CellTag.DoubleTwin tag = findTwinTag(twin);
+        if (tag == null) return false;
+        Cell primary = row.cells().stream()
+                .filter(c -> c.id().equals(tag.primary()))
+                .findFirst().orElse(null);
+        if (primary == null || !crossed.contains(primary.id())) return false;
+        return primary.position() == rightmostCrossedPosition(row, rowState);
+    }
+
     static int rightmostCrossedPosition(Row row, RowState rowState) {
         if (rowState.crossedCells().isEmpty()) return -1;
         return row.cells().stream()
@@ -214,10 +242,16 @@ class CellCrosser {
         if (cell == null) return;
         if (rowState.crossedCells().contains(cellId)) return;
 
+        CellTag.DoubleTwin twinTag = findTwinTag(cell);
         if (!isAuto) {
-            int rightmost = rightmostCrossedPosition(row, rowState);
-            if (cell.position() <= rightmost)
-                throw new IllegalMoveException("cell does not satisfy the progression check");
+            if (twinTag != null) {
+                if (!twinReachable(row, rowState, cell))
+                    throw new IllegalMoveException("double twin is not yet reachable");
+            } else {
+                int rightmost = rightmostCrossedPosition(row, rowState);
+                if (cell.position() <= rightmost)
+                    throw new IllegalMoveException("cell does not satisfy the progression check");
+            }
         }
 
         Set<String> newCrossed = new HashSet<>(rowState.crossedCells());

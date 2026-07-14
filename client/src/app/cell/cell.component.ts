@@ -21,6 +21,8 @@ export class CellComponent {
   crossed = input(false);
   pending = input(false);
   clickable = input(false);
+  // Double A twin: render a small hollow cell (white fill, coloured border, no number).
+  outline = input(false);
   showClickable = input<boolean | undefined>(undefined);
   showDieHint = input(false);
 

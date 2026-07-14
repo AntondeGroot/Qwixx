@@ -96,7 +96,12 @@
         <div class="final-board-inner">
           <div class="final-sheet">
             @for (row of layout.rows; track row.id) {
-              <app-row [row]="row" [rowState]="myRowStateFor(row.id)" [closed]="myIsRowClosed(row.id)" />
+              <app-row
+                [row]="row"
+                [rowState]="myRowStateFor(row.id)"
+                [closed]="myIsRowClosed(row.id)"
+                [doubleVariant]="myDoubleVariant()"
+              />
             }
             <div class="score-strip">
               <div class="score-labels">

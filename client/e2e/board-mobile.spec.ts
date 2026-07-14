@@ -37,7 +37,7 @@ function makeRows() {
         id: `lock-${color}`,
         color,
         minCrosses: 5,
-        requiredCells: [`${color}-${lockVal}`],
+        closingCells: [`${color}-${lockVal}`],
       },
     };
   });
@@ -79,6 +79,8 @@ const MOCK_STATE = {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function setup(page: Page) {
+  // Bypass the first-visit rules redirect so we land directly on the board.
+  await page.context().addCookies([{ name: 'qwixx_rules_seen_v1', value: '1', domain: 'localhost', path: '/' }]);
   await page.route(`**/gamestates/${SESSION_ID}**`, (route) =>
     route.fulfill({ contentType: 'application/json', body: JSON.stringify(MOCK_STATE) }),
   );
@@ -151,8 +153,8 @@ test.describe('Board layout on portrait phone (OnePlus Nord / Pixel 6 class)', (
 
   test('pass button is visible for passive player', async ({ page }) => {
     // Current player (PLAYER_ID) is in passive queue during ACTIVE_MOVE
-    await expect(page.locator('button.btn-pass')).toBeVisible();
-    await expectInViewport(page, 'button.btn-pass');
+    await expect(page.locator('button.btn-pass-arrow')).toBeVisible();
+    await expectInViewport(page, 'button.btn-pass-arrow');
   });
 
   test('punishment track is visible and within viewport', async ({ page }) => {
@@ -243,8 +245,15 @@ test.describe('Board layout after active→passive state transition', () => {
 
     let currentState: object = rollPhaseState;
 
+    // Initial fetch (GET /gamestates/:id) returns the current phase as JSON.
     await page.route(`**/gamestates/${SESSION_ID}**`, (route) =>
       route.fulfill({ contentType: 'application/json', body: JSON.stringify(currentState) }),
+    );
+    // The board is SSE-driven: it only updates via the /stream EventSource. Serve it as a real
+    // text/event-stream carrying the current phase. The board reconnects ~every 3s, so each phase
+    // change propagates on the next reconnect. Registered after the JSON route so it wins for /stream.
+    await page.route(`**/gamestates/${SESSION_ID}/stream`, (route) =>
+      route.fulfill({ contentType: 'text/event-stream', body: `data: ${JSON.stringify(currentState)}\n\n` }),
     );
     await page.route(`**/moves/**`, (route) =>
       route.fulfill({
@@ -254,6 +263,7 @@ test.describe('Board layout after active→passive state transition', () => {
     );
 
     // ── Step 1: load page as active player in ROLL phase ──────────────────────
+    await page.context().addCookies([{ name: 'qwixx_rules_seen_v1', value: '1', domain: 'localhost', path: '/' }]);
     await page.goto(`/game/${SESSION_ID}/${PLAYER_ID}`);
     await page.waitForSelector('app-row', { timeout: 10_000 });
 
@@ -265,7 +275,9 @@ test.describe('Board layout after active→passive state transition', () => {
 
     // ── Step 2: simulate rolling (state gains a roll + action buttons) ─────────
     currentState = activeMoveState;
-    await page.waitForTimeout(3000); // poll picks up new state
+    // Wait for the SSE reconnect to deliver the new phase: the roll button disappears
+    // once the active player has rolled (phase ROLL → ACTIVE_MOVE).
+    await expect(page.locator('button.btn-roll')).toBeHidden({ timeout: 8000 });
 
     await expectInViewport(page, '.turn-bar');
     await expectInViewport(page, '.dice-area');
@@ -280,14 +292,9 @@ test.describe('Board layout after active→passive state transition', () => {
     // ── Step 3: turn ends → PLAYER_ID is now passive, OTHER_ID in ROLL phase ──
     currentState = passiveWaitState;
 
-    // Wait for the poll to fire and pick up the new state.
-    await page.waitForFunction(
-      () => {
-        const tb = document.querySelector('.turn-bar');
-        return tb?.textContent?.includes('ROLL') ?? false;
-      },
-      { timeout: 5000 },
-    );
+    // Wait for the SSE reconnect to deliver the new phase: the turn bar now names the
+    // other player ("Bob's turn") instead of "Your turn".
+    await expect(page.locator('.turn-bar')).toContainText('Bob', { timeout: 8000 });
 
     // All board elements must be fully within the phone viewport.
     await expectInViewport(page, '.turn-bar');

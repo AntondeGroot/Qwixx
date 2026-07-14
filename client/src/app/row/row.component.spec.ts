@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { CellTag } from '../../generated';
 import { SheetCell } from '../../generated';
@@ -138,5 +138,69 @@ describe('RowComponent — bonus row zone placement', () => {
     f.componentRef.setInput('row', makeRow([makeCell('a'), makeCell('b', true)]));
     f.detectChanges();
     expect((f.nativeElement as HTMLElement).querySelector('.bonus-lock-zone')).toBeNull();
+  });
+});
+
+describe('RowComponent — Double B glow (clickable vs pending)', () => {
+  let f: ComponentFixture<RowComponent>;
+  let component: RowComponent;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [RowComponent],
+      providers: [{ provide: TranslateService, useValue: { instant: (k: string) => k } }],
+    }).compileComponents();
+    f = TestBed.createComponent(RowComponent);
+    component = f.componentInstance;
+  });
+
+  // primary = 'p', twin = 't'
+  const setIds = (clickable: string[], whiteWhite: string[], pending: string[] = []) => {
+    f.componentRef.setInput('clickableCellIds', new Set(clickable));
+    f.componentRef.setInput('whiteWhiteClickableCellIds', new Set(whiteWhite));
+    f.componentRef.setInput('pendingCellIds', new Set(pending));
+  };
+
+  it('glows cyan when the primary is a white+white move', () => {
+    setIds(['p'], ['p']);
+    expect(component.dbClickable('p', 't')).toBe(true);
+    expect(component.dbIsWhiteWhite('p', 't')).toBe(true); // cyan
+  });
+
+  it('glows purple when the primary is a colour-die move', () => {
+    setIds(['p'], []); // clickable, but not white+white
+    expect(component.dbClickable('p', 't')).toBe(true);
+    expect(component.dbIsWhiteWhite('p', 't')).toBe(false); // purple
+  });
+
+  it('does NOT glow a mark just placed, even if still reported clickable (the bug)', () => {
+    // The server-derived clickable set is briefly stale and still lists the primary,
+    // but it is now pending (just clicked) — it must not keep glowing.
+    setIds(['p'], ['p'], ['p']);
+    expect(component.dbClickable('p', 't')).toBe(false);
+    expect(component.dbIsWhiteWhite('p', 't')).toBe(false);
+  });
+
+  it('a placed colour-die mark stops advertising the colour die', () => {
+    setIds(['p'], [], ['p']); // was clickable via colour, now pending
+    expect(component.dbClickable('p', 't')).toBe(false);
+  });
+
+  it('still lets you undo a pending mark (interactive) without glowing', () => {
+    setIds([], [], ['p']); // only pending, not a fresh legal move
+    expect(component.dbActionable('p', 't')).toBe(true); // interactive → can undo
+    expect(component.dbClickable('p', 't')).toBe(false); // but no glow
+  });
+
+  it('after the primary is crossed, the twin glows in its own die colour', () => {
+    setIds(['t'], []); // primary done; twin now reachable via a colour die
+    expect(component.dbClickable('p', 't')).toBe(true);
+    expect(component.dbIsWhiteWhite('p', 't')).toBe(false); // purple = twin's die
+  });
+
+  it('nothing glows when there is no legal move', () => {
+    setIds([], []);
+    expect(component.dbClickable('p', 't')).toBe(false);
+    expect(component.dbActionable('p', 't')).toBe(false);
   });
 });

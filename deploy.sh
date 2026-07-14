@@ -12,11 +12,22 @@ fi
 SSH="ssh -i ~/.ssh/pi_deploy_key $TARGET"
 SCP="scp -i ~/.ssh/pi_deploy_key"
 
+# Kill leftover test processes from a previous (possibly crashed) run: Selenium's
+# chromedriver + its "Chrome for Testing" browser, and any stale ng serve on the
+# Playwright port. Scoped to test-only names so a normal Chrome is never touched.
+echo "🧹 Killing leftover test drivers/servers..."
+pkill -f chromedriver 2>/dev/null || true
+pkill -f "Chrome for Testing" 2>/dev/null || true
+port_pids=$(lsof -ti:5300 2>/dev/null || true); [ -n "$port_pids" ] && kill -9 $port_pids 2>/dev/null || true
+
 echo "🔨 Linting client..."
 (cd client && npm run lint)
 
 echo "🔨 Running client unit tests..."
 (cd client && npx ng test --watch=false)
+
+echo "🔨 Running client e2e (Playwright)..."
+(cd client && npx playwright install chromium >/dev/null && npm run e2e)
 
 echo "🔨 Building frontend and running all tests..."
 mvn clean verify -P frontend --file server/pom.xml

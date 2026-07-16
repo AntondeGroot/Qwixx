@@ -118,7 +118,7 @@ Package: `game/`
 Self-contained pipeline step; can be developed in parallel with MRs 8, 10, 11.
 
 - Random order shuffle step in `ConfigurableGameStyleFactory`
-- `PROBABILISTIC` card mode wiring (per-player independent shuffles)
+- `DIFFERENT_CARDS` card mode wiring (per-player independent shuffles)
 - Tests
 
 ---

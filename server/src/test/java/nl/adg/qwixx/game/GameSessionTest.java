@@ -123,7 +123,7 @@ class GameSessionTest {
     @Test
     void probabilisticModeGivesUniqueLayouts() {
         GameSession s = new GameSession(UUID.randomUUID().toString(), "test", 4,
-                GameSettings.builder().cardMode(CardMode.PROBABILISTIC).build());
+                GameSettings.builder().cardMode(CardMode.DIFFERENT_CARDS).build());
         Player alice = Player.of("Alice");
         Player bob   = Player.of("Bob");
         s.addPlayer(alice);

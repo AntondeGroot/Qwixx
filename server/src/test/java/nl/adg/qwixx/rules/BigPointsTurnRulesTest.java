@@ -294,7 +294,7 @@ class BigPointsTurnRulesTest {
         TurnState turn = new TurnState();
         turn.setActivePlayerId(active);
         turn.setPhase(TurnPhase.ROLL);
-        return new GameState(CardMode.DETERMINISTIC, players, null, layouts, board, turn);
+        return new GameState(CardMode.SAME_CARDS, players, null, layouts, board, turn);
     }
 
     private GameState bigPointsStateAfterRoll(UUID active, UUID... allPlayers) {

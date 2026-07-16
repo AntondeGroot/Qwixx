@@ -152,8 +152,8 @@ class GameStateMapper {
         Map<String, String> result = new HashMap<>();
         BoardState board = state.boardState();
         // Use every player's layout so that each client finds its own row ID in the map.
-        // In DETERMINISTIC mode all layouts share the same Row objects (same IDs), so
-        // duplicate puts are harmless. In PROBABILISTIC mode each player has unique row
+        // In SAME_CARDS mode all layouts share the same Row objects (same IDs), so
+        // duplicate puts are harmless. In DIFFERENT_CARDS mode each player has unique row
         // IDs and only the matching entry makes isRowClosed() return true for that player.
         board.closedRows().forEach((rowIndex, closingPlayerId) ->
                 state.sheetLayouts().forEach((layoutPlayerId, layout) ->

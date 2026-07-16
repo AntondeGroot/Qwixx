@@ -194,7 +194,7 @@ class BonusVariantTest {
             progresses.put(pid, new SheetProgress(new HashMap<>(), 0));
         }
         BoardState board = new BoardState(progresses, new ArrayList<>(), new HashMap<>());
-        GameState state = new GameState(CardMode.DETERMINISTIC, List.of(p1, p2), null, layouts, board, null);
+        GameState state = new GameState(CardMode.SAME_CARDS, List.of(p1, p2), null, layouts, board, null);
 
         RowClosureEvaluator.closeRowGlobally(state, p1, GREEN);
 
@@ -234,7 +234,7 @@ class BonusVariantTest {
         TurnState turn = new TurnState();
         turn.setActivePlayerId(p1);
         turn.setPhase(TurnPhase.ROLL);
-        GameState state = new GameState(CardMode.DETERMINISTIC, List.of(p1, p2), null, layouts,
+        GameState state = new GameState(CardMode.SAME_CARDS, List.of(p1, p2), null, layouts,
                 new BoardState(progresses, dice, new HashMap<>()), turn);
 
         // Close yellow through the real close entry point (as the turn evaluation does).
@@ -462,7 +462,7 @@ class BonusVariantTest {
         TurnState turn = new TurnState();
         turn.setActivePlayerId(p1);
         turn.setPhase(TurnPhase.ROLL);
-        return new GameState(CardMode.DETERMINISTIC, List.of(p1), null, layouts, board, turn);
+        return new GameState(CardMode.SAME_CARDS, List.of(p1), null, layouts, board, turn);
     }
 
     /** Fixed dice: white1=3, white2=4 (sum=7), red=2, yellow=3, green=4, blue=5. */

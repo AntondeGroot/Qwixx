@@ -52,7 +52,7 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
             // Big Points: two bonus rows interleaved between RED-YELLOW and GREEN-BLUE.
             // Bonus rows are shared (no per-player randomisation needed for them).
             // The four coloured rows follow the normal per-player/shared logic.
-            boolean perPlayer = settings.cardMode() == CardMode.PROBABILISTIC || settings.extraRow();
+            boolean perPlayer = settings.cardMode() == CardMode.DIFFERENT_CARDS || settings.extraRow();
             for (UUID player : players) {
                 List<Row> colored = perPlayer ? buildStandardRows() : null;
                 if (colored == null && result.isEmpty()) colored = buildStandardRows();
@@ -64,7 +64,7 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
             }
         } else {
             // extraRow is always per-player (each player gets an independently drawn bounce offset)
-            boolean perPlayer = settings.cardMode() == CardMode.PROBABILISTIC || settings.extraRow();
+            boolean perPlayer = settings.cardMode() == CardMode.DIFFERENT_CARDS || settings.extraRow();
             if (!perPlayer) {
                 List<Row> shared = settings.luckyCross()
                         ? buildStandardRowsWithLuckyCross(0)

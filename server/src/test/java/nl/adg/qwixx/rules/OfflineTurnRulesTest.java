@@ -365,7 +365,7 @@ class OfflineTurnRulesTest {
                 new Die(Color.RED, 6), new Die(Color.YELLOW, 6),
                 new Die(Color.GREEN, 6), new Die(Color.BLUE, 6)));
         BoardState board = new BoardState(progress, dice, new HashMap<>());
-        return new GameState(CardMode.DETERMINISTIC, playerList, null, layouts, board, null);
+        return new GameState(CardMode.SAME_CARDS, playerList, null, layouts, board, null);
     }
 
     private SheetLayout layout(GameState state, UUID player) {
@@ -430,7 +430,7 @@ class OfflineTurnRulesTest {
                 new Die(Color.RED, 6), new Die(Color.YELLOW, 6),
                 new Die(Color.GREEN, 6), new Die(Color.BLUE, 6)));
         BoardState board = new BoardState(progress, dice, new HashMap<>());
-        return new GameState(CardMode.DETERMINISTIC, playerList, null, layouts, board, null);
+        return new GameState(CardMode.SAME_CARDS, playerList, null, layouts, board, null);
     }
 
     private SheetLayout bigPointsLayout() {

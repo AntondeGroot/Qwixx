@@ -255,7 +255,7 @@ class DoubleVariantTest {
         TurnState turn = new TurnState();
         turn.setActivePlayerId(players[0]);
         turn.setPhase(TurnPhase.ROLL);
-        return new GameState(CardMode.DETERMINISTIC, List.of(players), null, layouts, board, turn);
+        return new GameState(CardMode.SAME_CARDS, List.of(players), null, layouts, board, turn);
     }
 
     /** Fixed dice: white1=3, white2=4 (sum=7), red=2, yellow=3, green=4, blue=5. */

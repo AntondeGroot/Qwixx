@@ -3,7 +3,7 @@ package nl.adg.qwixx.web;
 import jakarta.servlet.http.HttpServletResponse;
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSession;
-import nl.adg.qwixx.game.SessionNotFoundException;
+import nl.adg.qwixx.game.exception.SessionNotFoundException;
 import nl.adg.qwixx.state.GameState;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;

@@ -229,7 +229,7 @@ class GameStateMapperTest {
 
     @Test
     void toDtoClosedRowsContainsRowIdForDeterministicMode() {
-        // DETERMINISTIC (default): all players share the same Row objects → same row IDs.
+        // SAME_CARDS (default): all players share the same Row objects → same row IDs.
         // The single entry from anyLayout is correct for all players.
         GameState state = GameRegistry.getGame(sessionId).currentState();
         int rowIndex = 0;
@@ -240,8 +240,8 @@ class GameStateMapperTest {
         String aliceRowId = state.sheetLayouts().get(alice.id()).rows().get(rowIndex).id();
         String bobRowId   = state.sheetLayouts().get(bob.id()).rows().get(rowIndex).id();
 
-        // In DETERMINISTIC mode the layouts share objects, so IDs are equal.
-        assertEquals(aliceRowId, bobRowId, "DETERMINISTIC layouts must share row IDs");
+        // In SAME_CARDS mode the layouts share objects, so IDs are equal.
+        assertEquals(aliceRowId, bobRowId, "SAME_CARDS layouts must share row IDs");
 
         Map<String, String> closed = dto.getClosedRows();
         assertTrue(closed.containsKey(aliceRowId),
@@ -252,13 +252,13 @@ class GameStateMapperTest {
 
     @Test
     void toDtoClosedRowsContainsBothPlayersRowIdsInProbabilisticMode() {
-        // PROBABILISTIC mode: each player receives their own buildStandardRows() call,
+        // DIFFERENT_CARDS mode: each player receives their own buildStandardRows() call,
         // so Row objects have different UUIDs per player.
         // Bug: the old code used anyLayout — only one player's row ID ended up in the map,
         // so the other player's board never showed the row as closed.
         GameRegistry.clear();
         String sid = GameRegistry.createGame("prob", 4,
-                GameSettings.builder().cardMode(CardMode.PROBABILISTIC).build());
+                GameSettings.builder().cardMode(CardMode.DIFFERENT_CARDS).build());
         Player p1 = Player.of("P1");
         Player p2 = Player.of("P2");
         GameRegistry.getGame(sid).addPlayer(p1);
@@ -272,9 +272,9 @@ class GameStateMapperTest {
         String p1RowId = state.sheetLayouts().get(p1.id()).rows().get(rowIndex).id();
         String p2RowId = state.sheetLayouts().get(p2.id()).rows().get(rowIndex).id();
 
-        // Confirm the test setup: PROBABILISTIC mode must produce different row IDs.
+        // Confirm the test setup: DIFFERENT_CARDS mode must produce different row IDs.
         assertNotEquals(p1RowId, p2RowId,
-                "PROBABILISTIC layouts must have distinct row IDs — test setup is invalid if equal");
+                "DIFFERENT_CARDS layouts must have distinct row IDs — test setup is invalid if equal");
 
         var dto = GameStateMapper.toDto(state, GameRegistry.getGame(sid));
         Map<String, String> closed = dto.getClosedRows();
@@ -293,7 +293,7 @@ class GameStateMapperTest {
     void toDtoClosedRowsAllPlayersCanSeeMultipleClosedRowsInProbabilisticMode() {
         GameRegistry.clear();
         String sid = GameRegistry.createGame("prob2", 4,
-                GameSettings.builder().cardMode(CardMode.PROBABILISTIC).build());
+                GameSettings.builder().cardMode(CardMode.DIFFERENT_CARDS).build());
         Player p1 = Player.of("P1");
         Player p2 = Player.of("P2");
         GameRegistry.getGame(sid).addPlayer(p1);
@@ -315,7 +315,7 @@ class GameStateMapperTest {
             assertTrue(closed.containsKey(p2RowId),
                     "row " + rowIndex + " must be visible to p2");
         }
-        // 2 rows × 2 players = 4 entries total (all distinct in PROBABILISTIC mode).
+        // 2 rows × 2 players = 4 entries total (all distinct in DIFFERENT_CARDS mode).
         assertEquals(4, closed.size());
     }
 
@@ -325,7 +325,7 @@ class GameStateMapperTest {
         // closing-player ID is stored regardless of which player's layout is used.
         GameRegistry.clear();
         String sid = GameRegistry.createGame("attr", 4,
-                GameSettings.builder().cardMode(CardMode.PROBABILISTIC).build());
+                GameSettings.builder().cardMode(CardMode.DIFFERENT_CARDS).build());
         Player p1 = Player.of("P1");
         Player p2 = Player.of("P2");
         GameRegistry.getGame(sid).addPlayer(p1);
@@ -352,13 +352,13 @@ class GameStateMapperTest {
 
     @Test
     void oneLogicalRowClosedInProbabilisticModeProducesTwoDtoEntriesButCountsAsOneRow() {
-        // In PROBABILISTIC mode each player has a unique row UUID for the same logical row.
+        // In DIFFERENT_CARDS mode each player has a unique row UUID for the same logical row.
         // mapClosedRows must produce one DTO entry per player so each client can see their
         // row as closed — but the GAME must still count this as ONE closed row (not two),
         // because the internal board.closedRows() is keyed by rowIndex (integer), not rowId.
         GameRegistry.clear();
         String sid = GameRegistry.createGame("one-row", 4,
-                GameSettings.builder().cardMode(CardMode.PROBABILISTIC).build());
+                GameSettings.builder().cardMode(CardMode.DIFFERENT_CARDS).build());
         Player p1 = Player.of("P1");
         Player p2 = Player.of("P2");
         GameRegistry.getGame(sid).addPlayer(p1);
@@ -382,7 +382,7 @@ class GameStateMapperTest {
 
         String p1RowId = state.sheetLayouts().get(p1.id()).rows().get(0).id();
         String p2RowId = state.sheetLayouts().get(p2.id()).rows().get(0).id();
-        assertNotEquals(p1RowId, p2RowId, "PROBABILISTIC layouts must have distinct row IDs");
+        assertNotEquals(p1RowId, p2RowId, "DIFFERENT_CARDS layouts must have distinct row IDs");
 
         assertEquals(2, closed.size(),
                 "DTO closedRows must have one entry per player for the one closed logical row");
@@ -396,7 +396,7 @@ class GameStateMapperTest {
         // (2 rows × 2 players), but game-over is driven by the internal map size, not the DTO.
         GameRegistry.clear();
         String sid = GameRegistry.createGame("two-rows", 4,
-                GameSettings.builder().cardMode(CardMode.PROBABILISTIC).build());
+                GameSettings.builder().cardMode(CardMode.DIFFERENT_CARDS).build());
         Player p1 = Player.of("P1");
         Player p2 = Player.of("P2");
         GameRegistry.getGame(sid).addPlayer(p1);
@@ -416,7 +416,7 @@ class GameStateMapperTest {
 
         // 2 logical rows × 2 players = 4 DTO entries.
         assertEquals(4, closed.size(),
-                "DTO closedRows must have 4 entries (2 rows × 2 players) in PROBABILISTIC mode");
+                "DTO closedRows must have 4 entries (2 rows × 2 players) in DIFFERENT_CARDS mode");
         assertTrue(dto.getGameOver(), "gameOver flag must be true in the DTO");
     }
 

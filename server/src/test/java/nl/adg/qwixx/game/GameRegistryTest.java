@@ -65,7 +65,7 @@ class GameRegistryTest {
 
     @Test
     void randomPresetHasProbabilisticCardMode() {
-        assertEquals(nl.adg.qwixx.state.CardMode.PROBABILISTIC,
+        assertEquals(nl.adg.qwixx.state.CardMode.DIFFERENT_CARDS,
                 GameRegistry.presets().get("random").cardMode());
     }
 

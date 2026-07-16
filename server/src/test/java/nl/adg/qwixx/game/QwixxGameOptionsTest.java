@@ -32,8 +32,8 @@ class QwixxGameOptionsTest {
     }
 
     @Test
-    void cardModeOptionDefaultIsDeterministic() {
-        assertEquals("DETERMINISTIC", optionByKey("cardMode").defaultValue());
+    void cardModeOptionDefaultIsSameCards() {
+        assertEquals("SAME_CARDS", optionByKey("cardMode").defaultValue());
     }
 
     @Test
@@ -55,10 +55,10 @@ class QwixxGameOptionsTest {
     }
 
     @Test
-    void applyCardModeProbabilistic() {
+    void applyCardModeDifferentCards() {
         GameSettings.Builder builder = GameSettings.builder();
-        QwixxGameOptions.apply(builder, Map.of("cardMode", "PROBABILISTIC"));
-        assertEquals(CardMode.PROBABILISTIC, builder.build().cardMode());
+        QwixxGameOptions.apply(builder, Map.of("cardMode", "DIFFERENT_CARDS"));
+        assertEquals(CardMode.DIFFERENT_CARDS, builder.build().cardMode());
     }
 
     @Test
@@ -105,12 +105,12 @@ class QwixxGameOptionsTest {
         GameSettings.Builder builder = GameSettings.builder();
         QwixxGameOptions.apply(builder, Map.of(
                 "gameMode", "OFFLINE",
-                "cardMode", "PROBABILISTIC",
+                "cardMode", "DIFFERENT_CARDS",
                 "randomOrder", "true"
         ));
         GameSettings s = builder.build();
         assertEquals(GameMode.OFFLINE, s.gameMode());
-        assertEquals(CardMode.PROBABILISTIC, s.cardMode());
+        assertEquals(CardMode.DIFFERENT_CARDS, s.cardMode());
         assertTrue(s.randomOrder());
     }
 

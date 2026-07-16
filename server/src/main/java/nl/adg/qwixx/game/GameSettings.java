@@ -76,7 +76,7 @@ public class GameSettings {
     public static Builder builder() { return new Builder(); }
 
     public static class Builder {
-        private BaseVariant    base           = BaseVariant.STANDARD;
+        private BaseVariant    base = BaseVariant.STANDARD;
         private boolean        randomOrder;
         private boolean        connectedCells;
         private boolean        extraRow;
@@ -89,7 +89,7 @@ public class GameSettings {
         private boolean        doubleB;
         private boolean        bonusA;
         private boolean        seeOtherCards  = true;
-        private CardMode       cardMode       = CardMode.DETERMINISTIC;
+        private CardMode       cardMode       = CardMode.SAME_CARDS;
         private GameMode       gameMode       = GameMode.ONLINE;
         private int            botCount;
         private BotStrategy    botStrategy    = BotStrategy.BALANCED;

@@ -503,7 +503,7 @@ class LongoTurnRulesTest {
         TurnState turn = new TurnState();
         turn.setActivePlayerId(active);
         turn.setPhase(TurnPhase.ROLL);
-        return new GameState(CardMode.DETERMINISTIC, players, new LongoVariantData(new HashMap<>()),
+        return new GameState(CardMode.SAME_CARDS, players, new LongoVariantData(new HashMap<>()),
                 layouts, board, turn);
     }
 
@@ -1109,7 +1109,7 @@ class LongoTurnRulesTest {
         TurnState turn = new TurnState();
         turn.setActivePlayerId(active);
         turn.setPhase(TurnPhase.ROLL);
-        GameState state = new GameState(CardMode.DETERMINISTIC, players, new LongoVariantData(new HashMap<>()),
+        GameState state = new GameState(CardMode.SAME_CARDS, players, new LongoVariantData(new HashMap<>()),
                 layouts, board, turn);
         rules.apply(state, new RollAction(active));
         return state;

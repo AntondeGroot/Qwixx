@@ -472,7 +472,7 @@ components:
         gameOptions:
           type: object
           additionalProperties: {}
-          description: Optional key-value map of game settings (e.g. {"cardMode":"DETERMINISTIC"})
+          description: Optional key-value map of game settings (e.g. {"cardMode":"SAME_CARDS"})
 
     MoveRequest:
       type: object

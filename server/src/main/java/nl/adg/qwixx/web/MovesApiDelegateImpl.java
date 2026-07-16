@@ -17,7 +17,7 @@ import nl.adg.qwixx.action.UndoLastCrossAction;
 import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSession;
-import nl.adg.qwixx.game.SessionNotFoundException;
+import nl.adg.qwixx.game.exception.SessionNotFoundException;
 import nl.adg.qwixx.generated.api.MovesApiDelegate;
 import nl.adg.qwixx.generated.model.MoveRequest;
 import nl.adg.qwixx.generated.model.MoveResponse;

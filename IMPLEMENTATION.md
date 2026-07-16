@@ -262,10 +262,10 @@ public class QwixxGameOptions {
             TypeEnum.ENUM, "ONLINE")
             .choices(List.of("ONLINE", "OFFLINE")),
         new GameOption("cardMode", "Card mode",
-            "DETERMINISTIC gives all players identical row layouts. " +
-            "PROBABILISTIC gives each player their own random layout.",
-            TypeEnum.ENUM, "DETERMINISTIC")
-            .choices(List.of("DETERMINISTIC", "PROBABILISTIC")),
+            "SAME_CARDS gives all players identical row layouts. " +
+            "DIFFERENT_CARDS gives each player their own random layout.",
+            TypeEnum.ENUM, "SAME_CARDS")
+            .choices(List.of("SAME_CARDS", "DIFFERENT_CARDS")),
         new GameOption("randomOrder", "Random order",
             "Shuffle the display values within each row.",
             TypeEnum.BOOLEAN, "false"),

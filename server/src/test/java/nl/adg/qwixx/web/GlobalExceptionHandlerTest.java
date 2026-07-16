@@ -3,10 +3,10 @@ package nl.adg.qwixx.web;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import nl.adg.qwixx.game.GameAlreadyStartedException;
-import nl.adg.qwixx.game.GameNotFinishedException;
-import nl.adg.qwixx.game.GameNotStartedException;
-import nl.adg.qwixx.game.SessionNotFoundException;
+import nl.adg.qwixx.game.exception.GameAlreadyStartedException;
+import nl.adg.qwixx.game.exception.GameNotFinishedException;
+import nl.adg.qwixx.game.exception.GameNotStartedException;
+import nl.adg.qwixx.game.exception.SessionNotFoundException;
 import nl.adg.qwixx.rules.IllegalMoveException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

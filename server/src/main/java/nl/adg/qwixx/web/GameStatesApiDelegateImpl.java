@@ -1,9 +1,9 @@
 package nl.adg.qwixx.web;
 
-import nl.adg.qwixx.game.GameNotStartedException;
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSession;
-import nl.adg.qwixx.game.SessionNotFoundException;
+import nl.adg.qwixx.game.exception.GameNotStartedException;
+import nl.adg.qwixx.game.exception.SessionNotFoundException;
 import nl.adg.qwixx.generated.api.GamestatesApiDelegate;
 import nl.adg.qwixx.generated.model.GameState;
 import org.springframework.http.CacheControl;

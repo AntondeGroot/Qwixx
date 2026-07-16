@@ -100,10 +100,10 @@ Valid combinations for crossing a cell:
 
 ### CardMode
 ```
-enum CardMode { DETERMINISTIC, PROBABILISTIC }
+enum CardMode { SAME_CARDS, DIFFERENT_CARDS }
 ```
-- `DETERMINISTIC`: all players have identical rows (same cell IDs, same layout).
-- `PROBABILISTIC`: each player has their own generated rows (e.g. different random orderings). Cell IDs are globally unique per player.
+- `SAME_CARDS`: all players have identical rows (same cell IDs, same layout).
+- `DIFFERENT_CARDS`: each player has their own generated rows (e.g. different random orderings). Cell IDs are globally unique per player.
 
 ### ActiveTurnState
 Tracks what the active player has done this turn (one instance per turn, shared across all rows).
@@ -142,7 +142,7 @@ A player's row layout. Set once at game creation, never mutated.
 
 ```
 SheetLayout {
-  List<Row> rows   // identical across players in DETERMINISTIC mode; unique per player in PROBABILISTIC mode
+  List<Row> rows   // identical across players in SAME_CARDS mode; unique per player in DIFFERENT_CARDS mode
 }
 ```
 
@@ -338,19 +338,19 @@ GameSettings {
   boolean     connectedCells  // some cells carry an AutoCross tag
   boolean     extraRow        // add ExtraBucket-tagged cells forming a sinus wave across the 4 rows
   boolean     mixedColors     // cells within rows have varying colors (dice logic TBD)
-  CardMode    cardMode        // DETERMINISTIC | PROBABILISTIC
+  CardMode    cardMode        // SAME_CARDS | DIFFERENT_CARDS
   GameMode    gameMode        // ONLINE | OFFLINE
 }
 ```
 
 Example: longo + random order + connected cells + extra row:
 ```
-GameSettings { base: LONGO, randomOrder: true, connectedCells: true, extraRow: true, cardMode: DETERMINISTIC, gameMode: ONLINE }
+GameSettings { base: LONGO, randomOrder: true, connectedCells: true, extraRow: true, cardMode: SAME_CARDS, gameMode: ONLINE }
 ```
 
 Example: standard offline game (real dice, shared scorecard):
 ```
-GameSettings { base: STANDARD, cardMode: DETERMINISTIC, gameMode: OFFLINE }
+GameSettings { base: STANDARD, cardMode: SAME_CARDS, gameMode: OFFLINE }
 ```
 
 ### VariantData
@@ -394,10 +394,10 @@ GameRegistry {
 ```
 
 Built-in presets registered on startup:
-- `"standard"` → `{ base: STANDARD, all features false, DETERMINISTIC }`
-- `"longo"` → `{ base: LONGO, all features false, DETERMINISTIC }`
-- `"extra-row"` → `{ base: STANDARD, extraRow: true, DETERMINISTIC }`
-- `"random"` → `{ base: STANDARD, randomOrder: true, PROBABILISTIC }`
+- `"standard"` → `{ base: STANDARD, all features false, SAME_CARDS }`
+- `"longo"` → `{ base: LONGO, all features false, SAME_CARDS }`
+- `"extra-row"` → `{ base: STANDARD, extraRow: true, SAME_CARDS }`
+- `"random"` → `{ base: STANDARD, randomOrder: true, DIFFERENT_CARDS }`
 
 ### GameSession
 ```
@@ -487,15 +487,15 @@ During `LOCK_PENDING`, any other eligible player may fire `CrossLockAction` dire
 ### Feature: Extra Row
 - One cell per column (excluding the lock) is tagged `ExtraBucket`, forming a bouncing pattern across the 4 rows
 - The bounce follows the period-6 sequence `{0,1,2,3,2,1}` (0-indexed row), repeating indefinitely
-- A random start offset (0–5) is drawn independently per player at game start — the pattern is always probabilistic, even in `DETERMINISTIC` card mode
+- A random start offset (0–5) is drawn independently per player at game start — the pattern is always probabilistic, even in `SAME_CARDS` card mode
 - No Row object for the EXTRA scoring bucket — it exists only in `ScoreCard`
 - Tagged cells score in both their primary `cell.color` bucket and the EXTRA bucket
 - Frontend renders a thick black border on cells with the `ExtraBucket` tag
 
 ### Feature: Random Order
 - `displayValue` is shuffled per row; engine uses `position` throughout
-- `DETERMINISTIC`: all players get the same shuffle → identical cards
-- `PROBABILISTIC`: each player gets an independent shuffle → different cards
+- `SAME_CARDS`: all players get the same shuffle → identical cards
+- `DIFFERENT_CARDS`: each player gets an independent shuffle → different cards
 
 ### Feature: Connected Cells
 - Some cells carry an `AutoCross(targets)` tag

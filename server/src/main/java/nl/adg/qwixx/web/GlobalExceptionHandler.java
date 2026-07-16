@@ -1,10 +1,10 @@
 package nl.adg.qwixx.web;
 
 import jakarta.servlet.http.HttpServletRequest;
-import nl.adg.qwixx.game.GameAlreadyStartedException;
-import nl.adg.qwixx.game.GameNotFinishedException;
-import nl.adg.qwixx.game.GameNotStartedException;
-import nl.adg.qwixx.game.SessionNotFoundException;
+import nl.adg.qwixx.game.exception.GameAlreadyStartedException;
+import nl.adg.qwixx.game.exception.GameNotFinishedException;
+import nl.adg.qwixx.game.exception.GameNotStartedException;
+import nl.adg.qwixx.game.exception.SessionNotFoundException;
 import nl.adg.qwixx.generated.model.ErrorResponse;
 import nl.adg.qwixx.rules.IllegalMoveException;
 import org.springframework.http.HttpHeaders;

@@ -1565,7 +1565,7 @@ class StandardTurnRulesTest {
         TurnState turn = new TurnState();
         turn.setActivePlayerId(active);
         turn.setPhase(TurnPhase.ROLL);
-        return new GameState(CardMode.DETERMINISTIC, players, null, layouts, board, turn);
+        return new GameState(CardMode.SAME_CARDS, players, null, layouts, board, turn);
     }
 
     /** State after RollAction has been applied (in ACTIVE_MOVE). */
@@ -1960,7 +1960,7 @@ class StandardTurnRulesTest {
         TurnState turn = new TurnState();
         turn.setActivePlayerId(active);
         turn.setPhase(TurnPhase.ROLL);
-        GameState state = new GameState(CardMode.DETERMINISTIC, players, null, layouts, board, turn);
+        GameState state = new GameState(CardMode.SAME_CARDS, players, null, layouts, board, turn);
         rules.apply(state, new RollAction(active));
         // Override to WW=9 (matches x-change pairs (9,7) and (11,9))
         state.turnState().setCurrentRoll(
@@ -2149,7 +2149,7 @@ class StandardTurnRulesTest {
         TurnState turn = new TurnState();
         turn.setActivePlayerId(active);
         turn.setPhase(TurnPhase.ROLL);
-        GameState state = new GameState(CardMode.DETERMINISTIC, players, null, layouts, board, turn);
+        GameState state = new GameState(CardMode.SAME_CARDS, players, null, layouts, board, turn);
         rules.apply(state, new RollAction(active));
         // Override: blue=6 so ww(3+4)+blue(6) = 13 = luckyTarget
         Map<Color, Integer> colored = new EnumMap<>(Color.class);
@@ -2400,7 +2400,7 @@ class StandardTurnRulesTest {
         TurnState turn = new TurnState();
         turn.setActivePlayerId(active);
         turn.setPhase(TurnPhase.ROLL);
-        GameState state = new GameState(CardMode.DETERMINISTIC, players, null, layouts, board, turn);
+        GameState state = new GameState(CardMode.SAME_CARDS, players, null, layouts, board, turn);
         rules.apply(state, new RollAction(active));
         return state;
     }

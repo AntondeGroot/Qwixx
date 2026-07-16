@@ -142,7 +142,7 @@ public class GameSession {
 
         Map<UUID, List<Row>> rowsByPlayer = factory.buildRows(playerIds);
 
-        // Reuse the same SheetLayout instance when players share the same row list (DETERMINISTIC mode)
+        // Reuse the same SheetLayout instance when players share the same row list (SAME_CARDS mode)
         Map<List<Row>, SheetLayout> layoutCache = new HashMap<>();
         Map<UUID, SheetLayout> layouts = new HashMap<>();
         for (UUID id : playerIds) {

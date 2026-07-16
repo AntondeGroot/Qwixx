@@ -36,7 +36,7 @@ public class QwixxGameOptions {
             GameOption.enumOption(GAME_MODE, "gameOption.gameMode", "gameOption.gameModeDescription",
                 "ONLINE", List.of("ONLINE", "OFFLINE")),
             GameOption.enumOption(CARD_MODE, "gameOption.cardMode", "gameOption.cardModeDescription",
-                "DETERMINISTIC", List.of("DETERMINISTIC", "PROBABILISTIC")),
+                "SAME_CARDS", List.of("SAME_CARDS", "DIFFERENT_CARDS")),
             GameOption.adminBoolOption(BIG_POINTS, "gameOption.bigPoints", "gameOption.bigPointsDescription")
                     .withIncompatibleWith(List.of(RANDOM_ORDER, LUCKY_CROSS, DOUBLE_A, DOUBLE_B, BONUS_A)),
             GameOption.boolOption(RANDOM_ORDER, "gameOption.randomOrder", "gameOption.randomOrderDescription")

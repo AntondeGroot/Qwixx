@@ -410,10 +410,10 @@ class MovesApiDelegateImplTest {
                 .andExpect(jsonPath("$.result").value("ACCEPTED"));
     }
 
-    // ── Per-player layout mode (extraRow / PROBABILISTIC) ────────────────────
+    // ── Per-player layout mode (extraRow / DIFFERENT_CARDS) ────────────────────
 
     /**
-     * In extraRow (or PROBABILISTIC) mode each player gets their own Row objects
+     * In extraRow (or DIFFERENT_CARDS) mode each player gets their own Row objects
      * with distinct UUIDs. This verifies that assumption holds — the remaining
      * tests in this section are only meaningful because the IDs differ.
      */
@@ -458,7 +458,7 @@ class MovesApiDelegateImplTest {
     void perPlayerMode_probabilistic_passivePlayerCanCrossWithOwnRowId() throws Exception {
         Player bob = Player.of("Bob");
         String sid = perPlayerSession(alice, bob,
-                GameSettings.builder().cardMode(CardMode.PROBABILISTIC).build());
+                GameSettings.builder().cardMode(CardMode.DIFFERENT_CARDS).build());
         UUID active  = activePlayerId(sid);
         UUID passive = passivePlayerId(sid, active);
         roll(sid, active);

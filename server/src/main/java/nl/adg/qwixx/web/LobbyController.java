@@ -7,7 +7,7 @@ import java.util.Map;
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSession;
 import nl.adg.qwixx.game.QwixxGameOptions;
-import nl.adg.qwixx.game.SessionNotFoundException;
+import nl.adg.qwixx.game.exception.SessionNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;

@@ -148,6 +148,25 @@ describe('SettingsComponent — admin-only options', () => {
   it('shows an explicitly non-admin option to a non-admin', async () => {
     expect(await optionKeys({ adminOnly: false }, false)).toContain('bonusB');
   });
+
+  // Labels must render via the server's labelKey, not a key derived from opt.key. The two match for
+  // every option except xChange (key "xChange" vs label "gameOption.xchange"), which is why that one
+  // was the only untranslated label. In the test harness translate returns the key verbatim, so the
+  // rendered text is exactly the key that was looked up.
+  it('renders a label via labelKey, so xChange (key ≠ labelKey suffix) is not left untranslated', async () => {
+    const xchange = {
+      ...makeOptions()[0],
+      key: 'xChange',
+      labelKey: 'gameOption.xchange',
+      type: GameOption.TypeEnum.BOOLEAN,
+      choices: [],
+      adminOnly: false,
+    } as GameOption;
+    const fixture = await createFixture({}, [xchange]);
+
+    const label = fixture.nativeElement.querySelector('label[for="xChange"]') as HTMLLabelElement;
+    expect(label.textContent?.trim()).toBe('gameOption.xchange');
+  });
 });
 
 // ── Embed mode (real GWT iframe path: ?embed=1) ───────────────────────────────

@@ -13,7 +13,7 @@
   @for (opt of availableGameOptions(); track opt.key) {
     <div [class.option-disabled]="form.get(opt.key)?.disabled">
       <div class="option-header">
-        <label [for]="opt.key">{{ getGameOptionLabel(opt.key) }}</label>
+        <label [for]="opt.key">{{ t(opt.labelKey) }}</label>
         @switch (opt.key) {
           @case ('luckyNumber') {
             <div class="opt-chip">

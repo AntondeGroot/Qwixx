@@ -30,6 +30,17 @@ public class QwixxGameOptions {
 
     private QwixxGameOptions() {}
 
+    /**
+     * A variant that is admin-only until {@link AdminOptionRelease#RELEASE_MOMENT}, and an ordinary
+     * option for everyone after it. Both forms default to off, so the release only widens who may
+     * pick the variant — it never turns one on for an existing game.
+     */
+    private static GameOption trialBoolOption(String key, String labelKey, String descriptionKey) {
+        return AdminOptionRelease.released()
+                ? GameOption.boolOption(key, labelKey, descriptionKey)
+                : GameOption.adminBoolOption(key, labelKey, descriptionKey);
+    }
+
     public static List<GameOption> all() {
         return List.of(
             GameOption.enumOption(BASE, "gameOption.base", "gameOption.baseDescription",
@@ -38,7 +49,7 @@ public class QwixxGameOptions {
                 "ONLINE", List.of("ONLINE", "OFFLINE")),
             GameOption.enumOption(CARD_MODE, "gameOption.cardMode", "gameOption.cardModeDescription",
                 "SAME_CARDS", List.of("SAME_CARDS", "DIFFERENT_CARDS")),
-            GameOption.adminBoolOption(BIG_POINTS, "gameOption.bigPoints", "gameOption.bigPointsDescription")
+            trialBoolOption(BIG_POINTS, "gameOption.bigPoints", "gameOption.bigPointsDescription")
                     .withIncompatibleWith(List.of(RANDOM_ORDER, LUCKY_CROSS, DOUBLE_A, DOUBLE_B, BONUS_A, BONUS_B)),
             GameOption.boolOption(RANDOM_ORDER, "gameOption.randomOrder", "gameOption.randomOrderDescription")
                     .withIncompatibleWith(List.of(BIG_POINTS, BONUS_A, BONUS_B)),
@@ -47,17 +58,17 @@ public class QwixxGameOptions {
             GameOption.boolOption(CONNECTED_CELLS, "gameOption.connectedCells", "gameOption.connectedCellsDescription")
                     .withIncompatibleWith(List.of(DOUBLE_A, DOUBLE_B, BONUS_A, BONUS_B)),
             GameOption.boolOption(SEE_OTHER_CARDS, "gameOption.seeOtherCards", "gameOption.seeOtherCardsDescription", true),
-            GameOption.adminBoolOption(X_CHANGE, "gameOption.xchange", "gameOption.xchangeDescription"),
-            GameOption.adminBoolOption(LUCKY_NUMBER, "gameOption.luckyNumber", "gameOption.luckyNumberDescription"),
-            GameOption.adminBoolOption(LUCKY_CROSS,  "gameOption.luckyCross",  "gameOption.luckyCrossDescription")
+            trialBoolOption(X_CHANGE, "gameOption.xchange", "gameOption.xchangeDescription"),
+            trialBoolOption(LUCKY_NUMBER, "gameOption.luckyNumber", "gameOption.luckyNumberDescription"),
+            trialBoolOption(LUCKY_CROSS,  "gameOption.luckyCross",  "gameOption.luckyCrossDescription")
                     .withIncompatibleWith(List.of(BIG_POINTS, DOUBLE_A, DOUBLE_B, BONUS_A, BONUS_B)),
-            GameOption.adminBoolOption(DOUBLE_A, "gameOption.doubleA", "gameOption.doubleADescription")
+            trialBoolOption(DOUBLE_A, "gameOption.doubleA", "gameOption.doubleADescription")
                     .withIncompatibleWith(List.of(DOUBLE_B, BIG_POINTS, LUCKY_CROSS, CONNECTED_CELLS, BONUS_A, BONUS_B)),
-            GameOption.adminBoolOption(DOUBLE_B, "gameOption.doubleB", "gameOption.doubleBDescription")
+            trialBoolOption(DOUBLE_B, "gameOption.doubleB", "gameOption.doubleBDescription")
                     .withIncompatibleWith(List.of(DOUBLE_A, BIG_POINTS, LUCKY_CROSS, CONNECTED_CELLS, BONUS_A, BONUS_B)),
-            GameOption.adminBoolOption(BONUS_A, "gameOption.bonusA", "gameOption.bonusADescription")
+            trialBoolOption(BONUS_A, "gameOption.bonusA", "gameOption.bonusADescription")
                     .withIncompatibleWith(List.of(BIG_POINTS, DOUBLE_A, DOUBLE_B, CONNECTED_CELLS, LUCKY_CROSS, EXTRA_ROW, RANDOM_ORDER, BONUS_B)),
-            GameOption.adminBoolOption(BONUS_B, "gameOption.bonusB", "gameOption.bonusBDescription")
+            trialBoolOption(BONUS_B, "gameOption.bonusB", "gameOption.bonusBDescription")
                     .withIncompatibleWith(List.of(BIG_POINTS, DOUBLE_A, DOUBLE_B, CONNECTED_CELLS, LUCKY_CROSS, EXTRA_ROW, RANDOM_ORDER, BONUS_A)),
             GameOption.intOption(BOT_COUNT, "gameOption.botCount", "gameOption.botCountDescription",
                 "0", 0, 3),

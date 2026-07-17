@@ -40,9 +40,9 @@ function makeOptions(): GameOption[] {
   ];
 }
 
-function createFixture(queryParams: Record<string, string> = {}) {
+function createFixture(queryParams: Record<string, string> = {}, options: GameOption[] = makeOptions()) {
   const gamesServiceMock = {
-    getGameOptions: () => of(makeOptions()) as any,
+    getGameOptions: () => of(options) as any,
     previewLayout: () => of(null) as any,
   };
 
@@ -116,6 +116,37 @@ describe('SettingsComponent — botCount select', () => {
     // cycle. The options must still be present afterwards.
     fixture.detectChanges();
     expect(botCountSelect()!.options.length).toBe(4);
+  });
+});
+
+/**
+ * The server stops sending adminOnly once the trial variants are released (see AdminOptionRelease on
+ * the server). These pin the client half of that contract: what a non-admin may pick is decided
+ * purely by the flag the server sends, so the release needs no client change to take effect.
+ */
+describe('SettingsComponent — admin-only options', () => {
+  const optionKeys = async (over: Partial<GameOption>, isAdmin: boolean): Promise<string[]> => {
+    const trial = { ...makeOptions()[0], key: 'bonusB', labelKey: 'gameOption.bonusB', ...over } as GameOption;
+    const fixture = await createFixture({}, [trial]);
+    fixture.componentInstance.embedMode.isAdmin.set(isAdmin);
+    return fixture.componentInstance.availableGameOptions().map((o) => o.key);
+  };
+
+  it('hides an adminOnly option from a non-admin', async () => {
+    expect(await optionKeys({ adminOnly: true }, false)).not.toContain('bonusB');
+  });
+
+  it('shows an adminOnly option to an admin', async () => {
+    expect(await optionKeys({ adminOnly: true }, true)).toContain('bonusB');
+  });
+
+  it('shows the option to everyone once the server stops flagging it — the release path', async () => {
+    // A released option arrives with adminOnly absent entirely, not false.
+    expect(await optionKeys({ adminOnly: undefined }, false)).toContain('bonusB');
+  });
+
+  it('shows an explicitly non-admin option to a non-admin', async () => {
+    expect(await optionKeys({ adminOnly: false }, false)).toContain('bonusB');
   });
 });
 

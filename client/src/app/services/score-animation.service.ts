@@ -13,7 +13,19 @@ export interface PlayerRow {
 
 export interface Col {
   key: string;
+  /** The final value, with any Bonus B ×2 already applied. */
   getValue: (sc: ScoreCard) => number;
+  /** True when this column's value was doubled by Bonus B for this player. */
+  isDoubled?: (sc: ScoreCard) => boolean;
+}
+
+/**
+ * A column's value before Bonus B doubled it. The server sends only the final points, but the bonus
+ * is exactly ×2 of the row's triangular score, so halving recovers the original whole number.
+ */
+function baseValue(col: Col, sc: ScoreCard): number {
+  const value = col.getValue(sc);
+  return col.isDoubled?.(sc) ? value / 2 : value;
 }
 
 function animateFrames(duration: number, onTick: (eased: number) => void): Promise<void> {
@@ -34,6 +46,10 @@ export class ScoreAnimationService {
   readonly playerRows = signal<PlayerRow[]>([]);
   readonly activeKey = signal<string | null>(null);
   readonly doneKeys = signal<Set<string>>(new Set());
+  /** The column whose Bonus B ×2 is being revealed right now — drives the chip's attention beat. */
+  readonly doublingKey = signal<string | null>(null);
+  /** Columns whose ×2 chip has been revealed; it stays visible afterwards to explain the number. */
+  readonly doubledKeys = signal<Set<string>>(new Set());
   readonly punishActive = signal(false);
   readonly punishDone = signal(false);
   readonly allDone = signal(false);
@@ -58,6 +74,8 @@ export class ScoreAnimationService {
     this.playerRows.set([]);
     this.activeKey.set(null);
     this.doneKeys.set(new Set());
+    this.doublingKey.set(null);
+    this.doubledKeys.set(new Set());
     this.punishActive.set(false);
     this.punishDone.set(false);
     this.allDone.set(false);
@@ -82,6 +100,8 @@ export class ScoreAnimationService {
     this.applyRanks(finalRows);
     this.playerRows.set(finalRows);
     this.doneKeys.set(new Set(cols.map((c) => c.key)));
+    // The values already include the ×2, so the chips explaining them must be showing too.
+    this.doubledKeys.set(new Set(cols.filter((c) => rows.some((r) => c.isDoubled?.(r.scoreCard))).map((c) => c.key)));
     this.punishDone.set(true);
     this.allDone.set(true);
     this.showActionBar.set(true);
@@ -93,13 +113,15 @@ export class ScoreAnimationService {
     await delay(700);
 
     for (const col of cols) {
+      // Count up to the plain value first and settle the standings on it, so a Bonus B ×2 reads as
+      // a separate event that visibly moves the player rather than being hidden inside the count-up.
       this.activeKey.set(col.key);
-      const targets = new Map(rows.map((r) => [r.id, col.getValue(r.scoreCard)]));
+      const base = new Map(rows.map((r) => [r.id, baseValue(col, r.scoreCard)]));
       await animateFrames(ms(1400), (eased) =>
         this.playerRows.update((rs) =>
           rs.map((r) => ({
             ...r,
-            displayed: { ...r.displayed, [col.key]: Math.round((targets.get(r.id) ?? 0) * eased) },
+            displayed: { ...r.displayed, [col.key]: Math.round((base.get(r.id) ?? 0) * eased) },
           })),
         ),
       );
@@ -108,6 +130,8 @@ export class ScoreAnimationService {
       await delay(350);
       await this.sort(ms);
       await delay(450);
+
+      await this.applyDoubling(col, rows, ms);
     }
 
     this.punishActive.set(true);
@@ -129,6 +153,38 @@ export class ScoreAnimationService {
     this.allDone.set(true);
     await delay(1400);
     this.showModal.set(true);
+  }
+
+  /**
+   * The Bonus B ×2 beat for one column: reveal the chip, hold long enough to be read, then count the
+   * doubled players from their plain value up to double it and re-sort. No-op when nobody doubled
+   * this column, so ordinary columns keep their original rhythm.
+   */
+  private async applyDoubling(col: Col, rows: PlayerRow[], ms: (n: number) => number): Promise<void> {
+    const delay = (n: number) => new Promise<void>((res) => setTimeout(res, ms(n)));
+    const doublers = rows.filter((r) => col.isDoubled?.(r.scoreCard));
+    if (doublers.length === 0) return;
+
+    this.doublingKey.set(col.key);
+    this.doubledKeys.update((s) => new Set([...s, col.key]));
+    await delay(900); // let the chip land and pulse before the number moves
+
+    const from = new Map(doublers.map((r) => [r.id, baseValue(col, r.scoreCard)]));
+    const to = new Map(doublers.map((r) => [r.id, col.getValue(r.scoreCard)]));
+    await animateFrames(ms(900), (eased) =>
+      this.playerRows.update((rs) =>
+        rs.map((r) => {
+          const start = from.get(r.id);
+          if (start === undefined) return r;
+          const end = to.get(r.id) ?? start;
+          return { ...r, displayed: { ...r.displayed, [col.key]: Math.round(start + (end - start) * eased) } };
+        }),
+      ),
+    );
+    this.doublingKey.set(null);
+    await delay(350);
+    await this.sort(ms);
+    await delay(450);
   }
 
   private applyRanks(rows: PlayerRow[]): void {

@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import nl.adg.qwixx.data.BonusBKind;
 import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.CellTag;
 import nl.adg.qwixx.data.Color;
@@ -166,6 +167,32 @@ class ConfigurableGameStyleFactoryTest {
         UUID p2 = UUID.randomUUID();
         Map<UUID, List<Row>> result = factory(CardMode.DIFFERENT_CARDS).buildRows(List.of(p1, p2));
         assertNotSame(result.get(p1), result.get(p2));
+    }
+
+    @Test
+    void bonusBUniqueCardsShuffleColoursButKeepBonusPositions() {
+        var factory = new ConfigurableGameStyleFactory(
+                GameSettings.builder().bonusB(true).cardMode(CardMode.DIFFERENT_CARDS).build(), new Random(3));
+        List<UUID> players = List.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
+        Map<UUID, List<Row>> cards = factory.buildRows(players);
+
+        Set<Color> row0Colours = new HashSet<>();
+        for (List<Row> rows : cards.values()) {
+            // The bonus KIND at each (position, value) is identical for every player — distances fixed.
+            assertKind(rows.get(0), "6", BonusBKind.PLUS_13);
+            assertKind(rows.get(1), "11", BonusBKind.FEWEST_TWO);
+            assertKind(rows.get(2), "9", BonusBKind.FEWEST_TWO);
+            assertKind(rows.get(3), "4", BonusBKind.PLUS_13);
+            row0Colours.add(rows.get(0).cells().get(0).color());
+        }
+        // ...but the colour of a given row position varies across players.
+        assertTrue(row0Colours.size() > 1, "row-0 colour should differ across shuffled cards");
+    }
+
+    private void assertKind(Row row, String value, BonusBKind expected) {
+        Cell cell = row.cells().stream().filter(c -> c.displayValue().equals(value)).findFirst().orElseThrow();
+        assertTrue(cell.tags().stream().anyMatch(t -> t instanceof CellTag.BonusB(BonusBKind k) && k == expected),
+                "cell " + value + " should be " + expected);
     }
 
     // --- extra row ---

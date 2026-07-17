@@ -170,6 +170,56 @@
   position: relative;
 }
 
+/* ── Bonus B strip: the general shape, not a coloured box ──────────────────────
+   The strip is neutral (its cells are all tagged RED only because they need a colour), so it gets
+   the bare silhouette — left triangle, plus, shield — in gold, the same shapes the full board uses.
+   clip-path over an SVG: at 9px only the outline survives anyway, and percentages scale with the
+   box. The shield is a hexagon here; its curves are invisible at this size. */
+.mini-row-bstrip {
+  gap: 3px;
+}
+
+.mini-cell[data-bb-shape] {
+  background: var(--silver-edge);
+  border-radius: 0;
+}
+
+.mini-cell[data-bb-shape='triangle'] {
+  clip-path: polygon(0% 50%, 100% 4%, 100% 96%);
+}
+
+.mini-cell[data-bb-shape='plus'] {
+  clip-path: polygon(
+    34% 0%,
+    66% 0%,
+    66% 34%,
+    100% 34%,
+    100% 66%,
+    66% 66%,
+    66% 100%,
+    34% 100%,
+    34% 66%,
+    0% 66%,
+    0% 34%,
+    34% 34%
+  );
+}
+
+.mini-cell[data-bb-shape='shield'] {
+  clip-path: polygon(50% 0%, 100% 14%, 100% 55%, 50% 100%, 0% 55%, 0% 14%);
+}
+
+/* A crossed indicator means the bonus was earned, so it goes green — the usual white "crossed off"
+   wash would only make an earned bonus look spent. */
+.mini-cell[data-bb-shape].crossed {
+  background: #1e7d54;
+  opacity: 1;
+}
+
+.mini-cell[data-bb-shape].crossed::after {
+  display: none;
+}
+
 /* Big Points bonus cells: circle with diagonal primary/secondary colour split */
 .mini-row .mini-cell.mini-cell-big-points {
   border-radius: 50%;

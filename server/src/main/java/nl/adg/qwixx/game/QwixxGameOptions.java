@@ -25,6 +25,7 @@ public class QwixxGameOptions {
     private static final String DOUBLE_A     = "doubleA";
     private static final String DOUBLE_B     = "doubleB";
     private static final String BONUS_A      = "bonusA";
+    private static final String BONUS_B      = "bonusB";
     private static final String SEE_OTHER_CARDS = "seeOtherCards";
 
     private QwixxGameOptions() {}
@@ -38,24 +39,26 @@ public class QwixxGameOptions {
             GameOption.enumOption(CARD_MODE, "gameOption.cardMode", "gameOption.cardModeDescription",
                 "SAME_CARDS", List.of("SAME_CARDS", "DIFFERENT_CARDS")),
             GameOption.adminBoolOption(BIG_POINTS, "gameOption.bigPoints", "gameOption.bigPointsDescription")
-                    .withIncompatibleWith(List.of(RANDOM_ORDER, LUCKY_CROSS, DOUBLE_A, DOUBLE_B, BONUS_A)),
+                    .withIncompatibleWith(List.of(RANDOM_ORDER, LUCKY_CROSS, DOUBLE_A, DOUBLE_B, BONUS_A, BONUS_B)),
             GameOption.boolOption(RANDOM_ORDER, "gameOption.randomOrder", "gameOption.randomOrderDescription")
-                    .withIncompatibleWith(List.of(BIG_POINTS, BONUS_A)),
+                    .withIncompatibleWith(List.of(BIG_POINTS, BONUS_A, BONUS_B)),
             GameOption.boolOption(EXTRA_ROW, "gameOption.extraRow", "gameOption.extraRowDescription")
-                    .withIncompatibleWith(List.of(BONUS_A)),
+                    .withIncompatibleWith(List.of(BONUS_A, BONUS_B)),
             GameOption.boolOption(CONNECTED_CELLS, "gameOption.connectedCells", "gameOption.connectedCellsDescription")
-                    .withIncompatibleWith(List.of(DOUBLE_A, DOUBLE_B, BONUS_A)),
+                    .withIncompatibleWith(List.of(DOUBLE_A, DOUBLE_B, BONUS_A, BONUS_B)),
             GameOption.boolOption(SEE_OTHER_CARDS, "gameOption.seeOtherCards", "gameOption.seeOtherCardsDescription", true),
             GameOption.adminBoolOption(X_CHANGE, "gameOption.xchange", "gameOption.xchangeDescription"),
             GameOption.adminBoolOption(LUCKY_NUMBER, "gameOption.luckyNumber", "gameOption.luckyNumberDescription"),
             GameOption.adminBoolOption(LUCKY_CROSS,  "gameOption.luckyCross",  "gameOption.luckyCrossDescription")
-                    .withIncompatibleWith(List.of(BIG_POINTS, DOUBLE_A, DOUBLE_B, BONUS_A)),
+                    .withIncompatibleWith(List.of(BIG_POINTS, DOUBLE_A, DOUBLE_B, BONUS_A, BONUS_B)),
             GameOption.adminBoolOption(DOUBLE_A, "gameOption.doubleA", "gameOption.doubleADescription")
-                    .withIncompatibleWith(List.of(DOUBLE_B, BIG_POINTS, LUCKY_CROSS, CONNECTED_CELLS, BONUS_A)),
+                    .withIncompatibleWith(List.of(DOUBLE_B, BIG_POINTS, LUCKY_CROSS, CONNECTED_CELLS, BONUS_A, BONUS_B)),
             GameOption.adminBoolOption(DOUBLE_B, "gameOption.doubleB", "gameOption.doubleBDescription")
-                    .withIncompatibleWith(List.of(DOUBLE_A, BIG_POINTS, LUCKY_CROSS, CONNECTED_CELLS, BONUS_A)),
+                    .withIncompatibleWith(List.of(DOUBLE_A, BIG_POINTS, LUCKY_CROSS, CONNECTED_CELLS, BONUS_A, BONUS_B)),
             GameOption.adminBoolOption(BONUS_A, "gameOption.bonusA", "gameOption.bonusADescription")
-                    .withIncompatibleWith(List.of(BIG_POINTS, DOUBLE_A, DOUBLE_B, CONNECTED_CELLS, LUCKY_CROSS, EXTRA_ROW, RANDOM_ORDER)),
+                    .withIncompatibleWith(List.of(BIG_POINTS, DOUBLE_A, DOUBLE_B, CONNECTED_CELLS, LUCKY_CROSS, EXTRA_ROW, RANDOM_ORDER, BONUS_B)),
+            GameOption.adminBoolOption(BONUS_B, "gameOption.bonusB", "gameOption.bonusBDescription")
+                    .withIncompatibleWith(List.of(BIG_POINTS, DOUBLE_A, DOUBLE_B, CONNECTED_CELLS, LUCKY_CROSS, EXTRA_ROW, RANDOM_ORDER, BONUS_A)),
             GameOption.intOption(BOT_COUNT, "gameOption.botCount", "gameOption.botCountDescription",
                 "0", 0, 3),
             GameOption.enumOption(BOT_STRATEGY, "gameOption.botStrategy", "gameOption.botStrategyDescription",
@@ -80,6 +83,7 @@ public class QwixxGameOptions {
         map.put(DOUBLE_A,        s.doubleA());
         map.put(DOUBLE_B,        s.doubleB());
         map.put(BONUS_A,         s.bonusA());
+        map.put(BONUS_B,         s.bonusB());
         map.put(BOT_COUNT,       s.botCount());
         map.put(BOT_STRATEGY,    s.botStrategy() != null ? s.botStrategy().name()
                                                            : BotStrategy.BALANCED.name());
@@ -104,6 +108,7 @@ public class QwixxGameOptions {
                 case DOUBLE_A        -> builder.doubleA(bool(entry.getValue()));
                 case DOUBLE_B        -> builder.doubleB(bool(entry.getValue()));
                 case BONUS_A         -> builder.bonusA(bool(entry.getValue()));
+                case BONUS_B         -> builder.bonusB(bool(entry.getValue()));
                 case BOT_COUNT       -> builder.botCount(integer(entry.getValue()));
                 case BOT_STRATEGY    -> builder.botStrategy(BotStrategy.valueOf(str(entry.getValue())));
                 default              -> log.warning("unknown game option '" + entry.getKey() + "', ignoring");

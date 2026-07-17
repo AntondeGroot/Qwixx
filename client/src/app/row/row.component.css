@@ -426,3 +426,55 @@
   line-height: 1;
   z-index: 2;
 }
+
+/* ── Bonus B strip: 5 indicators, each captioned with what its bonus does ─────
+   Laid out as wrapping slots rather than one long line: with the words attached, five across
+   would overflow every phone. */
+.row.bonus-bstrip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding: 6px 8px;
+  background: transparent;
+  align-items: center;
+}
+
+/* One slot: the indicator, then its words above its N/2 counter. Each is a light card (as in the
+   design), which also fixes contrast — the strip appears both on the white game sheet and on the
+   dark score screen, so the text carries its own background rather than relying on either. */
+.bb-strip-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 158px;
+  padding: 5px 7px;
+  background: #fffdf8;
+  border: 1.5px solid #e4ddce;
+  border-radius: 10px;
+}
+
+.bb-strip-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.bb-what {
+  font-size: 10px;
+  line-height: 1.25;
+  color: #4a4335;
+  font-weight: 600;
+}
+
+.bb-count {
+  font-size: 11px;
+  font-weight: 800;
+  color: #8a7a55;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.bb-count.bb-count-done {
+  color: #1e7d54;
+}

@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import nl.adg.qwixx.data.BonusBKind;
 import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.CellTag;
 import nl.adg.qwixx.data.Color;
@@ -73,6 +74,7 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
                 if (settings.connectedCells()) applyConnectedCells(shared);
                 applyDoubleVariants(shared);
                 if (settings.bonusA()) { applyBonusBoxes(shared); shared.add(buildBonusBar(false)); }
+                if (settings.bonusB()) { applyBonusBBoxes(shared); shared.add(buildBonusBStrip()); }
                 if (settings.xChange()) shared.add(buildXChangeRow());
                 if (settings.luckyNumber()) shared.add(buildLuckyRow());
                 for (UUID player : players) result.put(player, shared);
@@ -80,14 +82,20 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
             } else {
                 int[] gaps = luckyCrossGaps();
                 for (UUID player : players) {
-                    List<Row> playerRows = settings.luckyCross()
-                            ? buildStandardRowsWithLuckyCross(random.nextInt(gaps.length))
-                            : buildStandardRows();
+                    List<Row> playerRows;
+                    if (settings.bonusB()) {
+                        playerRows = buildStandardRowsShuffledColors(); // unique cards: shuffle row colours
+                    } else if (settings.luckyCross()) {
+                        playerRows = buildStandardRowsWithLuckyCross(random.nextInt(gaps.length));
+                    } else {
+                        playerRows = buildStandardRows();
+                    }
                     if (settings.randomOrder()) shuffleDisplayValues(playerRows);
                     if (settings.extraRow()) applyExtraRow(playerRows);
                     if (settings.connectedCells()) applyConnectedCells(playerRows);
                     applyDoubleVariants(playerRows);
                     if (settings.bonusA()) { applyBonusBoxes(playerRows); playerRows.add(buildBonusBar(true)); }
+                    if (settings.bonusB()) { applyBonusBBoxes(playerRows); playerRows.add(buildBonusBStrip()); }
                     result.put(player, playerRows);
                 }
             }
@@ -257,12 +265,26 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
     }
 
     private List<Row> buildStandardRows() {
+        return buildStandardRows(Color.RED, Color.YELLOW, Color.GREEN, Color.BLUE);
+    }
+
+    /** Two ascending rows then two descending rows, coloured as given. The two directions are fixed
+     *  by position; the colours vary — used by Bonus B's per-player colour shuffle. */
+    private List<Row> buildStandardRows(Color asc0, Color asc1, Color desc0, Color desc1) {
         List<Row> rows = new ArrayList<>();
-        rows.add(buildAscendingRow(Color.RED));
-        rows.add(buildAscendingRow(Color.YELLOW));
-        rows.add(buildDescendingRow(Color.GREEN));
-        rows.add(buildDescendingRow(Color.BLUE));
+        rows.add(buildAscendingRow(asc0));
+        rows.add(buildAscendingRow(asc1));
+        rows.add(buildDescendingRow(desc0));
+        rows.add(buildDescendingRow(desc1));
         return rows;
+    }
+
+    /** The four standard rows with their colours randomly permuted across all four positions
+     *  (Bonus B unique cards): any colour can land on any row, so a colour may end up descending. */
+    private List<Row> buildStandardRowsShuffledColors() {
+        List<Color> colors = new ArrayList<>(List.of(Color.RED, Color.YELLOW, Color.GREEN, Color.BLUE));
+        Collections.shuffle(colors, random);
+        return buildStandardRows(colors.get(0), colors.get(1), colors.get(2), colors.get(3));
     }
 
     private int lockMinCrosses() {
@@ -632,6 +654,80 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
             cell.setDisplayValue("");
             cell.setClosingEligible(false);
             cell.setTags(List.of());
+            row.addCell(cell);
+        }
+        return row;
+    }
+
+    // ── Bonus B ────────────────────────────────────────────────────────────────
+
+    /** One bonus box: the coloured row's position (0-3), its display value, and the bonus kind.
+     *  Placement is keyed on position (not colour) so the row colours can be shuffled per player
+     *  (unique cards) while the box numbers/kinds — the "distances" — stay identical. */
+    private record BonusBSpec(int slot, int value, BonusBKind kind) {}
+
+    /** Fixed left-to-right order of the 5 indicator cells in the bonus strip. */
+    private static final BonusBKind[] BONUS_B_STRIP = {
+        BonusBKind.FEWEST_TWO, BonusBKind.ONE_EACH, BonusBKind.DOUBLE_FEWEST,
+        BonusBKind.PLUS_13, BonusBKind.NO_PENALTY
+    };
+
+    // Fixed placement of the 10 bonus boxes (2 per kind) by row position, clear of the lock cells.
+    // Row positions 0-3 default to RED, YELLOW, GREEN, BLUE. Standard values are the official ones.
+    private List<BonusBSpec> bonusBBoxes() {
+        return switch (settings.base()) {
+            case STANDARD -> List.of(
+                new BonusBSpec(0, 6, BonusBKind.PLUS_13),        // R6
+                new BonusBSpec(0, 8, BonusBKind.DOUBLE_FEWEST),  // R8
+                new BonusBSpec(1, 3, BonusBKind.NO_PENALTY),     // Y3
+                new BonusBSpec(1, 7, BonusBKind.ONE_EACH),       // Y7
+                new BonusBSpec(1, 11, BonusBKind.FEWEST_TWO),    // Y11
+                new BonusBSpec(2, 9, BonusBKind.FEWEST_TWO),     // G9
+                new BonusBSpec(2, 5, BonusBKind.NO_PENALTY),     // G5
+                new BonusBSpec(3, 10, BonusBKind.DOUBLE_FEWEST), // B10
+                new BonusBSpec(3, 7, BonusBKind.ONE_EACH),       // B7
+                new BonusBSpec(3, 4, BonusBKind.PLUS_13));       // B4
+            case LONGO -> List.of(
+                new BonusBSpec(0, 5, BonusBKind.FEWEST_TWO),
+                new BonusBSpec(0, 10, BonusBKind.DOUBLE_FEWEST),
+                new BonusBSpec(1, 7, BonusBKind.ONE_EACH),
+                new BonusBSpec(1, 11, BonusBKind.PLUS_13),
+                new BonusBSpec(1, 4, BonusBKind.NO_PENALTY),
+                new BonusBSpec(2, 11, BonusBKind.FEWEST_TWO),
+                new BonusBSpec(2, 6, BonusBKind.PLUS_13),
+                new BonusBSpec(2, 8, BonusBKind.NO_PENALTY),
+                new BonusBSpec(3, 10, BonusBKind.ONE_EACH),
+                new BonusBSpec(3, 6, BonusBKind.DOUBLE_FEWEST));
+        };
+    }
+
+    /** Tags the 10 bonus-box numbers by row position with {@link CellTag.BonusB}. */
+    private void applyBonusBBoxes(List<Row> colored) {
+        for (BonusBSpec spec : bonusBBoxes()) {
+            if (spec.slot() >= colored.size()) continue;
+            Row row = colored.get(spec.slot());
+            for (Cell cell : row.cells()) {
+                if (cell.displayValue().equals(String.valueOf(spec.value()))) {
+                    List<CellTag> tags = new ArrayList<>(cell.tags());
+                    tags.add(new CellTag.BonusB(spec.kind()));
+                    cell.setTags(tags);
+                }
+            }
+        }
+    }
+
+    /** Builds the bonus strip: 5 indicator cells, one per bonus kind, crossed once a pair completes. */
+    private Row buildBonusBStrip() {
+        Row row = new Row();
+        row.setBonusBStrip();
+        for (int i = 0; i < BONUS_B_STRIP.length; i++) {
+            Cell cell = new Cell(i);
+            // Inert placeholder colour: strip cells are neutral indicators (the client renders them
+            // without a row colour). WHITE is a die-only colour and isn't a valid cell/row colour.
+            cell.setColor(Color.RED);
+            cell.setDisplayValue("");
+            cell.setClosingEligible(false);
+            cell.setTags(List.of(new CellTag.BonusB(BONUS_B_STRIP[i])));
             row.addCell(cell);
         }
         return row;

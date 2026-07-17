@@ -13,6 +13,77 @@ body {
   color: #222;
 }
 
+/* ── Brushed silver — shared by the Bonus B tiles (cell), the no-penalty shield (board)
+   and the bonus pip on the score screen. The light → dark → light banding is what reads
+   as metal rather than flat grey; the gold rim ties them all to bonus scoring. ── */
+:root {
+  --silver-1: #ffffff;
+  --silver-2: #e9edf1;
+  --silver-3: #bcc4cd;
+  --silver-4: #dee3e9;
+  --silver-5: #a9b2bd;
+  --silver-6: #e4e9ee;
+  --silver-edge: #c8940f;
+}
+
+/* Colours for an SVG <linearGradient class="silver-grad"> of six stops; the stops keep their
+   own offsets so a shape can bend the banding to suit its geometry. */
+.silver-grad stop:nth-child(1) {
+  stop-color: var(--silver-1);
+}
+.silver-grad stop:nth-child(2) {
+  stop-color: var(--silver-2);
+}
+.silver-grad stop:nth-child(3) {
+  stop-color: var(--silver-3);
+}
+.silver-grad stop:nth-child(4) {
+  stop-color: var(--silver-4);
+}
+.silver-grad stop:nth-child(5) {
+  stop-color: var(--silver-5);
+}
+.silver-grad stop:nth-child(6) {
+  stop-color: var(--silver-6);
+}
+
+/* The gleam sweeping across a silver SVG face on a 0 0 44 44 viewBox — the host must clip the
+   band to its shape with a <clipPath>. 2.5s cycle: the band crosses in ~0.9s, then rests. */
+.silver-sheen {
+  transform-box: view-box;
+  transform-origin: 0 0;
+  animation: silver-sheen 2.5s ease-in-out infinite;
+}
+
+@keyframes silver-sheen {
+  0% {
+    transform: rotate(20deg) translateX(-14px);
+  }
+  36%,
+  100% {
+    transform: rotate(20deg) translateX(58px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .silver-sheen {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* The black-and-white Bonus B chip (×2, +13, ✕✕). On a tile it pins to a corner, on the score
+   screen it sits inline next to a value, so the caller owns placement and size. */
+.bb-chip {
+  background: #241f18;
+  color: #fff;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  border: 1.5px solid #fff;
+  border-radius: 7px;
+  pointer-events: none;
+}
+
 /* Shared lock-zone border — used by the game row and the rules page demo. */
 .lock-zone {
   border: 3px dashed rgba(0, 0, 0, 0.65);

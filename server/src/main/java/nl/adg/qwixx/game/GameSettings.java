@@ -18,6 +18,7 @@ public class GameSettings {
     private final boolean      doubleA;
     private final boolean      doubleB;
     private final boolean      bonusA;
+    private final boolean      bonusB;
     private final boolean      seeOtherCards;
     private final CardMode     cardMode;
     private final GameMode     gameMode;
@@ -40,6 +41,7 @@ public class GameSettings {
         this.doubleA     = builder.doubleA;
         this.doubleB     = builder.doubleB;
         this.bonusA      = builder.bonusA;
+        this.bonusB      = builder.bonusB;
         this.seeOtherCards = builder.seeOtherCards;
         this.cardMode    = builder.cardMode;
         this.gameMode    = builder.gameMode;
@@ -60,6 +62,7 @@ public class GameSettings {
     public boolean         doubleA()        { return doubleA; }
     public boolean         doubleB()        { return doubleB; }
     public boolean         bonusA()         { return bonusA; }
+    public boolean         bonusB()         { return bonusB; }
     public boolean         seeOtherCards()  { return seeOtherCards; }
     public CardMode        cardMode()       { return cardMode; }
     public GameMode        gameMode()       { return gameMode; }
@@ -88,6 +91,7 @@ public class GameSettings {
         private boolean        doubleA;
         private boolean        doubleB;
         private boolean        bonusA;
+        private boolean        bonusB;
         private boolean        seeOtherCards  = true;
         private CardMode       cardMode       = CardMode.SAME_CARDS;
         private GameMode       gameMode       = GameMode.ONLINE;
@@ -107,6 +111,7 @@ public class GameSettings {
         public Builder doubleA(boolean v)                  { this.doubleA = v; return this; }
         public Builder doubleB(boolean v)                  { this.doubleB = v; return this; }
         public Builder bonusA(boolean v)                   { this.bonusA = v; return this; }
+        public Builder bonusB(boolean v)                   { this.bonusB = v; return this; }
         public Builder seeOtherCards(boolean v)            { this.seeOtherCards = v; return this; }
         public Builder cardMode(CardMode cardMode)         { this.cardMode = cardMode; return this; }
         public Builder gameMode(GameMode gameMode)         { this.gameMode = gameMode; return this; }
@@ -133,7 +138,12 @@ public class GameSettings {
                     "the double variants cannot be combined with bigPoints, luckyCross or connectedCells: " +
                     "each restructures the coloured rows in an incompatible way");
             }
-            if (bonusA && (bigPoints || doubleA || doubleB || connectedCells || luckyCross || extraRow || randomOrder)) {
+            if (bonusB && (bigPoints || doubleA || doubleB || connectedCells || luckyCross || extraRow || randomOrder || bonusA)) {
+                throw new IllegalArgumentException(
+                    "bonusB cannot be combined with bigPoints, doubleA/doubleB, connectedCells, luckyCross, " +
+                    "extraRow, randomOrder or bonusA: the bonus boxes rely on the standard row layout");
+            }
+            if (bonusA && (bigPoints || doubleA || doubleB || connectedCells || luckyCross || extraRow || randomOrder || bonusB)) {
                 throw new IllegalArgumentException(
                     "bonusA cannot be combined with bigPoints, doubleA/doubleB, connectedCells, luckyCross, " +
                     "extraRow or randomOrder: bonus boxes sit at fixed numbers and rely on the standard row layout");

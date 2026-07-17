@@ -95,8 +95,49 @@
 [data-col='extra'] {
   background: #555;
 }
+/* The bonus pip wears the same brushed silver as the Bonus B tiles. The dot is a plain
+   element rather than an SVG, so the gleam is an ::after band the border-radius clips. */
 [data-col='bonus'] {
-  background: #b8860b;
+  background: linear-gradient(
+    160deg,
+    var(--silver-1) 0%,
+    var(--silver-2) 22%,
+    var(--silver-3) 48%,
+    var(--silver-4) 58%,
+    var(--silver-5) 82%,
+    var(--silver-6) 100%
+  );
+  border: 1.5px solid var(--silver-edge);
+  position: relative;
+  overflow: hidden;
+}
+
+[data-col='bonus']::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -75%;
+  width: 45%;
+  height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+  animation: pip-sheen 2.5s ease-in-out infinite;
+}
+
+@keyframes pip-sheen {
+  0% {
+    transform: translateX(0) rotate(20deg);
+  }
+  36%,
+  100% {
+    transform: translateX(400%) rotate(20deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-col='bonus']::after {
+    animation: none;
+    opacity: 0;
+  }
 }
 
 .pun-symbol {
@@ -176,6 +217,71 @@
   font-variant-numeric: tabular-nums;
   color: #bbb;
   transition: color 0.25s;
+  position: relative;
+}
+
+/* Bonus B marks ride in the corner of a value cell so they never shift the number, which is
+   mid count-up and must stay put under the tabular-nums grid. The chip clears the digits
+   vertically — parked on them it hid the very number it is explaining, and the reveal's scale-up
+   made it worse. The row leaves ~28px above the text, so sitting above costs nothing. */
+.dbl-chip {
+  position: absolute;
+  bottom: 100%;
+  margin-bottom: 1px;
+  right: -2px;
+  font-size: 9px;
+  line-height: 1.2;
+  padding: 0 3px;
+  transform-origin: center;
+}
+
+/* The chip's entrance: punch in, then keep glowing while the number counts up to double. The glow
+   pulses via box-shadow so it never fights the entrance's transform. */
+.dbl-chip-reveal {
+  animation:
+    dbl-chip-in 0.45s cubic-bezier(0.2, 1.5, 0.4, 1),
+    dbl-chip-glow 0.75s ease-in-out 0.45s infinite;
+}
+
+@keyframes dbl-chip-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+  50% {
+    box-shadow: 0 0 7px 2px rgba(255, 255, 255, 0.85);
+  }
+}
+
+@keyframes dbl-chip-in {
+  0% {
+    transform: scale(0.2) rotate(-25deg);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.45) rotate(6deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dbl-chip-reveal {
+    animation: none;
+  }
+}
+
+/* Sits above the punishment number like the ×2 chip, rather than beside it: at this size, tucked
+   next to the digits it read as a smudge instead of a shield. */
+.pun-shield {
+  position: absolute;
+  bottom: 100%;
+  right: -1px;
+  width: 17px;
+  height: 17px;
 }
 .active-val {
   color: #fff;

@@ -11,6 +11,7 @@ import java.util.UUID;
 import nl.adg.qwixx.action.CrossCellAction;
 import nl.adg.qwixx.action.DiceCombination;
 import nl.adg.qwixx.action.GameAction;
+import nl.adg.qwixx.data.BonusBKind;
 import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.CellTag;
 import nl.adg.qwixx.data.Color;
@@ -54,6 +55,9 @@ class CellCrosser {
 
             // Bonus A bar cells are never directly clickable — they are auto-crossed by the chain.
             if (row.isBonusBar()) continue;
+
+            // Bonus B strip cells are never directly clickable — they are auto-crossed on pair completion.
+            if (row.isBonusBStrip()) continue;
 
             // Bonus rows are never globally closed, but skip closed normal rows.
             if (!row.isBonusRow() && state.isRowClosed(rowIndex)) continue;
@@ -264,16 +268,21 @@ class CellCrosser {
         crossed.computeIfAbsent(rowIndex, k -> new HashSet<>()).add(cellId);
 
         boolean isBonusBox = false;
+        BonusBKind bonusBKind = null;
         for (CellTag tag : cell.tags()) {
             if (tag instanceof CellTag.AutoCross autoCross) {
                 findAndCrossAutoTarget(state, playerId, autoCross.target(), crossed);
             } else if (tag instanceof CellTag.BonusBox) {
                 isBonusBox = true;
+            } else if (tag instanceof CellTag.BonusB(BonusBKind kind)) {
+                bonusBKind = kind;
             }
         }
         // Bonus A: crossing a bonus box consumes the next bonus-bar cell and forces a cross in
         // that colour's row. Done after the cell is recorded so the chain sees the updated state.
         if (isBonusBox) triggerBonusBar(state, playerId, crossed);
+        // Bonus B: crossing a bonus box may complete its pair, which fires the kind's bonus.
+        if (bonusBKind != null) triggerBonusB(state, playerId, bonusBKind, crossed);
     }
 
     private void findAndCrossAutoTarget(GameState state, UUID playerId, String targetCellId,
@@ -322,6 +331,91 @@ class CellCrosser {
             if (forced != null) crossRecursive(state, playerId, i, forced.id(), crossed, true);
             return;
         }
+    }
+
+    // Bonus B: once both boxes of a kind are crossed, mark its strip indicator and fire the
+    // immediate effect. Score-time kinds (double / +13 / no-penalty) only mark the indicator.
+    private void triggerBonusB(GameState state, UUID playerId, BonusBKind kind,
+                               Map<Integer, Set<String>> crossed) {
+        SheetLayout layout = state.sheetLayouts().get(playerId);
+        SheetProgress prog = state.boardState().sheetProgress().get(playerId);
+
+        Cell stripCell = null;
+        int stripIndex = -1;
+        boolean sawBox = false;
+        boolean pairComplete = true;
+        for (int i = 0; i < layout.rows().size(); i++) {
+            Row row = layout.rows().get(i);
+            for (Cell c : row.cells()) {
+                for (CellTag t : c.tags()) {
+                    if (t instanceof CellTag.BonusB(BonusBKind k) && k == kind) {
+                        if (row.isBonusBStrip()) {
+                            stripCell = c;
+                            stripIndex = i;
+                        } else {
+                            sawBox = true;
+                            if (!getRowState(prog, i).crossedCells().contains(c.id())) pairComplete = false;
+                        }
+                    }
+                }
+            }
+        }
+        if (!sawBox || stripCell == null || !pairComplete) return;
+
+        RowState stripState = getRowState(prog, stripIndex);
+        if (stripState.crossedCells().contains(stripCell.id())) return; // already fired
+
+        Set<String> newStrip = new HashSet<>(stripState.crossedCells());
+        newStrip.add(stripCell.id());
+        prog.updateRowState(stripIndex, new RowState(newStrip, stripState.lockCrossed()));
+        crossed.computeIfAbsent(stripIndex, k -> new HashSet<>()).add(stripCell.id());
+
+        switch (kind) {
+            case FEWEST_TWO -> crossInFewestRow(state, playerId, 2, crossed);
+            case ONE_EACH   -> crossInEachRow(state, playerId, crossed);
+            default         -> { /* DOUBLE_FEWEST / PLUS_13 / NO_PENALTY apply at score time */ }
+        }
+    }
+
+    // Cross the next {@code count} boxes in the single open colour row with the fewest crosses.
+    private void crossInFewestRow(GameState state, UUID playerId, int count,
+                                  Map<Integer, Set<String>> crossed) {
+        SheetLayout layout = state.sheetLayouts().get(playerId);
+        SheetProgress prog = state.boardState().sheetProgress().get(playerId);
+        int rowIndex = fewestColourRow(state, playerId);
+        if (rowIndex < 0) return;
+        for (int n = 0; n < count; n++) {
+            Cell forced = nextForcedBox(layout.rows().get(rowIndex), getRowState(prog, rowIndex));
+            if (forced == null) return; // no room before the lock → remaining crosses are forfeited
+            crossRecursive(state, playerId, rowIndex, forced.id(), crossed, true);
+        }
+    }
+
+    // Cross the next box in every open colour row.
+    private void crossInEachRow(GameState state, UUID playerId, Map<Integer, Set<String>> crossed) {
+        SheetLayout layout = state.sheetLayouts().get(playerId);
+        SheetProgress prog = state.boardState().sheetProgress().get(playerId);
+        for (int i = 0; i < layout.rows().size(); i++) {
+            Row row = layout.rows().get(i);
+            if (row.lock() == null || state.isRowClosed(i)) continue;
+            Cell forced = nextForcedBox(row, getRowState(prog, i));
+            if (forced != null) crossRecursive(state, playerId, i, forced.id(), crossed, true);
+        }
+    }
+
+    // The open colour row (identified by having a lock) with the fewest crosses; ties → lowest index.
+    private int fewestColourRow(GameState state, UUID playerId) {
+        SheetLayout layout = state.sheetLayouts().get(playerId);
+        SheetProgress prog = state.boardState().sheetProgress().get(playerId);
+        int best = -1;
+        int bestCount = Integer.MAX_VALUE;
+        for (int i = 0; i < layout.rows().size(); i++) {
+            Row row = layout.rows().get(i);
+            if (row.lock() == null || state.isRowClosed(i)) continue;
+            int count = getRowState(prog, i).crossedCells().size();
+            if (count < bestCount) { bestCount = count; best = i; }
+        }
+        return best;
     }
 
     // The next box a forced bonus cross lands on: the left-most reachable, non-closing cell.

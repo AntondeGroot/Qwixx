@@ -28,6 +28,8 @@ import {
 } from '../../generated/model/models';
 import { DiceComponent } from '../dice/dice.component';
 import { PlayerListComponent } from '../player-list/player-list.component';
+import { SilverMarkComponent } from '../silver-mark/silver-mark.component';
+import { bonusKindOf, computeBonusBProgress } from '../row/bonus-b.util';
 import { RowComponent } from '../row/row.component';
 import { RowClosureModalService } from '../services/row-closure-modal.service';
 import { AudioService } from '../services/audio.service';
@@ -38,7 +40,7 @@ import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-board',
-  imports: [RowComponent, DiceComponent, PlayerListComponent],
+  imports: [RowComponent, DiceComponent, PlayerListComponent, SilverMarkComponent],
   templateUrl: './board.component.html',
   styleUrl: './board.component.css',
 })
@@ -322,6 +324,28 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   hasLuckyNumberRow = computed(() => {
     const layout = this.layoutFor(this.playerId());
     return !!layout?.rows.some((r) => r.luckyRow);
+  });
+
+  // Bonus B: how many of each kind's two boxes this player has crossed (for the strip's N/2 counter).
+  bonusBProgress = computed(() =>
+    computeBonusBProgress(this.layoutFor(this.playerId()), this.gameState()?.sheetProgress[this.playerId()]),
+  );
+
+  // True once this player has completed the Bonus B "no penalty" pair (its strip indicator is
+  // crossed): mis-rolls no longer subtract, so the penalty display should read 0.
+  noPenaltyAchieved = computed(() => {
+    const state = this.gameState();
+    const layout = this.layoutFor(this.playerId());
+    if (!state || !layout) return false;
+    const progress = state.sheetProgress[this.playerId()];
+    for (const row of layout.rows) {
+      if (!row.bonusBStrip) continue;
+      const crossed = progress?.rowStates[row.id]?.crossedCells ?? [];
+      for (const cell of row.cells) {
+        if (bonusKindOf(cell) === CellTag.BonusKindEnum.NO_PENALTY && crossed.includes(cell.id)) return true;
+      }
+    }
+    return false;
   });
 
   // True when this player has declared a lock intent that is currently pending.

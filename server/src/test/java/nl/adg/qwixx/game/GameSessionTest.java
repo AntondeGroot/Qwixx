@@ -275,6 +275,13 @@ class GameSessionTest {
     }
 
     @Test
+    void bonusB_botsPlayWithoutError() {
+        GameSession s = new GameSession(UUID.randomUUID().toString(), "test", 4,
+                GameSettings.builder().bonusB(true).botCount(2).build());
+        assertDoesNotThrow(() -> s.start(), "bots must play a Bonus B layout (pair triggers + score modifiers) without error");
+    }
+
+    @Test
     void exitGame_unknownPlayer_throwsIllegalArgumentException() {
         GameSession s = session(4);
         s.addPlayer(Player.of("Alice"));

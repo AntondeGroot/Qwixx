@@ -14,18 +14,18 @@ import { environment } from '../../environments/environment';
 import { firstValueFrom, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { GamesService, GamestatesService, PlayersService } from '../../generated/api/api';
-import { CellTag, GameState, RowState, ScoreCard, SheetRow } from '../../generated/model/models';
+import { GameState, RowState, ScoreCard } from '../../generated/model/models';
 import { TranslateService } from '@ngx-translate/core';
 import { RowComponent } from '../row/row.component';
+import { SilverMarkComponent } from '../silver-mark/silver-mark.component';
+import { computeBonusBProgress } from '../row/bonus-b.util';
+import { isScoringColourRow } from './score-rows.util';
+import { buildPreviewGame, PREVIEW_PLAYER_ID } from './score-preview.data';
 import { Col, PlayerRow, ScoreAnimationService } from '../services/score-animation.service';
-
-const isXChangeRow = (r: SheetRow): boolean =>
-  r.cells.some((c) => c.tags.some((t) => t.type === CellTag.TypeEnum.X_CHANGE));
-const isLuckyRow = (r: SheetRow): boolean => r.luckyRow === true;
 
 @Component({
   selector: 'app-score',
-  imports: [RowComponent],
+  imports: [RowComponent, SilverMarkComponent],
   templateUrl: './score.component.html',
   styleUrl: './score.component.css',
 })
@@ -44,6 +44,8 @@ export class ScoreComponent implements OnInit {
   readonly playerRows = this.animation.playerRows;
   readonly activeKey = this.animation.activeKey;
   readonly doneKeys = this.animation.doneKeys;
+  readonly doublingKey = this.animation.doublingKey;
+  readonly doubledKeys = this.animation.doubledKeys;
   readonly punishActive = this.animation.punishActive;
   readonly punishDone = this.animation.punishDone;
   readonly allDone = this.animation.allDone;
@@ -174,6 +176,7 @@ export class ScoreComponent implements OnInit {
     return s?.doubleA ? 'A' : s?.doubleB ? 'B' : null;
   });
   myProgress = computed(() => this.finalState()?.sheetProgress?.[this.playerId] ?? null);
+  myBonusBProgress = computed(() => computeBonusBProgress(this.myLayout(), this.myProgress()));
   myClosedRows = computed(() => this.finalState()?.closedRows ?? {});
 
   myScoreRows = computed(() => {
@@ -242,6 +245,11 @@ export class ScoreComponent implements OnInit {
 
   ngOnInit() {
     this.animation.reset();
+    // The preview route is static, so it carries no :sessionId to recognise it by — it flags itself.
+    if (this.route.snapshot.data['preview']) {
+      void this.runPreview();
+      return;
+    }
     this.sessionId = this.route.snapshot.paramMap.get('sessionId') ?? '';
     this.playerId =
       this.route.snapshot.queryParamMap.get('pid') ?? sessionStorage.getItem(`qwixx_pid_${this.sessionId}`) ?? '';
@@ -250,6 +258,27 @@ export class ScoreComponent implements OnInit {
       void this.showFinalState();
     } else {
       void this.runAnimation().then(() => sessionStorage.setItem(animationKey, '1'));
+    }
+  }
+
+  /**
+   * Dev preview (`/score/preview?players=4`): runs the real animation over synthetic Bonus B data,
+   * so the ×2 reveal, the shield and the rank flips can be watched without playing a game out.
+   * Replays on every visit — no sessionStorage guard, no SSE, nothing to restart.
+   */
+  private async runPreview(): Promise<void> {
+    try {
+      const players = Number(this.route.snapshot.queryParamMap.get('players') ?? 4);
+      // A real layout, so the preview shows the actual Bonus B board rather than a hand-built fake.
+      const layout = await firstValueFrom(this.gamesService.previewLayout({ bonusB: true }));
+      const { state, scores } = buildPreviewGame(layout, players);
+      this.playerId = PREVIEW_PLAYER_ID;
+      this.finalState.set(state);
+      const { cols, rows } = this.buildScoreData(state, scores);
+      this._initPortraitRowH(rows.length);
+      await this.animation.runSequence(cols, rows, (n) => this.ms(n));
+    } catch (e) {
+      console.error('[score] preview failed:', e);
     }
   }
 
@@ -290,18 +319,23 @@ export class ScoreComponent implements OnInit {
 
   private buildScoreData(state: GameState, scores: Record<string, ScoreCard>): { cols: Col[]; rows: PlayerRow[] } {
     const layout = Object.values(state.sheetLayouts)[0];
-    const colors = layout.rows
-      .filter((r) => !r.bonusRow && !isXChangeRow(r) && !isLuckyRow(r))
-      .map((r) => r.cells[0]!.color as string);
+    const colors = layout.rows.filter(isScoringColourRow).map((r) => r.cells[0]!.color as string);
     const hasExtra = Object.values(scores).some((s) => s.extraPoints > 0);
-    const hasBonus = Object.values(scores).some((s) => s.bonusPoints > 0);
+    // Bonus B always gets a column — like the colour columns, it comes from the layout, so it shows
+    // a 0 rather than vanishing. Other bonus sources still only appear once someone scores one.
+    const hasBonusBStrip = layout.rows.some((r) => r.bonusBStrip === true);
+    const hasBonus = hasBonusBStrip || Object.values(scores).some((s) => s.bonusPoints > 0);
 
     this.colorCols.set(colors);
     this.showExtra.set(hasExtra);
     this.showBonus.set(hasBonus);
 
     const cols: Col[] = [
-      ...colors.map((c) => ({ key: c, getValue: (sc: ScoreCard) => sc.pointsPerColor[c] ?? 0 })),
+      ...colors.map((c) => ({
+        key: c,
+        getValue: (sc: ScoreCard) => sc.pointsPerColor[c] ?? 0,
+        isDoubled: (sc: ScoreCard) => sc.doubledColor === c,
+      })),
       ...(hasExtra ? [{ key: 'EXTRA', getValue: (sc: ScoreCard) => sc.extraPoints }] : []),
       ...(hasBonus ? [{ key: 'BONUS', getValue: (sc: ScoreCard) => sc.bonusPoints }] : []),
     ];

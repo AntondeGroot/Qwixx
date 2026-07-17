@@ -1,7 +1,10 @@
 package nl.adg.qwixx.rules;
 
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.Map;
+import java.util.Set;
+import nl.adg.qwixx.data.BonusBKind;
 import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.CellTag;
 import nl.adg.qwixx.data.Color;
@@ -19,6 +22,7 @@ public class StandardScoringEngine implements ScoringEngine {
         Map<Color, Integer> crosses = zeroCrossesPerColor();
         int extraCrosses = 0;
         int bonusPoints  = 0;
+        Set<BonusBKind> achievedB = EnumSet.noneOf(BonusBKind.class); // Bonus B: kinds whose pair completed
 
         for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
             Row row           = layout.rows().get(rowIndex);
@@ -28,6 +32,18 @@ public class StandardScoringEngine implements ScoringEngine {
             if (row.isBonusBar()) continue;
             RowState rowState = progress.rowStates().get(rowIndex);
             if (rowState == null) continue;
+
+            // Bonus B strip: the crossed indicators record which bonuses were achieved; the strip
+            // itself scores nothing (its forced crosses already scored in the colour rows).
+            if (row.isBonusBStrip()) {
+                for (Cell cell : row.cells()) {
+                    if (!rowState.crossedCells().contains(cell.id())) continue;
+                    for (CellTag tag : cell.tags()) {
+                        if (tag instanceof CellTag.BonusB(BonusBKind kind)) achievedB.add(kind);
+                    }
+                }
+                continue;
+            }
 
             // Lucky Number row: score = sum of all crossed cells' bonus points (max 5+6+7+8 = 26).
             if (row.isLuckyRow()) {
@@ -61,9 +77,30 @@ public class StandardScoringEngine implements ScoringEngine {
 
         Map<Color, Integer> points = pointsPerColor(crosses);
         int extraPoints      = triangular(extraCrosses);
-        int punishmentPoints = progress.punishments() * PUNISHMENT_PENALTY;
 
-        return new ScoreCard(crosses, points, extraCrosses, extraPoints, bonusPoints, punishmentPoints);
+        // Bonus B score-time modifiers.
+        Color doubledColor = null;
+        if (achievedB.contains(BonusBKind.DOUBLE_FEWEST)) {
+            doubledColor = fewestColour(crosses);
+            points.merge(doubledColor, points.get(doubledColor), Integer::sum); // that row counts double
+        }
+        if (achievedB.contains(BonusBKind.PLUS_13)) bonusPoints += 13;
+        boolean noPenalty = achievedB.contains(BonusBKind.NO_PENALTY);
+        int punishmentPoints = noPenalty ? 0 : progress.punishments() * PUNISHMENT_PENALTY;
+
+        return new ScoreCard(crosses, points, extraCrosses, extraPoints, bonusPoints, punishmentPoints,
+                doubledColor, noPenalty);
+    }
+
+    /** The colour with the fewest crosses (ties broken RED→YELLOW→GREEN→BLUE). */
+    private static Color fewestColour(Map<Color, Integer> crosses) {
+        Color best = Color.RED;
+        int bestCount = Integer.MAX_VALUE;
+        for (Color c : new Color[]{Color.RED, Color.YELLOW, Color.GREEN, Color.BLUE}) {
+            int v = crosses.getOrDefault(c, 0);
+            if (v < bestCount) { bestCount = v; best = c; }
+        }
+        return best;
     }
 
     private static boolean isXChangeRow(Row row) {

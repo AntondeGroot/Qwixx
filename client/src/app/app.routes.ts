@@ -10,6 +10,13 @@ export const routes: Routes = [
     loadComponent: () => import('./settings/settings.component').then((m) => m.SettingsComponent),
   },
   {
+    // Dev preview of the score screen — must precede score/:sessionId, which would otherwise
+    // swallow 'preview' as a session id. See ScoreComponent.runPreview().
+    path: 'score/preview',
+    loadComponent: () => import('./score/score.component').then((m) => m.ScoreComponent),
+    data: { preview: true },
+  },
+  {
     path: 'score/:sessionId',
     loadComponent: () => import('./score/score.component').then((m) => m.ScoreComponent),
   },

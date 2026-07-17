@@ -385,10 +385,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
     return this.translate.instant(key);
   }
 
-  getGameOptionLabel(key: string): string {
-    return this.translate.instant(`gameOption.${key}`);
-  }
-
   effectiveMax(opt: GameOption): number | null {
     if (opt.key === 'botCount' && this.isRestartMode) return this.maxBotCount();
     return opt.maxValue ?? null;

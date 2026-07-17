@@ -35,6 +35,8 @@
     "doubleBDescription": "Alcune caselle mostrano il loro numero due volte in diagonale e possono essere sbarrate due volte. La seconda croce è consentita dopo la prima e se nulla è sbarrato alla sua destra — una croce extra per lo stesso numero.",
     "bonusA": "Bonus A",
     "bonusADescription": "12 caselle bonus (anello dorato) si trovano nelle righe colorate. Sbarrarne una obbliga a sbarrare la casella successiva della barra bonus in basso; il suo colore forza una croce nella casella successiva di quella riga — e può concatenarsi. Quando una riga viene chiusa, le sue caselle bonus rimanenti sono perdute.",
+    "bonusB": "Bonus B",
+    "bonusBDescription": "10 caselle bonus (2 per ciascuno dei 5 tipi) nelle righe colorate. Segna entrambe di un tipo per attivare il bonus, indicato sulla barra in basso: ✕✕ due croci nella riga con meno croci, ✕ una in ogni colore, ×2 raddoppia il punteggio di quella riga, +13 punti, o i tuoi tiri sbagliati non contano.",
     "xchange": "X-Cambio",
     "xchangeDescription": "Aggiunge una riga extra con la possibilità di cambiare la tua combinazione bianco+bianco con l'altro numero in quella cella.",
     "botCount": "Avversari computer",
@@ -113,5 +115,12 @@
     "selfClose": "Vuoi chiudere questa riga?",
     "yes": "Sì",
     "no": "No"
+  },
+  "bonusB": {
+    "fewestTwo": "✕✕ nella riga con meno croci",
+    "doubleFewest": "×2 il punteggio della riga con meno croci",
+    "oneEach": "✕ in ogni riga colorata",
+    "plus13": "+13 punti a fine partita",
+    "noPenalty": "i tiri sbagliati non contano come punti negativi"
   }
 }

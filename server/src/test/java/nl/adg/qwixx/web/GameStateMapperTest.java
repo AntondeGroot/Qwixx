@@ -48,6 +48,21 @@ class GameStateMapperTest {
     }
 
     @Test
+    void toDtoMapsBonusBLayoutWithoutError() {
+        String sid = GameRegistry.createGame("room", 4, GameSettings.builder().bonusB(true).build());
+        GameRegistry.getGame(sid).addPlayer(Player.of("Ann"));
+        GameRegistry.getGame(sid).addPlayer(Player.of("Ben"));
+        GameRegistry.getGame(sid).start();
+
+        var dto = assertDoesNotThrow(
+                () -> GameStateMapper.toDto(GameRegistry.getGame(sid).currentState(), GameRegistry.getGame(sid)),
+                "mapping a Bonus B layout (bonus strip + bonus boxes) must not throw");
+        var rows = dto.getSheetLayouts().values().iterator().next().getRows();
+        assertTrue(rows.stream().anyMatch(r -> Boolean.TRUE.equals(r.getBonusBStrip())),
+                "the DTO includes the Bonus B strip row");
+    }
+
+    @Test
     void toDtoIncludesSheetProgressForEachPlayer() {
         var dto = toDto();
         assertTrue(dto.getSheetProgress().containsKey(alice.id().toString()));

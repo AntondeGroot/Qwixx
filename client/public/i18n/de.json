@@ -35,6 +35,8 @@
     "doubleBDescription": "Einige Felder zeigen ihre Zahl zweimal diagonal und können zweimal angekreuzt werden. Das zweite Kreuz ist erlaubt, sobald das erste gesetzt ist und rechts davon noch nichts angekreuzt wurde – ein zusätzliches Kreuz für dieselbe Zahl.",
     "bonusA": "Bonus A",
     "bonusADescription": "12 Bonusfelder (goldener Ring) liegen in den farbigen Reihen. Kreuzt du eines an, musst du das nächste Feld der Bonusleiste darunter ankreuzen; dessen Farbe erzwingt ein Kreuz im nächsten Feld dieser Reihe – das kann sich verketten. Wird eine Reihe gesperrt, verfallen ihre restlichen Bonusleisten-Felder.",
+    "bonusB": "Bonus B",
+    "bonusBDescription": "10 Bonusfelder (je 2 von 5 Arten) in den farbigen Reihen. Kreuze beide einer Art an, um den Bonus auszulösen (auf der Leiste darunter markiert): ✕✕ zwei Kreuze in deiner niedrigsten Reihe, ✕ eins in jeder Farbe, ×2 verdopple die Punkte dieser Reihe, +13 Punkte oder deine Fehlwürfe zählen nicht.",
     "xchange": "X-Tausch",
     "xchangeDescription": "Fügt eine extra Reihe hinzu mit der Möglichkeit, deine Weiß+Weiß-Kombination gegen die andere Zahl in der Zelle zu tauschen.",
     "botCount": "Computergegner",
@@ -113,5 +115,12 @@
     "selfClose": "Möchtest du diese Reihe schließen?",
     "yes": "Ja",
     "no": "Nein"
+  },
+  "bonusB": {
+    "fewestTwo": "✕✕ in deiner niedrigsten Reihe",
+    "doubleFewest": "×2 die Punkte deiner niedrigsten Reihe",
+    "oneEach": "✕ in jeder Farbreihe",
+    "plus13": "+13 Punkte am Spielende",
+    "noPenalty": "Fehlwürfe zählen nicht als Minuspunkte"
   }
 }

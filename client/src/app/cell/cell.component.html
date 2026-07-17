@@ -8,6 +8,7 @@
   [class.extra-bucket]="hasTag()(TagEnum.EXTRA_BUCKET)"
   [class.auto-cross]="hasTag()(TagEnum.AUTO_CROSS)"
   [class.bonus-box]="hasTag()(TagEnum.BONUS_BOX)"
+  [class.bonus-b]="!!bonusBShape()"
   [class.big-points-cell]="!!secondaryColor()"
   [class.x-change-cell]="!!xChangeValues()"
   [class.lucky-number-cell]="!!luckyNumberBonusPoints() || isLuckyCross()"
@@ -16,12 +17,24 @@
   [class.clickable]="showClickable() ?? clickable()"
   [class.outline]="outline()"
   [class.ww]="showDieHint()"
-  [attr.data-color]="cell().color"
+  [attr.data-color]="neutral() ? null : cell().color"
   [attr.data-secondary-color]="secondaryColor()"
   (click)="(clickable() || pending()) && clicked.emit()"
   (keydown.enter)="(clickable() || pending()) && clicked.emit()"
   [attr.translate]="'no'"
 >
+  @if (bonusBShape(); as shape) {
+    <!-- Bonus B mark: brushed-silver shape behind the number, plus a corner chip. -->
+    <app-silver-mark class="bb-mark" [shape]="shape" />
+    @if (bonusBTag(); as tag) {
+      <span class="bb-tag bb-chip">{{ tag }}</span>
+    }
+    @if (bonusBQuad()) {
+      <span class="bb-quad">
+        <i data-c="RED"></i><i data-c="YELLOW"></i><i data-c="GREEN"></i><i data-c="BLUE"></i>
+      </span>
+    }
+  }
   @if (secondaryColor()) {
     <!-- SVG fills via inherited CSS custom properties --primary-color / --secondary-color. -->
     <svg class="big-points-svg" viewBox="0 0 44 32" xmlns="http://www.w3.org/2000/svg">

@@ -1,12 +1,13 @@
 <div
   class="row"
   [class.closed]="closed()"
-  [class.bonus-row]="!row().lock && !isXChangeRow() && !isLuckyRow() && !isBonusBar()"
+  [class.bonus-row]="!row().lock && !isXChangeRow() && !isLuckyRow() && !isBonusBar() && !isBonusBStrip()"
   [class.xchange-row]="isXChangeRow()"
   [class.lucky-number-row]="isLuckyRow()"
   [class.bonus-bar-row]="isBonusBar()"
+  [class.bonus-bstrip-row]="isBonusBStrip()"
   [class.row-double-a]="doubleVariant() === 'A'"
-  [attr.data-color]="isBonusBar() ? null : row().cells[0]?.color"
+  [attr.data-color]="isBonusBar() || isBonusBStrip() ? null : row().cells[0]?.color"
   [attr.translate]="'no'"
   [style.width]="xChangeRowWidth()"
 >
@@ -24,6 +25,18 @@
           <span class="cell-cross">✕</span>
         }
       </span>
+    }
+  } @else if (isBonusBStrip()) {
+    <!-- Bonus B strip: 5 indicator cells, crossed automatically when a pair completes. Each carries
+         the words for its bonus — the mark alone doesn't say what it does. -->
+    @for (cell of row().cells; track cell.id) {
+      <div class="bb-strip-item">
+        <app-cell class="bb-strip-cell" [cell]="cell" [crossed]="isCrossed(cell.id)" [neutral]="true" />
+        <div class="bb-strip-text">
+          <span class="bb-what">{{ bonusBText(cell) }}</span>
+          <span class="bb-count" [class.bb-count-done]="bonusBCount(cell) >= 2">{{ bonusBCount(cell) }}/2</span>
+        </div>
+      </div>
     }
   } @else if (isLuckyRow()) {
     <span class="lucky-number-label">{{ luckyLabel() }}</span>

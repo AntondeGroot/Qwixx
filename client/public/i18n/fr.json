@@ -35,6 +35,8 @@
     "doubleBDescription": "Certaines cases affichent leur numéro deux fois en diagonale et peuvent être cochées deux fois. La seconde croix est permise une fois la première faite et si rien n'est coché à sa droite — une croix supplémentaire pour le même numéro.",
     "bonusA": "Bonus A",
     "bonusADescription": "12 cases bonus (anneau doré) sont réparties dans les rangées colorées. En cocher une force à cocher la case suivante de la barre bonus en dessous ; sa couleur force une croix dans la case suivante de cette rangée — ce qui peut s'enchaîner. Quand une rangée est fermée, ses cases bonus restantes sont perdues.",
+    "bonusB": "Bonus B",
+    "bonusBDescription": "10 cases bonus (2 de chacun des 5 types) dans les rangées colorées. Cochez les deux d'un type pour déclencher son bonus, indiqué sur la barre en dessous : ✕✕ deux croix dans votre rangée la plus vide, ✕ une dans chaque couleur, ×2 doublez le score de cette rangée, +13 points, ou vos lancers ratés ne comptent pas.",
     "xchange": "X-Échange",
     "xchangeDescription": "Ajoute une rangée supplémentaire avec la possibilité d'échanger votre combinaison blanc+blanc contre l'autre nombre de cette case.",
     "botCount": "Adversaires ordinateur",
@@ -113,5 +115,12 @@
     "selfClose": "Voulez-vous fermer cette ligne ?",
     "yes": "Oui",
     "no": "Non"
+  },
+  "bonusB": {
+    "fewestTwo": "✕✕ dans votre rangée la plus vide",
+    "doubleFewest": "×2 le score de votre rangée la plus vide",
+    "oneEach": "✕ dans chaque rangée colorée",
+    "plus13": "+13 points à la fin de la partie",
+    "noPenalty": "les lancers ratés ne comptent pas comme points négatifs"
   }
 }

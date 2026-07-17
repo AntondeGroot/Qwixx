@@ -261,6 +261,7 @@ class GameStateMapper {
                 .bonusRow(row.isBonusRow())
                 .luckyRow(row.isLuckyRow())
                 .bonusBar(row.isBonusBar())
+                .bonusBStrip(row.isBonusBStrip())
                 .luckyTarget(row.isLuckyRow() ? row.luckyTarget() : null);
         if (row.isBonusRow()) {
             int upper = row.upperRowIndex();
@@ -308,6 +309,10 @@ class GameStateMapper {
             case CellTag.BonusBox ignored ->
                     new nl.adg.qwixx.generated.model.CellTag(
                             nl.adg.qwixx.generated.model.CellTag.TypeEnum.BONUS_BOX);
+            case CellTag.BonusB b ->
+                    new nl.adg.qwixx.generated.model.CellTag(
+                            nl.adg.qwixx.generated.model.CellTag.TypeEnum.BONUS_B)
+                            .bonusKind(nl.adg.qwixx.generated.model.CellTag.BonusKindEnum.fromValue(b.kind().name()));
             case CellTag.BonusPoints b ->
                     new nl.adg.qwixx.generated.model.CellTag(
                             nl.adg.qwixx.generated.model.CellTag.TypeEnum.BONUS_POINTS)

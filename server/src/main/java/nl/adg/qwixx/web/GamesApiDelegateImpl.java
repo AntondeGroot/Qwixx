@@ -217,11 +217,16 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
     }
 
     private static ScoreCard toDto(nl.adg.qwixx.rules.ScoreCard sc) {
-        return new ScoreCard(
+        ScoreCard dto = new ScoreCard(
                 toStringKeyedMap(sc.crossesPerColor()),
                 toStringKeyedMap(sc.pointsPerColor()),
                 sc.extraCrosses(), sc.extraPoints(),
                 sc.bonusPoints(), sc.punishmentPoints(), sc.total());
+        dto.setNoPenalty(sc.noPenalty());
+        if (sc.doubledColor() != null) {
+            dto.setDoubledColor(nl.adg.qwixx.generated.model.Color.fromValue(sc.doubledColor().name()));
+        }
+        return dto;
     }
 
     private static <K> Map<String, Integer> toStringKeyedMap(Map<K, Integer> map) {

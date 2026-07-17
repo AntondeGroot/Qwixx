@@ -348,3 +348,66 @@
   --glow-dim: rgba(0, 229, 255, 0.5);
   --glow-mid: rgba(0, 229, 255, 0.75);
 }
+
+/* ── Bonus B marks: gold background shape + corner chip ─────────────────────── */
+.bb-mark {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* A slightly finer rim than the standalone shield's, so it does not crowd the number it sits behind. */
+.bb-mark {
+  --silver-stroke-width: 2.4;
+}
+
+/* On a bonus-b cell the number sits on the silver mark, so it must read dark and stay on top. */
+.cell.bonus-b .cell-value {
+  color: #1a1a1a;
+  position: relative;
+  z-index: 2;
+}
+
+/* Corner placement for the shared .bb-chip look (see styles.css). */
+.bb-tag {
+  position: absolute;
+  right: -5px;
+  bottom: -6px;
+  z-index: 4;
+  font-size: 11px;
+  line-height: 1.15;
+  padding: 1px 4px;
+}
+
+.bb-quad {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  z-index: 4;
+  width: 17px;
+  height: 17px;
+  border-radius: 4px;
+  border: 1.5px solid #fff;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+.bb-quad i {
+  display: block;
+}
+.bb-quad i[data-c='RED'] {
+  background: #d32f2f;
+}
+.bb-quad i[data-c='YELLOW'] {
+  background: #f9a825;
+}
+.bb-quad i[data-c='GREEN'] {
+  background: #388e3c;
+}
+.bb-quad i[data-c='BLUE'] {
+  background: #1565c0;
+}

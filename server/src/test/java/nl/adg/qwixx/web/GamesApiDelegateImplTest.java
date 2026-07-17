@@ -293,6 +293,54 @@ class GamesApiDelegateImplTest {
         mvc.perform(get("/games/{id}/scores", id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$['" + alice.id() + "'].total").isNumber())
-                .andExpect(jsonPath("$['" + alice.id() + "'].punishmentPoints").value(-20));
+                .andExpect(jsonPath("$['" + alice.id() + "'].punishmentPoints").value(-20))
+                .andExpect(jsonPath("$['" + alice.id() + "'].noPenalty").value(false));
+    }
+
+    @Test
+    void getScoresReportsTheBonusBScoreTimeModifiers() throws Exception {
+        nl.adg.qwixx.game.GameSettings settings = nl.adg.qwixx.game.GameSettings.builder()
+                .gameMode(nl.adg.qwixx.game.GameMode.OFFLINE).bonusB(true).build();
+        String id = GameRegistry.createGame("room", 2, settings);
+        Player alice = Player.of("Alice");
+        GameRegistry.getGame(id).addPlayer(alice);
+        GameRegistry.getGame(id).start();
+
+        // Mark the NO_PENALTY and DOUBLE_FEWEST strip indicators as achieved.
+        nl.adg.qwixx.game.GameSession session = GameRegistry.getGame(id);
+        markStripAchieved(session, alice.id(),
+                nl.adg.qwixx.data.BonusBKind.NO_PENALTY, nl.adg.qwixx.data.BonusBKind.DOUBLE_FEWEST);
+
+        for (int i = 0; i < 4; i++) {
+            session.applyAction(new nl.adg.qwixx.action.TakePunishmentAction(alice.id()));
+        }
+
+        mvc.perform(get("/games/{id}/scores", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$['" + alice.id() + "'].noPenalty").value(true))
+                .andExpect(jsonPath("$['" + alice.id() + "'].punishmentPoints").value(0))
+                // No colour has any crosses, so the RED→YELLOW→GREEN→BLUE tie-break picks RED.
+                .andExpect(jsonPath("$['" + alice.id() + "'].doubledColor").value("RED"));
+    }
+
+    /** Crosses the given kinds' indicators on the player's Bonus B strip, as completing a pair would. */
+    private static void markStripAchieved(nl.adg.qwixx.game.GameSession session, java.util.UUID playerId,
+                                          nl.adg.qwixx.data.BonusBKind... kinds) {
+        var layout = session.currentState().sheetLayouts().get(playerId);
+        var wanted = java.util.Set.of(kinds);
+        for (int i = 0; i < layout.rows().size(); i++) {
+            nl.adg.qwixx.data.Row row = layout.rows().get(i);
+            if (!row.isBonusBStrip()) continue;
+            java.util.Set<String> crossed = row.cells().stream()
+                    .filter(c -> c.tags().stream().anyMatch(t ->
+                            t instanceof nl.adg.qwixx.data.CellTag.BonusB(var kind) && wanted.contains(kind)))
+                    .map(nl.adg.qwixx.data.Cell::id)
+                    .collect(java.util.stream.Collectors.toSet());
+            assertEquals(kinds.length, crossed.size(), "each requested kind has an indicator on the strip");
+            session.currentState().boardState().sheetProgress().get(playerId)
+                    .updateRowState(i, new nl.adg.qwixx.state.RowState(crossed, false));
+            return;
+        }
+        throw new IllegalStateException("no Bonus B strip in the layout");
     }
 }

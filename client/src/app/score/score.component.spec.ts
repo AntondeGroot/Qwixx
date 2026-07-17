@@ -4,6 +4,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { of } from 'rxjs';
 import type { Mocked } from 'vitest';
 import { ScoreComponent } from './score.component';
+import { isScoringColourRow } from './score-rows.util';
+import type { GameState, ScoreCard, SheetRow } from '../../generated/model/models';
 import { GamesService, GamestatesService, PlayersService } from '../../generated/api/api';
 import { environment } from '../../environments/environment';
 
@@ -30,7 +32,7 @@ describe('ScoreComponent', () => {
         {
           provide: ActivatedRoute,
           useValue: {
-            snapshot: { paramMap: { get: () => 'session-1' } },
+            snapshot: { paramMap: { get: () => 'session-1' }, data: {} },
             queryParamMap: of({ get: () => 'player-1' }),
           },
         },
@@ -40,6 +42,55 @@ describe('ScoreComponent', () => {
     component = TestBed.createComponent(ScoreComponent).componentInstance;
     component.sessionId = 'session-1';
     component.playerId = 'player-1';
+  });
+
+  describe('isScoringColourRow', () => {
+    const row = (over: Partial<SheetRow>): SheetRow => ({ cells: [{ color: 'RED', tags: [] }], ...over }) as SheetRow;
+
+    it('counts the four colour rows', () => {
+      expect(isScoringColourRow(row({}))).toBe(true);
+    });
+
+    it('excludes the Bonus B strip and Bonus A bar so they are not score columns', () => {
+      expect(isScoringColourRow(row({ bonusBStrip: true }))).toBe(false);
+      expect(isScoringColourRow(row({ bonusBar: true }))).toBe(false);
+      expect(isScoringColourRow(row({ bonusRow: true }))).toBe(false);
+      expect(isScoringColourRow(row({ luckyRow: true }))).toBe(false);
+    });
+  });
+
+  describe('the BONUS column', () => {
+    const stateWith = (rows: Partial<SheetRow>[]): GameState =>
+      ({
+        players: [{ id: 'player-1', name: 'A' }],
+        sheetLayouts: {
+          'player-1': { rows: rows.map((r) => ({ cells: [{ color: 'RED', tags: [] }], ...r })) },
+        },
+      }) as unknown as GameState;
+
+    const scoresWith = (bonusPoints: number): Record<string, ScoreCard> =>
+      ({ 'player-1': { pointsPerColor: {}, extraPoints: 0, bonusPoints } }) as unknown as Record<string, ScoreCard>;
+
+    const buildCols = (state: GameState, scores: Record<string, ScoreCard>): string[] =>
+      component['buildScoreData'](state, scores).cols.map((c) => c.key);
+
+    it('shows for Bonus B even at 0 points, like the colour columns', () => {
+      const cols = buildCols(stateWith([{}, { bonusBStrip: true }]), scoresWith(0));
+
+      expect(cols).toContain('BONUS');
+    });
+
+    it('stays hidden without Bonus B when nobody scored a bonus', () => {
+      const cols = buildCols(stateWith([{}]), scoresWith(0));
+
+      expect(cols).not.toContain('BONUS');
+    });
+
+    it('still shows without Bonus B once someone scores a bonus', () => {
+      const cols = buildCols(stateWith([{}]), scoresWith(13));
+
+      expect(cols).toContain('BONUS');
+    });
   });
 
   describe('animationKey cleanup', () => {

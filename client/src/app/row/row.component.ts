@@ -3,6 +3,16 @@ import { TranslateService } from '@ngx-translate/core';
 
 import { CellTag, RowState, SheetCell, SheetRow } from '../../generated/model/models';
 import { CellComponent } from '../cell/cell.component';
+import { bonusKindOf } from './bonus-b.util';
+
+/** Bonus B kind → its i18n key under `bonusB.*`. */
+const BONUS_B_KEYS: Record<string, string> = {
+  [CellTag.BonusKindEnum.FEWEST_TWO]: 'fewestTwo',
+  [CellTag.BonusKindEnum.ONE_EACH]: 'oneEach',
+  [CellTag.BonusKindEnum.DOUBLE_FEWEST]: 'doubleFewest',
+  [CellTag.BonusKindEnum.PLUS_13]: 'plus13',
+  [CellTag.BonusKindEnum.NO_PENALTY]: 'noPenalty',
+};
 
 @Component({
   selector: 'app-row',
@@ -16,6 +26,8 @@ export class RowComponent {
   row = input.required<SheetRow>();
   rowState = input<RowState | null>(null);
   closed = input(false);
+  // Bonus B: kind string → how many of its two boxes are crossed (0–2). Drives the strip's N/2 counter.
+  bonusBProgress = input<Record<string, number>>({});
   clickableCellIds = input<Set<string>>(new Set());
   showClickableCellIds = input<Set<string> | null>(null);
   whiteWhiteClickableCellIds = input<Set<string>>(new Set());
@@ -61,6 +73,19 @@ export class RowComponent {
 
   isLuckyRow = computed(() => this.row().luckyRow === true);
   isBonusBar = computed(() => this.row().bonusBar === true);
+  isBonusBStrip = computed(() => this.row().bonusBStrip === true);
+
+  // How many of a strip indicator's two boxes are crossed (0–2), for the N/2 counter.
+  bonusBCount(cell: SheetCell): number {
+    const kind = bonusKindOf(cell);
+    return kind ? (this.bonusBProgress()[kind] ?? 0) : 0;
+  }
+
+  /** What a strip indicator's bonus does, in words. */
+  bonusBText(cell: SheetCell): string {
+    const kind = bonusKindOf(cell);
+    return kind ? this.t(`bonusB.${BONUS_B_KEYS[kind]}`) : '';
+  }
   luckyTarget = computed(() => this.row().luckyTarget);
   luckyLabel = computed(() => `LUCKY ${this.luckyTarget()}`);
 

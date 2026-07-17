@@ -64,13 +64,22 @@
               <div class="name-cell player-name">{{ player.name }}</div>
 
               @for (col of allCols(); track col) {
-                <div class="bucket-cell score-value" [class.active-val]="activeKey() === col">
+                <div class="bucket-cell score-value" [class.active-val]="activeKey() === col || doublingKey() === col">
                   {{ player.displayed[col] }}
+                  <!-- Bonus B ×2: revealed after this column's plain count-up, then the number
+                       doubles — so the chip explains the jump instead of trailing it. -->
+                  @if (player.scoreCard.doubledColor === col && doubledKeys().has(col)) {
+                    <span class="dbl-chip bb-chip" [class.dbl-chip-reveal]="doublingKey() === col">×2</span>
+                  }
                 </div>
               }
 
               <!-- Punishment value counts down from 0 to a negative number -->
               <div class="bucket-cell score-value pun-value" [class.active-val]="punishActive()">
+                @if (player.scoreCard.noPenalty) {
+                  <!-- Bonus B shield: this player's mis-rolls cost nothing. -->
+                  <app-silver-mark class="pun-shield" />
+                }
                 {{ player.displayedPunishment }}
               </div>
 
@@ -99,6 +108,7 @@
               <app-row
                 [row]="row"
                 [rowState]="myRowStateFor(row.id)"
+                [bonusBProgress]="myBonusBProgress()"
                 [closed]="myIsRowClosed(row.id)"
                 [doubleVariant]="myDoubleVariant()"
               />

@@ -35,6 +35,8 @@
     "doubleBDescription": "Sommige vakjes tonen hun getal twee keer op een diagonaal en mogen twee keer worden gekruist. Het tweede kruis mag zodra het eerste is gezet en er nog niets rechts ervan is gekruist — een extra kruis voor hetzelfde getal.",
     "bonusA": "Bonus A",
     "bonusADescription": "12 bonusvakjes (gouden ring) staan in de gekleurde rijen. Kruis je er één, dan moet je het volgende vakje van de bonusbalk eronder kruisen; de kleur ervan dwingt een kruis in het volgende vakje van die rij — wat kan doorschakelen. Wanneer een rij wordt gesloten, vervallen de resterende bonusbalk-vakjes.",
+    "bonusB": "Bonus B",
+    "bonusBDescription": "10 bonusvakjes (2 van elk van 5 soorten) in de gekleurde rijen. Kruis beide van een soort aan om de bonus te activeren, aangegeven op de strook eronder: ✕✕ twee kruisjes in je laagste rij, ✕ één in elke kleur, ×2 verdubbel de score van die rij, +13 punten, of je misworpen tellen niet.",
     "xchange": "X-Wissel",
     "xchangeDescription": "Voegt een extra rij toe met de optie om je wit+wit-combinatie te wisselen voor het andere getal in die cel.",
     "botCount": "Computertegenstanders",
@@ -113,5 +115,12 @@
     "selfClose": "Wil je deze rij sluiten?",
     "yes": "Ja",
     "no": "Nee"
+  },
+  "bonusB": {
+    "fewestTwo": "✕✕ in je laagste rij",
+    "doubleFewest": "×2 de score van je laagste rij",
+    "oneEach": "✕ in elke kleurenrij",
+    "plus13": "+13 punten aan het einde van het spel",
+    "noPenalty": "misworpen tellen niet als minpunten"
   }
 }

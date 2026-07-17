@@ -9,7 +9,11 @@ public record ScoreCard(
         int extraCrosses,                     // from ExtraBucket-tagged cells
         int extraPoints,                      // triangular of extraCrosses
         int bonusPoints,                      // flat points from BonusPoints tags
-        int punishmentPoints                  // -5 per punishment
+        int punishmentPoints,                 // -5 per punishment
+        // Which Bonus B score-time modifiers applied. Their effect is already folded into the
+        // fields above; these record it so a score screen can show why the numbers look that way.
+        Color doubledColor,                   // row doubled by DOUBLE_FEWEST, or null
+        boolean noPenalty                     // NO_PENALTY nullified the punishments
 ) {
     public ScoreCard {
         crossesPerColor = Map.copyOf(crossesPerColor);

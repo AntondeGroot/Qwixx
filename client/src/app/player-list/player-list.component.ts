@@ -7,6 +7,7 @@ import { SheetProgress } from '../../generated';
 import { SheetRow } from '../../generated';
 import { TurnPhase } from '../../generated';
 import { TurnState } from '../../generated';
+import { BonusBShape, bonusBShapeOf, bonusKindOf } from '../row/bonus-b.util';
 
 @Component({
   selector: 'app-player-list',
@@ -85,6 +86,15 @@ export class PlayerListComponent {
 
   secondaryColorOf(cell: SheetCell | undefined): string | null {
     return cell?.tags?.find((t) => t.type === 'SECONDARY_COLOR')?.secondaryColor ?? null;
+  }
+
+  /**
+   * The general shape of a cell's Bonus B mark, or null. The strip's cells are all tagged RED, so
+   * without this the mini-sheet draws the strip as a row of red squares that says nothing about
+   * which bonus is which.
+   */
+  bonusBShape(cell: SheetCell): BonusBShape | null {
+    return bonusBShapeOf(bonusKindOf(cell));
   }
 
   isXChange(cell: SheetCell): boolean {

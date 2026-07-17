@@ -737,10 +737,14 @@ components:
       properties:
         type:
           type: string
-          enum: [EXTRA_BUCKET, AUTO_CROSS, BONUS_POINTS, DOUBLE_CROSS, DOUBLE_TWIN, BONUS_BOX, SECONDARY_COLOR, X_CHANGE, LUCKY_NUMBER, LUCKY_CROSS]
+          enum: [EXTRA_BUCKET, AUTO_CROSS, BONUS_POINTS, DOUBLE_CROSS, DOUBLE_TWIN, BONUS_BOX, BONUS_B, SECONDARY_COLOR, X_CHANGE, LUCKY_NUMBER, LUCKY_CROSS]
         target:
           type: string
           description: Cell ID this tag references — the auto-cross target for AUTO_CROSS, or the primary cell for DOUBLE_TWIN.
+        bonusKind:
+          type: string
+          enum: [FEWEST_TWO, ONE_EACH, DOUBLE_FEWEST, PLUS_13, NO_PENALTY]
+          description: Which Bonus B bonus this box belongs to — only present for BONUS_B (both the paired boxes and the strip indicator carry it).
         amount:
           type: integer
           description: Bonus point amount — only present for BONUS_POINTS.
@@ -833,6 +837,10 @@ components:
           type: boolean
           default: false
           description: True when this row is the Bonus A bonus bar (12 coloured cells below the four colour rows).
+        bonusBStrip:
+          type: boolean
+          default: false
+          description: True when this row is the Bonus B strip (5 indicator cells below the four colour rows).
         luckyTarget:
           type: integer
           description: >
@@ -895,6 +903,19 @@ components:
         total:
           type: integer
           description: Sum of all points.
+        doubledColor:
+          allOf:
+            - $ref: '#/components/schemas/Color'
+          description: >
+            Bonus B DOUBLE_FEWEST: the colour row whose points were doubled, or absent when the
+            bonus was not achieved. The doubling is already applied to pointsPerColor; this only
+            records which row it landed on.
+        noPenalty:
+          type: boolean
+          default: false
+          description: >
+            Bonus B NO_PENALTY: true when the shield nullified this player's punishments.
+            punishmentPoints is already 0 in that case.
 
     ErrorResponse:
       type: object

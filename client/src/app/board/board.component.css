@@ -591,3 +591,47 @@ a {
     -1px 1px 0 #fff,
     1px 1px 0 #fff;
 }
+
+/* ── Bonus B "no penalty" achieved: penalty label reads 0 with a shield. The penalty
+   boxes stay fully functional/clickable — only the points become 0, and a 4th penalty
+   still ends the game. ── */
+.pl-strike {
+  text-decoration: line-through;
+  opacity: 0.55;
+  margin-right: 3px;
+}
+
+.pl-zero {
+  display: inline-block;
+  font-weight: 900;
+  color: #1e7d54;
+  background: rgba(30, 125, 84, 0.14);
+  border-radius: 5px;
+  padding: 0 5px;
+  animation: pl-pop 0.45s ease-out;
+}
+
+.pl-shield {
+  width: 14px;
+  height: 14px;
+  vertical-align: -3px;
+  margin-left: 3px;
+}
+
+@keyframes pl-pop {
+  0% {
+    transform: scale(1.5);
+  }
+  60% {
+    transform: scale(0.92);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pl-zero {
+    animation: none;
+  }
+}

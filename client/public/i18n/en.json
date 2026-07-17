@@ -35,6 +35,8 @@
     "doubleBDescription": "Some cells show their number twice on a diagonal and can be crossed twice. The second cross is allowed once the first is made and nothing to its right is crossed yet — an extra cross for the same number.",
     "bonusA": "Bonus A",
     "bonusADescription": "12 bonus boxes (gold ring) sit in the coloured rows. Crossing one forces you to cross the next cell of the bonus bar below; its colour forces a cross in that row's next box — which can chain. When a row locks, its remaining bonus-bar cells are forfeited.",
+    "bonusB": "Bonus B",
+    "bonusBDescription": "10 bonus boxes (2 each of 5 kinds) sit in the coloured rows. Cross both of a kind to trigger its bonus, marked on the strip below: ✕✕ two crosses in your fewest-crossed row, ✕ one in every colour, ×2 double that row's score, +13 points, or your mis-rolls don't count.",
     "xchange": "X-Change",
     "xchangeDescription": "Adds an extra row with the option to change your white+white combination for the other number in that cell.",
     "botCount": "Computer opponents",
@@ -113,5 +115,12 @@
     "selfClose": "Do you want to close this row?",
     "yes": "Yes",
     "no": "No"
+  },
+  "bonusB": {
+    "fewestTwo": "✕✕ in your fewest-crossed row",
+    "doubleFewest": "×2 the score of your fewest-crossed row",
+    "oneEach": "✕ in every colour row",
+    "plus13": "+13 points at the end of the game",
+    "noPenalty": "mis-rolls don't count as minus points"
   }
 }

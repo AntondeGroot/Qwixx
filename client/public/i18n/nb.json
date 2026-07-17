@@ -35,6 +35,8 @@
     "doubleBDescription": "Noen ruter viser tallet sitt to ganger på diagonalen og kan krysses av to ganger. Det andre krysset er tillatt når det første er satt og ingenting til høyre for det er krysset ennå – et ekstra kryss for samme tall.",
     "bonusA": "Bonus A",
     "bonusADescription": "12 bonusruter (gullring) ligger i de fargede radene. Krysser du av én, må du krysse av neste rute i bonuslinjen under; fargen tvinger fram et kryss i neste rute i den raden – som kan gi kjedetrekk. Når en rad låses, går de resterende bonuslinje-rutene tapt.",
+    "bonusB": "Bonus B",
+    "bonusBDescription": "10 bonusruter (2 av hver av 5 typer) i de fargede radene. Kryss av begge av en type for å utløse bonusen, vist på stripen under: ✕✕ to kryss i raden med færrest kryss, ✕ ett i hver farge, ×2 doble poengene for den raden, +13 poeng, eller bomkastene dine teller ikke.",
     "xchange": "X-Bytte",
     "xchangeDescription": "Legger til en ekstra rad med muligheten til å bytte din hvit+hvit-kombinasjon mot det andre tallet i den ruten.",
     "botCount": "Datamotstandere",
@@ -111,5 +113,12 @@
     "selfClose": "Vil du lukke denne raden?",
     "yes": "Ja",
     "no": "Nei"
+  },
+  "bonusB": {
+    "fewestTwo": "✕✕ i raden med færrest kryss",
+    "doubleFewest": "×2 poengene i raden med færrest kryss",
+    "oneEach": "✕ i hver fargerad",
+    "plus13": "+13 poeng ved spillets slutt",
+    "noPenalty": "bomkast teller ikke som minuspoeng"
   }
 }

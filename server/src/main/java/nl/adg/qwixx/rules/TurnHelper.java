@@ -2,6 +2,7 @@ package nl.adg.qwixx.rules;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import nl.adg.qwixx.state.GameState;
 import nl.adg.qwixx.state.TurnState;
@@ -30,7 +31,7 @@ class TurnHelper {
     }
 
     static List<UUID> unactedPassives(GameState state, UUID excludedPlayer) {
-        TurnState turn = state.turnState();
+        TurnState turn = Objects.requireNonNull(state.turnState());
         List<UUID> remaining = new ArrayList<>(state.players());
         remaining.remove(excludedPlayer);
         remaining.removeIf(pid -> turn.passivesActed().contains(pid));

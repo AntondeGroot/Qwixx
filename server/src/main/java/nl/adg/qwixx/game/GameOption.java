@@ -1,5 +1,6 @@
 package nl.adg.qwixx.game;
 
+import jakarta.annotation.Nullable;
 import java.util.List;
 
 public record GameOption(
@@ -9,8 +10,8 @@ public record GameOption(
         OptionType type,
         String defaultValue,
         List<String> choices,
-        Integer minValue,
-        Integer maxValue,
+        @Nullable Integer minValue, // only set for INTEGER options
+        @Nullable Integer maxValue,
         boolean adminOnly,
         List<String> incompatibleWith) {
 

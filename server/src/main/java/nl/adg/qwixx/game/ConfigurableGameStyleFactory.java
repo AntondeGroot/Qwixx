@@ -1,5 +1,6 @@
 package nl.adg.qwixx.game;
 
+import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -7,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -106,13 +108,13 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
         if (settings.xChange()) {
             // X-Change row is appended after all per-player rows are built.
             Row xChangeRow = buildXChangeRow();
-            for (UUID player : players) result.get(player).add(xChangeRow);
+            for (UUID player : players) Objects.requireNonNull(result.get(player)).add(xChangeRow);
         }
 
         if (settings.luckyNumber()) {
             // Lucky Number row is shared and appended last.
             Row luckyRow = buildLuckyRow();
-            for (UUID player : players) result.get(player).add(luckyRow);
+            for (UUID player : players) Objects.requireNonNull(result.get(player)).add(luckyRow);
         }
 
         return result;
@@ -226,7 +228,7 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
     }
 
     @Override
-    public VariantData buildVariantData(List<UUID> playerIds) {
+    @Nullable public VariantData buildVariantData(List<UUID> playerIds) {
         return switch (settings.base()) {
             case STANDARD -> null;
             case LONGO -> {
@@ -527,7 +529,7 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
     }
 
     // Picks 2 positions satisfying: intra-pair diff >= 3 and each >= 2 from every prevPair position.
-    private int[] pickPairPositions(List<Integer> shuffled, int[] prevPair) {
+    private int[] pickPairPositions(List<Integer> shuffled, @Nullable int[] prevPair) {
         for (int i = 0; i < shuffled.size(); i++) {
             for (int j = i + 1; j < shuffled.size(); j++) {
                 int p1 = shuffled.get(i);

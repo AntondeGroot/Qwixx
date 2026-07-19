@@ -6,6 +6,7 @@ import static nl.adg.qwixx.rules.CellCrosser.isReachableCell;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Random;
@@ -49,7 +50,7 @@ public class LongoTurnRules extends StandardTurnRules {
     }
 
     private boolean mayUseBonusNumber(GameState state, UUID playerId) {
-        TurnState turn = state.turnState();
+        TurnState turn = Objects.requireNonNull(state.turnState());
         if (playerId.equals(turn.activePlayerId())) {
             return turn.phase() == TurnPhase.ACTIVE_MOVE && !turn.activeTurnState().hasActed();
         }
@@ -86,10 +87,10 @@ public class LongoTurnRules extends StandardTurnRules {
         if (!(state.variantData() instanceof LongoVariantData vd)) return false;
         List<Integer> bonuses = vd.bonusNumbersPerPlayer().getOrDefault(playerId, List.of());
         if (bonuses.isEmpty()) return false;
-        int whiteSum = state.turnState().currentRoll().white1() + state.turnState().currentRoll().white2();
+        int whiteSum = Objects.requireNonNull(state.turnState()).currentRoll().white1() + Objects.requireNonNull(state.turnState()).currentRoll().white2();
         if (bonuses.contains(whiteSum)) return true;
         // After an x-change cross, the effective WW may differ from the actual roll sum.
-        Integer effectiveWW = state.turnState().xChangeEffectiveWW().get(playerId);
+        Integer effectiveWW = Objects.requireNonNull(state.turnState()).xChangeEffectiveWW().get(playerId);
         return effectiveWW != null && bonuses.contains(effectiveWW);
     }
 

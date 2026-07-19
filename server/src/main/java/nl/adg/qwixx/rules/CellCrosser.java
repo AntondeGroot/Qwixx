@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -37,7 +38,7 @@ class CellCrosser {
     @SuppressWarnings("PMD.NullAssignment")
     List<GameAction> crossCellActions(GameState state, UUID playerId, boolean isActive, int minCrosses) {
         List<GameAction> actions   = new ArrayList<>();
-        TurnState turn             = state.turnState();
+        TurnState turn             = Objects.requireNonNull(state.turnState());
         var roll                   = turn.currentRoll();
         ActiveTurnState ats        = isActive ? turn.activeTurnState() : null;
         SheetLayout layout         = state.sheetLayouts().get(playerId);

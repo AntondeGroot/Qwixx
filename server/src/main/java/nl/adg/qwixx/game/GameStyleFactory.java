@@ -1,5 +1,6 @@
 package nl.adg.qwixx.game;
 
+import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -15,5 +16,5 @@ public interface GameStyleFactory {
     List<Die> buildDice();
     TurnRules buildTurnRules();
     ScoringEngine buildScoringEngine();
-    VariantData buildVariantData(List<UUID> playerIds);
+    @Nullable VariantData buildVariantData(List<UUID> playerIds);
 }

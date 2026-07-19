@@ -2,12 +2,14 @@ package nl.adg.qwixx.game;
 
 import static java.util.Collections.shuffle;
 
+import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -28,6 +30,8 @@ import nl.adg.qwixx.state.SheetProgress;
 import nl.adg.qwixx.state.TurnPhase;
 import nl.adg.qwixx.state.TurnState;
 
+// `rules` and `state` are populated in start()/restart(), not the constructor.
+@SuppressWarnings("NullAway.Init")
 public class GameSession {
 
     /** A bot "thinks" for a random spell in this range before rolling, so its turn feels human. */
@@ -148,14 +152,14 @@ public class GameSession {
         Map<List<Row>, SheetLayout> layoutCache = new HashMap<>();
         Map<UUID, SheetLayout> layouts = new HashMap<>();
         for (UUID id : playerIds) {
-            List<Row> rows = rowsByPlayer.get(id);
+            List<Row> rows = Objects.requireNonNull(rowsByPlayer.get(id));
             layouts.put(id, layoutCache.computeIfAbsent(rows, SheetLayout::new));
         }
 
         Map<UUID, SheetProgress> progress = new HashMap<>();
         for (UUID id : playerIds) {
             Map<Integer, RowState> rowStates = new HashMap<>();
-            List<Row> rows = rowsByPlayer.get(id);
+            List<Row> rows = Objects.requireNonNull(rowsByPlayer.get(id));
             for (int i = 0; i < rows.size(); i++) rowStates.put(i, new RowState(new HashSet<>(), false));
             progress.put(id, new SheetProgress(rowStates, 0));
         }
@@ -190,7 +194,7 @@ public class GameSession {
      * can play the dice animation before the bot's moves arrive.
      * Pass {@code null} for headless simulation (no delay, no intermediate emit).
      */
-    public synchronized GameState applyAction(GameAction action, Consumer<GameState> botStateListener) {
+    public synchronized GameState applyAction(GameAction action, @Nullable Consumer<GameState> botStateListener) {
         if (status != SessionStatus.IN_PROGRESS)
             throw new IllegalStateException("game is not in progress");
         state = rules.apply(state, action);
@@ -255,14 +259,14 @@ public class GameSession {
         Map<List<Row>, SheetLayout> layoutCache = new HashMap<>();
         Map<UUID, SheetLayout> layouts = new HashMap<>();
         for (UUID id : playerIds) {
-            List<Row> rows = rowsByPlayer.get(id);
+            List<Row> rows = Objects.requireNonNull(rowsByPlayer.get(id));
             layouts.put(id, layoutCache.computeIfAbsent(rows, SheetLayout::new));
         }
 
         Map<UUID, SheetProgress> progress = new HashMap<>();
         for (UUID id : playerIds) {
             Map<Integer, RowState> rowStates = new HashMap<>();
-            List<Row> rows = rowsByPlayer.get(id);
+            List<Row> rows = Objects.requireNonNull(rowsByPlayer.get(id));
             for (int i = 0; i < rows.size(); i++) rowStates.put(i, new RowState(new HashSet<>(), false));
             progress.put(id, new SheetProgress(rowStates, 0));
         }
@@ -314,7 +318,7 @@ public class GameSession {
         return state;
     }
 
-    private GameState runBotTurns(GameState state, Consumer<GameState> botStateListener) {
+    private GameState runBotTurns(GameState state, @Nullable Consumer<GameState> botStateListener) {
         if (botPlayerIds.isEmpty()) return state;
         GameState current = state;
         int guard = 0;
@@ -337,13 +341,13 @@ public class GameSession {
                 // Emit the bot's cleared, pre-roll board and let it "think" before rolling. Clients
                 // drive the dice animation off the no-roll -> roll transition, so this pre-roll emit
                 // is what makes the animation play for a bot.
-                botStateListener.accept(current);
+                if (botStateListener != null) botStateListener.accept(current);
                 pauseBot(randomPreRollDelayMs());
             }
             current = rules.apply(current, action);
 
             if (liveGame) {
-                botStateListener.accept(current);
+                if (botStateListener != null) botStateListener.accept(current);
                 // The roll gets a long, fixed pause for the dice animation; every other move
                 // (cross, punishment, lock intent, pass) gets a short random beat so it doesn't
                 // land instantaneously.
@@ -370,7 +374,7 @@ public class GameSession {
         }
     }
 
-    private UUID nextBotToAct(GameState state) {
+    @Nullable private UUID nextBotToAct(GameState state) {
         TurnState turn = state.turnState();
         if (turn == null) return null;
         TurnPhase phase = turn.phase();

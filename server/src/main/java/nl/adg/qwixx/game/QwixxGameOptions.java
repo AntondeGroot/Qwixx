@@ -129,7 +129,7 @@ public class QwixxGameOptions {
     }
 
     private static String str(Object value) {
-        return value == null ? null : value.toString().trim().toUpperCase(Locale.ROOT);
+        return value.toString().trim().toUpperCase(Locale.ROOT);
     }
 
     private static boolean bool(Object value) {

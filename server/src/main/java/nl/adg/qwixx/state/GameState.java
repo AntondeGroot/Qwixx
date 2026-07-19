@@ -1,5 +1,6 @@
 package nl.adg.qwixx.state;
 
+import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,18 +11,18 @@ import java.util.UUID;
 public class GameState {
     CardMode               cardMode;
     List<UUID>             players;        // ordered; defines turn order
-    VariantData            variantData;    // opaque, variant-specific data
+    @Nullable VariantData  variantData;    // opaque, variant-specific data
     Map<UUID, SheetLayout> sheetLayouts;   // static layout per player
     BoardState             boardState;
-    TurnState              turnState;
+    @Nullable TurnState    turnState;
     List<ClosureNotification> closureNotifications; // pending row closure notifications (UI)
     Map<Integer, UUID>     pendingClosures;     // rows queued to close at EVALUATE: rowIndex → declarerId
     boolean                gameOver;
     long                   version;        // increments on every applyAction
 
-    public GameState(CardMode cardMode, List<UUID> players, VariantData variantData,
+    public GameState(CardMode cardMode, List<UUID> players, @Nullable VariantData variantData,
                      Map<UUID, SheetLayout> sheetLayouts, BoardState boardState,
-                     TurnState turnState) {
+                     @Nullable TurnState turnState) {
         this.cardMode         = cardMode;
         this.players          = players;
         this.variantData      = variantData;
@@ -36,10 +37,10 @@ public class GameState {
 
     public CardMode cardMode()                        { return cardMode; }
     public List<UUID> players()                       { return players; }
-    public VariantData variantData()                  { return variantData; }
+    @Nullable public VariantData variantData()        { return variantData; }
     public Map<UUID, SheetLayout> sheetLayouts()      { return sheetLayouts; }
     public BoardState boardState()                    { return boardState; }
-    public TurnState turnState()                      { return turnState; }
+    @Nullable public TurnState turnState()            { return turnState; }
     public List<ClosureNotification> closureNotifications() { return closureNotifications; }
     public Map<Integer, UUID> pendingClosures()       { return pendingClosures; }
     public boolean gameOver()                         { return gameOver; }

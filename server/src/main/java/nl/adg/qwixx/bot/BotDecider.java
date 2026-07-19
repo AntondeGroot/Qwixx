@@ -55,12 +55,12 @@ public class BotDecider {
         for (GameAction a : usable) if (a instanceof RollAction) return a;
         for (GameAction a : usable) if (a instanceof DeclareLockIntentAction) return a;
 
-        boolean isPassive = !botId.equals(state.turnState().activePlayerId());
+        boolean isPassive = !botId.equals(Objects.requireNonNull(state.turnState()).activePlayerId());
         int     center    = diceCenter(state, botId);
 
         // Full-turn lookahead: active player before either die is used
         if (!isPassive) {
-            ActiveTurnState activePlayer = state.turnState().activeTurnState();
+            ActiveTurnState activePlayer = Objects.requireNonNull(state.turnState()).activeTurnState();
             if (!activePlayer.whiteWhiteUsed() && !activePlayer.colorDieUsed()) {
                 return decideTwoMove(state, botId, usable, center, profile);
             }

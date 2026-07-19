@@ -36,6 +36,12 @@ jobs:
         run: npm ci
         working-directory: client
 
+      # Lint the OpenAPI spec BEFORE codegen — openapi-generator is lenient and turns malformed
+      # specs into silently-wrong output, so a green codegen build is not proof of a valid contract.
+      - name: Lint OpenAPI spec
+        run: npm run lint:openapi
+        working-directory: client
+
       - name: Generate API client
         run: npm run generate
         working-directory: client
@@ -52,8 +58,8 @@ jobs:
         run: npm run format:check
         working-directory: client
 
-      - name: Run tests
-        run: npm test -- --watch=false
+      - name: Run tests with coverage
+        run: npm test -- --watch=false --coverage
         working-directory: client
 
       - name: Build

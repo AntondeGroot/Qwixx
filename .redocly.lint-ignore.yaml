@@ -1,0 +1,13 @@
+# Redocly lint exceptions. Scoped ignores (not a rule-off) so operation-4xx-response keeps catching
+# genuinely-undocumented error responses elsewhere.
+#
+# These three are no-input / ignore-input list endpoints that only ever return 200:
+#   - GET  /games                 — lists all games, no input, cannot 4xx
+#   - GET  /game-options          — lists the option catalogue, no input, cannot 4xx
+#   - POST /game-options/preview  — ignores unknown options (never validates to 400), always 200
+# See https://redocly.com/docs/cli/ for the format.
+qwixx_openapi.yml:
+  operation-4xx-response:
+    - '#/paths/~1games/get/responses'
+    - '#/paths/~1game-options/get/responses'
+    - '#/paths/~1game-options~1preview/post/responses'

@@ -25,6 +25,9 @@
     <checkstyle-tool.version>13.8.0</checkstyle-tool.version>
     <pmd.version>3.28.0</pmd.version>
     <spotless.version>3.8.0</spotless.version>
+    <!-- Pinned above the Spring Boot BOM's managed version: Java 25 is non-LTS and older JaCoCo
+         cannot instrument its class files. -->
+    <jacoco.version>0.8.13</jacoco.version>
   </properties>
 
   <repositories>
@@ -262,6 +265,70 @@
             <exclude>**/e2e/**</exclude>
           </excludes>
         </configuration>
+      </plugin>
+
+      <!-- Test coverage. Excludes the Spring bootstrap/lifecycle glue and generated code, which
+           carry no meaningfully testable logic. The 0.90 ratchet lives in the <check> execution. -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco.version}</version>
+        <configuration>
+          <excludes>
+            <!-- Spring bootstrap + generated code: lifecycle glue, no testable logic. -->
+            <exclude>nl/adg/qwixx/QwixxApplication.class</exclude>
+            <exclude>nl/adg/qwixx/generated/**</exclude>
+            <exclude>nl/adg/qwixx/config/**</exclude>
+            <!-- Dev-only tooling (also excluded from PMD): the manual test harness and the offline
+                 bot-training main(), neither of which runs in the served app. -->
+            <exclude>nl/adg/qwixx/testapp/**</exclude>
+            <exclude>nl/adg/qwixx/bot/BotTrainer.class</exclude>
+            <exclude>nl/adg/qwixx/bot/BotSimulator.class</exclude>
+          </excludes>
+        </configuration>
+        <executions>
+          <execution>
+            <id>prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>check</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <configuration>
+              <!-- Ratchet, not a big-bang: pinned just below the current 86.6% line / 77.5% branch
+                   so coverage can only climb, never regress. TODO: raise both to 0.90 as tests fill in. -->
+              <rules>
+                <rule>
+                  <element>BUNDLE</element>
+                  <limits>
+                    <limit>
+                      <counter>LINE</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>0.85</minimum>
+                    </limit>
+                    <limit>
+                      <counter>BRANCH</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>0.75</minimum>
+                    </limit>
+                  </limits>
+                </rule>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
 
       <!-- Generate Spring controllers and model from the OpenAPI spec -->

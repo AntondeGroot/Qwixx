@@ -7,8 +7,11 @@ info:
     This API manages players, games, moves, and game state.
 
 servers:
-  - url: http://localhost:4300
-    description: Local development server
+  # Relative to the serving origin — also the correct default basePath for the generated SPA client,
+  # which overrides it at runtime via provideApi(environment.apiBaseUrl). The dev server runs on
+  # http://localhost:4300.
+  - url: /
+    description: Same-origin
 
 paths:
   /games:
@@ -93,8 +96,10 @@ paths:
                     type: integer
                   description: Shuffled list of available bot profile-pic indices; each bot gets the next one (no duplicates).
                 callbackUrl:
+                  # Optional (absent from `required`); the server treats null/blank the same, so a
+                  # plain optional string is all that's needed. (Was `nullable: true`, which OpenAPI
+                  # 3.1 dropped — it was silently ignored and generated a plain String anyway.)
                   type: string
-                  nullable: true
                   description: URL to POST to when the game finishes (empty body). Best-effort — failures are logged and ignored.
       responses:
         '200':
@@ -162,6 +167,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Player'
+        '404':
+          description: Game not found
     post:
       summary: Add a player to a game
       operationId: addPlayerToGame

@@ -45,6 +45,13 @@ module.exports = defineConfig([
       '@typescript-eslint/no-floating-promises': 'error',
       'no-console': ['error', { allow: ['warn', 'error'] }],
       eqeqeq: ['error', 'always', { null: 'ignore' }],
+      // God-object / size caps — stop a class growing one harmless method at a time. Adopted as a
+      // ratchet: files already over the cap get a per-file override pinned at their current counted
+      // size (see the overrides at the bottom), so they can only shrink, never grow. Specs are
+      // exempt below (fixtures/provider setup make them legitimately long).
+      'max-lines': ['error', { max: 400, skipBlankLines: true, skipComments: true }],
+      'max-lines-per-function': ['error', { max: 80, skipBlankLines: true, skipComments: true }],
+      'max-classes-per-file': ['error', 1],
       'no-restricted-imports': [
         'error',
         {
@@ -68,6 +75,26 @@ module.exports = defineConfig([
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-empty-function': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
+      // Specs are legitimately long (fixtures, provider setup) and use long describe/it callbacks.
+      'max-lines': 'off',
+      'max-lines-per-function': 'off',
+    },
+  },
+  // ── Ratchet overrides ───────────────────────────────────────────────────────
+  // Files already over a size cap when it was introduced, pinned at their CURRENT counted size
+  // (skipBlankLines/skipComments, as reported by lint — not `wc -l`). A frozen ceiling: they can
+  // only shrink. TODO: lower each toward the global cap (400 / 80) as the file/method is split,
+  // then delete the override once it drops under the global cap.
+  {
+    files: ['src/app/board/board.component.ts'],
+    rules: {
+      'max-lines': ['error', { max: 644, skipBlankLines: true, skipComments: true }],
+    },
+  },
+  {
+    files: ['src/app/settings/settings.component.ts'],
+    rules: {
+      'max-lines-per-function': ['error', { max: 94, skipBlankLines: true, skipComments: true }],
     },
   },
   {

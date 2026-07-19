@@ -21,10 +21,11 @@
  */
 
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 
-const dir = dirname(fileURLToPath(import.meta.url));
+// Anchor to the source tree via cwd (the client root when tests run), not import.meta.url — under
+// v8 coverage instrumentation the module URL points elsewhere, which broke the relative reads.
+const dir = join(process.cwd(), 'src/app');
 function css(rel: string) {
   return readFileSync(join(dir, rel), 'utf-8');
 }

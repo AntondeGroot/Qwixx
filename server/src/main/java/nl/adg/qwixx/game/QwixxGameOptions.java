@@ -2,6 +2,7 @@ package nl.adg.qwixx.game;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Logger;
 import nl.adg.qwixx.bot.BotStrategy;
@@ -128,7 +129,7 @@ public class QwixxGameOptions {
     }
 
     private static String str(Object value) {
-        return value == null ? null : value.toString().trim().toUpperCase();
+        return value == null ? null : value.toString().trim().toUpperCase(Locale.ROOT);
     }
 
     private static boolean bool(Object value) {

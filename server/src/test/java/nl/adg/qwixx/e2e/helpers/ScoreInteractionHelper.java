@@ -204,7 +204,7 @@ public class ScoreInteractionHelper {
             String transform = host.getCssValue("transform");
             if (transform == null || transform.equals("none")) return false;
             // matrix(a, b, c, d, tx, ty) — for 90deg: a≈0, b≈1, c≈-1, d≈0
-            String[] parts = transform.replace("matrix(", "").replace(")", "").split(",");
+            String[] parts = transform.replace("matrix(", "").replace(")", "").split(",", -1);
             double a = Double.parseDouble(parts[0].trim());
             double b = Double.parseDouble(parts[1].trim());
             return Math.abs(a) < 0.1 && Math.abs(b - 1) < 0.1;

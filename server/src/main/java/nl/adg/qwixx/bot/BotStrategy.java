@@ -2,6 +2,7 @@ package nl.adg.qwixx.bot;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Locale;
 import java.util.logging.Logger;
 
 /**
@@ -28,6 +29,8 @@ public enum BotStrategy {
     BALANCED;
 
     private static final Logger log = Logger.getLogger(BotStrategy.class.getName());
+    // Intentional lazy memoization of the trained profile; the mutable field is deliberate.
+    @SuppressWarnings("ImmutableEnumChecker")
     private transient volatile BotProfile cachedProfile;
 
     public BotProfile profile() {
@@ -44,7 +47,7 @@ public enum BotStrategy {
     }
 
     private BotProfile loadFromClasspath() {
-        String resource = "/profiles/trained-" + name().toLowerCase().replace('_', '-') + ".json";
+        String resource = "/profiles/trained-" + name().toLowerCase(Locale.ROOT).replace('_', '-') + ".json";
         try (InputStream is = BotStrategy.class.getResourceAsStream(resource)) {
             if (is != null) return BotTrainer.load(is);
             log.warning("Profile resource not found: " + resource + " — using DEFAULT");

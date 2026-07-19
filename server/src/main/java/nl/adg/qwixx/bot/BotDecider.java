@@ -342,7 +342,9 @@ public class BotDecider {
                     int v = Integer.parseInt(c.displayValue());
                     if (v < min) min = v;
                     if (v > max) max = v;
-                } catch (NumberFormatException ignored) {}
+                } catch (NumberFormatException ignored) {
+                    // Non-numeric cell (e.g. a bonus cell) — skip it when computing the row's range.
+                }
             }
         }
         return (min == Integer.MAX_VALUE) ? 7 : (min + max) / 2;

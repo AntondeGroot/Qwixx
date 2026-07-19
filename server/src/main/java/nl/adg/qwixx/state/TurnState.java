@@ -10,6 +10,8 @@ import java.util.UUID;
 import nl.adg.qwixx.data.RollResult;
 
 // Everything scoped to the turn currently in progress. Rebuilt at the start of each turn.
+// Fields are assigned via setters after construction, so NullAway can't prove initialization.
+@SuppressWarnings("NullAway.Init")
 public class TurnState {
     UUID activePlayerId;
     TurnPhase phase;

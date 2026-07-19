@@ -99,6 +99,8 @@ public class GameSession {
     }
 
     /**
+     * Starts the game: seeds bots, builds each player's sheet, and rolls the first turn.
+     *
      * @param runInitialBotTurns when {@code true} (headless/simulation) any bots that act
      *     first play immediately and synchronously. Live games pass {@code false} and drive
      *     the initial bot turns via {@link #runPendingBotTurns} once clients have subscribed,
@@ -218,7 +220,10 @@ public class GameSession {
         restart(newSettings, true);
     }
 
-    /** @see #start(List, boolean) for the meaning of {@code runInitialBotTurns}. */
+    /**
+     * Resets a finished game to a fresh start with new settings, keeping the same players.
+     * See {@link #start(List, boolean)} for the meaning of {@code runInitialBotTurns}.
+     */
     public synchronized void restart(GameSettings newSettings, boolean runInitialBotTurns) {
         if (status != SessionStatus.FINISHED)
             throw new IllegalStateException("can only restart a finished game");

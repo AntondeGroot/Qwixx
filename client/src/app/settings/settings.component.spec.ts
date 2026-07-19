@@ -83,7 +83,7 @@ describe('SettingsComponent — botCount select', () => {
   it('renders a <select> with exactly four options for botCount', () => {
     const sel = botCountSelect();
     expect(sel).toBeTruthy();
-    expect(sel!.options.length).toBe(4);
+    expect(sel!.options).toHaveLength(4);
   });
 
   it('botCount option labels are 0, 1, 2, 3', () => {
@@ -115,7 +115,7 @@ describe('SettingsComponent — botCount select', () => {
     // In the real app a TranslateService lang change triggers an extra change-detection
     // cycle. The options must still be present afterwards.
     fixture.detectChanges();
-    expect(botCountSelect()!.options.length).toBe(4);
+    expect(botCountSelect()!.options).toHaveLength(4);
   });
 });
 
@@ -183,7 +183,7 @@ describe('SettingsComponent — botCount select in embed mode', () => {
 
   it('embed mode: botCount select still has 4 options', () => {
     expect(botCountSelect()).toBeTruthy();
-    expect(botCountSelect()!.options.length).toBe(4);
+    expect(botCountSelect()!.options).toHaveLength(4);
   });
 
   it('embed mode: option labels are still 0, 1, 2, 3', () => {

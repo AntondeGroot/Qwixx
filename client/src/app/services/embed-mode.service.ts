@@ -24,10 +24,14 @@ export class EmbedModeService {
     // Handshake: tell the host we're now listening so it (re)sends state such as
     // the admin status. Without this, the host's on-load post can arrive before
     // Angular has bootstrapped and registered the listener above, and be lost.
+    // Target origin is '*' by necessity: the host origin is unknown until it replies, and this
+    // ping (and the options broadcast below) carry only non-sensitive lobby UI state.
+    // eslint-disable-next-line sonarjs/post-message
     window.parent.postMessage({ type: 'qwixx-embed-ready' }, '*');
   }
 
   postOptions(options: Record<string, string>): void {
+    // eslint-disable-next-line sonarjs/post-message -- non-sensitive UI options to the embed host (see enable())
     window.parent.postMessage({ type: 'qwixx-options-changed', options }, '*');
   }
 }

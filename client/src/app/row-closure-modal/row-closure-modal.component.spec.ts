@@ -45,7 +45,7 @@ describe('RowClosureModalComponent', () => {
     component.requests = requests;
     fixture.detectChanges();
     const items = fixture.nativeElement.querySelectorAll('.request-item');
-    expect(items.length).toBe(3);
+    expect(items).toHaveLength(3);
   });
 
   it('should emit confirmSelection when confirm button is clicked', () => {
@@ -114,7 +114,7 @@ describe('RowClosureModalComponent', () => {
     component.requests = requests;
     fixture.detectChanges();
     const cells = fixture.nativeElement.querySelectorAll('.color-cell');
-    expect(cells.length).toBe(4);
+    expect(cells).toHaveLength(4);
     expect(cells[0].classList.contains('cell-red')).toBeTruthy();
     expect(cells[1].classList.contains('cell-yellow')).toBeTruthy();
     expect(cells[2].classList.contains('cell-green')).toBeTruthy();
@@ -131,7 +131,7 @@ describe('RowClosureModalComponent', () => {
     component.requests = requests;
     fixture.detectChanges();
     const items = fixture.nativeElement.querySelectorAll('.request-item');
-    expect(items.length).toBe(4);
+    expect(items).toHaveLength(4);
   });
 
   it('should show one button when there is no pending cross', () => {
@@ -139,7 +139,7 @@ describe('RowClosureModalComponent', () => {
     component.hasPendingCross = false;
     fixture.detectChanges();
     const buttons = fixture.nativeElement.querySelectorAll('.btn');
-    expect(buttons.length).toBe(1);
+    expect(buttons).toHaveLength(1);
   });
 
   it('should show two buttons when there is a pending cross', () => {
@@ -147,7 +147,7 @@ describe('RowClosureModalComponent', () => {
     component.hasPendingCross = true;
     fixture.detectChanges();
     const buttons = fixture.nativeElement.querySelectorAll('.btn');
-    expect(buttons.length).toBe(2);
+    expect(buttons).toHaveLength(2);
   });
 
   it('should render modal with correct CSS classes', () => {
@@ -171,7 +171,7 @@ describe('RowClosureModalComponent', () => {
     component.lockConfirmRequest = null;
     fixture.detectChanges();
     const overlays = fixture.nativeElement.querySelectorAll('.modal-overlay');
-    expect(overlays.length).toBe(0);
+    expect(overlays).toHaveLength(0);
   });
 
   it('should show yes/no modal when lockConfirmRequest is set', () => {
@@ -185,7 +185,7 @@ describe('RowClosureModalComponent', () => {
     component.lockConfirmRequest = { rowColor: Color.GREEN };
     fixture.detectChanges();
     const buttons = fixture.nativeElement.querySelectorAll('.btn');
-    expect(buttons.length).toBe(2);
+    expect(buttons).toHaveLength(2);
     const primary = fixture.nativeElement.querySelector('.btn-primary');
     const secondary = fixture.nativeElement.querySelector('.btn-secondary');
     expect(primary).toBeTruthy();
@@ -229,6 +229,6 @@ describe('RowClosureModalComponent', () => {
     component.requests = [{ playerName: 'A', rowColor: Color.BLUE }];
     fixture.detectChanges();
     const overlays = fixture.nativeElement.querySelectorAll('.modal-overlay');
-    expect(overlays.length).toBe(2);
+    expect(overlays).toHaveLength(2);
   });
 });

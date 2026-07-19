@@ -3,6 +3,7 @@ package nl.adg.qwixx.rules;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import nl.adg.qwixx.data.BonusBKind;
 import nl.adg.qwixx.data.Cell;
@@ -82,7 +83,7 @@ public class StandardScoringEngine implements ScoringEngine {
         Color doubledColor = null;
         if (achievedB.contains(BonusBKind.DOUBLE_FEWEST)) {
             doubledColor = fewestColour(crosses);
-            points.merge(doubledColor, points.get(doubledColor), Integer::sum); // that row counts double
+            points.merge(doubledColor, Objects.requireNonNull(points.get(doubledColor)), Integer::sum); // that row counts double
         }
         if (achievedB.contains(BonusBKind.PLUS_13)) bonusPoints += 13;
         boolean noPenalty = achievedB.contains(BonusBKind.NO_PENALTY);
@@ -121,7 +122,7 @@ public class StandardScoringEngine implements ScoringEngine {
     private Map<Color, Integer> pointsPerColor(Map<Color, Integer> crosses) {
         int cap = maxCrossesPerRow();
         Map<Color, Integer> points = new EnumMap<>(Color.class);
-        for (Color c : Color.values()) points.put(c, triangular(Math.min(cap, crosses.get(c))));
+        for (Color c : Color.values()) points.put(c, triangular(Math.min(cap, Objects.requireNonNull(crosses.get(c)))));
         return points;
     }
 

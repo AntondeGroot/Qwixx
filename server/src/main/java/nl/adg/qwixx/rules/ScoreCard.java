@@ -1,5 +1,6 @@
 package nl.adg.qwixx.rules;
 
+import jakarta.annotation.Nullable;
 import java.util.Map;
 import nl.adg.qwixx.data.Color;
 
@@ -12,7 +13,7 @@ public record ScoreCard(
         int punishmentPoints,                 // -5 per punishment
         // Which Bonus B score-time modifiers applied. Their effect is already folded into the
         // fields above; these record it so a score screen can show why the numbers look that way.
-        Color doubledColor,                   // row doubled by DOUBLE_FEWEST, or null
+        @Nullable Color doubledColor,         // row doubled by DOUBLE_FEWEST, or null
         boolean noPenalty                     // NO_PENALTY nullified the punishments
 ) {
     public ScoreCard {

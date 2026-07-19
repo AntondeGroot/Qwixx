@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 // Top-level envelope. SheetLayout lives here as it is static; BoardState holds only what changes.
@@ -48,6 +49,16 @@ public class GameState {
 
     public Map<Integer, UUID> closedRows()           { return boardState.closedRows(); }
     public boolean isRowClosed(int rowIndex)         { return boardState.closedRows().containsKey(rowIndex); }
+
+    /** The layout for a seated player. Every seated player always has one; the lookup never misses. */
+    public SheetLayout sheetLayout(UUID playerId) {
+        return Objects.requireNonNull(sheetLayouts.get(playerId), "no layout for player");
+    }
+
+    /** The progress for a seated player. Every seated player always has one; the lookup never misses. */
+    public SheetProgress sheetProgress(UUID playerId) {
+        return Objects.requireNonNull(boardState.sheetProgress().get(playerId), "no progress for player");
+    }
 
     public void setTurnState(TurnState turnState)   { this.turnState = turnState; }
     public void setGameOver(boolean gameOver)       { this.gameOver = gameOver; }

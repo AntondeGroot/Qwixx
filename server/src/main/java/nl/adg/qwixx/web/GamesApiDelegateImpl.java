@@ -233,8 +233,9 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
                 sc.extraCrosses(), sc.extraPoints(),
                 sc.bonusPoints(), sc.punishmentPoints(), sc.total());
         dto.setNoPenalty(sc.noPenalty());
-        if (sc.doubledColor() != null) {
-            dto.setDoubledColor(nl.adg.qwixx.generated.model.Color.fromValue(sc.doubledColor().name()));
+        nl.adg.qwixx.data.Color doubledColor = sc.doubledColor();
+        if (doubledColor != null) {
+            dto.setDoubledColor(nl.adg.qwixx.generated.model.Color.fromValue(doubledColor.name()));
         }
         return dto;
     }

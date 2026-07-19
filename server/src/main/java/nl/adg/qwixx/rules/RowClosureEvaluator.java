@@ -36,7 +36,7 @@ class RowClosureEvaluator {
 
     static List<GameAction> declareLockIntentActions(GameState state, UUID playerId, int minCrossesRequired) {
         List<GameAction> actions = new ArrayList<>();
-        SheetLayout layout = getLayout(state, playerId);
+        SheetLayout layout = state.sheetLayout(playerId);
         for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
             if (canOfferLockDeclaration(state, playerId, rowIndex, minCrossesRequired)) {
                 actions.add(new DeclareLockIntentAction(playerId, rowIndex));
@@ -83,13 +83,13 @@ class RowClosureEvaluator {
     static boolean rowIsNotLockable(GameState state, UUID playerId, int rowIndex) {
         Row row = getRow(state, playerId, rowIndex);
         if (row.lock() == null) return true;
-        RowState rowState = getRowState(getProgress(state, playerId), rowIndex);
+        RowState rowState = getRowState(state.sheetProgress(playerId), rowIndex);
         if (rowState.lockCrossed()) return true;
         return state.isRowClosed(rowIndex);
     }
 
     static Set<String> allCrossesForPlayer(GameState state, UUID playerId, int rowIndex) {
-        RowState rowState = getRowState(getProgress(state, playerId), rowIndex);
+        RowState rowState = getRowState(state.sheetProgress(playerId), rowIndex);
         Set<String> all = new HashSet<>(rowState.crossedCells());
         all.addAll(getPendingCrossesInRow(state, playerId, rowIndex));
         return all;
@@ -123,7 +123,7 @@ class RowClosureEvaluator {
     static void autoDetectClosingIntent(GameState state, TurnState turn, UUID playerId, int minCrossesRequired) {
         if (!turn.undoBuffer().containsKey(playerId)) return;
 
-        SheetLayout layout = getLayout(state, playerId);
+        SheetLayout layout = state.sheetLayout(playerId);
         for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
             if (qualifiesForAutoClose(state, playerId, rowIndex, minCrossesRequired)) {
                 recordClosureIntent(state, playerId, rowIndex);
@@ -180,12 +180,12 @@ class RowClosureEvaluator {
 
     private static boolean otherPlayerAlsoQualifiesForLockCross(GameState state, UUID pid, UUID declarant, int rowIndex, int minCrossesRequired) {
         return !pid.equals(declarant)
-                && !getRowState(getProgress(state, pid), rowIndex).lockCrossed()
+                && !getRowState(state.sheetProgress(pid), rowIndex).lockCrossed()
                 && canCrossLock(state, pid, rowIndex, minCrossesRequired);
     }
 
     static void markLockCrossed(GameState state, UUID playerId, int rowIndex) {
-        SheetProgress prog = getProgress(state, playerId);
+        SheetProgress prog = state.sheetProgress(playerId);
         RowState current   = getRowState(prog, rowIndex);
         prog.updateRowState(rowIndex, new RowState(current.crossedCells(), true));
     }
@@ -207,7 +207,7 @@ class RowClosureEvaluator {
             for (int i = 0; i < layout.rows().size(); i++) {
                 Row row = layout.rows().get(i);
                 if (!row.isBonusBar()) continue;
-                SheetProgress prog = getProgress(state, pid);
+                SheetProgress prog = state.sheetProgress(pid);
                 RowState barState = getRowState(prog, i);
                 Set<String> crossed = new HashSet<>(barState.crossedCells());
                 boolean changed = false;
@@ -265,16 +265,8 @@ class RowClosureEvaluator {
 
     // ── Private state accessors ───────────────────────────────────────────────
 
-    private static SheetLayout getLayout(GameState state, UUID playerId) {
-        return state.sheetLayouts().get(playerId);
-    }
-
-    private static SheetProgress getProgress(GameState state, UUID playerId) {
-        return state.boardState().sheetProgress().get(playerId);
-    }
-
     private static Row getRow(GameState state, UUID playerId, int rowIndex) {
-        return getLayout(state, playerId).rows().get(rowIndex);
+        return state.sheetLayout(playerId).rows().get(rowIndex);
     }
 
     private static LockCell getLock(GameState state, UUID playerId, int rowIndex) {

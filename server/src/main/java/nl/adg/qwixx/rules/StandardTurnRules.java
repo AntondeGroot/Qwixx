@@ -4,6 +4,7 @@ import static nl.adg.qwixx.rules.CellCrosser.getRowState;
 import static nl.adg.qwixx.rules.CellCrosser.isReachableCell;
 import static nl.adg.qwixx.rules.RowClosureEvaluator.*;
 
+import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -199,7 +200,7 @@ public class StandardTurnRules implements TurnRules {
         }
     }
 
-    private static boolean isLuckyNumberCell(Cell cell) {
+    private static boolean isLuckyNumberCell(@Nullable Cell cell) {
         if (cell == null) return false;
         return cell.tags().stream().anyMatch(t -> t instanceof CellTag.LuckyNumber);
     }
@@ -219,7 +220,7 @@ public class StandardTurnRules implements TurnRules {
             throw new IllegalMoveException("Lucky Cross already used this turn");
         }
         // Validate that the 1+5 combo permits crossing this row.
-        Row row = getLayout(state, playerId).rows().get(action.rowIndex());
+        Row row = state.sheetLayout(playerId).rows().get(action.rowIndex());
         Color rowColor = rowColor(row);
         Set<Color> eligible = luckyCrossEligibleColors(turn.currentRoll());
         if (eligible != null && (rowColor == null || !eligible.contains(rowColor))) {
@@ -254,7 +255,7 @@ public class StandardTurnRules implements TurnRules {
         }
     }
 
-    private static void mergeWithPreviousXChangeCross(Map<Integer, Set<String>> xChangeCross,
+    private static void mergeWithPreviousXChangeCross(@Nullable Map<Integer, Set<String>> xChangeCross,
                                                       Map<Integer, Set<String>> regularCross) {
         if (xChangeCross == null) return;
         for (var entry : xChangeCross.entrySet()) {
@@ -262,8 +263,9 @@ public class StandardTurnRules implements TurnRules {
         }
     }
 
+    @Nullable
     private Cell findCell(GameState state, UUID playerId, int rowIndex, String cellId) {
-        return getLayout(state, playerId).rows().get(rowIndex).cells().stream()
+        return state.sheetLayout(playerId).rows().get(rowIndex).cells().stream()
                 .filter(c -> c.id().equals(cellId)).findFirst().orElse(null);
     }
 
@@ -333,7 +335,7 @@ public class StandardTurnRules implements TurnRules {
             return;
         }
 
-        SheetProgress progress = getProgress(state, playerId);
+        SheetProgress progress = state.sheetProgress(playerId);
         for (var entry : lastCross.entrySet()) {
             int idx = entry.getKey();
             RowState current = getRowState(progress, idx);
@@ -363,7 +365,7 @@ public class StandardTurnRules implements TurnRules {
         UUID playerId = action.playerId();
         restoreToSnapshot(state, turn, playerId);
         cancelPlayerRowClosure(state, playerId);
-        getProgress(state, playerId).addPunishment();
+        state.sheetProgress(playerId).addPunishment();
 
         evaluateOrTransitionToPassiveMove(state, turn);
     }
@@ -488,7 +490,7 @@ public class StandardTurnRules implements TurnRules {
     private Map<UUID, SheetProgress> snapshotProgress(GameState state) {
         Map<UUID, SheetProgress> snap = new HashMap<>();
         for (UUID pid : state.players()) {
-            snap.put(pid, deepCopy(getProgress(state, pid)));
+            snap.put(pid, deepCopy(state.sheetProgress(pid)));
         }
         return snap;
     }
@@ -527,8 +529,8 @@ public class StandardTurnRules implements TurnRules {
         var roll = turn.currentRoll();
         if (roll == null) return List.of();
 
-        SheetLayout layout     = getLayout(state, playerId);
-        SheetProgress progress = getProgress(state, playerId);
+        SheetLayout layout     = state.sheetLayout(playerId);
+        SheetProgress progress = state.sheetProgress(playerId);
 
         for (int i = 0; i < layout.rows().size(); i++) {
             Row row = layout.rows().get(i);
@@ -557,7 +559,8 @@ public class StandardTurnRules implements TurnRules {
      * Returns null when white+white shows 1+5 (free choice — any colored row).
      * Returns an empty set when no 1+5 combo is present at all.
      */
-    protected Set<Color> luckyCrossEligibleColors(RollResult roll) {
+    @Nullable
+    protected Set<Color> luckyCrossEligibleColors(@Nullable RollResult roll) {
         if (roll == null) return Set.of();
         int w1 = roll.white1(), w2 = roll.white2();
         Set<Color> eligible = EnumSet.noneOf(Color.class);
@@ -602,8 +605,8 @@ public class StandardTurnRules implements TurnRules {
         Set<Color> eligible = luckyCrossEligibleColors(roll);
         if (eligible != null && eligible.isEmpty()) return List.of();
 
-        SheetLayout layout = getLayout(state, playerId);
-        SheetProgress progress = getProgress(state, playerId);
+        SheetLayout layout = state.sheetLayout(playerId);
+        SheetProgress progress = state.sheetProgress(playerId);
         List<GameAction> actions = new ArrayList<>();
 
         for (int i = 0; i < layout.rows().size(); i++) {
@@ -630,7 +633,7 @@ public class StandardTurnRules implements TurnRules {
         return actions;
     }
 
-    protected static boolean isLuckyCrossCell(Cell cell) {
+    protected static boolean isLuckyCrossCell(@Nullable Cell cell) {
         return cell != null && cell.tags() != null
                 && cell.tags().stream().anyMatch(t -> t instanceof CellTag.LuckyCross);
     }
@@ -639,6 +642,7 @@ public class StandardTurnRules implements TurnRules {
         return row.cells().stream().anyMatch(StandardTurnRules::isLuckyCrossCell);
     }
 
+    @Nullable
     private static Color rowColor(Row row) {
         return row.cells().stream()
                 .filter(c -> !isLuckyCrossCell(c))
@@ -663,19 +667,11 @@ public class StandardTurnRules implements TurnRules {
         turn.undoBuffer().remove(playerId);
     }
 
+    @Nullable
     private Map<Integer, Set<String>> getPendingCrosses(TurnState turn, UUID playerId) {
         return turn.undoBuffer().get(playerId);
     }
 
-    // ── State accessors for subclasses ────────────────────────────────────────
-
-    protected SheetLayout getLayout(GameState state, UUID playerId) {
-        return state.sheetLayouts().get(playerId);
-    }
-
-    protected SheetProgress getProgress(GameState state, UUID playerId) {
-        return state.boardState().sheetProgress().get(playerId);
-    }
 
     protected int getMinCrossesRequired() {
         return 5;

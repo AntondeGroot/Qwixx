@@ -1,5 +1,6 @@
 package nl.adg.qwixx.rules;
 
+import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,8 +42,8 @@ class CellCrosser {
         TurnState turn             = Objects.requireNonNull(state.turnState());
         var roll                   = turn.currentRoll();
         ActiveTurnState ats        = isActive ? turn.activeTurnState() : null;
-        SheetLayout layout         = state.sheetLayouts().get(playerId);
-        var progress               = state.boardState().sheetProgress().get(playerId);
+        SheetLayout layout         = state.sheetLayout(playerId);
+        var progress               = state.sheetProgress(playerId);
         // Pre-turn snapshot used for Big Points bonus prerequisite check.
         Map<UUID, SheetProgress> startProgress = turn.moveStartProgress();
         // Effective white+white after an x-change cross; null means use the actual roll sum.
@@ -105,7 +106,7 @@ class CellCrosser {
                 } else if (row.isBonusRow()) {
                     combo = resolveBonusCombo(roll, cell, ats, isActive);
                 } else if (isActive) {
-                    combo = DiceRoller.resolveActiveCombo(roll, cell, ats, state.boardState().activeDice());
+                    combo = DiceRoller.resolveActiveCombo(roll, cell, Objects.requireNonNull(ats), state.boardState().activeDice());
                 } else {
                     combo = DiceRoller.matchesWhiteWhite(roll, cell) ? DiceCombination.WHITE_WHITE : null;
                 }
@@ -120,9 +121,11 @@ class CellCrosser {
 
     // Resolves combo for a normal cell when effectiveWW is active.
     // WW slot targets effectiveWW value; color die is still independent.
-    private static DiceCombination resolveWithEffectiveWW(RollResult roll, Cell cell, ActiveTurnState ats, boolean isActive, int effectiveWW) {
+    @Nullable
+    private static DiceCombination resolveWithEffectiveWW(RollResult roll, Cell cell, @Nullable ActiveTurnState ats, boolean isActive, int effectiveWW) {
         String target = String.valueOf(effectiveWW);
         if (isActive) {
+            Objects.requireNonNull(ats);
             if (!ats.whiteWhiteUsed() && !ats.colorDieUsed() && cell.displayValue().equals(target)) {
                 return DiceCombination.WHITE_WHITE;
             }
@@ -139,7 +142,8 @@ class CellCrosser {
     }
 
     // X-Change cells respond only to white+white sum matching either value in the pair.
-    static CellTag.XChange findXChangeTag(Cell cell) {
+    @Nullable
+    static CellTag.XChange findXChangeTag(@Nullable Cell cell) {
         if (cell == null) return null;
         for (CellTag tag : cell.tags()) {
             if (tag instanceof CellTag.XChange xc) return xc;
@@ -147,7 +151,8 @@ class CellCrosser {
         return null;
     }
 
-    private static DiceCombination resolveXChangeCombo(RollResult roll, CellTag.XChange xc, ActiveTurnState ats, boolean isActive) {
+    @Nullable
+    private static DiceCombination resolveXChangeCombo(RollResult roll, CellTag.XChange xc, @Nullable ActiveTurnState ats, boolean isActive) {
         int ww = roll.white1() + roll.white2();
         if (ww != xc.a() && ww != xc.b()) return null;
         if (isActive && ats != null && ats.whiteWhiteUsed()) return null;
@@ -155,10 +160,12 @@ class CellCrosser {
     }
 
     // Bonus cells respond to white+white OR either neighbouring colour die.
-    private static DiceCombination resolveBonusCombo(RollResult roll, Cell cell, ActiveTurnState ats, boolean isActive) {
+    @Nullable
+    private static DiceCombination resolveBonusCombo(RollResult roll, Cell cell, @Nullable ActiveTurnState ats, boolean isActive) {
         if (!isActive) {
             return DiceRoller.matchesWhiteWhite(roll, cell) ? DiceCombination.WHITE_WHITE : null;
         }
+        Objects.requireNonNull(ats);
         if (!ats.whiteWhiteUsed() && DiceRoller.matchesWhiteWhite(roll, cell)) return DiceCombination.WHITE_WHITE;
         if (!ats.colorDieUsed() && matchesBonusColorDie(roll, cell)) return DiceCombination.WHITE_COLOR;
         return null;
@@ -179,7 +186,7 @@ class CellCrosser {
 
     // A bonus cell may only be offered when its display value is permanently crossed
     // in at least one neighbouring coloured row (checked against the pre-turn snapshot).
-    static boolean bonusPrerequisiteMet(SheetLayout layout, SheetProgress startProgress, Row bonusRow, Cell cell) {
+    static boolean bonusPrerequisiteMet(SheetLayout layout, @Nullable SheetProgress startProgress, Row bonusRow, Cell cell) {
         if (startProgress == null) return false;
         String value = cell.displayValue();
         for (int neighborIndex : new int[]{bonusRow.upperRowIndex(), bonusRow.lowerRowIndex()}) {
@@ -196,7 +203,8 @@ class CellCrosser {
         return cell.position() > rightmost && !crossedCells.contains(cell.id());
     }
 
-    static CellTag.DoubleTwin findTwinTag(Cell cell) {
+    @Nullable
+    static CellTag.DoubleTwin findTwinTag(@Nullable Cell cell) {
         if (cell == null || cell.tags() == null) return null;
         for (CellTag tag : cell.tags()) {
             if (tag instanceof CellTag.DoubleTwin dt) return dt;
@@ -242,8 +250,8 @@ class CellCrosser {
 
     private void crossRecursive(GameState state, UUID playerId, int rowIndex, String cellId,
                                 Map<Integer, Set<String>> crossed, boolean isAuto) {
-        SheetLayout layout  = state.sheetLayouts().get(playerId);
-        SheetProgress prog  = state.boardState().sheetProgress().get(playerId);
+        SheetLayout layout  = state.sheetLayout(playerId);
+        SheetProgress prog  = state.sheetProgress(playerId);
         Row row             = layout.rows().get(rowIndex);
         RowState rowState   = getRowState(prog, rowIndex);
 
@@ -288,7 +296,7 @@ class CellCrosser {
 
     private void findAndCrossAutoTarget(GameState state, UUID playerId, String targetCellId,
                                         Map<Integer, Set<String>> crossed) {
-        SheetLayout layout = state.sheetLayouts().get(playerId);
+        SheetLayout layout = state.sheetLayout(playerId);
         findCellById(layout, targetCellId).ifPresent(e ->
                 crossRecursive(state, playerId, e.getKey(), targetCellId, crossed, true));
     }
@@ -296,8 +304,8 @@ class CellCrosser {
     // Consume the next open bonus-bar cell; its colour forces a cross of the next box in that row.
     // Forced crosses recurse through crossRecursive, so a bonus box crossed this way chains again.
     private void triggerBonusBar(GameState state, UUID playerId, Map<Integer, Set<String>> crossed) {
-        SheetLayout layout = state.sheetLayouts().get(playerId);
-        SheetProgress prog = state.boardState().sheetProgress().get(playerId);
+        SheetLayout layout = state.sheetLayout(playerId);
+        SheetProgress prog = state.sheetProgress(playerId);
 
         int barIndex = -1;
         Row bar = null;
@@ -338,8 +346,8 @@ class CellCrosser {
     // immediate effect. Score-time kinds (double / +13 / no-penalty) only mark the indicator.
     private void triggerBonusB(GameState state, UUID playerId, BonusBKind kind,
                                Map<Integer, Set<String>> crossed) {
-        SheetLayout layout = state.sheetLayouts().get(playerId);
-        SheetProgress prog = state.boardState().sheetProgress().get(playerId);
+        SheetLayout layout = state.sheetLayout(playerId);
+        SheetProgress prog = state.sheetProgress(playerId);
 
         Cell stripCell = null;
         int stripIndex = -1;
@@ -381,8 +389,8 @@ class CellCrosser {
     // Cross the next {@code count} boxes in the single open colour row with the fewest crosses.
     private void crossInFewestRow(GameState state, UUID playerId, int count,
                                   Map<Integer, Set<String>> crossed) {
-        SheetLayout layout = state.sheetLayouts().get(playerId);
-        SheetProgress prog = state.boardState().sheetProgress().get(playerId);
+        SheetLayout layout = state.sheetLayout(playerId);
+        SheetProgress prog = state.sheetProgress(playerId);
         int rowIndex = fewestColourRow(state, playerId);
         if (rowIndex < 0) return;
         for (int n = 0; n < count; n++) {
@@ -394,8 +402,8 @@ class CellCrosser {
 
     // Cross the next box in every open colour row.
     private void crossInEachRow(GameState state, UUID playerId, Map<Integer, Set<String>> crossed) {
-        SheetLayout layout = state.sheetLayouts().get(playerId);
-        SheetProgress prog = state.boardState().sheetProgress().get(playerId);
+        SheetLayout layout = state.sheetLayout(playerId);
+        SheetProgress prog = state.sheetProgress(playerId);
         for (int i = 0; i < layout.rows().size(); i++) {
             Row row = layout.rows().get(i);
             if (row.lock() == null || state.isRowClosed(i)) continue;
@@ -406,8 +414,8 @@ class CellCrosser {
 
     // The open colour row (identified by having a lock) with the fewest crosses; ties → lowest index.
     private int fewestColourRow(GameState state, UUID playerId) {
-        SheetLayout layout = state.sheetLayouts().get(playerId);
-        SheetProgress prog = state.boardState().sheetProgress().get(playerId);
+        SheetLayout layout = state.sheetLayout(playerId);
+        SheetProgress prog = state.sheetProgress(playerId);
         int best = -1;
         int bestCount = Integer.MAX_VALUE;
         for (int i = 0; i < layout.rows().size(); i++) {
@@ -421,6 +429,7 @@ class CellCrosser {
 
     // The next box a forced bonus cross lands on: the left-most reachable, non-closing cell.
     // (The lock cell is excluded so row-closing stays with the turn-rules layer.)
+    @Nullable
     private static Cell nextForcedBox(Row row, RowState rowState) {
         int rightmost = rightmostCrossedPosition(row, rowState);
         Cell best = null;

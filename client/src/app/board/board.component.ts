@@ -653,7 +653,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   private applyState(s: GameState) {
     // Never let an out-of-order response overwrite a newer state.
     const curr = this.gameState()?.version;
-    if (curr !== undefined && s.version !== undefined && s.version < curr) return;
+    if (curr !== undefined && s.version < curr) return;
 
     // A newer authoritative state has arrived, so any in-flight move is now resolved.
     this.movePending.set(false);
@@ -818,20 +818,16 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       // Passive player undoes their cross to reconsider.
       this.suppressModal.set(false);
       this.sendMove({ moveType: MoveType.UNDO_LAST_CROSS });
-    } else if (this.hasPendingActiveCross()) {
-      // Active player resets their entire turn to reconsider — suppress modal until
-      // they make a new cross, at which point hasPendingActiveCross becomes true again
-      // and the auto-unsuppress (pendingCellIds > 0) brings the modal back.
-      this.suppressModal.set(true);
-      this.sendMove({ moveType: MoveType.RESET_TURN });
-    } else if (this.hasRevertableEndTurn() || this.hasRevertablePassiveEndTurn()) {
-      // Active or passive player reverts their EndTurn to make a different/additional move.
-      // Server restores the player's state and puts them back in the appropriate phase/queue.
-      this.suppressModal.set(true);
-      this.sendMove({ moveType: MoveType.RESET_TURN });
-    } else if (this.canPassPassive() && this.reQueuedThisTurn()) {
-      // Re-queued passive (already passed earlier this turn): Change = RESET_TURN so snapshot
-      // is restored and they can make a fresh decision. Modal auto-unsuppresses on next cross.
+    } else if (
+      this.hasPendingActiveCross() ||
+      this.hasRevertableEndTurn() ||
+      this.hasRevertablePassiveEndTurn() ||
+      (this.canPassPassive() && this.reQueuedThisTurn())
+    ) {
+      // Active or passive player reverts their turn to reconsider: reset to the server snapshot and
+      // suppress the modal until their next cross re-triggers it (auto-unsuppress on pendingCellIds > 0).
+      // Covers a pending active cross, a revertable EndTurn (active or passive), and a re-queued
+      // passive who already passed earlier this turn.
       this.suppressModal.set(true);
       this.sendMove({ moveType: MoveType.RESET_TURN });
     } else {

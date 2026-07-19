@@ -112,13 +112,16 @@ export class RulesComponent implements OnDestroy {
   }
 
   t(key: string): string {
-    void this._lang();
+    this._lang(); // read the language signal so this re-runs on a language change
     return this.translateService.instant(key);
   }
 
   /** Returns the translated value as trusted HTML (renders <strong>, <em>, etc.). */
   html(key: string): SafeHtml {
-    void this._lang();
+    this._lang(); // read the language signal so this re-runs on a language change
+    // Safe: the input is our own static translation JSON (developer-authored, never user input),
+    // so bypassing sanitization to render the intended inline markup carries no injection risk.
+    // eslint-disable-next-line sonarjs/no-angular-bypass-sanitization
     return this.sanitizer.bypassSecurityTrustHtml(this.translateService.instant(key));
   }
 

@@ -116,9 +116,9 @@ describe('RowComponent — bonus row zone placement', () => {
     const el = f.nativeElement as HTMLElement;
     const bonusZone = el.querySelector('.bonus-lock-zone')!;
     expect(bonusZone).not.toBeNull();
-    expect(bonusZone.querySelectorAll('app-cell').length).toBe(1);
+    expect(bonusZone.querySelectorAll('app-cell')).toHaveLength(1);
     const mainCells = Array.from(el.querySelectorAll('app-cell')).filter((c) => !bonusZone.contains(c));
-    expect(mainCells.length).toBe(10);
+    expect(mainCells).toHaveLength(10);
   });
 
   it('puts the last two cells into .bonus-lock-zone for a longo bonus row (15 cells)', () => {
@@ -128,9 +128,9 @@ describe('RowComponent — bonus row zone placement', () => {
     const el = f.nativeElement as HTMLElement;
     const bonusZone = el.querySelector('.bonus-lock-zone')!;
     expect(bonusZone).not.toBeNull();
-    expect(bonusZone.querySelectorAll('app-cell').length).toBe(2);
+    expect(bonusZone.querySelectorAll('app-cell')).toHaveLength(2);
     const mainCells = Array.from(el.querySelectorAll('app-cell')).filter((c) => !bonusZone.contains(c));
-    expect(mainCells.length).toBe(13);
+    expect(mainCells).toHaveLength(13);
   });
 
   it('regular row with lock has no .bonus-lock-zone', () => {

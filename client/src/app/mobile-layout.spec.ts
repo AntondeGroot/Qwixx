@@ -32,11 +32,15 @@ function css(rel: string) {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
+// Matches each `@media (orientation: portrait) { ... }` block. Only ever run against our own
+// component CSS at test time (trusted, small), so the backtracking sonarjs flags is not a ReDoS risk.
+// eslint-disable-next-line sonarjs/super-linear-regex
+const PORTRAIT_BLOCK_RE = /@media[^(]*\([^)]*orientation:\s*portrait[^)]*\)\s*\{([\s\S]*?)(?=@media\s|\s*$)/g;
+
 /** Returns true if any @media (orientation: portrait) block in cssText
  *  contains `selector { ... prop ... value ... }`. */
 function portraitBlockHas(cssText: string, selector: string, prop: string, value: string): boolean {
-  const portraitBlocks =
-    cssText.match(/@media[^(]*\([^)]*orientation:\s*portrait[^)]*\)\s*\{([\s\S]*?)(?=@media\s|\s*$)/g) ?? [];
+  const portraitBlocks = cssText.match(PORTRAIT_BLOCK_RE) ?? [];
   for (const block of portraitBlocks) {
     const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const re = new RegExp(escaped + '\\s*\\{([^}]*)\\}', 'g');
@@ -50,8 +54,7 @@ function portraitBlockHas(cssText: string, selector: string, prop: string, value
 
 /** Extracts the value of a CSS property from a selector inside a portrait @media block. */
 function getPortraitPropertyValue(cssText: string, selector: string, prop: string): string | null {
-  const portraitBlocks =
-    cssText.match(/@media[^(]*\([^)]*orientation:\s*portrait[^)]*\)\s*\{([\s\S]*?)(?=@media\s|\s*$)/g) ?? [];
+  const portraitBlocks = cssText.match(PORTRAIT_BLOCK_RE) ?? [];
   for (const block of portraitBlocks) {
     const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const re = new RegExp(escaped + '\\s*\\{([^}]*)\\}', 'g');

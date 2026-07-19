@@ -3,6 +3,7 @@ const eslint = require('@eslint/js');
 const { defineConfig } = require('eslint/config');
 const tseslint = require('typescript-eslint');
 const angular = require('angular-eslint');
+const sonarjs = require('eslint-plugin-sonarjs');
 
 module.exports = defineConfig([
   {
@@ -15,6 +16,7 @@ module.exports = defineConfig([
       tseslint.configs.recommended,
       tseslint.configs.stylistic,
       angular.configs.tsRecommended,
+      sonarjs.configs.recommended,
     ],
     processor: angular.processInlineTemplates,
     languageOptions: {
@@ -52,6 +54,10 @@ module.exports = defineConfig([
       'max-lines': ['error', { max: 400, skipBlankLines: true, skipComments: true }],
       'max-lines-per-function': ['error', { max: 80, skipBlankLines: true, skipComments: true }],
       'max-classes-per-file': ['error', 1],
+      // Off project-wide: the only randomness in the client is dice-animation timing (period, phase,
+      // stop delay). There is no security-sensitive randomness anywhere, so this security rule is
+      // pure noise here.
+      'sonarjs/pseudo-random': 'off',
       'no-restricted-imports': [
         'error',
         {
@@ -89,12 +95,23 @@ module.exports = defineConfig([
     files: ['src/app/board/board.component.ts'],
     rules: {
       'max-lines': ['error', { max: 644, skipBlankLines: true, skipComments: true }],
+      // TODO: reduce to the default 15 by extracting from the complex method at ~line 730.
+      'sonarjs/cognitive-complexity': ['error', 31],
     },
   },
   {
     files: ['src/app/settings/settings.component.ts'],
     rules: {
       'max-lines-per-function': ['error', { max: 94, skipBlankLines: true, skipComments: true }],
+      // TODO: reduce to the default 15 (ngOnInit — already down from 31; extract the option-loading).
+      'sonarjs/cognitive-complexity': ['error', 19],
+    },
+  },
+  {
+    files: ['src/app/services/cell-highlight.service.ts'],
+    rules: {
+      // TODO: reduce to the default 15 by splitting the highlight-computation method.
+      'sonarjs/cognitive-complexity': ['error', 28],
     },
   },
   {

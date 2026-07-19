@@ -99,6 +99,15 @@ export class SettingsComponent implements OnInit, OnDestroy {
     if (scale !== this.previewScale()) this.previewScale.set(scale);
   }
 
+  /** Re-types an option's string value (form default, or a URL/host override) to its declared type. */
+  // The union return is the point: the value's type depends on the option's declared type.
+  // eslint-disable-next-line sonarjs/function-return-type
+  private coerceOptionFromString(type: GameOption.TypeEnum | undefined, raw: string): boolean | number | string {
+    if (type === GameOption.TypeEnum.BOOLEAN) return raw === 'true';
+    if (type === GameOption.TypeEnum.INTEGER) return Number(raw);
+    return raw;
+  }
+
   ngOnInit() {
     const params = this.route.snapshot.queryParamMap;
 
@@ -129,22 +138,13 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
     this.gamesService.getGameOptions().subscribe((opts) => {
       for (const opt of opts) {
-        this.form.addControl(
-          opt.key,
-          this.fb.control(
-            opt.type === GameOption.TypeEnum.BOOLEAN
-              ? opt.defaultValue === 'true'
-              : opt.type === GameOption.TypeEnum.INTEGER
-                ? Number(opt.defaultValue)
-                : opt.defaultValue,
-          ),
-        );
+        this.form.addControl(opt.key, this.fb.control(this.coerceOptionFromString(opt.type, opt.defaultValue)));
       }
       this.gameOptions.set(opts);
       const wiredPairs = new Set<string>();
       for (const opt of opts) {
         for (const other of opt.incompatibleWith ?? []) {
-          const pairKey = [opt.key, other].sort().join('|');
+          const pairKey = [opt.key, other].sort((a, b) => a.localeCompare(b)).join('|');
           if (!wiredPairs.has(pairKey)) {
             wiredPairs.add(pairKey);
             this.setupMutualExclusion(opt.key, other);
@@ -159,16 +159,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
           for (const [k, v] of Object.entries(init)) {
             const ctrl = this.form.get(k);
             if (!ctrl) continue;
-            // Re-type the string value to match the control's expected type.
             const opt = opts.find((o) => o.key === k);
-            ctrl.setValue(
-              opt?.type === GameOption.TypeEnum.BOOLEAN
-                ? v === 'true'
-                : opt?.type === GameOption.TypeEnum.INTEGER
-                  ? Number(v)
-                  : v,
-              { emitEvent: false },
-            );
+            ctrl.setValue(this.coerceOptionFromString(opt?.type, v), { emitEvent: false });
           }
         } catch {
           /* ignore malformed options */
@@ -267,12 +259,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
       const ctrl = this.form.get(key);
       if (!ctrl) continue;
       const opt = this.gameOptions().find((o) => o.key === key);
-      const coerced =
-        opt?.type === GameOption.TypeEnum.BOOLEAN
-          ? Boolean(value)
-          : opt?.type === GameOption.TypeEnum.INTEGER
-            ? Number(value)
-            : value;
+      let coerced: unknown = value;
+      if (opt?.type === GameOption.TypeEnum.BOOLEAN) coerced = Boolean(value);
+      else if (opt?.type === GameOption.TypeEnum.INTEGER) coerced = Number(value);
       if (ctrl.value !== coerced) ctrl.setValue(coerced, { emitEvent: false });
     }
     this.suppressLobbySync = false;
@@ -329,7 +318,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
   private fetchPreview() {
     this.previewSub?.unsubscribe();
     const opts = this.buildGameOptions();
-    this.previewDoubleVariant.set(opts['doubleA'] ? 'A' : opts['doubleB'] ? 'B' : null);
+    let variant: 'A' | 'B' | null = null;
+    if (opts['doubleA']) variant = 'A';
+    else if (opts['doubleB']) variant = 'B';
+    this.previewDoubleVariant.set(variant);
     this.previewSub = this.gamesService.previewLayout(opts).subscribe({
       next: (layout) => this.previewLayout.set(layout),
       error: () => this.previewLayout.set(null),

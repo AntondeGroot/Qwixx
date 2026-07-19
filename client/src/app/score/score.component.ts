@@ -173,7 +173,9 @@ export class ScoreComponent implements OnInit {
   myLayout = computed(() => this.finalState()?.sheetLayouts?.[this.playerId] ?? null);
   myDoubleVariant = computed<'A' | 'B' | null>(() => {
     const s = this.finalState();
-    return s?.doubleA ? 'A' : s?.doubleB ? 'B' : null;
+    if (s?.doubleA) return 'A';
+    if (s?.doubleB) return 'B';
+    return null;
   });
   myProgress = computed(() => this.finalState()?.sheetProgress?.[this.playerId] ?? null);
   myBonusBProgress = computed(() => computeBonusBProgress(this.myLayout(), this.myProgress()));

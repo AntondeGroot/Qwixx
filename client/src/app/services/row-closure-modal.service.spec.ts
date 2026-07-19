@@ -23,7 +23,7 @@ describe('RowClosureModalService', () => {
       () => {},
     );
     expect(service.requests()).toHaveLength(1);
-    expect(service.requests()[0].playerName).toBe('Alice');
+    expect(service.requests()[0]!.playerName).toBe('Alice');
   });
 
   it('show() sets confirm and change callbacks', () => {
@@ -66,6 +66,6 @@ describe('RowClosureModalService', () => {
       () => {},
     );
     expect(service.requests()).toHaveLength(2);
-    expect(service.requests()[0].playerName).toBe('B');
+    expect(service.requests()[0]!.playerName).toBe('B');
   });
 });

@@ -83,12 +83,13 @@ export class AutoLockService {
     const pending = new Set(state.turnState?.pendingCrosses?.[pid] ?? []);
     const closing = row.lock.closingCells;
     const last = closing[closing.length - 1];
+    if (last === undefined) return false; // no closing cells → cannot lock
 
     if (permanent.has(last) || pending.has(last)) return true;
 
     // Second-to-last closing cell pending (Longo "15"/"3" YES scenario) → can declare.
     if (closing.length > 1) {
-      const secondLast = closing[closing.length - 2];
+      const secondLast = closing[closing.length - 2]!; // length > 1 guarantees this index
       if (pending.has(secondLast)) {
         return permanent.size + 1 >= row.lock.minCrosses;
       }

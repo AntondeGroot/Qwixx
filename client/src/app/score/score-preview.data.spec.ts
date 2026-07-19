@@ -21,7 +21,7 @@ const layout = (): SheetLayout => {
     id,
     cells: Array.from({ length: 11 }, (_, i) => {
       // Boxes sit mid-row, so "cross the first N" would only catch them by luck.
-      const kind = BOXES[id][[4, 6, 8].indexOf(i)];
+      const kind = BOXES[id]![[4, 6, 8].indexOf(i)];
       return {
         id: `${id}-${i}`,
         color,
@@ -57,21 +57,21 @@ describe('buildPreviewGame', () => {
 
   it('scores the doubled row at twice its triangular value', () => {
     const { scores } = buildPreviewGame(layout(), 1);
-    const alice = scores['preview-0'];
+    const alice = scores['preview-0']!;
 
     // Alice has 5 RED crosses → triangular(5) = 15, doubled to 30.
     expect(alice.doubledColor).toBe('RED');
-    expect(alice.pointsPerColor['RED']).toBe(30);
-    expect(alice.pointsPerColor['YELLOW']).toBe(15); // 5 crosses, undoubled
+    expect(alice.pointsPerColor['RED']!).toBe(30);
+    expect(alice.pointsPerColor['YELLOW']!).toBe(15); // 5 crosses, undoubled
   });
 
   it('zeroes the punishment for the shielded player, so the shield has something to explain', () => {
     const { scores } = buildPreviewGame(layout(), 2);
 
-    expect(scores['preview-0'].noPenalty).toBe(true);
-    expect(scores['preview-0'].punishmentPoints).toBe(0);
-    expect(scores['preview-1'].noPenalty).toBe(false);
-    expect(scores['preview-1'].punishmentPoints).toBe(-5);
+    expect(scores['preview-0']!.noPenalty).toBe(true);
+    expect(scores['preview-0']!.punishmentPoints).toBe(0);
+    expect(scores['preview-1']!.noPenalty).toBe(false);
+    expect(scores['preview-1']!.punishmentPoints).toBe(-5);
   });
 
   it('keeps total consistent with the parts, so the count-up lands where the table says', () => {
@@ -87,8 +87,8 @@ describe('buildPreviewGame', () => {
     const { scores } = buildPreviewGame(layout(), 2);
     // Ranks sort on the running total, and RED counts first, so the flip must happen inside RED:
     // anything decided by later columns would not read as the doubling's doing.
-    const aliceRed = scores['preview-0'].pointsPerColor['RED'];
-    const bobRed = scores['preview-1'].pointsPerColor['RED'];
+    const aliceRed = scores['preview-0']!.pointsPerColor['RED']!;
+    const bobRed = scores['preview-1']!.pointsPerColor['RED']!;
 
     expect(aliceRed / 2).toBeLessThan(bobRed); // Bob leads once RED has counted up plain
     expect(aliceRed).toBeGreaterThan(bobRed); // the double takes Alice past him
@@ -108,11 +108,13 @@ describe('buildPreviewGame', () => {
 
   it('marks exactly the strip indicators the player achieved', () => {
     const { state } = buildPreviewGame(layout(), 1);
-    const progress = state.sheetProgress['preview-0'];
+    const progress = state.sheetProgress['preview-0']!;
 
     // Alice has the ×2, the shield and the +13 — three of the five indicators.
-    expect(progress.rowStates['strip'].crossedCells).toEqual(expect.arrayContaining(['strip-2', 'strip-3', 'strip-4']));
-    expect(progress.rowStates['strip'].crossedCells).toHaveLength(3);
+    expect(progress.rowStates['strip']!.crossedCells).toEqual(
+      expect.arrayContaining(['strip-2', 'strip-3', 'strip-4']),
+    );
+    expect(progress.rowStates['strip']!.crossedCells).toHaveLength(3);
   });
 
   it('backs every achieved bonus with both its boxes, so the strip counters read 2/2', () => {
@@ -139,9 +141,9 @@ describe('buildPreviewGame', () => {
 
   it('crosses each colour row to match its score, so the board below the table agrees', () => {
     const { state, scores } = buildPreviewGame(layout(), 1);
-    const progress = state.sheetProgress['preview-0'];
+    const progress = state.sheetProgress['preview-0']!;
 
-    expect(progress.rowStates['r'].crossedCells).toHaveLength(scores['preview-0'].crossesPerColor['RED']);
-    expect(progress.rowStates['b'].crossedCells).toHaveLength(scores['preview-0'].crossesPerColor['BLUE']);
+    expect(progress.rowStates['r']!.crossedCells).toHaveLength(scores['preview-0']!.crossesPerColor['RED']!);
+    expect(progress.rowStates['b']!.crossedCells).toHaveLength(scores['preview-0']!.crossesPerColor['BLUE']!);
   });
 });

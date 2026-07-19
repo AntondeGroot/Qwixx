@@ -141,9 +141,9 @@
                     class="punishment-box"
                     role="button"
                     [tabindex]="canTakePunishment(playerId()) ? 0 : -1"
-                    [class.taken]="state.sheetProgress[playerId()].punishments > i"
+                    [class.taken]="(state.sheetProgress[playerId()]?.punishments ?? 0) > i"
                     [class.clickable]="canTakePunishment(playerId())"
-                    [class.must-give-up]="mustGiveUp() && !(state.sheetProgress[playerId()].punishments > i)"
+                    [class.must-give-up]="mustGiveUp() && !((state.sheetProgress[playerId()]?.punishments ?? 0) > i)"
                     (click)="onPunishmentClicked(playerId())"
                     (keydown.enter)="onPunishmentClicked(playerId())"
                   ></div>

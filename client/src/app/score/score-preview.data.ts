@@ -151,7 +151,7 @@ export function buildPreviewGame(
   const scores: Record<string, ScoreCard> = {};
 
   cast.forEach((p, i) => {
-    const id = players[i].id;
+    const id = players[i]!.id; // players is built from cast, so the indices line up
     const { progress, crosses } = buildProgress(layout, p);
     sheetLayouts[id] = layout;
     sheetProgress[id] = progress;

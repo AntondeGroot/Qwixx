@@ -156,7 +156,7 @@
             isDeclarantLockPending() ||
             isPendingAutoLock() ||
             (row().lock.closingCells.length > 0 &&
-              pendingCellIds().has(row().lock.closingCells[row().lock.closingCells.length - 1]))
+              pendingCellIds().has(row().lock.closingCells[row().lock.closingCells.length - 1]!))
           ) {
             <span class="cell-cross">✕</span>
           }

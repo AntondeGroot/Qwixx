@@ -604,13 +604,14 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const pending = this.pendingCellIds();
     const closing = row.lock.closingCells;
     const lastCell = closing[closing.length - 1];
+    if (lastCell === undefined) return false; // no closing cells → not lock-eligible
 
     // Last closing cell in any crosses (permanent or pending) → eligible.
     if (permanent.has(lastCell) || pending.has(lastCell)) return true;
 
     // Second-to-last closing cell enables locking only while it is a pending cross.
     if (closing.length > 1) {
-      const secondLast = closing[closing.length - 2];
+      const secondLast = closing[closing.length - 2]!; // length > 1 guarantees this index
       return pending.has(secondLast);
     }
     return false;
@@ -738,20 +739,20 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       >();
       if (!layout) return result;
       for (let i = 0; i < layout.rows.length; i++) {
-        const row = layout.rows[i];
+        const row = layout.rows[i]!; // i is a valid index of layout.rows
 
         const rowBelow = layout.rows[i + 1];
         const hasBonusRowBelow = rowBelow?.bonusRow === true;
         const belowIds = new Set<string>(rowBelow?.cells.map((c) => c.id) ?? []);
         if (hasBonusRowBelow && i + 2 < layout.rows.length) {
-          for (const id of layout.rows[i + 2].cells.map((c) => c.id)) belowIds.add(id);
+          for (const id of layout.rows[i + 2]!.cells.map((c) => c.id)) belowIds.add(id);
         }
 
         const rowAbove = layout.rows[i - 1];
         const hasBonusRowAbove = rowAbove?.bonusRow === true;
         const aboveIds = new Set<string>(rowAbove?.cells.map((c) => c.id) ?? []);
         if (hasBonusRowAbove && i - 2 >= 0) {
-          for (const id of layout.rows[i - 2].cells.map((c) => c.id)) aboveIds.add(id);
+          for (const id of layout.rows[i - 2]!.cells.map((c) => c.id)) aboveIds.add(id);
         }
 
         const above: number[] = [];

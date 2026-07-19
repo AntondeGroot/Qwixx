@@ -42,7 +42,7 @@ describe('TranslationService', () => {
       service.setLanguage('de');
 
       expect(replaceStateSpy).toHaveBeenCalled();
-      const newUrl = replaceStateSpy.mock.calls[0][2];
+      const newUrl = replaceStateSpy.mock.calls[0]![2];
 
       expect(newUrl).toContain('sessionid=123');
       expect(newUrl).toContain('playerid=456');
@@ -65,7 +65,7 @@ describe('TranslationService', () => {
 
       service.setLanguage('fr');
 
-      const newUrl = replaceStateSpy.mock.calls[0][2];
+      const newUrl = replaceStateSpy.mock.calls[0]![2];
 
       expect(newUrl).toBe('/settings?locale=fr');
 
@@ -86,7 +86,7 @@ describe('TranslationService', () => {
 
       service.setLanguage('nl');
 
-      const newUrl = replaceStateSpy.mock.calls[0][2];
+      const newUrl = replaceStateSpy.mock.calls[0]![2];
 
       expect(newUrl).toContain('sessionid=abc');
       expect(newUrl).toContain('playerid=def');

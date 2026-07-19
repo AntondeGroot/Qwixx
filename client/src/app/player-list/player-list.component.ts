@@ -102,7 +102,8 @@ export class PlayerListComponent {
   }
 
   isXChangeRow(row: SheetRow): boolean {
-    return this.isXChange(row.cells[0]);
+    const first = row.cells[0];
+    return first !== undefined && this.isXChange(first);
   }
 
   isLuckyNumber(cell: SheetCell): boolean {

@@ -1355,7 +1355,7 @@ describe('BoardComponent — row-closure modal delegation', () => {
       );
       TestBed.tick();
       expect(modalService.requests()).toHaveLength(1);
-      expect(modalService.requests()[0].rowColor).toBe(Color.BLUE);
+      expect(modalService.requests()[0]!.rowColor).toBe(Color.BLUE);
     });
 
     it('shows the modal to the active player when a passive declares intent', () => {
@@ -1369,7 +1369,7 @@ describe('BoardComponent — row-closure modal delegation', () => {
       );
       TestBed.tick();
       expect(modalService.requests()).toHaveLength(1);
-      expect(modalService.requests()[0].rowColor).toBe(Color.BLUE);
+      expect(modalService.requests()[0]!.rowColor).toBe(Color.BLUE);
     });
 
     it('active player does not see their own declaration in the modal', () => {

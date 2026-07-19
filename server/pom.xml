@@ -27,7 +27,7 @@
     <spotless.version>3.8.0</spotless.version>
     <!-- Pinned above the Spring Boot BOM's managed version: Java 25 is non-LTS and older JaCoCo
          cannot instrument its class files. -->
-    <jacoco.version>0.8.13</jacoco.version>
+    <jacoco.version>0.8.15</jacoco.version>
   </properties>
 
   <repositories>

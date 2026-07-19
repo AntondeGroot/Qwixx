@@ -1,6 +1,12 @@
 import { Injectable, signal } from '@angular/core';
 import { Color } from '../../generated/model/models';
-import { ClosureNotification } from '../row-closure-modal/row-closure-modal.component';
+
+/** A pending row-closure request shown to other players. Owned by the service (the closure-state
+ *  authority) rather than the modal component, so the service never depends on the UI layer. */
+export interface ClosureNotification {
+  playerName: string;
+  rowColor: Color;
+}
 
 @Injectable({ providedIn: 'root' })
 export class RowClosureModalService {

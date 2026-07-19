@@ -4,6 +4,7 @@ const { defineConfig } = require('eslint/config');
 const tseslint = require('typescript-eslint');
 const angular = require('angular-eslint');
 const sonarjs = require('eslint-plugin-sonarjs');
+const boundaries = require('eslint-plugin-boundaries');
 
 module.exports = defineConfig([
   {
@@ -58,6 +59,10 @@ module.exports = defineConfig([
       // stop delay). There is no security-sensitive randomness anywhere, so this security rule is
       // pure noise here.
       'sonarjs/pseudo-random': 'off',
+      // Off: TODO markers are used deliberately as discoverable debt markers (the ratchet overrides
+      // below and the boundaries exemptions both point future work at a TODO). Flagging them as
+      // build-breaking errors is counterproductive.
+      'sonarjs/todo-tag': 'off',
       'no-restricted-imports': [
         'error',
         {
@@ -112,6 +117,67 @@ module.exports = defineConfig([
     rules: {
       // TODO: reduce to the default 15 by splitting the highlight-computation method.
       'sonarjs/cognitive-complexity': ['error', 28],
+    },
+  },
+  // ── Architectural layer boundaries ──────────────────────────────────────────
+  // Enforce the dependency direction of the app's layers. The load-bearing rule is that a
+  // component may use the generated DTO *types* (generated-model) but may NOT inject the generated
+  // API *services* (generated-api) — data access must go through an app service, so components don't
+  // accrete data-layer logic into god objects. Utils are leaves; services never depend on UI.
+  //
+  // NOTE: boundaries resolves every import to a file before classifying it. The default node
+  // resolver can't follow extensionless TS paths, so without the typescript resolver below every
+  // dependency would classify as "unknown" and the rule would silently pass — a green gate that
+  // checks nothing. The `import/resolver` setting is load-bearing, not optional.
+  {
+    files: ['src/app/**/*.ts'],
+    ignores: ['**/*.spec.ts'],
+    plugins: { boundaries },
+    settings: {
+      'import/resolver': {
+        typescript: { project: 'tsconfig.json' },
+      },
+      // Order matters: first matching pattern wins, so specific suffixes precede the broad
+      // component glob, and generated-api precedes the generated-model catch-all.
+      'boundaries/elements': [
+        { type: 'app', mode: 'full', pattern: ['src/app/app.ts', 'src/app/app.config.ts', 'src/app/app.routes.ts'] },
+        { type: 'util', mode: 'full', pattern: ['src/app/**/*.util.ts', 'src/app/**/*.data.ts'] },
+        { type: 'guard', mode: 'full', pattern: ['src/app/**/*.guard.ts'] },
+        { type: 'interceptor', mode: 'full', pattern: ['src/app/interceptors/**/*'] },
+        { type: 'service', mode: 'full', pattern: ['src/app/services/**/*.service.ts'] },
+        { type: 'component', mode: 'full', pattern: ['src/app/**/*.component.ts'] },
+        { type: 'generated-api', mode: 'full', pattern: ['src/generated/api/**/*'] },
+        { type: 'generated-model', mode: 'full', pattern: ['src/generated/**/*'] },
+      ],
+    },
+    rules: {
+      // no-unknown(-files) also flags external packages and unclassified bootstrap files (main.ts,
+      // environments); leave off so the dependency rule below carries the signal.
+      'boundaries/no-unknown': 'off',
+      'boundaries/no-unknown-files': 'off',
+      'boundaries/dependencies': [
+        'error',
+        {
+          default: 'disallow',
+          rules: [
+            { from: { type: 'app' }, allow: { to: { type: '*' } } },
+            {
+              from: { type: 'component' },
+              allow: { to: { type: ['component', 'service', 'guard', 'interceptor', 'util', 'generated-model'] } },
+            },
+            {
+              from: { type: 'service' },
+              allow: { to: { type: ['service', 'util', 'generated-api', 'generated-model'] } },
+            },
+            { from: { type: 'guard' }, allow: { to: { type: ['service', 'util', 'generated-model'] } } },
+            {
+              from: { type: 'interceptor' },
+              allow: { to: { type: ['service', 'util', 'generated-api', 'generated-model'] } },
+            },
+            { from: { type: 'util' }, allow: { to: { type: ['util', 'generated-model'] } } },
+          ],
+        },
+      ],
     },
   },
   {

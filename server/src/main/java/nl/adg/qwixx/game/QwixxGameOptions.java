@@ -1,5 +1,6 @@
 package nl.adg.qwixx.game;
 
+import jakarta.annotation.Nullable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -102,7 +103,7 @@ public class QwixxGameOptions {
         return map;
     }
 
-    public static void apply(GameSettings.Builder builder, Map<String, Object> options) {
+    public static void apply(GameSettings.Builder builder, @Nullable Map<String, Object> options) {
         if (options == null) return;
         for (var entry : options.entrySet()) {
             switch (entry.getKey()) {

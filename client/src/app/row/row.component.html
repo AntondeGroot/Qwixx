@@ -131,7 +131,7 @@
         />
       }
     }
-    @if (row().lock) {
+    @if (row().lock; as lock) {
       <div class="lock-zone" [class.lock-zone-crossed]="rowState()?.lockCrossed">
         @for (cell of closingEligibleCells(); track cell.id) {
           <app-cell
@@ -155,8 +155,7 @@
             rowState()?.lockCrossed ||
             isDeclarantLockPending() ||
             isPendingAutoLock() ||
-            (row().lock.closingCells.length > 0 &&
-              pendingCellIds().has(row().lock.closingCells[row().lock.closingCells.length - 1]!))
+            (lock.closingCells.length > 0 && pendingCellIds().has(lock.closingCells[lock.closingCells.length - 1]!))
           ) {
             <span class="cell-cross">✕</span>
           }

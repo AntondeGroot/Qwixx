@@ -1,5 +1,6 @@
 package nl.adg.qwixx.web;
 
+import jakarta.annotation.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,9 +76,9 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
         return switch (req.getMoveType()) {
             case ROLL              -> new RollAction(pid);
             case CROSS_WHITE_WHITE -> new CrossCellAction(
-                    pid, parseRowIndex(req.getRowId(), session, pid), req.getCellId(), DiceCombination.WHITE_WHITE);
+                    pid, parseRowIndex(req.getRowId(), session, pid), requireCellId(req.getCellId()), DiceCombination.WHITE_WHITE);
             case CROSS_COLOR_DIE   -> new CrossCellAction(
-                    pid, parseRowIndex(req.getRowId(), session, pid), req.getCellId(), DiceCombination.WHITE_COLOR);
+                    pid, parseRowIndex(req.getRowId(), session, pid), requireCellId(req.getCellId()), DiceCombination.WHITE_COLOR);
             case TAKE_PUNISHMENT   -> new TakePunishmentAction(pid);
             case PASS              -> new EndTurnAction(pid);
             case DECLARE_LOCK_INTENT -> new DeclareLockIntentAction(pid, parseRowIndex(req.getRowId(), session, pid));
@@ -85,12 +86,17 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
             case GIVE_UP           -> new GiveUpAction(pid);
             case UNDO_LAST_CROSS   -> new UndoLastCrossAction(pid);
             case CROSS_LUCKY_CROSS -> new CrossCellAction(
-                    pid, parseRowIndex(req.getRowId(), session, pid), req.getCellId(), DiceCombination.WHITE_WHITE);
+                    pid, parseRowIndex(req.getRowId(), session, pid), requireCellId(req.getCellId()), DiceCombination.WHITE_WHITE);
             case CROSS_LOCK        -> throw new IllegalMoveException("CROSS_LOCK is no longer a valid move type");
         };
     }
 
-    private static int parseRowIndex(String rowId, GameSession session, UUID playerId) {
+    private static String requireCellId(@Nullable String cellId) {
+        if (cellId == null) throw new IllegalMoveException("cellId is required for cross moves");
+        return cellId;
+    }
+
+    private static int parseRowIndex(@Nullable String rowId, GameSession session, UUID playerId) {
         if (rowId == null) throw new IllegalMoveException("rowId is required for cross moves");
         SheetLayout layout = session.currentState().sheetLayouts().get(playerId);
         if (layout == null) throw new IllegalMoveException("no layout found for player: " + playerId);

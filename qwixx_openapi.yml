@@ -819,7 +819,6 @@ components:
       required:
         - id
         - cells
-        - lock
       properties:
         id:
           type: string

@@ -261,7 +261,8 @@ class GameStateMapper {
         List<SheetCell> cells = row.cells().stream()
                 .map(GameStateMapper::mapCell)
                 .toList();
-        SheetRow dto = new SheetRow(row.id(), cells, mapLock(row.lock()))
+        SheetRow dto = new SheetRow(row.id(), cells)
+                .lock(mapLock(row.lock()))
                 .bonusRow(row.isBonusRow())
                 .luckyRow(row.isLuckyRow())
                 .bonusBar(row.isBonusBar())

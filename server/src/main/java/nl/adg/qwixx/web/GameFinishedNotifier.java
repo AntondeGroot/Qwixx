@@ -1,5 +1,6 @@
 package nl.adg.qwixx.web;
 
+import jakarta.annotation.Nullable;
 import java.util.concurrent.ConcurrentHashMap;
 import nl.adg.qwixx.game.GameSession;
 import nl.adg.qwixx.game.SessionStatus;
@@ -17,7 +18,7 @@ public class GameFinishedNotifier {
     private final ConcurrentHashMap<String, String> callbacks = new ConcurrentHashMap<>();
     private final RestTemplate restTemplate = new RestTemplate();
 
-    public void register(String sessionId, String callbackUrl) {
+    public void register(String sessionId, @Nullable String callbackUrl) {
         if (callbackUrl != null && !callbackUrl.isBlank()) {
             callbacks.put(sessionId, callbackUrl);
         }

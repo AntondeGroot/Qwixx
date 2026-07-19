@@ -1,5 +1,6 @@
 package nl.adg.qwixx.game;
 
+import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -34,6 +35,7 @@ public class GameRegistry {
         return createGame(roomName, maxPlayers, settings);
     }
 
+    @Nullable
     public static GameSession getGame(String sessionId) {
         return SESSIONS.get(sessionId);
     }

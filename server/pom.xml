@@ -110,12 +110,12 @@
             <arg>-Werror</arg>
             <!-- Error Prone runs as a javac plugin; the JVM exports it needs are in .mvn/jvm.config.
                  Its default checks run on main code; NullAway (null-safety) is a ratchet — scoped to
-                 the packages already annotated (data, state, bot), expand AnnotatedPackages to game
-                 then rules as each is cleaned. Generated code, the dev-only testapp, and test sources are
+                 the packages already annotated (data, state, bot, game), expand AnnotatedPackages to rules
+                 as it is cleaned. Generated code, the dev-only testapp, and test sources are
                  excluded (test utilities legitimately use patterns Error Prone flags). -->
             <arg>-XDcompilePolicy=simple</arg>
             <arg>--should-stop=ifError=FLOW</arg>
-            <arg>-Xplugin:ErrorProne -XepExcludedPaths:.*(/generated-sources/|/testapp/|/src/test/).* -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=nl.adg.qwixx.data,nl.adg.qwixx.state,nl.adg.qwixx.bot</arg>
+            <arg>-Xplugin:ErrorProne -XepExcludedPaths:.*(/generated-sources/|/testapp/|/src/test/).* -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=nl.adg.qwixx.data,nl.adg.qwixx.state,nl.adg.qwixx.bot,nl.adg.qwixx.game</arg>
           </compilerArgs>
           <annotationProcessorPaths>
             <path>

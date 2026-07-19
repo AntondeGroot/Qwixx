@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -59,7 +60,7 @@ public class StandardTurnRules implements TurnRules {
     public List<GameAction> getValidActions(GameState state, UUID playerId) {
         if (state.gameOver()) return List.of();
 
-        TurnState turn = state.turnState();
+        TurnState turn = Objects.requireNonNull(state.turnState());
         boolean isActive = playerId.equals(turn.activePlayerId());
 
         return switch (turn.phase()) {
@@ -151,7 +152,7 @@ public class StandardTurnRules implements TurnRules {
     // ── Action handlers ───────────────────────────────────────────────────────
 
     private void applyRoll(GameState state, RollAction action) {
-        TurnState turn = state.turnState();
+        TurnState turn = Objects.requireNonNull(state.turnState());
         requirePhase(turn, TurnPhase.ROLL);
         requireActivePlayer(turn, action.playerId());
 
@@ -170,7 +171,7 @@ public class StandardTurnRules implements TurnRules {
     }
 
     private void applyCrossCell(GameState state, CrossCellAction action) {
-        TurnState turn   = state.turnState();
+        TurnState turn   = Objects.requireNonNull(state.turnState());
         UUID playerId    = action.playerId();
         boolean isActive = playerId.equals(turn.activePlayerId());
 
@@ -295,7 +296,7 @@ public class StandardTurnRules implements TurnRules {
     // For the second-to-last closing cell (Longo "15"/"3"): explicit YES action from client.
     // For the last closing cell ("16"/"2", standard "12"): auto-detected at each player's EndTurn.
     private void applyDeclareLockIntent(GameState state, DeclareLockIntentAction action) {
-        TurnState turn   = state.turnState();
+        TurnState turn   = Objects.requireNonNull(state.turnState());
         UUID declarerId  = action.playerId();
         int rowIndex     = action.rowIndex();
         boolean isActive = declarerId.equals(turn.activePlayerId());
@@ -318,7 +319,7 @@ public class StandardTurnRules implements TurnRules {
     }
 
     private void applyUndoLastCross(GameState state, UndoLastCrossAction action) {
-        TurnState turn = state.turnState();
+        TurnState turn = Objects.requireNonNull(state.turnState());
         if (turn.phase() != TurnPhase.ACTIVE_MOVE && turn.phase() != TurnPhase.PASSIVE_MOVE)
             throw new IllegalMoveException("UndoLastCrossAction not valid in phase " + turn.phase());
 
@@ -354,7 +355,7 @@ public class StandardTurnRules implements TurnRules {
     }
 
     private void applyGiveUp(GameState state, GiveUpAction action) {
-        TurnState turn = state.turnState();
+        TurnState turn = Objects.requireNonNull(state.turnState());
         requireActivePlayer(turn, action.playerId());
         if (turn.phase() != TurnPhase.ACTIVE_MOVE)
             throw new IllegalMoveException("GiveUpAction not valid in phase " + turn.phase());
@@ -368,7 +369,7 @@ public class StandardTurnRules implements TurnRules {
     }
 
     private void applyResetTurn(GameState state, ResetTurnAction action) {
-        TurnState turn   = state.turnState();
+        TurnState turn   = Objects.requireNonNull(state.turnState());
         UUID playerId    = action.playerId();
         boolean isActive = playerId.equals(turn.activePlayerId());
 
@@ -400,7 +401,7 @@ public class StandardTurnRules implements TurnRules {
     }
 
     private void applyEndTurn(GameState state, EndTurnAction action) {
-        TurnState turn = state.turnState();
+        TurnState turn = Objects.requireNonNull(state.turnState());
         UUID playerId  = action.playerId();
         boolean isActive = playerId.equals(turn.activePlayerId());
 
@@ -461,7 +462,7 @@ public class StandardTurnRules implements TurnRules {
 
         state.pendingClosures().clear();
         state.closureNotifications().clear();
-        state.turnState().undoBuffer().clear();
+        Objects.requireNonNull(state.turnState()).undoBuffer().clear();
 
         if (isGameOver(state)) {
             state.setGameOver(true);
@@ -473,7 +474,7 @@ public class StandardTurnRules implements TurnRules {
 
     private void advanceToNextPlayer(GameState state) {
         List<UUID> players = state.players();
-        UUID active = state.turnState().activePlayerId();
+        UUID active = Objects.requireNonNull(state.turnState()).activePlayerId();
         UUID next = players.get((players.indexOf(active) + 1) % players.size());
 
         TurnState nextTurn = new TurnState();
@@ -522,7 +523,7 @@ public class StandardTurnRules implements TurnRules {
      * prerequisite is met: white1 + white2 + any active coloured die = luckyTarget.
      */
     protected List<GameAction> luckyNumberCellActions(GameState state, UUID playerId) {
-        TurnState turn = state.turnState();
+        TurnState turn = Objects.requireNonNull(state.turnState());
         var roll = turn.currentRoll();
         if (roll == null) return List.of();
 
@@ -594,7 +595,7 @@ public class StandardTurnRules implements TurnRules {
      * Available to every player (active and passive) once per turn when the 1+5 combo is present.
      */
     protected List<GameAction> luckyCrossActions(GameState state, UUID playerId) {
-        TurnState turn = state.turnState();
+        TurnState turn = Objects.requireNonNull(state.turnState());
         RollResult roll = turn.currentRoll();
         if (roll == null) return List.of();
 

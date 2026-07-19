@@ -1,4 +1,8 @@
 <FindBugsFilter>
+  <!-- Dev-only tooling (excluded from PMD/JaCoCo/Error Prone too). -->
+  <Match>
+    <Source name="~.*/testapp/.*"/>
+  </Match>
   <!-- Skip all OpenAPI-generated code -->
   <Match>
     <Package name="~nl\.adg\.qwixx\.generated.*"/>

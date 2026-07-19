@@ -257,7 +257,7 @@ class RowClosureEvaluator {
 
     static Set<String> getPendingCrossesInRow(GameState state, UUID playerId, int rowIndex) {
         TurnState turn = state.turnState();
-        if (turn == null) return Set.of();
+        if (turn == null) return Set.of(); // no active turn → no pending crosses
         Map<Integer, Set<String>> buffer = turn.undoBuffer().get(playerId);
         if (buffer == null) return Set.of();
         return buffer.getOrDefault(rowIndex, Set.of());

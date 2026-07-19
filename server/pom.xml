@@ -81,6 +81,14 @@
       <version>6.3.4</version>
       <scope>test</scope>
     </dependency>
+    <!-- Architecture rules. Pinned explicitly (not BOM-managed) so the version can parse Java 25
+         class files. -->
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5</artifactId>
+      <version>1.4.1</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

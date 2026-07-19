@@ -1,6 +1,7 @@
 package nl.adg.qwixx.bot;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -146,7 +147,7 @@ public class BotDecider {
 
         if (bestFirst != null) {
             if (bestFirstLoss <= profile.punishmentLoss()) return bestFirst;
-            int punishments = state.boardState().sheetProgress().get(botId).punishments();
+            int punishments = progressOf(state, botId).punishments();
             if (punishments < profile.maxPunishments()) {
                 for (GameAction a : usable) if (a instanceof TakePunishmentAction) return a;
             }
@@ -181,7 +182,7 @@ public class BotDecider {
                 if (bestLoss <= profile.passiveThreshold()) return best;
             } else {
                 if (bestLoss <= profile.punishmentLoss()) return best;
-                int punishments = state.boardState().sheetProgress().get(botId).punishments();
+                int punishments = progressOf(state, botId).punishments();
                 if (punishments < profile.maxPunishments()) {
                     for (GameAction a : usable) if (a instanceof TakePunishmentAction) return a;
                 }
@@ -197,8 +198,8 @@ public class BotDecider {
 
     private static double cellLoss(GameState state, UUID botId,
                                    CrossCellAction action, int center, BotProfile profile) {
-        SheetLayout   layout = state.sheetLayouts().get(botId);
-        SheetProgress prog   = state.boardState().sheetProgress().get(botId);
+        SheetLayout   layout = layoutOf(state, botId);
+        SheetProgress prog   = progressOf(state, botId);
         Row  row  = layout.rows().get(action.rowIndex());
         Cell cell = row.cells().stream()
                 .filter(c -> c.id().equals(action.cellId())).findFirst().orElseThrow();
@@ -224,8 +225,8 @@ public class BotDecider {
             return cellLoss(state, botId, action, center, profile);
         }
 
-        SheetLayout   layout = state.sheetLayouts().get(botId);
-        SheetProgress prog   = state.boardState().sheetProgress().get(botId);
+        SheetLayout   layout = layoutOf(state, botId);
+        SheetProgress prog   = progressOf(state, botId);
         Row  row      = layout.rows().get(action.rowIndex());
         Cell cell     = row.cells().stream().filter(c -> c.id().equals(action.cellId())).findFirst().orElseThrow();
         Cell priorCell = row.cells().stream().filter(c -> c.id().equals(priorCross.cellId())).findFirst().orElseThrow();
@@ -251,7 +252,7 @@ public class BotDecider {
     private static boolean validOrdering(GameState state, UUID botId,
                                           CrossCellAction first, CrossCellAction second) {
         if (first.rowIndex() != second.rowIndex()) return true;
-        Row row = state.sheetLayouts().get(botId).rows().get(first.rowIndex());
+        Row row = layoutOf(state, botId).rows().get(first.rowIndex());
         int firstPos  = row.cells().stream().filter(c -> c.id().equals(first.cellId()))
                 .mapToInt(Cell::position).findFirst().orElse(0);
         int secondPos = row.cells().stream().filter(c -> c.id().equals(second.cellId()))
@@ -334,9 +335,19 @@ public class BotDecider {
     }
 
     // Midpoint of the value range: 7 for standard (2–12, d6+d6), 9 for Longo (2–16, d8+d8).
+    // The bot's own id is always a key in the game's per-player maps, so these lookups never return
+    // null; requireNonNull makes that invariant explicit (and fails fast if it's ever violated).
+    private static SheetLayout layoutOf(GameState state, UUID botId) {
+        return Objects.requireNonNull(state.sheetLayouts().get(botId), "bot has no sheet layout");
+    }
+
+    private static SheetProgress progressOf(GameState state, UUID botId) {
+        return Objects.requireNonNull(state.boardState().sheetProgress().get(botId), "bot has no sheet progress");
+    }
+
     private static int diceCenter(GameState state, UUID botId) {
         int min = Integer.MAX_VALUE, max = Integer.MIN_VALUE;
-        for (Row row : state.sheetLayouts().get(botId).rows()) {
+        for (Row row : layoutOf(state, botId).rows()) {
             for (Cell c : row.cells()) {
                 try {
                     int v = Integer.parseInt(c.displayValue());
@@ -351,11 +362,11 @@ public class BotDecider {
     }
 
     private static boolean nearLock(GameState state, UUID botId, int rowIndex, BotProfile profile) {
-        Row row = state.sheetLayouts().get(botId).rows().get(rowIndex);
+        Row row = layoutOf(state, botId).rows().get(rowIndex);
         if (row.lock() == null) return false;
         LockCell lock = row.lock();
 
-        SheetProgress prog  = state.boardState().sheetProgress().get(botId);
+        SheetProgress prog  = progressOf(state, botId);
         RowState rowState   = prog.rowStates().getOrDefault(rowIndex, new RowState(Set.of(), false));
         Set<String> crossed = rowState.crossedCells();
 

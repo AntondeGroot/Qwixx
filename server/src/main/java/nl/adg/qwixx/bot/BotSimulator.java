@@ -3,6 +3,7 @@ package nl.adg.qwixx.bot;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.IntStream;
 import nl.adg.qwixx.game.GameMode;
@@ -86,9 +87,9 @@ public class BotSimulator {
 
                     // seat 0 = "first" player; the rest use the second profile
                     UUID firstId = ids.get(0);
-                    int firstScore = result.get(firstId).total();
+                    int firstScore = Objects.requireNonNull(result.get(firstId)).total();
                     int othersMax  = ids.stream().skip(1)
-                            .mapToInt(id -> result.get(id).total()).max().orElse(firstScore);
+                            .mapToInt(id -> Objects.requireNonNull(result.get(id)).total()).max().orElse(firstScore);
 
                     int p1Score = swap ? othersMax : firstScore;
                     int p2Score = swap ? firstScore : othersMax;

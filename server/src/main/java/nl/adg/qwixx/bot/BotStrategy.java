@@ -1,5 +1,6 @@
 package nl.adg.qwixx.bot;
 
+import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
@@ -31,7 +32,7 @@ public enum BotStrategy {
     private static final Logger log = Logger.getLogger(BotStrategy.class.getName());
     // Intentional lazy memoization of the trained profile; the mutable field is deliberate.
     @SuppressWarnings("ImmutableEnumChecker")
-    private transient volatile BotProfile cachedProfile;
+    private transient volatile @Nullable BotProfile cachedProfile;
 
     public BotProfile profile() {
         if (cachedProfile == null) {

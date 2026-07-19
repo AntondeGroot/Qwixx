@@ -29,6 +29,13 @@ function baseValue(col: Col, sc: ScoreCard): number {
 }
 
 function animateFrames(duration: number, onTick: (eased: number) => void): Promise<void> {
+  // Zero (or negative) duration means "no animation": jump straight to the end. This is correct for
+  // a 0 ms animation and keeps the unit tests deterministic — they collapse every duration to 0, so
+  // they must not depend on requestAnimationFrame firing (which can stall under load and time out).
+  if (duration <= 0) {
+    onTick(1);
+    return Promise.resolve();
+  }
   return new Promise((resolve) => {
     const start = performance.now();
     const frame = (now: number) => {

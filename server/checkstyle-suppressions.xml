@@ -19,4 +19,8 @@
 
   <!-- Test API helper: 'api' is a conventional short name for a test utility field -->
   <suppress files="BaseIntegrationTest\.java" checks="ConstantName"/>
+
+  <!-- ArchUnit rules are camelCase static-final fields by convention so each reads as a sentence
+       (and reports as a readable test name); UPPER_SNAKE would defeat that. -->
+  <suppress files="ArchitectureTest\.java" checks="ConstantName"/>
 </suppressions>

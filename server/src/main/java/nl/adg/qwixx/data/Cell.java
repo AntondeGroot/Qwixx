@@ -3,6 +3,9 @@ package nl.adg.qwixx.data;
 import java.util.List;
 import java.util.UUID;
 
+// Fields are populated by the game-style factory via setters after construction, not in the
+// constructor, so NullAway can't prove they're initialized — they are before any read.
+@SuppressWarnings("NullAway.Init")
 public class Cell {
   String        id;
   int           position;          // ordinal index in the row (engine uses this, not displayValue)

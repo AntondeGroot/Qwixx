@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+// Fields are populated via setters after construction (see the game-style factory), not in the
+// constructor, so NullAway can't prove initialization — they are set before any read.
+@SuppressWarnings("NullAway.Init")
 public class Row {
   private String id;
   private List<Cell> cells = new ArrayList<>();

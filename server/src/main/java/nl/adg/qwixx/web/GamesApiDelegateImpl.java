@@ -24,6 +24,8 @@ import nl.adg.qwixx.generated.model.GameStatus;
 import nl.adg.qwixx.generated.model.NewGameRequest;
 import nl.adg.qwixx.generated.model.RestartGameRequest;
 import nl.adg.qwixx.generated.model.ScoreCard;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -43,6 +45,8 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
 
     @Autowired
     private GameFinishedNotifier gameFinishedNotifier;
+
+    private static final Logger logger = LoggerFactory.getLogger(GamesApiDelegateImpl.class);
 
     /** Runs initial bot turns off the request thread so the roll can animate on connected clients. */
     private final ExecutorService botTurnExecutor = Executors.newCachedThreadPool();
@@ -107,12 +111,18 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
      */
     private void runInitialBotTurnsAsync(String sessionId, GameSession session) {
         if (!session.isBotToAct()) return;
-        botTurnExecutor.submit(() -> {
-            awaitSubscriber(sessionId);
-            session.runPendingBotTurns(
-                    intermediate -> sseRegistry.emit(sessionId, intermediate, session));
-            sseRegistry.emit(sessionId, session.currentState(), session);
-            gameFinishedNotifier.checkAndNotify(sessionId, session);
+        // The returned Future is intentionally not awaited (fire-and-forget on the request path), so
+        // exceptions must be caught here or they'd be swallowed by the discarded Future.
+        botTurnExecutor.execute(() -> {
+            try {
+                awaitSubscriber(sessionId);
+                session.runPendingBotTurns(
+                        intermediate -> sseRegistry.emit(sessionId, intermediate, session));
+                sseRegistry.emit(sessionId, session.currentState(), session);
+                gameFinishedNotifier.checkAndNotify(sessionId, session);
+            } catch (RuntimeException e) {
+                logger.warn("Initial bot turns failed for session {}", sessionId, e);
+            }
         });
     }
 

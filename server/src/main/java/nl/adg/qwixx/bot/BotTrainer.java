@@ -57,7 +57,9 @@ public class BotTrainer {
      *                          guaranteeing that {@code bestFitness} is monotonically non-decreasing
      * @return the best profile found
      */
-    @SuppressWarnings("PMD.CompareObjectsWithEquals")
+    // `candidate != best` below is a deliberate identity check — "was a different profile object
+    // chosen this round" — not a value comparison. (PMD and Error Prone both flag it.)
+    @SuppressWarnings({"PMD.CompareObjectsWithEquals", "ReferenceEquality"})
     public static BotProfile train(BotProfile start,
                                    Objective objective,
                                    int generations,

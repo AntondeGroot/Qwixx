@@ -47,7 +47,7 @@
     "angular-eslint": "22.1.0",
     "eslint": "^10.3.0",
     "eslint-import-resolver-typescript": "^4.4.5",
-    "eslint-plugin-boundaries": "^6.0.2",
+    "eslint-plugin-boundaries": "^7.0.0",
     "eslint-plugin-sonarjs": "^4.2.0",
     "husky": "^9.1.7",
     "jsdom": "^29.0.0",

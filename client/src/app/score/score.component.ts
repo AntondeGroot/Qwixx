@@ -323,7 +323,7 @@ export class ScoreComponent implements OnInit {
   }
 
   private buildScoreData(state: GameState, scores: Record<string, ScoreCard>): { cols: Col[]; rows: PlayerRow[] } {
-    const layout = Object.values(state.sheetLayouts)[0];
+    const layout = Object.values(state.sheetLayouts)[0]!; // a finished/preview game always has ≥1 layout
     const colors = layout.rows.filter(isScoringColourRow).map((r) => r.cells[0]!.color as string);
     const hasExtra = Object.values(scores).some((s) => s.extraPoints > 0);
     // Bonus B always gets a column — like the colour columns, it comes from the layout, so it shows
@@ -348,7 +348,7 @@ export class ScoreComponent implements OnInit {
     const rows: PlayerRow[] = state.players.map((p, i) => ({
       id: p.id,
       name: p.name,
-      scoreCard: scores[p.id],
+      scoreCard: scores[p.id]!, // every player in the game has a score card
       displayed: Object.fromEntries(cols.map((c) => [c.key, 0])),
       displayedPunishment: 0,
       rank: i,

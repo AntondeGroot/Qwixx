@@ -46,7 +46,7 @@ function portraitBlockHas(cssText: string, selector: string, prop: string, value
     const re = new RegExp(escaped + '\\s*\\{([^}]*)\\}', 'g');
     let m: RegExpExecArray | null;
     while ((m = re.exec(block)) !== null) {
-      if (m[1].includes(prop) && m[1].includes(value)) return true;
+      if (m[1]!.includes(prop) && m[1]!.includes(value)) return true;
     }
   }
   return false;
@@ -61,8 +61,8 @@ function getPortraitPropertyValue(cssText: string, selector: string, prop: strin
     let m: RegExpExecArray | null;
     while ((m = re.exec(block)) !== null) {
       const propRe = new RegExp(prop + '\\s*:\\s*([^;]+)', 'i');
-      const pm = propRe.exec(m[1]);
-      if (pm) return pm[1].trim();
+      const pm = propRe.exec(m[1]!);
+      if (pm) return pm[1]!.trim();
     }
   }
   return null;
@@ -73,7 +73,7 @@ function globalSelectorHas(cssText: string, selector: string, prop: string, valu
   const re = new RegExp(escaped + '\\s*\\{([^}]*)\\}', 'g');
   let m: RegExpExecArray | null;
   while ((m = re.exec(cssText)) !== null) {
-    if (m[1].includes(prop) && m[1].includes(value)) return true;
+    if (m[1]!.includes(prop) && m[1]!.includes(value)) return true;
   }
   return false;
 }

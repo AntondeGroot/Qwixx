@@ -1,6 +1,8 @@
 package nl.adg.qwixx.web;
 
+import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.Objects;
 import nl.adg.qwixx.game.exception.GameAlreadyStartedException;
 import nl.adg.qwixx.game.exception.GameNotFinishedException;
 import nl.adg.qwixx.game.exception.GameNotStartedException;
@@ -45,13 +47,15 @@ public class GlobalExceptionHandler {
         return response(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), request);
     }
 
-    private static ResponseEntity<ErrorResponse> response(HttpStatus status, String message, HttpServletRequest request) {
+    private static ResponseEntity<ErrorResponse> response(
+            HttpStatus status, @Nullable String message, HttpServletRequest request) {
         // SSE connections have text/event-stream locked in — no JSON converter available.
         // Return a body-less status so Spring doesn't try to serialize ErrorResponse as SSE.
         String accept = request.getHeader(HttpHeaders.ACCEPT);
         if (accept != null && accept.contains(MediaType.TEXT_EVENT_STREAM_VALUE)) {
             return ResponseEntity.status(status).build();
         }
-        return ResponseEntity.status(status).body(new ErrorResponse(message, status.value()));
+        String body = Objects.requireNonNullElse(message, status.getReasonPhrase());
+        return ResponseEntity.status(status).body(new ErrorResponse(body, status.value()));
     }
 }

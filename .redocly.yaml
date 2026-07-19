@@ -1,0 +1,14 @@
+# Structural lint gate for qwixx_openapi.yml. The `recommended` ruleset enables `struct`, which
+# validates schema objects against the OpenAPI meta-schema — this is what catches the silently-wrong
+# spec bugs (invalid keywords, malformed inline schemas) that openapi-generator accepts and turns
+# into empty/mis-bound models. Runs BEFORE codegen in CI.
+extends:
+  - recommended
+
+rules:
+  # No auth by design — security-defined is `error` in recommended and would fail once per operation.
+  # (Reminder: OpenAPI security schemes are declarative only; adding one needs real server-side
+  # enforcement, so we don't fake it here.)
+  security-defined: off
+  # Unlicensed hobby project — don't claim a license the repo doesn't have.
+  info-license: off

@@ -11,6 +11,7 @@
     "generate": "openapi-generator-cli generate && node -e \"const fs=require('fs'),path=require('path');function visit(d){for(const f of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,f.name);if(f.isDirectory())visit(p);else if(f.name.endsWith('.ts')){const c=fs.readFileSync(p,'utf8');if(!c.startsWith('// @ts-nocheck'))fs.writeFileSync(p,'// @ts-nocheck\\n'+c);}}}visit('src/generated')\"",
     "e2e": "playwright test",
     "lint": "ng lint --max-warnings=0",
+    "lint:openapi": "redocly lint ../qwixx_openapi.yml --config ../.redocly.yaml",
     "format:check": "prettier --check .",
     "format:write": "prettier --write .",
     "prepare": "[ -n \"$CI\" ] || (cd .. && git config core.hooksPath client/.husky)"
@@ -41,6 +42,7 @@
     "@eslint/js": "^10.0.1",
     "@openapitools/openapi-generator-cli": "^2.23.0",
     "@playwright/test": "^1.59.1",
+    "@redocly/cli": "^2.39.0",
     "@vitest/coverage-v8": "^4.1.5",
     "angular-eslint": "22.1.0",
     "eslint": "^10.3.0",

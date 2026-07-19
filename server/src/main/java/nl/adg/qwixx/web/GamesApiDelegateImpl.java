@@ -1,5 +1,6 @@
 package nl.adg.qwixx.web;
 
+import jakarta.annotation.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -202,16 +203,15 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
 
     // ── Converters ────────────────────────────────────────────────────────────
 
-    private static GameSettings buildSettings(Map<String, Object> options) {
+    private static GameSettings buildSettings(@Nullable Map<String, Object> options) {
         GameSettings.Builder builder = GameSettings.builder();
         QwixxGameOptions.apply(builder, options);
         return builder.build();
     }
 
     private static Map<String, Object> resolveOptions(RestartGameRequest req, GameSession session) {
-        return (req != null && req.getGameOptions() != null)
-                ? new HashMap<>(req.getGameOptions())
-                : session.proposedOptions();
+        Map<String, Object> options = req != null ? req.getGameOptions() : null;
+        return options != null ? new HashMap<>(options) : session.proposedOptions();
     }
 
     private static Player playerFromRequest(nl.adg.qwixx.generated.model.Player req) {

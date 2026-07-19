@@ -109,13 +109,14 @@
             <arg>-Xlint:-processing</arg>
             <arg>-Werror</arg>
             <!-- Error Prone runs as a javac plugin; the JVM exports it needs are in .mvn/jvm.config.
-                 Its default checks run on main code; NullAway (null-safety) is a ratchet — scoped to
-                 the packages already annotated (data, state, bot, game), expand AnnotatedPackages to rules
-                 as it is cleaned. Generated code, the dev-only testapp, and test sources are
-                 excluded (test utilities legitimately use patterns Error Prone flags). -->
+                 Its default checks run on main code; NullAway (null-safety) now covers the whole
+                 nl.adg.qwixx tree, so any new package is null-checked by default. Generated code, the
+                 dev-only testapp, and test sources are excluded from analysis via XepExcludedPaths
+                 (test utilities legitimately use patterns Error Prone flags); the generated DTOs'
+                 own nullability annotations are still honored at call sites. -->
             <arg>-XDcompilePolicy=simple</arg>
             <arg>--should-stop=ifError=FLOW</arg>
-            <arg>-Xplugin:ErrorProne -XepExcludedPaths:.*(/generated-sources/|/testapp/|/src/test/).* -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=nl.adg.qwixx.data,nl.adg.qwixx.state,nl.adg.qwixx.bot,nl.adg.qwixx.game,nl.adg.qwixx.rules,nl.adg.qwixx.web</arg>
+            <arg>-Xplugin:ErrorProne -XepExcludedPaths:.*(/generated-sources/|/testapp/|/src/test/).* -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=nl.adg.qwixx</arg>
           </compilerArgs>
           <annotationProcessorPaths>
             <path>
@@ -382,6 +383,10 @@
                 <delegatePattern>true</delegatePattern>
                 <sourceFolder>src/main/java</sourceFolder>
                 <useJakartaEe>true</useJakartaEe>
+                <!-- Optional (non-required) container fields default to null, not an empty
+                     collection, so NullAway sees their real nullability and the wire keeps
+                     omitting them (e.g. bonusNumbers for standard games, availableMoves offline). -->
+                <containerDefaultToNull>true</containerDefaultToNull>
               </configOptions>
             </configuration>
           </execution>

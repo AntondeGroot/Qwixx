@@ -1,3 +1,3 @@
-package nl.adg.qwixx.game;
+package nl.adg.qwixx.state;
 
 public interface VariantData {}

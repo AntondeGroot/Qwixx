@@ -1,4 +1,4 @@
-package nl.adg.qwixx.game;
+package nl.adg.qwixx.state;
 
 import java.util.List;
 import java.util.Map;

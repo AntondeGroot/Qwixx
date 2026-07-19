@@ -8,7 +8,6 @@ import com.tngtech.archunit.core.importer.Location;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
-import com.tngtech.archunit.library.freeze.FreezingArchRule;
 
 /**
  * Architecture rules for the server — the Java counterpart to the client's eslint-plugin-boundaries.
@@ -16,7 +15,8 @@ import com.tngtech.archunit.library.freeze.FreezingArchRule;
  *
  * <p>Tests are excluded from the import (per ArchUnit guidance) so a test class sharing a production
  * package doesn't appear as a production dependency; the generated OpenAPI code and the dev-only
- * {@code testapp} harness are excluded too, so the rules describe only hand-written application code.
+ * tooling (testapp harness, offline bot-training mains) are excluded too, so the rules describe only
+ * the hand-written code that runs in the served app.
  */
 @AnalyzeClasses(
         packages = "nl.adg.qwixx",
@@ -54,19 +54,23 @@ class ArchitectureTest {
             .resideInAPackage("..qwixx.generated..")
             .because("only the web layer may use the generated OpenAPI code");
 
-    // The domain packages (game/state/bot/rules) are currently intertwined with 7 dependency cycles.
-    // Untangling them is a real refactoring project, so this is frozen: the current cycles are an
-    // accepted baseline (in archunit_store/) and the rule fails only when a NEW cycle is introduced.
-    // TODO: break the existing cycles (e.g. move game.VariantData into state) and shrink the baseline.
     @ArchTest
-    static final ArchRule packagesAreFreeOfNewCycles =
-            FreezingArchRule.freeze(slices().matching("nl.adg.qwixx.(*)..").should().beFreeOfCycles());
+    static final ArchRule packagesAreFreeOfCycles =
+            slices().matching("nl.adg.qwixx.(*)..").should().beFreeOfCycles();
 
-    /** Excludes the generated OpenAPI code and the dev-only testapp harness from the analysis. */
+    /**
+     * Excludes from the analysis the generated OpenAPI code and the dev-only tooling — the testapp
+     * harness and the offline bot-training mains (BotSimulator/BotTrainer). None of it runs in the
+     * served app, and the training mains are the only thing that makes {@code bot} depend on
+     * {@code game}, which would otherwise be a false cycle.
+     */
     static class ExcludeGeneratedAndTooling implements ImportOption {
         @Override
         public boolean includes(Location location) {
-            return !location.contains("/generated/") && !location.contains("/testapp/");
+            return !location.contains("/generated/")
+                    && !location.contains("/testapp/")
+                    && !location.contains("BotSimulator")
+                    && !location.contains("BotTrainer");
         }
     }
 }

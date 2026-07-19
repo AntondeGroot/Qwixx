@@ -25,6 +25,8 @@ import nl.adg.qwixx.rules.StandardScoringEngine;
 import nl.adg.qwixx.rules.StandardTurnRules;
 import nl.adg.qwixx.rules.TurnRules;
 import nl.adg.qwixx.state.CardMode;
+import nl.adg.qwixx.state.LongoVariantData;
+import nl.adg.qwixx.state.VariantData;
 
 public class ConfigurableGameStyleFactory implements GameStyleFactory {
 

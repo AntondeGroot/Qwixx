@@ -115,7 +115,7 @@
                  excluded (test utilities legitimately use patterns Error Prone flags). -->
             <arg>-XDcompilePolicy=simple</arg>
             <arg>--should-stop=ifError=FLOW</arg>
-            <arg>-Xplugin:ErrorProne -XepExcludedPaths:.*(/generated-sources/|/testapp/|/src/test/).* -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=nl.adg.qwixx.data,nl.adg.qwixx.state,nl.adg.qwixx.bot,nl.adg.qwixx.game,nl.adg.qwixx.rules</arg>
+            <arg>-Xplugin:ErrorProne -XepExcludedPaths:.*(/generated-sources/|/testapp/|/src/test/).* -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=nl.adg.qwixx.data,nl.adg.qwixx.state,nl.adg.qwixx.bot,nl.adg.qwixx.game,nl.adg.qwixx.rules,nl.adg.qwixx.web</arg>
           </compilerArgs>
           <annotationProcessorPaths>
             <path>

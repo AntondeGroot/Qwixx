@@ -1,5 +1,6 @@
 package nl.adg.qwixx.web;
 
+import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -67,6 +68,7 @@ class GameStateMapper {
                 .doubleB(session.settings().doubleB());
     }
 
+    @Nullable
     @SuppressWarnings("PMD.ReturnEmptyCollectionRatherThanNull")
     private static Map<String, List<nl.adg.qwixx.generated.model.AvailableMove>> mapAvailableMoves(
             GameState state, GameSession session) {
@@ -75,7 +77,7 @@ class GameStateMapper {
         Map<String, List<nl.adg.qwixx.generated.model.AvailableMove>> result = new HashMap<>();
         for (UUID playerId : state.players()) {
             List<GameAction> actions = session.rules().getValidActions(state, playerId);
-            nl.adg.qwixx.state.SheetLayout layout = state.sheetLayouts().get(playerId);
+            nl.adg.qwixx.state.SheetLayout layout = state.sheetLayout(playerId);
             List<nl.adg.qwixx.generated.model.AvailableMove> moves = new ArrayList<>();
             Set<String> seen = new HashSet<>();
 
@@ -109,8 +111,8 @@ class GameStateMapper {
         return result;
     }
 
+    @Nullable
     private static Cell findCellInLayout(nl.adg.qwixx.state.SheetLayout layout, int rowIndex, String cellId) {
-        if (layout == null) return null;
         List<Row> rows = layout.rows();
         if (rowIndex < 0 || rowIndex >= rows.size()) return null;
         return rows.get(rowIndex).cells().stream()
@@ -119,7 +121,7 @@ class GameStateMapper {
                 .orElse(null);
     }
 
-    private static boolean isLuckyCrossCell(Cell cell) {
+    private static boolean isLuckyCrossCell(@Nullable Cell cell) {
         return cell != null && cell.tags() != null
                 && cell.tags().stream().anyMatch(t -> t instanceof CellTag.LuckyCross);
     }
@@ -127,7 +129,7 @@ class GameStateMapper {
     private static Map<String, nl.adg.qwixx.generated.model.SheetProgress> mapSheetProgress(GameState state) {
         Map<String, nl.adg.qwixx.generated.model.SheetProgress> result = new HashMap<>();
         state.boardState().sheetProgress().forEach((playerId, sp) -> {
-            SheetLayout layout = state.sheetLayouts().get(playerId);
+            SheetLayout layout = state.sheetLayout(playerId);
             result.put(playerId.toString(), mapSheetProgress(sp, layout));
         });
         return result;
@@ -168,6 +170,7 @@ class GameStateMapper {
                 .toList();
     }
 
+    @Nullable
     @SuppressWarnings("PMD.ReturnEmptyCollectionRatherThanNull")
     private static Map<String, List<Integer>> mapBonusNumbers(GameState state) {
         if (!(state.variantData() instanceof LongoVariantData longo)) return null;
@@ -176,7 +179,8 @@ class GameStateMapper {
         return result;
     }
 
-    private static nl.adg.qwixx.generated.model.TurnState mapTurnState(TurnState turn) {
+    @Nullable
+    private static nl.adg.qwixx.generated.model.TurnState mapTurnState(@Nullable TurnState turn) {
         if (turn == null) return null;
         nl.adg.qwixx.generated.model.TurnState dto = new nl.adg.qwixx.generated.model.TurnState(
                 turn.activePlayerId().toString(),
@@ -282,7 +286,8 @@ class GameStateMapper {
                 cell.id(), cell.position(), cell.displayValue(), color, cell.isClosingEligible(), tags);
     }
 
-    private static LockConfig mapLock(LockCell lock) {
+    @Nullable
+    private static LockConfig mapLock(@Nullable LockCell lock) {
         if (lock == null) return null;
         nl.adg.qwixx.generated.model.Color color =
                 nl.adg.qwixx.generated.model.Color.fromValue(lock.color().name());

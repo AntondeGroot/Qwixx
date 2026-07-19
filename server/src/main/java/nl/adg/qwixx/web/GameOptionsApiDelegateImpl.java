@@ -2,6 +2,7 @@ package nl.adg.qwixx.web;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.game.ConfigurableGameStyleFactory;
@@ -31,7 +32,7 @@ public class GameOptionsApiDelegateImpl implements GameOptionsApiDelegate {
         GameSettings settings = builder.build();
         ConfigurableGameStyleFactory factory = new ConfigurableGameStyleFactory(settings);
         UUID dummy = UUID.randomUUID();
-        List<Row> rows = factory.buildRows(List.of(dummy)).get(dummy);
+        List<Row> rows = Objects.requireNonNull(factory.buildRows(List.of(dummy)).get(dummy));
         var layout = new nl.adg.qwixx.state.SheetLayout(rows);
         return ResponseEntity.ok(GameStateMapper.toSheetLayoutDto(layout));
     }

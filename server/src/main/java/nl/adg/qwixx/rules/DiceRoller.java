@@ -1,5 +1,6 @@
 package nl.adg.qwixx.rules;
 
+import jakarta.annotation.Nullable;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,7 @@ class DiceRoller {
         return new RollResult(whites[0], whites[1], colored);
     }
 
+    @Nullable
     static DiceCombination resolveActiveCombo(RollResult roll, Cell cell, ActiveTurnState activePlayer, List<Die> activeDice) {
         if (activePlayer.colorDieUsed()) return null;
 

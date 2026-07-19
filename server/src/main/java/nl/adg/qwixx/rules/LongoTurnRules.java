@@ -62,8 +62,8 @@ public class LongoTurnRules extends StandardTurnRules {
     private List<GameAction> bonusCellActions(GameState state, UUID playerId, List<GameAction> existing) {
         if (!whiteSumMatchesBonusNumber(state, playerId)) return List.of();
 
-        SheetLayout layout     = getLayout(state, playerId);
-        SheetProgress progress = getProgress(state, playerId);
+        SheetLayout layout     = state.sheetLayout(playerId);
+        SheetProgress progress = state.sheetProgress(playerId);
 
         OptionalInt fewest = IntStream.range(0, layout.rows().size())
                 .filter(i -> !state.isRowClosed(i))

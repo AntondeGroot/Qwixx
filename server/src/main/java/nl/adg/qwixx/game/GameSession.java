@@ -211,8 +211,7 @@ public class GameSession {
         if (state == null) throw new IllegalStateException("game not started");
         return new ConfigurableGameStyleFactory(settings)
                 .buildScoringEngine()
-                .calculate(state.sheetLayouts().get(playerId),
-                           state.boardState().sheetProgress().get(playerId));
+                .calculate(state.sheetLayout(playerId), state.sheetProgress(playerId));
     }
 
     /** Returns only the human (non-bot) players. */

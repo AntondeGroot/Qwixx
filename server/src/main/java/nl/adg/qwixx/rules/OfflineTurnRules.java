@@ -26,8 +26,8 @@ public class OfflineTurnRules extends StandardTurnRules {
     public List<GameAction> getValidActions(GameState state, UUID playerId) {
         if (state.gameOver()) return List.of();
 
-        SheetLayout layout            = state.sheetLayouts().get(playerId);
-        SheetProgress progress        = state.boardState().sheetProgress().get(playerId);
+        SheetLayout layout            = state.sheetLayout(playerId);
+        SheetProgress progress        = state.sheetProgress(playerId);
         List<GameAction> actions = new ArrayList<>();
 
         for (int rowIndex = 0; rowIndex < layout.rows().size(); rowIndex++) {
@@ -70,10 +70,10 @@ public class OfflineTurnRules extends StandardTurnRules {
     private void applyOfflineCrossCell(GameState state, CrossCellAction action) {
         if (state.isRowClosed(action.rowIndex()))
             throw new IllegalMoveException("cannot cross a cell in a globally closed row");
-        SheetLayout layout = state.sheetLayouts().get(action.playerId());
+        SheetLayout layout = state.sheetLayout(action.playerId());
         Row row = layout.rows().get(action.rowIndex());
         if (row.isBonusRow()) {
-            SheetProgress progress = state.boardState().sheetProgress().get(action.playerId());
+            SheetProgress progress = state.sheetProgress(action.playerId());
             Cell cell = row.cells().stream()
                     .filter(c -> c.id().equals(action.cellId()))
                     .findFirst()
@@ -95,7 +95,7 @@ public class OfflineTurnRules extends StandardTurnRules {
     }
 
     private void applyOfflinePunishment(GameState state, TakePunishmentAction action) {
-        state.boardState().sheetProgress().get(action.playerId()).addPunishment();
+        state.sheetProgress(action.playerId()).addPunishment();
         if (isGameOver(state)) state.setGameOver(true);
     }
 
@@ -103,8 +103,8 @@ public class OfflineTurnRules extends StandardTurnRules {
     // Any ONE closing cell is sufficient (same semantics as online mode).
     @Override
     protected boolean canCrossLock(GameState state, UUID playerId, int rowIndex) {
-        SheetLayout layout = state.sheetLayouts().get(playerId);
-        SheetProgress prog = state.boardState().sheetProgress().get(playerId);
+        SheetLayout layout = state.sheetLayout(playerId);
+        SheetProgress prog = state.sheetProgress(playerId);
         Row row            = layout.rows().get(rowIndex);
 
         if (row.lock() == null) return false;
@@ -113,4 +113,5 @@ public class OfflineTurnRules extends StandardTurnRules {
         if (!hasEnoughNonClosingCrosses(state, playerId, rowIndex, rowState.crossedCells(), getMinCrossesRequired())) return false;
         return playerHasCrossedAClosingCell(state, playerId, rowIndex, rowState.crossedCells());
     }
+
 }

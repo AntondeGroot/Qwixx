@@ -16,6 +16,9 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslateService } from '@ngx-translate/core';
+// TODO(boundaries): move this data access behind an app service so the component doesn't inject the
+// generated API layer directly. Existing debt — the rule forbids any NEW component → generated-api edge.
+// eslint-disable-next-line boundaries/dependencies
 import { GamesService, PlayersService } from '../../generated/api/api';
 import { GameOption, SheetLayout } from '../../generated/model/models';
 import { RowComponent } from '../row/row.component';

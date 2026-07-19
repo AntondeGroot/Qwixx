@@ -1,11 +1,7 @@
 import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { Color } from '../../generated/model/models';
-
-export interface ClosureNotification {
-  playerName: string;
-  rowColor: Color;
-}
+import { ClosureNotification } from '../services/row-closure-modal.service';
 
 @Component({
   selector: 'app-row-closure-modal',

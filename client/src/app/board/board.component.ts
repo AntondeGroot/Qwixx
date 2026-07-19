@@ -14,6 +14,9 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { environment } from '../../environments/environment';
+// TODO(boundaries): move this data access behind an app service so the component doesn't inject the
+// generated API layer directly. Existing debt — the rule forbids any NEW component → generated-api edge.
+// eslint-disable-next-line boundaries/dependencies
 import { GamestatesService, MovesService } from '../../generated/api/api';
 import {
   AvailableMove,

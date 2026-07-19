@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.function.Function;
 import nl.adg.qwixx.game.GameSettings;
@@ -232,6 +233,6 @@ public class BotTrainer {
     }
 
     private static double num(Map<String, Object> map, String key) {
-        return ((Number) map.get(key)).doubleValue();
+        return ((Number) Objects.requireNonNull(map.get(key))).doubleValue();
     }
 }

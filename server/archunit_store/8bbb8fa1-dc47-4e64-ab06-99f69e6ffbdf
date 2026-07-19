@@ -9,19 +9,19 @@ Cycle detected: Slice bot -> \
     - Method <nl.adg.qwixx.bot.BotSimulator.playGame(java.util.List, nl.adg.qwixx.game.GameSettings)> has parameter of type <nl.adg.qwixx.game.GameSettings> in (BotSimulator.java:0)\
     - Method <nl.adg.qwixx.bot.BotTrainer.fitnessFunction(nl.adg.qwixx.bot.BotTrainer$Objective, int, nl.adg.qwixx.game.GameSettings, nl.adg.qwixx.bot.BotProfile)> has parameter of type <nl.adg.qwixx.game.GameSettings> in (BotTrainer.java:0)\
     - Method <nl.adg.qwixx.bot.BotTrainer.train(nl.adg.qwixx.bot.BotProfile, nl.adg.qwixx.bot.BotTrainer$Objective, int, int, int, nl.adg.qwixx.game.GameSettings, java.util.Random, java.util.function.Consumer, nl.adg.qwixx.bot.BotProfile, int)> has parameter of type <nl.adg.qwixx.game.GameSettings> in (BotTrainer.java:0)\
-    - Method <nl.adg.qwixx.bot.BotSimulator.baseSettings(int)> calls method <nl.adg.qwixx.game.GameSettings.builder()> in (BotSimulator.java:114)\
-    - Method <nl.adg.qwixx.bot.BotSimulator.baseSettings(int)> calls method <nl.adg.qwixx.game.GameSettings$Builder.botCount(int)> in (BotSimulator.java:115)\
-    - Method <nl.adg.qwixx.bot.BotSimulator.baseSettings(int)> gets field <nl.adg.qwixx.game.GameMode.ONLINE> in (BotSimulator.java:115)\
-    - Method <nl.adg.qwixx.bot.BotSimulator.baseSettings(int)> calls method <nl.adg.qwixx.game.GameSettings$Builder.gameMode(nl.adg.qwixx.game.GameMode)> in (BotSimulator.java:116)\
-    - Method <nl.adg.qwixx.bot.BotSimulator.baseSettings(int)> calls method <nl.adg.qwixx.game.GameSettings$Builder.build()> in (BotSimulator.java:117)\
-    - Method <nl.adg.qwixx.bot.BotSimulator.playGame(java.util.List, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.game.GameSettings.builder()> in (BotSimulator.java:123)\
-    - Method <nl.adg.qwixx.bot.BotSimulator.playGame(java.util.List, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.game.GameSettings$Builder.base(nl.adg.qwixx.game.BaseVariant)> in (BotSimulator.java:124)\
-    - Method <nl.adg.qwixx.bot.BotSimulator.playGame(java.util.List, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.game.GameSettings.base()> in (BotSimulator.java:124)\
-    - Method <nl.adg.qwixx.bot.BotSimulator.playGame(java.util.List, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.game.GameSettings$Builder.randomOrder(boolean)> in (BotSimulator.java:125)\
-    - Method <nl.adg.qwixx.bot.BotSimulator.playGame(java.util.List, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.game.GameSettings.randomOrder()> in (BotSimulator.java:125)\
-    - Method <nl.adg.qwixx.bot.BotSimulator.playGame(java.util.List, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.game.GameSettings$Builder.connectedCells(boolean)> in (BotSimulator.java:126)\
-    - Method <nl.adg.qwixx.bot.BotSimulator.playGame(java.util.List, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.game.GameSettings.connectedCells()> in (BotSimulator.java:126)\
-    - Method <nl.adg.qwixx.bot.BotSimulator.playGame(java.util.List, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.game.GameSettings$Builder.extraRow(boolean)> in (BotSimulator.java:127)\
+    - Method <nl.adg.qwixx.bot.BotSimulator.baseSettings(int)> calls method <nl.adg.qwixx.game.GameSettings.builder()> in (BotSimulator.java:115)\
+    - Method <nl.adg.qwixx.bot.BotSimulator.baseSettings(int)> calls method <nl.adg.qwixx.game.GameSettings$Builder.botCount(int)> in (BotSimulator.java:116)\
+    - Method <nl.adg.qwixx.bot.BotSimulator.baseSettings(int)> gets field <nl.adg.qwixx.game.GameMode.ONLINE> in (BotSimulator.java:116)\
+    - Method <nl.adg.qwixx.bot.BotSimulator.baseSettings(int)> calls method <nl.adg.qwixx.game.GameSettings$Builder.gameMode(nl.adg.qwixx.game.GameMode)> in (BotSimulator.java:117)\
+    - Method <nl.adg.qwixx.bot.BotSimulator.baseSettings(int)> calls method <nl.adg.qwixx.game.GameSettings$Builder.build()> in (BotSimulator.java:118)\
+    - Method <nl.adg.qwixx.bot.BotSimulator.playGame(java.util.List, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.game.GameSettings.builder()> in (BotSimulator.java:124)\
+    - Method <nl.adg.qwixx.bot.BotSimulator.playGame(java.util.List, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.game.GameSettings$Builder.base(nl.adg.qwixx.game.BaseVariant)> in (BotSimulator.java:125)\
+    - Method <nl.adg.qwixx.bot.BotSimulator.playGame(java.util.List, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.game.GameSettings.base()> in (BotSimulator.java:125)\
+    - Method <nl.adg.qwixx.bot.BotSimulator.playGame(java.util.List, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.game.GameSettings$Builder.randomOrder(boolean)> in (BotSimulator.java:126)\
+    - Method <nl.adg.qwixx.bot.BotSimulator.playGame(java.util.List, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.game.GameSettings.randomOrder()> in (BotSimulator.java:126)\
+    - Method <nl.adg.qwixx.bot.BotSimulator.playGame(java.util.List, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.game.GameSettings$Builder.connectedCells(boolean)> in (BotSimulator.java:127)\
+    - Method <nl.adg.qwixx.bot.BotSimulator.playGame(java.util.List, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.game.GameSettings.connectedCells()> in (BotSimulator.java:127)\
+    - Method <nl.adg.qwixx.bot.BotSimulator.playGame(java.util.List, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.game.GameSettings$Builder.extraRow(boolean)> in (BotSimulator.java:128)\
     (14 further dependencies have been omitted...)\
   2. Dependencies of Slice game\
     - Field <nl.adg.qwixx.game.GameSession.botProfiles> has generic type <java.util.Map<java.util.UUID, nl.adg.qwixx.bot.BotProfile>> with type argument depending on <nl.adg.qwixx.bot.BotProfile> in (GameSession.java:0)\
@@ -37,21 +37,21 @@ Cycle detected: Slice bot -> \
     - Method <nl.adg.qwixx.game.GameSettings.profileForBot(int)> calls method <nl.adg.qwixx.bot.BotStrategy.profile()> in (GameSettings.java:76)\
     - Method <nl.adg.qwixx.game.GameSettings.profileForBot(int)> gets field <nl.adg.qwixx.bot.BotProfile.DEFAULT> in (GameSettings.java:76)\
     - Constructor <nl.adg.qwixx.game.GameSettings$Builder.<init>()> gets field <nl.adg.qwixx.bot.BotStrategy.BALANCED> in (GameSettings.java:99)\
-    - Method <nl.adg.qwixx.game.QwixxGameOptions.toMap(nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.bot.BotStrategy.name()> in (QwixxGameOptions.java:99)\
     - Method <nl.adg.qwixx.game.QwixxGameOptions.toMap(nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.bot.BotStrategy.name()> in (QwixxGameOptions.java:100)\
-    - Method <nl.adg.qwixx.game.QwixxGameOptions.toMap(nl.adg.qwixx.game.GameSettings)> gets field <nl.adg.qwixx.bot.BotStrategy.BALANCED> in (QwixxGameOptions.java:100)\
-    - Method <nl.adg.qwixx.game.QwixxGameOptions.apply(nl.adg.qwixx.game.GameSettings$Builder, java.util.Map)> calls method <nl.adg.qwixx.bot.BotStrategy.valueOf(java.lang.String)> in (QwixxGameOptions.java:124)\
-    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> calls method <nl.adg.qwixx.bot.BotDecider.decide(nl.adg.qwixx.state.GameState, java.util.UUID, java.util.List, nl.adg.qwixx.bot.BotProfile)> in (GameSession.java:322)\
-    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> gets field <nl.adg.qwixx.bot.BotProfile.DEFAULT> in (GameSession.java:322)
+    - Method <nl.adg.qwixx.game.QwixxGameOptions.toMap(nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.bot.BotStrategy.name()> in (QwixxGameOptions.java:101)\
+    - Method <nl.adg.qwixx.game.QwixxGameOptions.toMap(nl.adg.qwixx.game.GameSettings)> gets field <nl.adg.qwixx.bot.BotStrategy.BALANCED> in (QwixxGameOptions.java:101)\
+    - Method <nl.adg.qwixx.game.QwixxGameOptions.apply(nl.adg.qwixx.game.GameSettings$Builder, java.util.Map)> calls method <nl.adg.qwixx.bot.BotStrategy.valueOf(java.lang.String)> in (QwixxGameOptions.java:125)\
+    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> calls method <nl.adg.qwixx.bot.BotDecider.decide(nl.adg.qwixx.state.GameState, java.util.UUID, java.util.List, nl.adg.qwixx.bot.BotProfile)> in (GameSession.java:327)\
+    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> gets field <nl.adg.qwixx.bot.BotProfile.DEFAULT> in (GameSession.java:327)
 Cycle detected: Slice bot -> \
                 Slice rules -> \
                 Slice game -> \
                 Slice bot\
   1. Dependencies of Slice bot\
     - Method <nl.adg.qwixx.bot.BotSimulator.playGame(java.util.List, nl.adg.qwixx.game.GameSettings)> has generic return type <java.util.Map<java.util.UUID, nl.adg.qwixx.rules.ScoreCard>> with type argument depending on <nl.adg.qwixx.rules.ScoreCard> in (BotSimulator.java:0)\
-    - Method <nl.adg.qwixx.bot.BotSimulator.evaluate(nl.adg.qwixx.bot.BotProfile, int, int, nl.adg.qwixx.game.GameSettings)> references method <nl.adg.qwixx.rules.ScoreCard.total()> in (BotSimulator.java:60)\
-    - Method <nl.adg.qwixx.bot.BotSimulator.headToHead(nl.adg.qwixx.bot.BotProfile, nl.adg.qwixx.bot.BotProfile, int, int, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.rules.ScoreCard.total()> in (BotSimulator.java:89)\
-    - Method <nl.adg.qwixx.bot.BotSimulator.headToHead(nl.adg.qwixx.bot.BotProfile, nl.adg.qwixx.bot.BotProfile, int, int, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.rules.ScoreCard.total()> in (BotSimulator.java:91)\
+    - Method <nl.adg.qwixx.bot.BotSimulator.evaluate(nl.adg.qwixx.bot.BotProfile, int, int, nl.adg.qwixx.game.GameSettings)> references method <nl.adg.qwixx.rules.ScoreCard.total()> in (BotSimulator.java:61)\
+    - Method <nl.adg.qwixx.bot.BotSimulator.headToHead(nl.adg.qwixx.bot.BotProfile, nl.adg.qwixx.bot.BotProfile, int, int, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.rules.ScoreCard.total()> in (BotSimulator.java:90)\
+    - Method <nl.adg.qwixx.bot.BotSimulator.headToHead(nl.adg.qwixx.bot.BotProfile, nl.adg.qwixx.bot.BotProfile, int, int, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.rules.ScoreCard.total()> in (BotSimulator.java:92)\
   2. Dependencies of Slice rules\
     - Method <nl.adg.qwixx.rules.LongoTurnRules.whiteSumMatchesBonusNumber(nl.adg.qwixx.state.GameState, java.util.UUID)> checks instanceof <nl.adg.qwixx.game.LongoVariantData> in (LongoTurnRules.java:86)\
     - Method <nl.adg.qwixx.rules.LongoTurnRules.whiteSumMatchesBonusNumber(nl.adg.qwixx.state.GameState, java.util.UUID)> calls method <nl.adg.qwixx.game.LongoVariantData.bonusNumbersPerPlayer()> in (LongoTurnRules.java:87)\
@@ -69,12 +69,12 @@ Cycle detected: Slice bot -> \
     - Method <nl.adg.qwixx.game.GameSettings.profileForBot(int)> calls method <nl.adg.qwixx.bot.BotStrategy.profile()> in (GameSettings.java:76)\
     - Method <nl.adg.qwixx.game.GameSettings.profileForBot(int)> gets field <nl.adg.qwixx.bot.BotProfile.DEFAULT> in (GameSettings.java:76)\
     - Constructor <nl.adg.qwixx.game.GameSettings$Builder.<init>()> gets field <nl.adg.qwixx.bot.BotStrategy.BALANCED> in (GameSettings.java:99)\
-    - Method <nl.adg.qwixx.game.QwixxGameOptions.toMap(nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.bot.BotStrategy.name()> in (QwixxGameOptions.java:99)\
     - Method <nl.adg.qwixx.game.QwixxGameOptions.toMap(nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.bot.BotStrategy.name()> in (QwixxGameOptions.java:100)\
-    - Method <nl.adg.qwixx.game.QwixxGameOptions.toMap(nl.adg.qwixx.game.GameSettings)> gets field <nl.adg.qwixx.bot.BotStrategy.BALANCED> in (QwixxGameOptions.java:100)\
-    - Method <nl.adg.qwixx.game.QwixxGameOptions.apply(nl.adg.qwixx.game.GameSettings$Builder, java.util.Map)> calls method <nl.adg.qwixx.bot.BotStrategy.valueOf(java.lang.String)> in (QwixxGameOptions.java:124)\
-    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> calls method <nl.adg.qwixx.bot.BotDecider.decide(nl.adg.qwixx.state.GameState, java.util.UUID, java.util.List, nl.adg.qwixx.bot.BotProfile)> in (GameSession.java:322)\
-    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> gets field <nl.adg.qwixx.bot.BotProfile.DEFAULT> in (GameSession.java:322)
+    - Method <nl.adg.qwixx.game.QwixxGameOptions.toMap(nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.bot.BotStrategy.name()> in (QwixxGameOptions.java:101)\
+    - Method <nl.adg.qwixx.game.QwixxGameOptions.toMap(nl.adg.qwixx.game.GameSettings)> gets field <nl.adg.qwixx.bot.BotStrategy.BALANCED> in (QwixxGameOptions.java:101)\
+    - Method <nl.adg.qwixx.game.QwixxGameOptions.apply(nl.adg.qwixx.game.GameSettings$Builder, java.util.Map)> calls method <nl.adg.qwixx.bot.BotStrategy.valueOf(java.lang.String)> in (QwixxGameOptions.java:125)\
+    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> calls method <nl.adg.qwixx.bot.BotDecider.decide(nl.adg.qwixx.state.GameState, java.util.UUID, java.util.List, nl.adg.qwixx.bot.BotProfile)> in (GameSession.java:327)\
+    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> gets field <nl.adg.qwixx.bot.BotProfile.DEFAULT> in (GameSession.java:327)
 Cycle detected: Slice bot -> \
                 Slice rules -> \
                 Slice state -> \
@@ -82,9 +82,9 @@ Cycle detected: Slice bot -> \
                 Slice bot\
   1. Dependencies of Slice bot\
     - Method <nl.adg.qwixx.bot.BotSimulator.playGame(java.util.List, nl.adg.qwixx.game.GameSettings)> has generic return type <java.util.Map<java.util.UUID, nl.adg.qwixx.rules.ScoreCard>> with type argument depending on <nl.adg.qwixx.rules.ScoreCard> in (BotSimulator.java:0)\
-    - Method <nl.adg.qwixx.bot.BotSimulator.evaluate(nl.adg.qwixx.bot.BotProfile, int, int, nl.adg.qwixx.game.GameSettings)> references method <nl.adg.qwixx.rules.ScoreCard.total()> in (BotSimulator.java:60)\
-    - Method <nl.adg.qwixx.bot.BotSimulator.headToHead(nl.adg.qwixx.bot.BotProfile, nl.adg.qwixx.bot.BotProfile, int, int, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.rules.ScoreCard.total()> in (BotSimulator.java:89)\
-    - Method <nl.adg.qwixx.bot.BotSimulator.headToHead(nl.adg.qwixx.bot.BotProfile, nl.adg.qwixx.bot.BotProfile, int, int, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.rules.ScoreCard.total()> in (BotSimulator.java:91)\
+    - Method <nl.adg.qwixx.bot.BotSimulator.evaluate(nl.adg.qwixx.bot.BotProfile, int, int, nl.adg.qwixx.game.GameSettings)> references method <nl.adg.qwixx.rules.ScoreCard.total()> in (BotSimulator.java:61)\
+    - Method <nl.adg.qwixx.bot.BotSimulator.headToHead(nl.adg.qwixx.bot.BotProfile, nl.adg.qwixx.bot.BotProfile, int, int, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.rules.ScoreCard.total()> in (BotSimulator.java:90)\
+    - Method <nl.adg.qwixx.bot.BotSimulator.headToHead(nl.adg.qwixx.bot.BotProfile, nl.adg.qwixx.bot.BotProfile, int, int, nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.rules.ScoreCard.total()> in (BotSimulator.java:92)\
   2. Dependencies of Slice rules\
     - Method <nl.adg.qwixx.rules.CellCrosser.bonusPrerequisiteMet(nl.adg.qwixx.state.SheetLayout, nl.adg.qwixx.state.SheetProgress, nl.adg.qwixx.data.Row, nl.adg.qwixx.data.Cell)> has parameter of type <nl.adg.qwixx.state.SheetLayout> in (CellCrosser.java:0)\
     - Method <nl.adg.qwixx.rules.CellCrosser.bonusPrerequisiteMet(nl.adg.qwixx.state.SheetLayout, nl.adg.qwixx.state.SheetProgress, nl.adg.qwixx.data.Row, nl.adg.qwixx.data.Cell)> has parameter of type <nl.adg.qwixx.state.SheetProgress> in (CellCrosser.java:0)\
@@ -126,12 +126,12 @@ Cycle detected: Slice bot -> \
     - Method <nl.adg.qwixx.game.GameSettings.profileForBot(int)> calls method <nl.adg.qwixx.bot.BotStrategy.profile()> in (GameSettings.java:76)\
     - Method <nl.adg.qwixx.game.GameSettings.profileForBot(int)> gets field <nl.adg.qwixx.bot.BotProfile.DEFAULT> in (GameSettings.java:76)\
     - Constructor <nl.adg.qwixx.game.GameSettings$Builder.<init>()> gets field <nl.adg.qwixx.bot.BotStrategy.BALANCED> in (GameSettings.java:99)\
-    - Method <nl.adg.qwixx.game.QwixxGameOptions.toMap(nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.bot.BotStrategy.name()> in (QwixxGameOptions.java:99)\
     - Method <nl.adg.qwixx.game.QwixxGameOptions.toMap(nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.bot.BotStrategy.name()> in (QwixxGameOptions.java:100)\
-    - Method <nl.adg.qwixx.game.QwixxGameOptions.toMap(nl.adg.qwixx.game.GameSettings)> gets field <nl.adg.qwixx.bot.BotStrategy.BALANCED> in (QwixxGameOptions.java:100)\
-    - Method <nl.adg.qwixx.game.QwixxGameOptions.apply(nl.adg.qwixx.game.GameSettings$Builder, java.util.Map)> calls method <nl.adg.qwixx.bot.BotStrategy.valueOf(java.lang.String)> in (QwixxGameOptions.java:124)\
-    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> calls method <nl.adg.qwixx.bot.BotDecider.decide(nl.adg.qwixx.state.GameState, java.util.UUID, java.util.List, nl.adg.qwixx.bot.BotProfile)> in (GameSession.java:322)\
-    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> gets field <nl.adg.qwixx.bot.BotProfile.DEFAULT> in (GameSession.java:322)
+    - Method <nl.adg.qwixx.game.QwixxGameOptions.toMap(nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.bot.BotStrategy.name()> in (QwixxGameOptions.java:101)\
+    - Method <nl.adg.qwixx.game.QwixxGameOptions.toMap(nl.adg.qwixx.game.GameSettings)> gets field <nl.adg.qwixx.bot.BotStrategy.BALANCED> in (QwixxGameOptions.java:101)\
+    - Method <nl.adg.qwixx.game.QwixxGameOptions.apply(nl.adg.qwixx.game.GameSettings$Builder, java.util.Map)> calls method <nl.adg.qwixx.bot.BotStrategy.valueOf(java.lang.String)> in (QwixxGameOptions.java:125)\
+    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> calls method <nl.adg.qwixx.bot.BotDecider.decide(nl.adg.qwixx.state.GameState, java.util.UUID, java.util.List, nl.adg.qwixx.bot.BotProfile)> in (GameSession.java:327)\
+    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> gets field <nl.adg.qwixx.bot.BotProfile.DEFAULT> in (GameSession.java:327)
 Cycle detected: Slice bot -> \
                 Slice state -> \
                 Slice game -> \
@@ -147,17 +147,17 @@ Cycle detected: Slice bot -> \
     - Method <nl.adg.qwixx.bot.BotDecider.decideSingleMove(nl.adg.qwixx.state.GameState, java.util.UUID, java.util.List, boolean, int, nl.adg.qwixx.bot.BotProfile)> has parameter of type <nl.adg.qwixx.state.GameState> in (BotDecider.java:0)\
     - Method <nl.adg.qwixx.bot.BotDecider.decideTwoMove(nl.adg.qwixx.state.GameState, java.util.UUID, java.util.List, int, nl.adg.qwixx.bot.BotProfile)> has parameter of type <nl.adg.qwixx.state.GameState> in (BotDecider.java:0)\
     - Method <nl.adg.qwixx.bot.BotDecider.diceCenter(nl.adg.qwixx.state.GameState, java.util.UUID)> has parameter of type <nl.adg.qwixx.state.GameState> in (BotDecider.java:0)\
+    - Method <nl.adg.qwixx.bot.BotDecider.layoutOf(nl.adg.qwixx.state.GameState, java.util.UUID)> has parameter of type <nl.adg.qwixx.state.GameState> in (BotDecider.java:0)\
+    - Method <nl.adg.qwixx.bot.BotDecider.layoutOf(nl.adg.qwixx.state.GameState, java.util.UUID)> has return type <nl.adg.qwixx.state.SheetLayout> in (BotDecider.java:0)\
     - Method <nl.adg.qwixx.bot.BotDecider.nearLock(nl.adg.qwixx.state.GameState, java.util.UUID, int, nl.adg.qwixx.bot.BotProfile)> has parameter of type <nl.adg.qwixx.state.GameState> in (BotDecider.java:0)\
+    - Method <nl.adg.qwixx.bot.BotDecider.progressOf(nl.adg.qwixx.state.GameState, java.util.UUID)> has parameter of type <nl.adg.qwixx.state.GameState> in (BotDecider.java:0)\
+    - Method <nl.adg.qwixx.bot.BotDecider.progressOf(nl.adg.qwixx.state.GameState, java.util.UUID)> has return type <nl.adg.qwixx.state.SheetProgress> in (BotDecider.java:0)\
     - Method <nl.adg.qwixx.bot.BotDecider.singleCellLoss(int, nl.adg.qwixx.data.Cell, nl.adg.qwixx.data.Row, nl.adg.qwixx.state.SheetProgress, int, boolean, nl.adg.qwixx.bot.BotProfile)> has parameter of type <nl.adg.qwixx.state.SheetProgress> in (BotDecider.java:0)\
     - Method <nl.adg.qwixx.bot.BotDecider.tagAdjustments(nl.adg.qwixx.data.Cell, int, nl.adg.qwixx.state.SheetLayout, nl.adg.qwixx.state.SheetProgress, nl.adg.qwixx.state.GameState, java.util.UUID, nl.adg.qwixx.bot.BotProfile)> has parameter of type <nl.adg.qwixx.state.GameState> in (BotDecider.java:0)\
     - Method <nl.adg.qwixx.bot.BotDecider.tagAdjustments(nl.adg.qwixx.data.Cell, int, nl.adg.qwixx.state.SheetLayout, nl.adg.qwixx.state.SheetProgress, nl.adg.qwixx.state.GameState, java.util.UUID, nl.adg.qwixx.bot.BotProfile)> has parameter of type <nl.adg.qwixx.state.SheetLayout> in (BotDecider.java:0)\
     - Method <nl.adg.qwixx.bot.BotDecider.tagAdjustments(nl.adg.qwixx.data.Cell, int, nl.adg.qwixx.state.SheetLayout, nl.adg.qwixx.state.SheetProgress, nl.adg.qwixx.state.GameState, java.util.UUID, nl.adg.qwixx.bot.BotProfile)> has parameter of type <nl.adg.qwixx.state.SheetProgress> in (BotDecider.java:0)\
     - Method <nl.adg.qwixx.bot.BotDecider.validOrdering(nl.adg.qwixx.state.GameState, java.util.UUID, nl.adg.qwixx.action.CrossCellAction, nl.adg.qwixx.action.CrossCellAction)> has parameter of type <nl.adg.qwixx.state.GameState> in (BotDecider.java:0)\
-    - Method <nl.adg.qwixx.bot.BotDecider.decide(nl.adg.qwixx.state.GameState, java.util.UUID, java.util.List, nl.adg.qwixx.bot.BotProfile)> calls method <nl.adg.qwixx.state.GameState.turnState()> in (BotDecider.java:57)\
-    - Method <nl.adg.qwixx.bot.BotDecider.decide(nl.adg.qwixx.state.GameState, java.util.UUID, java.util.List, nl.adg.qwixx.bot.BotProfile)> calls method <nl.adg.qwixx.state.TurnState.activePlayerId()> in (BotDecider.java:57)\
-    - Method <nl.adg.qwixx.bot.BotDecider.decide(nl.adg.qwixx.state.GameState, java.util.UUID, java.util.List, nl.adg.qwixx.bot.BotProfile)> calls method <nl.adg.qwixx.state.GameState.turnState()> in (BotDecider.java:62)\
-    - Method <nl.adg.qwixx.bot.BotDecider.decide(nl.adg.qwixx.state.GameState, java.util.UUID, java.util.List, nl.adg.qwixx.bot.BotProfile)> calls method <nl.adg.qwixx.state.TurnState.activeTurnState()> in (BotDecider.java:62)\
-    (38 further dependencies have been omitted...)\
+    (30 further dependencies have been omitted...)\
   2. Dependencies of Slice state\
     - Constructor <nl.adg.qwixx.state.GameState.<init>(nl.adg.qwixx.state.CardMode, java.util.List, nl.adg.qwixx.game.VariantData, java.util.Map, nl.adg.qwixx.state.BoardState, nl.adg.qwixx.state.TurnState)> has parameter of type <nl.adg.qwixx.game.VariantData> in (GameState.java:0)\
     - Field <nl.adg.qwixx.state.GameState.variantData> has type <nl.adg.qwixx.game.VariantData> in (GameState.java:0)\
@@ -177,12 +177,12 @@ Cycle detected: Slice bot -> \
     - Method <nl.adg.qwixx.game.GameSettings.profileForBot(int)> calls method <nl.adg.qwixx.bot.BotStrategy.profile()> in (GameSettings.java:76)\
     - Method <nl.adg.qwixx.game.GameSettings.profileForBot(int)> gets field <nl.adg.qwixx.bot.BotProfile.DEFAULT> in (GameSettings.java:76)\
     - Constructor <nl.adg.qwixx.game.GameSettings$Builder.<init>()> gets field <nl.adg.qwixx.bot.BotStrategy.BALANCED> in (GameSettings.java:99)\
-    - Method <nl.adg.qwixx.game.QwixxGameOptions.toMap(nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.bot.BotStrategy.name()> in (QwixxGameOptions.java:99)\
     - Method <nl.adg.qwixx.game.QwixxGameOptions.toMap(nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.bot.BotStrategy.name()> in (QwixxGameOptions.java:100)\
-    - Method <nl.adg.qwixx.game.QwixxGameOptions.toMap(nl.adg.qwixx.game.GameSettings)> gets field <nl.adg.qwixx.bot.BotStrategy.BALANCED> in (QwixxGameOptions.java:100)\
-    - Method <nl.adg.qwixx.game.QwixxGameOptions.apply(nl.adg.qwixx.game.GameSettings$Builder, java.util.Map)> calls method <nl.adg.qwixx.bot.BotStrategy.valueOf(java.lang.String)> in (QwixxGameOptions.java:124)\
-    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> calls method <nl.adg.qwixx.bot.BotDecider.decide(nl.adg.qwixx.state.GameState, java.util.UUID, java.util.List, nl.adg.qwixx.bot.BotProfile)> in (GameSession.java:322)\
-    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> gets field <nl.adg.qwixx.bot.BotProfile.DEFAULT> in (GameSession.java:322)
+    - Method <nl.adg.qwixx.game.QwixxGameOptions.toMap(nl.adg.qwixx.game.GameSettings)> calls method <nl.adg.qwixx.bot.BotStrategy.name()> in (QwixxGameOptions.java:101)\
+    - Method <nl.adg.qwixx.game.QwixxGameOptions.toMap(nl.adg.qwixx.game.GameSettings)> gets field <nl.adg.qwixx.bot.BotStrategy.BALANCED> in (QwixxGameOptions.java:101)\
+    - Method <nl.adg.qwixx.game.QwixxGameOptions.apply(nl.adg.qwixx.game.GameSettings$Builder, java.util.Map)> calls method <nl.adg.qwixx.bot.BotStrategy.valueOf(java.lang.String)> in (QwixxGameOptions.java:125)\
+    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> calls method <nl.adg.qwixx.bot.BotDecider.decide(nl.adg.qwixx.state.GameState, java.util.UUID, java.util.List, nl.adg.qwixx.bot.BotProfile)> in (GameSession.java:327)\
+    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> gets field <nl.adg.qwixx.bot.BotProfile.DEFAULT> in (GameSession.java:327)
 Cycle detected: Slice game -> \
                 Slice rules -> \
                 Slice game\
@@ -194,16 +194,16 @@ Cycle detected: Slice game -> \
     - Method <nl.adg.qwixx.game.GameSession.rules()> has return type <nl.adg.qwixx.rules.TurnRules> in (GameSession.java:0)\
     - Method <nl.adg.qwixx.game.GameStyleFactory.buildScoringEngine()> has return type <nl.adg.qwixx.rules.ScoringEngine> in (GameStyleFactory.java:0)\
     - Method <nl.adg.qwixx.game.GameStyleFactory.buildTurnRules()> has return type <nl.adg.qwixx.rules.TurnRules> in (GameStyleFactory.java:0)\
-    - Method <nl.adg.qwixx.game.GameSession.applyAction(nl.adg.qwixx.action.GameAction, java.util.function.Consumer)> calls method <nl.adg.qwixx.rules.TurnRules.apply(nl.adg.qwixx.state.GameState, nl.adg.qwixx.action.GameAction)> in (GameSession.java:194)\
+    - Method <nl.adg.qwixx.game.GameSession.applyAction(nl.adg.qwixx.action.GameAction, java.util.function.Consumer)> calls method <nl.adg.qwixx.rules.TurnRules.apply(nl.adg.qwixx.state.GameState, nl.adg.qwixx.action.GameAction)> in (GameSession.java:196)\
     - Method <nl.adg.qwixx.game.ConfigurableGameStyleFactory.buildTurnRules()> calls constructor <nl.adg.qwixx.rules.OfflineTurnRules.<init>()> in (ConfigurableGameStyleFactory.java:204)\
     - Method <nl.adg.qwixx.game.ConfigurableGameStyleFactory.buildTurnRules()> calls constructor <nl.adg.qwixx.rules.StandardTurnRules.<init>()> in (ConfigurableGameStyleFactory.java:206)\
     - Method <nl.adg.qwixx.game.ConfigurableGameStyleFactory.buildTurnRules()> calls constructor <nl.adg.qwixx.rules.LongoTurnRules.<init>()> in (ConfigurableGameStyleFactory.java:207)\
-    - Method <nl.adg.qwixx.game.GameSession.getScore(java.util.UUID)> calls method <nl.adg.qwixx.rules.ScoringEngine.calculate(nl.adg.qwixx.state.SheetLayout, nl.adg.qwixx.state.SheetProgress)> in (GameSession.java:208)\
+    - Method <nl.adg.qwixx.game.GameSession.getScore(java.util.UUID)> calls method <nl.adg.qwixx.rules.ScoringEngine.calculate(nl.adg.qwixx.state.SheetLayout, nl.adg.qwixx.state.SheetProgress)> in (GameSession.java:210)\
     - Method <nl.adg.qwixx.game.ConfigurableGameStyleFactory.buildScoringEngine()> calls constructor <nl.adg.qwixx.rules.BigPointsScoringEngine.<init>(int)> in (ConfigurableGameStyleFactory.java:213)\
     - Method <nl.adg.qwixx.game.ConfigurableGameStyleFactory.buildScoringEngine()> calls constructor <nl.adg.qwixx.rules.StandardScoringEngine.<init>()> in (ConfigurableGameStyleFactory.java:214)\
-    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> calls method <nl.adg.qwixx.rules.TurnRules.getValidActions(nl.adg.qwixx.state.GameState, java.util.UUID)> in (GameSession.java:320)\
-    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> calls method <nl.adg.qwixx.rules.TurnRules.apply(nl.adg.qwixx.state.GameState, nl.adg.qwixx.action.GameAction)> in (GameSession.java:338)\
-    - Method <nl.adg.qwixx.game.GameSession.nextBotToAct(nl.adg.qwixx.state.GameState)> calls method <nl.adg.qwixx.rules.TurnRules.getValidActions(nl.adg.qwixx.state.GameState, java.util.UUID)> in (GameSession.java:381)\
+    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> calls method <nl.adg.qwixx.rules.TurnRules.getValidActions(nl.adg.qwixx.state.GameState, java.util.UUID)> in (GameSession.java:325)\
+    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> calls method <nl.adg.qwixx.rules.TurnRules.apply(nl.adg.qwixx.state.GameState, nl.adg.qwixx.action.GameAction)> in (GameSession.java:343)\
+    - Method <nl.adg.qwixx.game.GameSession.nextBotToAct(nl.adg.qwixx.state.GameState)> calls method <nl.adg.qwixx.rules.TurnRules.getValidActions(nl.adg.qwixx.state.GameState, java.util.UUID)> in (GameSession.java:386)\
   2. Dependencies of Slice rules\
     - Method <nl.adg.qwixx.rules.LongoTurnRules.whiteSumMatchesBonusNumber(nl.adg.qwixx.state.GameState, java.util.UUID)> checks instanceof <nl.adg.qwixx.game.LongoVariantData> in (LongoTurnRules.java:86)\
     - Method <nl.adg.qwixx.rules.LongoTurnRules.whiteSumMatchesBonusNumber(nl.adg.qwixx.state.GameState, java.util.UUID)> calls method <nl.adg.qwixx.game.LongoVariantData.bonusNumbersPerPlayer()> in (LongoTurnRules.java:87)
@@ -219,16 +219,16 @@ Cycle detected: Slice game -> \
     - Method <nl.adg.qwixx.game.GameSession.rules()> has return type <nl.adg.qwixx.rules.TurnRules> in (GameSession.java:0)\
     - Method <nl.adg.qwixx.game.GameStyleFactory.buildScoringEngine()> has return type <nl.adg.qwixx.rules.ScoringEngine> in (GameStyleFactory.java:0)\
     - Method <nl.adg.qwixx.game.GameStyleFactory.buildTurnRules()> has return type <nl.adg.qwixx.rules.TurnRules> in (GameStyleFactory.java:0)\
-    - Method <nl.adg.qwixx.game.GameSession.applyAction(nl.adg.qwixx.action.GameAction, java.util.function.Consumer)> calls method <nl.adg.qwixx.rules.TurnRules.apply(nl.adg.qwixx.state.GameState, nl.adg.qwixx.action.GameAction)> in (GameSession.java:194)\
+    - Method <nl.adg.qwixx.game.GameSession.applyAction(nl.adg.qwixx.action.GameAction, java.util.function.Consumer)> calls method <nl.adg.qwixx.rules.TurnRules.apply(nl.adg.qwixx.state.GameState, nl.adg.qwixx.action.GameAction)> in (GameSession.java:196)\
     - Method <nl.adg.qwixx.game.ConfigurableGameStyleFactory.buildTurnRules()> calls constructor <nl.adg.qwixx.rules.OfflineTurnRules.<init>()> in (ConfigurableGameStyleFactory.java:204)\
     - Method <nl.adg.qwixx.game.ConfigurableGameStyleFactory.buildTurnRules()> calls constructor <nl.adg.qwixx.rules.StandardTurnRules.<init>()> in (ConfigurableGameStyleFactory.java:206)\
     - Method <nl.adg.qwixx.game.ConfigurableGameStyleFactory.buildTurnRules()> calls constructor <nl.adg.qwixx.rules.LongoTurnRules.<init>()> in (ConfigurableGameStyleFactory.java:207)\
-    - Method <nl.adg.qwixx.game.GameSession.getScore(java.util.UUID)> calls method <nl.adg.qwixx.rules.ScoringEngine.calculate(nl.adg.qwixx.state.SheetLayout, nl.adg.qwixx.state.SheetProgress)> in (GameSession.java:208)\
+    - Method <nl.adg.qwixx.game.GameSession.getScore(java.util.UUID)> calls method <nl.adg.qwixx.rules.ScoringEngine.calculate(nl.adg.qwixx.state.SheetLayout, nl.adg.qwixx.state.SheetProgress)> in (GameSession.java:210)\
     - Method <nl.adg.qwixx.game.ConfigurableGameStyleFactory.buildScoringEngine()> calls constructor <nl.adg.qwixx.rules.BigPointsScoringEngine.<init>(int)> in (ConfigurableGameStyleFactory.java:213)\
     - Method <nl.adg.qwixx.game.ConfigurableGameStyleFactory.buildScoringEngine()> calls constructor <nl.adg.qwixx.rules.StandardScoringEngine.<init>()> in (ConfigurableGameStyleFactory.java:214)\
-    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> calls method <nl.adg.qwixx.rules.TurnRules.getValidActions(nl.adg.qwixx.state.GameState, java.util.UUID)> in (GameSession.java:320)\
-    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> calls method <nl.adg.qwixx.rules.TurnRules.apply(nl.adg.qwixx.state.GameState, nl.adg.qwixx.action.GameAction)> in (GameSession.java:338)\
-    - Method <nl.adg.qwixx.game.GameSession.nextBotToAct(nl.adg.qwixx.state.GameState)> calls method <nl.adg.qwixx.rules.TurnRules.getValidActions(nl.adg.qwixx.state.GameState, java.util.UUID)> in (GameSession.java:381)\
+    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> calls method <nl.adg.qwixx.rules.TurnRules.getValidActions(nl.adg.qwixx.state.GameState, java.util.UUID)> in (GameSession.java:325)\
+    - Method <nl.adg.qwixx.game.GameSession.runBotTurns(nl.adg.qwixx.state.GameState, java.util.function.Consumer)> calls method <nl.adg.qwixx.rules.TurnRules.apply(nl.adg.qwixx.state.GameState, nl.adg.qwixx.action.GameAction)> in (GameSession.java:343)\
+    - Method <nl.adg.qwixx.game.GameSession.nextBotToAct(nl.adg.qwixx.state.GameState)> calls method <nl.adg.qwixx.rules.TurnRules.getValidActions(nl.adg.qwixx.state.GameState, java.util.UUID)> in (GameSession.java:386)\
   2. Dependencies of Slice rules\
     - Method <nl.adg.qwixx.rules.CellCrosser.bonusPrerequisiteMet(nl.adg.qwixx.state.SheetLayout, nl.adg.qwixx.state.SheetProgress, nl.adg.qwixx.data.Row, nl.adg.qwixx.data.Cell)> has parameter of type <nl.adg.qwixx.state.SheetLayout> in (CellCrosser.java:0)\
     - Method <nl.adg.qwixx.rules.CellCrosser.bonusPrerequisiteMet(nl.adg.qwixx.state.SheetLayout, nl.adg.qwixx.state.SheetProgress, nl.adg.qwixx.data.Row, nl.adg.qwixx.data.Cell)> has parameter of type <nl.adg.qwixx.state.SheetProgress> in (CellCrosser.java:0)\

@@ -455,7 +455,7 @@ class MovesApiDelegateImplTest {
     }
 
     @Test
-    void perPlayerMode_probabilistic_passivePlayerCanCrossWithOwnRowId() throws Exception {
+    void perPlayerMode_differentCards_passivePlayerCanCrossWithOwnRowId() throws Exception {
         Player bob = Player.of("Bob");
         String sid = perPlayerSession(alice, bob,
                 GameSettings.builder().cardMode(CardMode.DIFFERENT_CARDS).build());

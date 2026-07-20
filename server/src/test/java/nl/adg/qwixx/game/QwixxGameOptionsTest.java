@@ -2,8 +2,10 @@ package nl.adg.qwixx.game;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import nl.adg.qwixx.bot.BotStrategy;
 import nl.adg.qwixx.state.CardMode;
 import org.junit.jupiter.api.Test;
 
@@ -137,6 +139,84 @@ class QwixxGameOptionsTest {
         GameSettings.Builder builder = GameSettings.builder();
         QwixxGameOptions.apply(builder, Map.of("randomOrder", true, "bigPoints", true));
         assertThrows(IllegalArgumentException.class, builder::build);
+    }
+
+    // ── bool() parses both value types and both truth values ──────────────────
+
+    @Test
+    void applyBoolFromStringFalseParsesToFalse() {
+        // seeOtherCards defaults to true; the String "false" must flip it off. This exercises the
+        // Boolean.parseBoolean branch returning the parsed false (not a hard-coded true).
+        GameSettings.Builder builder = GameSettings.builder();
+        QwixxGameOptions.apply(builder, Map.of("seeOtherCards", "false"));
+        assertFalse(builder.build().seeOtherCards(), "String \"false\" must parse to false");
+    }
+
+    @Test
+    void applyBoolFromBooleanTrueStaysTrue() {
+        // The instanceof-Boolean branch must return the actual value, so a real Boolean.TRUE stays on.
+        GameSettings.Builder builder = GameSettings.builder();
+        QwixxGameOptions.apply(builder, Map.of("randomOrder", Boolean.TRUE));
+        assertTrue(builder.build().randomOrder());
+    }
+
+    // ── integer() parses both value types and returns the exact number ────────
+
+    @Test
+    void applyBotCountFromNumberReturnsExactValue() {
+        // A real Number must be returned via intValue() — exactly 2, not 0.
+        GameSettings.Builder builder = GameSettings.builder();
+        QwixxGameOptions.apply(builder, Map.of("botCount", 2));
+        assertEquals(2, builder.build().botCount());
+    }
+
+    @Test
+    void applyBotCountFromStringReturnsExactValue() {
+        // A String must be parsed via Integer.parseInt — exactly 3, not 0.
+        GameSettings.Builder builder = GameSettings.builder();
+        QwixxGameOptions.apply(builder, Map.of("botCount", "3"));
+        assertEquals(3, builder.build().botCount());
+    }
+
+    @Test
+    void applyBotCountNullDefaultsToZero() {
+        // A null value takes the "0" default branch of integer() without throwing.
+        GameSettings.Builder builder = GameSettings.builder();
+        Map<String, Object> options = new HashMap<>();
+        options.put("botCount", null);
+        QwixxGameOptions.apply(builder, options);
+        assertEquals(0, builder.build().botCount());
+    }
+
+    // ── toMap() round-trips every setting ─────────────────────────────────────
+
+    @Test
+    void toMapReturnsPopulatedMapWithExpectedEntries() {
+        GameSettings settings = GameSettings.builder()
+                .gameMode(GameMode.OFFLINE)
+                .botCount(2)
+                .botStrategy(BotStrategy.MOST_WINS)
+                .build();
+
+        Map<String, Object> map = QwixxGameOptions.toMap(settings);
+
+        assertFalse(map.isEmpty(), "toMap must serialize the settings, not an empty map");
+        assertEquals("STANDARD", map.get("base"));
+        assertEquals("OFFLINE", map.get("gameMode"));
+        assertEquals(2, map.get("botCount"));
+        assertEquals(true, map.get("seeOtherCards"));
+        // Non-null strategy branch: its own name is serialized, not the BALANCED fallback.
+        assertEquals("MOST_WINS", map.get("botStrategy"));
+    }
+
+    @Test
+    void toMapUsesBalancedWhenStrategyIsNull() {
+        GameSettings settings = GameSettings.builder().botStrategy(null).build();
+
+        Map<String, Object> map = QwixxGameOptions.toMap(settings);
+
+        // Null-strategy branch of the ternary: fall back to BALANCED's name.
+        assertEquals(BotStrategy.BALANCED.name(), map.get("botStrategy"));
     }
 
     private GameOption optionByKey(String key) {

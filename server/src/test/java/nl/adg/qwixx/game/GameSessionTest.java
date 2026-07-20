@@ -125,7 +125,7 @@ class GameSessionTest {
     }
 
     @Test
-    void deterministicModeSharesLayouts() {
+    void sameCardsModeSharesLayouts() {
         GameSession s = session(4);
         Player alice = Player.of("Alice");
         Player bob   = Player.of("Bob");
@@ -137,7 +137,7 @@ class GameSessionTest {
     }
 
     @Test
-    void probabilisticModeGivesUniqueLayouts() {
+    void differentCardsModeGivesUniqueLayouts() {
         GameSession s = new GameSession(UUID.randomUUID().toString(), "test", 4,
                 GameSettings.builder().cardMode(CardMode.DIFFERENT_CARDS).build());
         Player alice = Player.of("Alice");

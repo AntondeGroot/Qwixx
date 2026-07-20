@@ -1646,3 +1646,59 @@ describe('BoardComponent — BigPoints bonus cell prerequisite', () => {
     expect(ids.has('yellow-7')).toBe(true);
   });
 });
+
+describe('BoardComponent — pass button vs roll animation', () => {
+  let fixture: ReturnType<typeof TestBed.createComponent<BoardComponent>>;
+  let component: BoardComponent;
+
+  beforeEach(async () => {
+    // EventSource is not available in jsdom — stub it so ngOnInit → setupSse() does not throw.
+    vi.stubGlobal(
+      'EventSource',
+      Object.assign(
+        vi.fn().mockImplementation(function (this: any) {
+          this.close = vi.fn();
+          this.readyState = 1;
+        }),
+        { CONNECTING: 0, OPEN: 1, CLOSED: 2 },
+      ),
+    );
+
+    await TestBed.configureTestingModule({
+      imports: [BoardComponent],
+      providers: [
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '' } } } },
+        { provide: GamestatesService, useValue: { getGameState: () => of(makeState()) } },
+        { provide: MovesService, useValue: { makeMove: vi.fn().mockReturnValue(of({ result: 'ACCEPTED' } as any)) } },
+        { provide: DiceSvgService, useValue: mockDiceSvgService },
+        provideRouter([]),
+        provideTranslateService({ loader: { provide: TranslateLoader, useClass: MockLoader } }),
+        provideHttpClientTesting(),
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(BoardComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges(); // ngOnInit
+    component.playerId.set(PLAYER_ID);
+    // Passive player who could pass (in the queue, no cells to cross, no pending cross).
+    component.gameState.set(
+      makeState({
+        turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.ACTIVE_MOVE, passivePlayerQueue: [PLAYER_ID] },
+      }),
+    );
+  });
+
+  it('hides the pass button while another player’s roll is still animating', () => {
+    component.rollingDice.set(true);
+    fixture.detectChanges();
+    expect(component.canPassPassive()).toBe(true); // game logic allows passing…
+    expect(fixture.nativeElement.querySelector('.btn-pass-arrow')).toBeNull(); // …but it isn't shown yet
+  });
+
+  it('shows the pass button once the roll animation has finished', () => {
+    component.rollingDice.set(false);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.btn-pass-arrow')).not.toBeNull();
+  });
+});

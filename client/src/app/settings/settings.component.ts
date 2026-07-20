@@ -68,6 +68,16 @@ export class SettingsComponent implements OnInit, OnDestroy {
   // Cap bots so total players (humans + bots) stays within a sensible Qwixx limit of 5.
   maxBotCount = computed(() => Math.max(0, this.maxPlayers() - this.lobbyPlayers().length));
 
+  /** Selects an enum option value (used by the Variant slider toggle). */
+  setOption(key: string, value: string): void {
+    this.form.get(key)?.setValue(value);
+  }
+
+  /** Index of the currently-selected choice — drives the slider thumb's position. */
+  variantIndex(opt: GameOption): number {
+    return Math.max(0, (opt.choices ?? []).indexOf(this.form.get(opt.key)?.value));
+  }
+
   // Suppress lobby → form updates while the player is actively editing
   private suppressLobbySync = false;
 
@@ -292,19 +302,22 @@ export class SettingsComponent implements OnInit, OnDestroy {
   // Applies all registered mutual exclusions based on current control values.
   // Must be called after any setValue({ emitEvent: false }) path (e.g. lobby sync).
   private enforceMutualExclusions(): void {
+    // A control is blocked when ANY incompatible partner is on. Collect every blocked key from the
+    // current values FIRST, then apply — otherwise one pair's "enable" could undo another pair's
+    // "disable" (e.g. picking doubleA disables doubleB, but the doubleB/bigPoints pair re-enabled it).
+    const blocked = new Set<string>();
     for (const [keyA, keyB] of this.mutualExclusionPairs) {
-      const ctrlA = this.form.get(keyA);
-      const ctrlB = this.form.get(keyB);
-      if (!ctrlA || !ctrlB) continue;
-      if (ctrlA.value) {
-        ctrlB.setValue(false, { emitEvent: false });
-        ctrlB.disable({ emitEvent: false });
-      } else if (ctrlB.value) {
-        ctrlA.setValue(false, { emitEvent: false });
-        ctrlA.disable({ emitEvent: false });
+      if (this.form.get(keyA)?.value) blocked.add(keyB);
+      if (this.form.get(keyB)?.value) blocked.add(keyA);
+    }
+    for (const key of new Set(this.mutualExclusionPairs.flat())) {
+      const ctrl = this.form.get(key);
+      if (!ctrl) continue;
+      if (blocked.has(key)) {
+        if (ctrl.value) ctrl.setValue(false, { emitEvent: false });
+        ctrl.disable({ emitEvent: false });
       } else {
-        ctrlA.enable({ emitEvent: false });
-        ctrlB.enable({ emitEvent: false });
+        ctrl.enable({ emitEvent: false });
       }
     }
   }

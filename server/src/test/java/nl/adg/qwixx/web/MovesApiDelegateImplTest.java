@@ -30,7 +30,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = MovesApiController.class)
-@Import({MovesApiDelegateImpl.class, GlobalExceptionHandler.class, SseEmitterRegistry.class, GameFinishedNotifier.class})
+@Import({MovesApiDelegateImpl.class, GlobalExceptionHandler.class, SseEmitterRegistry.class, GameFinishedNotifier.class, BotTurnDriver.class})
 class MovesApiDelegateImplTest {
 
     @Autowired

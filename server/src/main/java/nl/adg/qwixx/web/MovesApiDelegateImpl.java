@@ -39,6 +39,9 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
     @Autowired
     private GameFinishedNotifier gameFinishedNotifier;
 
+    @Autowired
+    private BotTurnDriver botDriver;
+
     @Override
     public ResponseEntity<MoveResponse> makeMove(String sessionId, String playerId,
             MoveRequest req) {
@@ -49,10 +52,14 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
         Map<Integer, UUID> closedBefore = new HashMap<>(
                 session.currentState().boardState().closedRows());
 
-        GameState newState = session.applyAction(action,
-                intermediate -> sseRegistry.emit(sessionId, intermediate, session));
+        // Apply the human's move and return at once — the response describes only this move's outcome.
+        // Any subsequent bot turns are paced asynchronously (see BotTurnDriver) and delivered over SSE,
+        // so the click is never blocked behind bot pacing.
+        GameState newState = session.applyPlayerAction(action);
         sseRegistry.emit(sessionId, newState, session);
-        gameFinishedNotifier.checkAndNotify(sessionId, session);
+        botDriver.ensureDriving(sessionId, session,
+                intermediate -> sseRegistry.emit(sessionId, intermediate, session),
+                () -> gameFinishedNotifier.checkAndNotify(sessionId, session), null);
 
         MoveResult result = newState.gameOver() ? MoveResult.GAME_OVER : MoveResult.ACCEPTED;
 

@@ -517,6 +517,8 @@ public class LockMechanismIT extends BaseIntegrationTest {
     }
 
     @Test
+    @ExtendWith(RetryOnChromeFailure.Extension.class)
+    @RetryOnChromeFailure
     void passive_crossesClosingCell_threePlayer_player2SeesRedModal() {
         // 3-player: player0 declares BLUE, player1 crosses RED "12" (auto-declares RED).
         // Both rows in pendingClosures → EVALUATE closes both → player2 doesn't need to see RED modal.

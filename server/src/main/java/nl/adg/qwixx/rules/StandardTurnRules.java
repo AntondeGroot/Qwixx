@@ -660,7 +660,17 @@ public class StandardTurnRules implements TurnRules {
     // ── Undo buffer ───────────────────────────────────────────────────────────
 
     private void savePendingCrosses(TurnState turn, UUID playerId, Map<Integer, Set<String>> crosses) {
-        turn.undoBuffer().put(playerId, crosses);
+        // Accumulate, don't overwrite: an active player makes up to two crosses per turn (white+white
+        // and white+color), often in different rows. Overwriting would erase the first cross from the
+        // turn's record, so a row lockable via that first cross — e.g. Longo's "15"/"3" second-to-last
+        // closing cell — could no longer be declared or auto-detected after the second cross.
+        Map<Integer, Set<String>> existing = turn.undoBuffer().get(playerId);
+        if (existing == null) {
+            turn.undoBuffer().put(playerId, crosses);
+            return;
+        }
+        crosses.forEach((rowIndex, cells) ->
+                existing.computeIfAbsent(rowIndex, k -> new HashSet<>()).addAll(cells));
     }
 
     private void clearPendingCrosses(TurnState turn, UUID playerId) {

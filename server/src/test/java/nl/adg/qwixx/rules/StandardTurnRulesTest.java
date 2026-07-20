@@ -171,6 +171,36 @@ class StandardTurnRulesTest {
         assertThrows(IllegalMoveException.class, () -> rules.apply(state, wwCross));
     }
 
+    @Test
+    void secondActiveCrossDoesNotEraseTheFirstFromThisTurn() {
+        // Regression: an active player's two crosses (white+white then white+color) in DIFFERENT rows
+        // must both stay recorded for this turn. The second cross used to overwrite the first, so a
+        // row lockable via the first cross — e.g. Longo's "15"/"3" second-to-last closing cell — could
+        // no longer be declared or auto-detected after the second cross, silently losing that lock.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        List<GameAction> actions = rules.getValidActions(state, p1);
+
+        CrossCellAction wc = actions.stream()
+                .filter(a -> a instanceof CrossCellAction c && c.combination() == DiceCombination.WHITE_COLOR)
+                .map(a -> (CrossCellAction) a).findFirst()
+                .orElseThrow(() -> new AssertionError("no white+color cross available"));
+        CrossCellAction ww = actions.stream()
+                .filter(a -> a instanceof CrossCellAction c
+                        && c.combination() == DiceCombination.WHITE_WHITE && c.rowIndex() != wc.rowIndex())
+                .map(a -> (CrossCellAction) a).findFirst()
+                .orElseThrow(() -> new AssertionError("no white+white cross in a different row available"));
+
+        rules.apply(state, ww);
+        rules.apply(state, wc);
+
+        Map<Integer, Set<String>> thisTurn = state.turnState().undoBuffer().get(p1);
+        assertNotNull(thisTurn, "the active player should have pending crosses recorded this turn");
+        assertTrue(thisTurn.getOrDefault(ww.rowIndex(), Set.of()).contains(ww.cellId()),
+                "the first (white+white) cross must still be recorded after the second cross");
+        assertTrue(thisTurn.getOrDefault(wc.rowIndex(), Set.of()).contains(wc.cellId()),
+                "the second (white+color) cross must be recorded too");
+    }
+
     // -------------------------------------------------------------------------
     // ACTIVE_MOVE → PASSIVE_MOVE transition
     // -------------------------------------------------------------------------

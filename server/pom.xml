@@ -554,11 +554,12 @@
               <mutators>
                 <mutator>DEFAULTS</mutator>
               </mutators>
-              <!-- Ratchet: baseline mutation score is ~78% (test strength 71%). Bot play is now seeded
-                   in tests (GameSession#seedForTest), so the score is stable; the small remaining buffer
-                   below actual absorbs PIT's own timeout-based nondeterminism. Raise toward 80% as tests
-                   improve — a frozen floor that only goes up, like the JaCoCo coverage gate. -->
-              <mutationThreshold>75</mutationThreshold>
+              <!-- Ratchet: baseline mutation score is ~80% (test strength 83%). Bot play is now seeded
+                   in tests (GameSession#seedForTest), so the score is stable; the ~2-point buffer below
+                   actual absorbs PIT's own timeout-based nondeterminism (~17 mutations time out per run,
+                   ≈1% of the total, and count as killed only when they finish in time). Raise past 80% as
+                   tests improve — a frozen floor that only goes up, like the JaCoCo coverage gate. -->
+              <mutationThreshold>78</mutationThreshold>
               <timestampedReports>false</timestampedReports>
               <outputFormats>
                 <outputFormat>HTML</outputFormat>

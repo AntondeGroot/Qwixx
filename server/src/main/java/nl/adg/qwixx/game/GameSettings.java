@@ -143,7 +143,7 @@ public class GameSettings {
                     "bonusB cannot be combined with bigPoints, doubleA/doubleB, connectedCells, luckyCross, " +
                     "extraRow, randomOrder or bonusA: the bonus boxes rely on the standard row layout");
             }
-            if (bonusA && (bigPoints || doubleA || doubleB || connectedCells || luckyCross || extraRow || randomOrder || bonusB)) {
+            if (bonusA && (bigPoints || doubleA || doubleB || connectedCells || luckyCross || extraRow || randomOrder)) {
                 throw new IllegalArgumentException(
                     "bonusA cannot be combined with bigPoints, doubleA/doubleB, connectedCells, luckyCross, " +
                     "extraRow or randomOrder: bonus boxes sit at fixed numbers and rely on the standard row layout");

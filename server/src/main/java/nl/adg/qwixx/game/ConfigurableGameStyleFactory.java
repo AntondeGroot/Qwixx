@@ -374,8 +374,8 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
     /**
      * Builds all four coloured rows with lucky cross fields interleaved.
      * Row i gets a cyclic shift of (baseShift + i) positions in the gap pattern so each
-     * row has its cross fields at different positions. baseShift = 0 for deterministic mode,
-     * a random value for probabilistic mode.
+     * row has its cross fields at different positions. baseShift = 0 for same-cards mode,
+     * a random value for different-cards mode.
      */
     private List<Row> buildStandardRowsWithLuckyCross(int baseShift) {
         int[] gaps = luckyCrossGaps();

@@ -539,7 +539,10 @@
                 <param>nl.adg.qwixx.bot.*</param>
               </targetClasses>
               <excludedClasses>
+                <!-- Dev-only offline mains (also excluded from JaCoCo/PMD/ArchUnit): not part of the
+                     served app, so they shouldn't count toward the mutation score. -->
                 <param>nl.adg.qwixx.bot.BotTrainer</param>
+                <param>nl.adg.qwixx.bot.BotSimulator</param>
               </excludedClasses>
               <targetTests>
                 <param>nl.adg.qwixx.*</param>
@@ -551,11 +554,11 @@
               <mutators>
                 <mutator>DEFAULTS</mutator>
               </mutators>
-              <!-- Ratchet: baseline mutation score is ~63% (test strength 71%). Bot play is now seeded
+              <!-- Ratchet: baseline mutation score is ~70% (test strength 71%). Bot play is now seeded
                    in tests (GameSession#seedForTest), so the score is stable; the small remaining buffer
                    below actual absorbs PIT's own timeout-based nondeterminism. Raise toward 80% as tests
                    improve — a frozen floor that only goes up, like the JaCoCo coverage gate. -->
-              <mutationThreshold>60</mutationThreshold>
+              <mutationThreshold>68</mutationThreshold>
               <timestampedReports>false</timestampedReports>
               <outputFormats>
                 <outputFormat>HTML</outputFormat>

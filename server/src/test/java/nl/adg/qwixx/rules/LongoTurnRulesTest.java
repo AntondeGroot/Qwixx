@@ -1152,6 +1152,138 @@ class LongoTurnRulesTest {
                 .orElseThrow(() -> new AssertionError("no XChange(" + a + "," + b + ") offered to " + playerId));
     }
 
+    // ── bonusCellActions / whiteSumMatchesBonusNumber edge cases ─────────────────
+
+    @Test
+    void bonusNotOfferedToRowsAboveTheFewestCrossCount() {
+        // Only the fewest-crosses rows may be offered a bonus cell (guards L78).
+        GameState state = stateAfterRoll(p1, p1, p2);
+        state.setVariantData(new LongoVariantData(Map.of(p1, List.of(FIXED_WHITE_SUM))));
+        SheetLayout layout = state.sheetLayouts().get(p1);
+        SheetProgress prog = state.boardState().sheetProgress().get(p1);
+
+        // RED (0): 3 crosses (positions 0-2) — the MOST. YELLOW/GREEN/BLUE: 0 crosses (fewest).
+        Set<String> redCrossed = new HashSet<>();
+        for (int i = 0; i < 3; i++) redCrossed.add(layout.rows().get(0).cells().get(i).id());
+        prog.updateRowState(0, new RowState(redCrossed, false));
+
+        // RED's leftmost available cell is position 3 (value "5") — never a bonus target here.
+        String redLeftmostAvail = layout.rows().get(0).cells().get(3).id();
+        assertFalse(rules.getValidActions(state, p1).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction cc
+                                && cc.rowIndex() == 0 && cc.cellId().equals(redLeftmostAvail)
+                                && cc.combination() == DiceCombination.WHITE_WHITE),
+                "RED (3 crosses) must not receive a bonus — only fewest-crosses rows do");
+
+        // Sanity: a fewest row (YELLOW, 0 crosses) IS offered its leftmost cell.
+        String yellowFirst = layout.rows().get(1).cells().get(0).id();
+        assertTrue(rules.getValidActions(state, p1).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction cc
+                                && cc.rowIndex() == 1 && cc.cellId().equals(yellowFirst)),
+                "YELLOW (0 crosses, fewest) must be offered its leftmost bonus cell");
+    }
+
+    @Test
+    void bonusNotOfferedForAClosedRow() {
+        // A closed row must be skipped when offering bonus cells (guards L77).
+        GameState state = stateAfterRoll(p1, p1, p2);
+        state.setVariantData(new LongoVariantData(Map.of(p1, List.of(FIXED_WHITE_SUM))));
+        SheetLayout layout = state.sheetLayouts().get(p1);
+
+        // All rows have 0 crosses → fewest = 0. Close RED (row 0): it would otherwise qualify.
+        state.boardState().closedRows().put(0, p2);
+
+        String redFirst = layout.rows().get(0).cells().get(0).id(); // "2" ≠ white sum → bonus-only
+        assertFalse(rules.getValidActions(state, p1).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction cc
+                                && cc.rowIndex() == 0 && cc.cellId().equals(redFirst)),
+                "a closed row must not be offered a bonus cell");
+    }
+
+    @Test
+    void closedRowWithFewerCrossesDoesNotSuppressBonusForOpenRows() {
+        // The fewest-crosses computation must ignore closed rows (guards the row-open filter, L69).
+        GameState state = stateAfterRoll(p1, p1, p2);
+        state.setVariantData(new LongoVariantData(Map.of(p1, List.of(FIXED_WHITE_SUM))));
+        SheetLayout layout = state.sheetLayouts().get(p1);
+        SheetProgress prog = state.boardState().sheetProgress().get(p1);
+
+        state.boardState().closedRows().put(0, p2); // RED closed with 0 crosses
+        for (int r = 1; r <= 3; r++) {              // open rows each have 2 crosses
+            Set<String> two = new HashSet<>(Set.of(
+                    layout.rows().get(r).cells().get(0).id(),
+                    layout.rows().get(r).cells().get(1).id()));
+            prog.updateRowState(r, new RowState(two, false));
+        }
+
+        // Fewest among OPEN rows = 2 → YELLOW's leftmost available (position 2, "4") must be offered.
+        String yellowBonus = layout.rows().get(1).cells().get(2).id();
+        assertTrue(rules.getValidActions(state, p1).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction cc
+                                && cc.rowIndex() == 1 && cc.cellId().equals(yellowBonus)
+                                && cc.combination() == DiceCombination.WHITE_WHITE),
+                "open rows must still receive a bonus even though a closed row has fewer crosses");
+    }
+
+    @Test
+    void bonusCellNotDuplicatedWhenItIsAlsoARegularWhiteWhiteAction() {
+        // If the bonus cell coincides with a regular white+white action it must appear once (guards L80).
+        GameState state = stateAfterRoll(p1, p1, p2); // white sum = 7
+        state.setVariantData(new LongoVariantData(Map.of(p1, List.of(FIXED_WHITE_SUM))));
+        SheetLayout layout = state.sheetLayouts().get(p1);
+        SheetProgress prog = state.boardState().sheetProgress().get(p1);
+
+        // RED (0): 5 crosses (positions 0-4) → leftmost available = position 5 (value "7" = white sum).
+        Set<String> redCrossed = new HashSet<>();
+        for (int i = 0; i < 5; i++) redCrossed.add(layout.rows().get(0).cells().get(i).id());
+        prog.updateRowState(0, new RowState(redCrossed, false));
+        // Other rows: 6 crosses so RED (5) is the unique fewest.
+        for (int r = 1; r <= 3; r++) {
+            Set<String> six = new HashSet<>();
+            for (int i = 0; i < 6; i++) six.add(layout.rows().get(r).cells().get(i).id());
+            prog.updateRowState(r, new RowState(six, false));
+        }
+
+        String redSeven = layout.rows().get(0).cells().get(5).id(); // value "7"
+        long count = rules.getValidActions(state, p1).stream()
+                .filter(a -> a instanceof CrossCellAction cc
+                        && cc.cellId().equals(redSeven) && cc.combination() == DiceCombination.WHITE_WHITE)
+                .count();
+        assertEquals(1, count, "a cell that is both bonus and regular white+white must appear exactly once");
+    }
+
+    @Test
+    void noBonusOfferedWhenVariantDataIsNotLongo() {
+        // whiteSumMatchesBonusNumber must return false (never true) for non-Longo variant data (guards L87).
+        GameState state = stateAfterRoll(p1, p1, p2);
+        state.setVariantData(null); // not a LongoVariantData
+        SheetLayout layout = state.sheetLayouts().get(p1);
+        String firstCell = layout.rows().get(0).cells().get(0).id(); // "2" ≠ white sum → bonus-only
+
+        assertDoesNotThrow(() -> rules.getValidActions(state, p1),
+                "missing Longo variant data must not throw");
+        assertFalse(rules.getValidActions(state, p1).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction cc
+                                && cc.rowIndex() == 0 && cc.cellId().equals(firstCell)
+                                && cc.combination() == DiceCombination.WHITE_WHITE),
+                "no bonus cell may be offered when variant data is not Longo");
+    }
+
+    @Test
+    void noBonusOfferedWhenPlayerHasNoBonusNumbers() {
+        // An empty bonus list must return false (never true) (guards L89).
+        GameState state = stateAfterRoll(p1, p1, p2);
+        state.setVariantData(new LongoVariantData(Map.of())); // p1 has no bonus numbers
+        SheetLayout layout = state.sheetLayouts().get(p1);
+        String firstCell = layout.rows().get(0).cells().get(0).id(); // "2" ≠ white sum → bonus-only
+
+        assertFalse(rules.getValidActions(state, p1).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction cc
+                                && cc.rowIndex() == 0 && cc.cellId().equals(firstCell)
+                                && cc.combination() == DiceCombination.WHITE_WHITE),
+                "no bonus cell may be offered when the player has no bonus numbers");
+    }
+
     private Random fixedRandom() {
         return rollSequence(2, 3, 1, 2, 3, 4); // → white1=3, white2=4, ..., blue=5
     }

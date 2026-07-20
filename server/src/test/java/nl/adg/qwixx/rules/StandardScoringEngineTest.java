@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import nl.adg.qwixx.data.BonusBKind;
 import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.CellTag;
 import nl.adg.qwixx.data.Color;
@@ -310,5 +311,98 @@ class StandardScoringEngineTest {
         assertEquals(5, card.bonusPoints());
         assertEquals(-10, card.punishmentPoints());
         assertEquals(3 + 5 - 10, card.total());
+    }
+
+    // --- X-Change row is skipped entirely ---
+
+    @Test
+    void xChangeRowCellsContributeNothing() {
+        // A crossed cell in an X-Change row would count as a colour cross if the row were scored;
+        // the engine must skip the whole row so it adds nothing.
+        Row row = new Row();
+        Cell c = cell(Color.RED, List.of(new CellTag.XChange(2, 12)));
+        row.addCell(c);
+
+        SheetLayout layout = layoutOf(row);
+        SheetProgress progress = progressOf(Map.of(0, new RowState(Set.of(c.id()), false)), 0);
+
+        ScoreCard card = engine.calculate(layout, progress);
+
+        assertEquals(0, card.crossesPerColor().get(Color.RED), "X-Change rows are skipped, so no crosses count");
+        assertEquals(0, card.bonusPoints());
+        assertEquals(0, card.total());
+    }
+
+    @Test
+    void xChangeRowIsSkippedEvenAlongsideAScoringRow() {
+        // Row 0 is a normal red row (2 crosses → 3 points); row 1 is an X-Change row whose crossed
+        // cell must not add to the total.
+        Row scoring = new Row();
+        Cell a = cell(Color.RED);
+        Cell b = cell(Color.RED);
+        scoring.addCell(a);
+        scoring.addCell(b);
+
+        Row xChange = new Row();
+        Cell x = cell(Color.RED, List.of(new CellTag.XChange(2, 12)));
+        xChange.addCell(x);
+
+        SheetLayout layout = layoutOf(scoring, xChange);
+        SheetProgress progress = progressOf(Map.of(
+                0, new RowState(Set.of(a.id(), b.id()), false),
+                1, new RowState(Set.of(x.id()), false)), 0);
+
+        ScoreCard card = engine.calculate(layout, progress);
+
+        // Only the scoring row counts: 2 red crosses → triangular(2) = 3. The X-Change cross adds nothing.
+        assertEquals(2, card.crossesPerColor().get(Color.RED), "the X-Change cell must not be tallied");
+        assertEquals(3, card.total());
+    }
+
+    // --- Bonus B strip cells score nothing ---
+
+    @Test
+    void bonusBStripCellsScoreNothing() {
+        // FEWEST_TWO is an immediate (rule-time) bonus with no score-time effect, so a crossed strip
+        // indicator must leave the score at zero.
+        Row strip = new Row();
+        strip.setBonusBStrip();
+        Cell indicator = cell(Color.RED, List.of(new CellTag.BonusB(BonusBKind.FEWEST_TWO)));
+        strip.addCell(indicator);
+
+        SheetLayout layout = layoutOf(strip);
+        SheetProgress progress = progressOf(Map.of(0, new RowState(Set.of(indicator.id()), false)), 0);
+
+        ScoreCard card = engine.calculate(layout, progress);
+
+        assertEquals(0, card.crossesPerColor().get(Color.RED), "strip indicators never count as colour crosses");
+        assertEquals(0, card.bonusPoints());
+        assertEquals(0, card.total());
+    }
+
+    // --- Lucky Number row: score = exact sum of crossed lucky values ---
+
+    @Test
+    void luckyNumberRowScoresExactSumOfCrossedValues() {
+        // Lucky cells worth 5 and 6 are crossed; a third worth 8 is left uncrossed. The bonus must be
+        // exactly 5 + 6 = 11 — not the difference, not zero, and not including the uncrossed cell.
+        Row lucky = new Row();
+        lucky.setLuckyRow(7);
+        Cell five  = cell(Color.RED, List.of(new CellTag.LuckyNumber(5)));
+        Cell six   = cell(Color.RED, List.of(new CellTag.LuckyNumber(6)));
+        Cell eight = cell(Color.RED, List.of(new CellTag.LuckyNumber(8)));
+        lucky.addCell(five);
+        lucky.addCell(six);
+        lucky.addCell(eight);
+
+        SheetLayout layout = layoutOf(lucky);
+        SheetProgress progress = progressOf(
+                Map.of(0, new RowState(Set.of(five.id(), six.id()), false)), 0);
+
+        ScoreCard card = engine.calculate(layout, progress);
+
+        assertEquals(11, card.bonusPoints(), "lucky bonus is the sum of only the crossed LuckyNumber values");
+        assertEquals(0, card.crossesPerColor().get(Color.RED), "lucky cells are not counted as colour crosses");
+        assertEquals(11, card.total());
     }
 }

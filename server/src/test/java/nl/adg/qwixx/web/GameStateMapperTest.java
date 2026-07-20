@@ -243,7 +243,7 @@ class GameStateMapperTest {
     }
 
     @Test
-    void toDtoClosedRowsContainsRowIdForDeterministicMode() {
+    void toDtoClosedRowsContainsRowIdForSameCardsMode() {
         // SAME_CARDS (default): all players share the same Row objects → same row IDs.
         // The single entry from anyLayout is correct for all players.
         GameState state = GameRegistry.getGame(sessionId).currentState();
@@ -266,7 +266,7 @@ class GameStateMapperTest {
     }
 
     @Test
-    void toDtoClosedRowsContainsBothPlayersRowIdsInProbabilisticMode() {
+    void toDtoClosedRowsContainsBothPlayersRowIdsInDifferentCardsMode() {
         // DIFFERENT_CARDS mode: each player receives their own buildStandardRows() call,
         // so Row objects have different UUIDs per player.
         // Bug: the old code used anyLayout — only one player's row ID ended up in the map,
@@ -305,7 +305,7 @@ class GameStateMapperTest {
     }
 
     @Test
-    void toDtoClosedRowsAllPlayersCanSeeMultipleClosedRowsInProbabilisticMode() {
+    void toDtoClosedRowsAllPlayersCanSeeMultipleClosedRowsInDifferentCardsMode() {
         GameRegistry.clear();
         String sid = GameRegistry.createGame("prob2", 4,
                 GameSettings.builder().cardMode(CardMode.DIFFERENT_CARDS).build());
@@ -366,7 +366,7 @@ class GameStateMapperTest {
     }
 
     @Test
-    void oneLogicalRowClosedInProbabilisticModeProducesTwoDtoEntriesButCountsAsOneRow() {
+    void oneLogicalRowClosedInDifferentCardsModeProducesTwoDtoEntriesButCountsAsOneRow() {
         // In DIFFERENT_CARDS mode each player has a unique row UUID for the same logical row.
         // mapClosedRows must produce one DTO entry per player so each client can see their
         // row as closed — but the GAME must still count this as ONE closed row (not two),
@@ -406,7 +406,7 @@ class GameStateMapperTest {
     }
 
     @Test
-    void twoLogicalRowsClosedInProbabilisticModeProducesFourDtoEntriesAndGameIsOver() {
+    void twoLogicalRowsClosedInDifferentCardsModeProducesFourDtoEntriesAndGameIsOver() {
         // Closing two logical rows ends the game (>= 2). The DTO has 4 entries
         // (2 rows × 2 players), but game-over is driven by the internal map size, not the DTO.
         GameRegistry.clear();

@@ -10,6 +10,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -62,6 +63,8 @@ public class GameSession {
     private       SessionStatus status = SessionStatus.WAITING;
     /** When false, bot pacing sleeps are skipped (tests only) so the paced path runs instantly. */
     private volatile boolean  botPacingEnabled = true;
+    /** Drives player-order/pic shuffles and (via the factory) dice rolls; seedable for tests. */
+    private       Random      random = new Random();
     /** Full pool of available bot profile-pic indices, as supplied by GameRoom at start time. */
     private List<Integer> botPicPool = List.of();
 
@@ -134,7 +137,7 @@ public class GameSession {
 
         botPicPool = List.copyOf(availableBotPics);
         List<Integer> shuffled = new ArrayList<>(botPicPool);
-        shuffle(shuffled);
+        shuffle(shuffled, random);
         for (int i = 0; i < settings.botCount(); i++) {
             String pic = i < shuffled.size() ? String.valueOf(shuffled.get(i)) : null;
             Player bot = new Player(UUID.randomUUID(), "Computer " + (i + 1), pic);
@@ -143,9 +146,9 @@ public class GameSession {
             botProfiles.put(bot.id(), settings.profileForBot(i));
         }
 
-        shuffle(players);
+        shuffle(players, random);
 
-        GameStyleFactory factory = new ConfigurableGameStyleFactory(settings);
+        GameStyleFactory factory = new ConfigurableGameStyleFactory(settings, random);
         List<UUID> playerIds = players.stream().map(Player::id).toList();
 
         Map<UUID, List<Row>> rowsByPlayer = factory.buildRows(playerIds);
@@ -249,7 +252,7 @@ public class GameSession {
         botProfiles.clear();
 
         List<Integer> shuffled = new ArrayList<>(botPicPool);
-        shuffle(shuffled);
+        shuffle(shuffled, random);
         for (int i = 0; i < newSettings.botCount(); i++) {
             String pic = i < shuffled.size() ? String.valueOf(shuffled.get(i)) : null;
             Player bot = new Player(UUID.randomUUID(), "Computer " + (i + 1), pic);
@@ -258,9 +261,9 @@ public class GameSession {
             botProfiles.put(bot.id(), newSettings.profileForBot(i));
         }
 
-        shuffle(players);
+        shuffle(players, random);
 
-        GameStyleFactory factory = new ConfigurableGameStyleFactory(newSettings);
+        GameStyleFactory factory = new ConfigurableGameStyleFactory(newSettings, random);
         List<UUID> playerIds = players.stream().map(Player::id).toList();
 
         Map<UUID, List<Row>> rowsByPlayer = factory.buildRows(playerIds);
@@ -400,6 +403,15 @@ public class GameSession {
     /** Test hook: disables the human-feel bot pacing so paced-path tests run instantly. */
     void disableBotPacingForTest() {
         this.botPacingEnabled = false;
+    }
+
+    /**
+     * Test hook: makes the whole game reproducible — seeds the shuffle/dice RNG for this session and
+     * the bot's tie-breaking RNG — so bot-driven runs give deterministic coverage and mutation results.
+     */
+    synchronized void seedForTest(long seed) {
+        this.random = new Random(seed);
+        BotDecider.seedForTest(seed);
     }
 
     @Nullable private UUID nextBotToAct(GameState state) {

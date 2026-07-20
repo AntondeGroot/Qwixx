@@ -40,6 +40,11 @@ public class BotDecider {
 
     private BotDecider() {}
 
+    /** Test hook: seeds the tie-breaking RNG so a bot's choice among equally-good moves is reproducible. */
+    public static void seedForTest(long seed) {
+        RAND.setSeed(seed);
+    }
+
     // ── Public API ────────────────────────────────────────────────────────────
 
     /** Decides the best action using the given profile. */

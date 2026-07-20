@@ -60,6 +60,8 @@ public class GameSession {
     private final Map<UUID, nl.adg.qwixx.bot.BotProfile> botProfiles = new HashMap<>();
     private       GameState   state;
     private       SessionStatus status = SessionStatus.WAITING;
+    /** When false, bot pacing sleeps are skipped (tests only) so the paced path runs instantly. */
+    private volatile boolean  botPacingEnabled = true;
     /** Full pool of available bot profile-pic indices, as supplied by GameRoom at start time. */
     private List<Integer> botPicPool = List.of();
 
@@ -107,7 +109,7 @@ public class GameSession {
      *
      * @param runInitialBotTurns when {@code true} (headless/simulation) any bots that act
      *     first play immediately and synchronously. Live games pass {@code false} and drive
-     *     the initial bot turns via {@link #runPendingBotTurns} once clients have subscribed,
+     *     the initial bot turns via {@link #driveBotTurns} once clients have subscribed,
      *     so a bot going first still plays its dice animation.
      */
     public synchronized void start(List<Integer> availableBotPics, boolean runInitialBotTurns) {
@@ -183,22 +185,30 @@ public class GameSession {
         }
     }
 
-    public synchronized GameState applyAction(GameAction action) {
-        return applyAction(action, null);
-    }
-
     /**
-     * Applies a player action and runs any subsequent bot turns.
-     * If {@code botStateListener} is provided it is called (and the thread sleeps
-     * for {@link #BOT_ROLL_DELAY_MS}) immediately after each bot roll so the client
-     * can play the dice animation before the bot's moves arrive.
-     * Pass {@code null} for headless simulation (no delay, no intermediate emit).
+     * Applies a player action and runs any subsequent bot turns inline (no pacing, no emits).
+     * For headless simulation and tests — the returned state already reflects the bot turns.
+     * Live play uses {@link #applyPlayerAction} + {@link #driveBotTurns} instead, so a human's
+     * click is never blocked behind bot pacing.
      */
-    public synchronized GameState applyAction(GameAction action, @Nullable Consumer<GameState> botStateListener) {
+    public synchronized GameState applyAction(GameAction action) {
         if (status != SessionStatus.IN_PROGRESS)
             throw new IllegalStateException("game is not in progress");
         state = rules.apply(state, action);
-        if (!state.gameOver()) state = runBotTurns(state, botStateListener);
+        if (!state.gameOver()) state = runBotTurns(state);
+        if (state.gameOver()) status = SessionStatus.FINISHED;
+        return state;
+    }
+
+    /**
+     * Applies a single player action and returns the new state, WITHOUT running any subsequent
+     * bot turns. Live callers apply the human's move with this (so the response returns at once)
+     * and then drive the paced bot turns asynchronously via {@link #driveBotTurns}.
+     */
+    public synchronized GameState applyPlayerAction(GameAction action) {
+        if (status != SessionStatus.IN_PROGRESS)
+            throw new IllegalStateException("game is not in progress");
+        state = rules.apply(state, action);
         if (state.gameOver()) status = SessionStatus.FINISHED;
         return state;
     }
@@ -295,29 +305,8 @@ public class GameSession {
         status = SessionStatus.FINISHED;
     }
 
+    /** Headless bot turns: applies every pending bot action inline with no pacing or emits. */
     private GameState runBotTurns(GameState state) {
-        return runBotTurns(state, null);
-    }
-
-    /** True when a bot is next to act at the current state (e.g. a bot rolls first). */
-    public synchronized boolean isBotToAct() {
-        return nextBotToAct(state) != null;
-    }
-
-    /**
-     * Runs any bot turns pending at the current state, emitting each intermediate state
-     * through {@code botStateListener}. Live games call this (typically off the request
-     * thread, once clients have subscribed) so a bot acting first still plays its dice
-     * animation instead of having the roll baked into the initial state.
-     */
-    public synchronized GameState runPendingBotTurns(Consumer<GameState> botStateListener) {
-        if (status != SessionStatus.IN_PROGRESS) return state;
-        state = runBotTurns(state, botStateListener);
-        if (state.gameOver()) status = SessionStatus.FINISHED;
-        return state;
-    }
-
-    private GameState runBotTurns(GameState state, @Nullable Consumer<GameState> botStateListener) {
         if (botPlayerIds.isEmpty()) return state;
         GameState current = state;
         int guard = 0;
@@ -329,31 +318,65 @@ public class GameSession {
             if (valid.isEmpty()) break;
             GameAction action = BotDecider.decide(current, bot, valid,
                     botProfiles.getOrDefault(bot, nl.adg.qwixx.bot.BotProfile.DEFAULT));
-
-            // Live games only (botStateListener != null): pace bot actions so they feel human.
-            // The decision above is instantaneous; only the applied move is paced. Simulation and
-            // training pass a null listener and stay fast.
-            boolean liveGame = botStateListener != null;
-            boolean isRoll   = action instanceof RollAction;
-
-            if (liveGame && isRoll) {
-                // Emit the bot's cleared, pre-roll board and let it "think" before rolling. Clients
-                // drive the dice animation off the no-roll -> roll transition, so this pre-roll emit
-                // is what makes the animation play for a bot.
-                if (botStateListener != null) botStateListener.accept(current);
-                pauseBot(randomPreRollDelayMs());
-            }
             current = rules.apply(current, action);
-
-            if (liveGame) {
-                if (botStateListener != null) botStateListener.accept(current);
-                // The roll gets a long, fixed pause for the dice animation; every other move
-                // (cross, punishment, lock intent, pass) gets a short random beat so it doesn't
-                // land instantaneously.
-                pauseBot(isRoll ? BOT_ROLL_DELAY_MS : randomMoveDelayMs());
-            }
         }
         return current;
+    }
+
+    /**
+     * True when a bot is next to act at the current state (e.g. a bot rolls first). False once the
+     * game is over or not in progress — kept consistent with {@link #stepBotOnce} so the driver's
+     * idle re-check can never spin on a game-over state.
+     */
+    public synchronized boolean isBotToAct() {
+        return status == SessionStatus.IN_PROGRESS && !state.gameOver() && nextBotToAct(state) != null;
+    }
+
+    /**
+     * Drives all pending bot turns with human-feel pacing, emitting each intermediate state through
+     * {@code emit}. Runs OFF the request thread (see the web layer's bot driver): only the per-action
+     * state mutation and its emit are synchronized (in {@link #stepBotOnce}); the pacing delay between
+     * actions holds no lock, so a human's move can interleave and is never blocked behind bot pacing.
+     */
+    public void driveBotTurns(Consumer<GameState> emit) {
+        for (int guard = 0; guard < 400; guard++) {
+            Long delayMs = stepBotOnce(emit);
+            if (delayMs == null) return; // no bot pending (or game over)
+            pauseBot(delayMs);           // UNLOCKED — human moves interleave here
+        }
+    }
+
+    /**
+     * Applies the next pending bot action in a short critical section, emitting the resulting state
+     * (and, for a roll, the pre-roll board first) while the lock is held so each snapshot is
+     * consistent. Returns the delay to pace before the next action, or {@code null} when no bot is
+     * pending. During a bot's ROLL phase no other player has a legal move, so the brief pre-roll
+     * "think" pause here is the one place pacing runs under the lock — it never blocks a human move.
+     */
+    private synchronized @Nullable Long stepBotOnce(Consumer<GameState> emit) {
+        if (status != SessionStatus.IN_PROGRESS || state.gameOver()) return null;
+        UUID bot = nextBotToAct(state);
+        if (bot == null) return null;
+        List<GameAction> valid = rules.getValidActions(state, bot);
+        if (valid.isEmpty()) return null;
+        GameAction action = BotDecider.decide(state, bot, valid,
+                botProfiles.getOrDefault(bot, nl.adg.qwixx.bot.BotProfile.DEFAULT));
+        boolean isRoll = action instanceof RollAction;
+
+        if (isRoll) {
+            // Emit the bot's cleared, pre-roll board and let it "think" before rolling. Clients drive
+            // the dice animation off the no-roll -> roll transition, so this pre-roll emit is what
+            // makes the animation play for a bot.
+            emit.accept(state);
+            pauseBot(randomPreRollDelayMs());
+        }
+        state = rules.apply(state, action);
+        if (state.gameOver()) status = SessionStatus.FINISHED;
+        emit.accept(state);
+
+        // The roll gets a long, fixed pause for the dice animation; every other move (cross,
+        // punishment, lock intent, pass) gets a short random beat so it doesn't land instantaneously.
+        return isRoll ? BOT_ROLL_DELAY_MS : randomMoveDelayMs();
     }
 
     private static long randomPreRollDelayMs() {
@@ -365,12 +388,18 @@ public class GameSession {
     }
 
     private void pauseBot(long millis) {
+        if (!botPacingEnabled) return;
         try {
             Thread.sleep(millis);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warning("Bot roll delay interrupted");
         }
+    }
+
+    /** Test hook: disables the human-feel bot pacing so paced-path tests run instantly. */
+    void disableBotPacingForTest() {
+        this.botPacingEnabled = false;
     }
 
     @Nullable private UUID nextBotToAct(GameState state) {

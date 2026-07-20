@@ -2,9 +2,12 @@ package nl.adg.qwixx.game;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import nl.adg.qwixx.action.RollAction;
 import nl.adg.qwixx.state.CardMode;
+import nl.adg.qwixx.state.GameState;
 import nl.adg.qwixx.state.TurnPhase;
 import org.junit.jupiter.api.Test;
 
@@ -289,5 +292,55 @@ class GameSessionTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> s.exitGame(UUID.randomUUID()));
+    }
+
+    // --- bot turns: responsiveness (human moves must not run bots inline) ---
+
+    private GameSession sessionWithOneBot() {
+        GameSession s = new GameSession(UUID.randomUUID().toString(), "test", 4,
+                GameSettings.builder().botCount(1).build());
+        s.addPlayer(Player.of("Alice"));
+        s.start(List.of(), false); // seed one bot; do not auto-run initial bot turns
+        return s;
+    }
+
+    @Test
+    void applyPlayerActionDoesNotRunBotTurnsInline() {
+        GameSession s = sessionWithOneBot();
+        UUID active = s.currentState().turnState().activePlayerId();
+        s.applyPlayerAction(new RollAction(active));
+        // The human's action is applied, but bot turns are left for the async driver — a bot is
+        // still pending. This is what lets the move endpoint return without waiting on bot pacing.
+        assertTrue(s.isBotToAct(), "applyPlayerAction must not run bot turns inline");
+    }
+
+    @Test
+    void applyActionResolvesBotTurnsInline() {
+        GameSession s = sessionWithOneBot();
+        UUID active = s.currentState().turnState().activePlayerId();
+        s.applyAction(new RollAction(active));
+        // The headless path resolves all pending bot turns inline, returning control to the human.
+        assertFalse(s.isBotToAct(), "applyAction must resolve bot turns inline");
+    }
+
+    @Test
+    void isBotToActIsFalseWhenGameOver() {
+        GameSession s = sessionWithOneBot();
+        s.currentState().setGameOver(true);
+        // Guards the async driver's idle re-check from spinning on a finished game.
+        assertFalse(s.isBotToAct(), "a finished game must report no bot to act");
+    }
+
+    @Test
+    void driveBotTurnsAppliesPendingBotActions() {
+        GameSession s = sessionWithOneBot();
+        s.disableBotPacingForTest();
+        UUID active = s.currentState().turnState().activePlayerId();
+        s.applyPlayerAction(new RollAction(active));
+        assertTrue(s.isBotToAct());
+
+        List<GameState> emitted = new ArrayList<>();
+        s.driveBotTurns(emitted::add);
+        assertFalse(emitted.isEmpty(), "driveBotTurns should apply and emit the pending bot action(s)");
     }
 }

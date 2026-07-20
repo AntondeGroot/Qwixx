@@ -5,8 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSession;
@@ -25,8 +23,6 @@ import nl.adg.qwixx.generated.model.GameStatus;
 import nl.adg.qwixx.generated.model.NewGameRequest;
 import nl.adg.qwixx.generated.model.RestartGameRequest;
 import nl.adg.qwixx.generated.model.ScoreCard;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,10 +43,8 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
     @Autowired
     private GameFinishedNotifier gameFinishedNotifier;
 
-    private static final Logger logger = LoggerFactory.getLogger(GamesApiDelegateImpl.class);
-
-    /** Runs initial bot turns off the request thread so the roll can animate on connected clients. */
-    private final ExecutorService botTurnExecutor = Executors.newCachedThreadPool();
+    @Autowired
+    private BotTurnDriver botDriver;
 
     @Override
     public ResponseEntity<CreateNewGame201Response> createNewGame(NewGameRequest req) {
@@ -111,20 +105,13 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
      * No-op when a human acts first.
      */
     private void runInitialBotTurnsAsync(String sessionId, GameSession session) {
-        if (!session.isBotToAct()) return;
-        // The returned Future is intentionally not awaited (fire-and-forget on the request path), so
-        // exceptions must be caught here or they'd be swallowed by the discarded Future.
-        botTurnExecutor.execute(() -> {
-            try {
-                awaitSubscriber(sessionId);
-                session.runPendingBotTurns(
-                        intermediate -> sseRegistry.emit(sessionId, intermediate, session));
-                sseRegistry.emit(sessionId, session.currentState(), session);
-                gameFinishedNotifier.checkAndNotify(sessionId, session);
-            } catch (RuntimeException e) {
-                logger.warn("Initial bot turns failed for session {}", sessionId, e);
-            }
-        });
+        // Drive the opening bot turns off the request thread, waiting first for a subscriber so a
+        // first-acting bot's dice animation isn't missed. Same paced, lock-yielding driver the move
+        // endpoint uses, so it stays single-flight with any move that arrives.
+        botDriver.ensureDriving(sessionId, session,
+                intermediate -> sseRegistry.emit(sessionId, intermediate, session),
+                () -> gameFinishedNotifier.checkAndNotify(sessionId, session),
+                () -> awaitSubscriber(sessionId));
     }
 
     private void awaitSubscriber(String sessionId) {

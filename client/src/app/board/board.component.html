@@ -168,7 +168,7 @@
           >
             {{ t('roll') }}
           </button>
-        } @else if (canPassActive()) {
+        } @else if (canPassActive() && !rollingDice()) {
           <button class="btn-confirm" (click)="passActive()" [class.sent]="movePending()" [disabled]="movePending()">
             <svg class="confirm-check-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 102.97">
               <path
@@ -176,7 +176,7 @@
               />
             </svg>
           </button>
-        } @else if (canPassPassive()) {
+        } @else if (canPassPassive() && !rollingDice()) {
           @if (hasPendingPassiveCross()) {
             <button class="btn-confirm" (click)="passPassive()" [class.sent]="movePending()" [disabled]="movePending()">
               <svg class="confirm-check-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 122.88 102.97">

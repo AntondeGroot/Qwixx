@@ -11,7 +11,7 @@
 
 <form [formGroup]="form" (ngSubmit)="startGame()" [attr.translate]="'no'">
   @for (opt of availableGameOptions(); track opt.key) {
-    <div [class.option-disabled]="form.get(opt.key)?.disabled">
+    <div [class.option-disabled]="form.get(opt.key)?.disabled" [class.option-variant]="opt.key === 'base'">
       <div class="option-header">
         <label [for]="opt.key">{{ t(opt.labelKey) }}</label>
         @switch (opt.key) {
@@ -97,11 +97,35 @@
       @if (opt.type === TypeEnum.BOOLEAN) {
         <input [id]="opt.key" type="checkbox" [formControlName]="opt.key" />
       } @else if (opt.type === TypeEnum.ENUM) {
-        <select [id]="opt.key" [formControlName]="opt.key">
-          @for (val of opt.choices ?? []; track val) {
-            <option [value]="val">{{ t('gameOption.choice.' + val) }}</option>
-          }
-        </select>
+        @if (opt.key === 'base') {
+          <div
+            class="variant-toggle"
+            role="radiogroup"
+            [attr.aria-label]="t(opt.labelKey)"
+            [style.--sel]="variantIndex(opt)"
+          >
+            <span class="variant-thumb" aria-hidden="true"></span>
+            @for (val of opt.choices ?? []; track val) {
+              <button
+                type="button"
+                class="variant-chip"
+                role="radio"
+                [class.selected]="form.get(opt.key)?.value === val"
+                [attr.aria-checked]="form.get(opt.key)?.value === val"
+                [disabled]="form.get(opt.key)?.disabled"
+                (click)="setOption(opt.key, val)"
+              >
+                {{ t('gameOption.choice.' + val) }}
+              </button>
+            }
+          </div>
+        } @else {
+          <select [id]="opt.key" [formControlName]="opt.key">
+            @for (val of opt.choices ?? []; track val) {
+              <option [value]="val">{{ t('gameOption.choice.' + val) }}</option>
+            }
+          </select>
+        }
       } @else if (opt.type === TypeEnum.INTEGER) {
         @if (isSmallIntegerRange(opt)) {
           <select [id]="opt.key" [formControlName]="opt.key">

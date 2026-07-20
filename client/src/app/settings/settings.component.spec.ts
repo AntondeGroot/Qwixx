@@ -197,3 +197,64 @@ describe('SettingsComponent — botCount select in embed mode', () => {
     expect(ctrl!.value).toBe(0);
   });
 });
+
+describe('SettingsComponent — mutual exclusion with multiple partners', () => {
+  function bool(key: string, incompatibleWith: string[]): GameOption {
+    return {
+      key,
+      labelKey: 'gameOption.' + key,
+      type: GameOption.TypeEnum.BOOLEAN,
+      defaultValue: 'false',
+      choices: [],
+      adminOnly: false,
+      incompatibleWith,
+    };
+  }
+
+  it('keeps an incompatible option disabled even when it has multiple exclusion partners', async () => {
+    const fixture = await createFixture({}, [
+      ...makeOptions(),
+      bool('doubleA', ['doubleB', 'bigPoints']),
+      bool('doubleB', ['doubleA', 'bigPoints']),
+      bool('bigPoints', ['doubleA', 'doubleB']),
+    ]);
+    const form = fixture.componentInstance.form;
+
+    form.get('doubleA')!.setValue(true);
+    fixture.detectChanges();
+
+    // Regression: doubleB must be OFF and DISABLED. A naive per-pair pass re-enabled it via the
+    // doubleB/bigPoints pair, letting the user pick doubleA + doubleB (which the server then rejects).
+    expect(form.get('doubleB')!.value).toBe(false);
+    expect(form.get('doubleB')!.disabled).toBe(true);
+    expect(form.get('bigPoints')!.disabled).toBe(true);
+
+    // Clearing doubleA re-enables both partners.
+    form.get('doubleA')!.setValue(false);
+    fixture.detectChanges();
+    expect(form.get('doubleB')!.disabled).toBe(false);
+    expect(form.get('bigPoints')!.disabled).toBe(false);
+  });
+});
+
+describe('SettingsComponent — Variant chip toggle', () => {
+  it('renders the Variant enum as two chips (no dropdown) and selecting one updates the form', async () => {
+    const fixture = await createFixture();
+    const el: HTMLElement = fixture.nativeElement;
+    const [standard, longo] = Array.from(el.querySelectorAll<HTMLButtonElement>('.variant-chip'));
+
+    expect(standard && longo).toBeTruthy(); // exactly two chips, STANDARD | LONGO side by side
+    expect(el.querySelector('select#base')).toBeNull(); // the dropdown is replaced
+
+    const form = fixture.componentInstance.form;
+    expect(form.get('base')!.value).toBe('STANDARD');
+    expect(standard!.classList.contains('selected')).toBe(true);
+
+    longo!.click();
+    fixture.detectChanges();
+
+    expect(form.get('base')!.value).toBe('LONGO');
+    expect(longo!.classList.contains('selected')).toBe(true);
+    expect(standard!.classList.contains('selected')).toBe(false);
+  });
+});

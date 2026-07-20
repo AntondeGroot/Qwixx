@@ -25,6 +25,10 @@ import { RowComponent } from '../row/row.component';
 import { LobbyService } from '../services/lobby.service';
 import { EmbedModeService } from '../services/embed-mode.service';
 
+// Qwixx seats at most 5 players total (humans + bots). Bots are added on top of the human
+// seats server-side, so this — not the room's human capacity — bounds how many bots may be added.
+const MAX_TOTAL_PLAYERS = 5;
+
 @Component({
   selector: 'app-settings',
   imports: [ReactiveFormsModule, RowComponent],
@@ -55,7 +59,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
   gameOptions = signal<GameOption[]>([]);
   availableGameOptions = computed(() => this.gameOptions().filter((o) => !o.adminOnly || this.embedMode.isAdmin()));
   lobbyPlayers = signal<{ id: string; name: string }[]>([]);
-  maxPlayers = signal<number>(99);
   previewLayout = signal<SheetLayout | null>(null);
   // Which double variant the preview should render (derived from the doubleA/doubleB options),
   // since the previewLayout payload itself doesn't carry the flags.
@@ -65,8 +68,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   botCount = signal<number>(0);
   botSlots = computed(() => Array.from({ length: this.botCount() }, (_, i) => i + 1));
-  // Cap bots so total players (humans + bots) stays within a sensible Qwixx limit of 5.
-  maxBotCount = computed(() => Math.max(0, this.maxPlayers() - this.lobbyPlayers().length));
+  // Bots fill the seats left over after the human players, capped at the Qwixx table size.
+  // lobbyPlayers holds only the humans (the finished game's bots don't count), so a fresh set
+  // of bots can always be chosen — e.g. after a 1-human + 2-bot game, up to 4 bots remain.
+  maxBotCount = computed(() => Math.max(0, MAX_TOTAL_PLAYERS - this.lobbyPlayers().length));
 
   /** Selects an enum option value (used by the Variant slider toggle). */
   setOption(key: string, value: string): void {
@@ -245,7 +250,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
     es.onmessage = (event: MessageEvent) => {
       const lobby = JSON.parse(event.data);
       this.lobbyPlayers.set(lobby.players);
-      if (lobby.maxPlayers) this.maxPlayers.set(lobby.maxPlayers);
       this.applyLobbyOptions(lobby.proposedOptions);
     };
   }
@@ -394,7 +398,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
   }
 
   effectiveMax(opt: GameOption): number | null {
-    if (opt.key === 'botCount' && this.isRestartMode) return this.maxBotCount();
+    if (opt.key === 'botCount' && this.isRestartMode) {
+      // Never exceed the option's own max, but shrink it further if few seats remain.
+      return opt.maxValue != null ? Math.min(opt.maxValue, this.maxBotCount()) : this.maxBotCount();
+    }
     return opt.maxValue ?? null;
   }
 

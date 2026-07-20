@@ -237,6 +237,43 @@ describe('SettingsComponent — mutual exclusion with multiple partners', () => 
   });
 });
 
+describe('SettingsComponent — botCount range in restart mode', () => {
+  function botCountOpt(): GameOption {
+    return makeOptions().find((o) => o.key === 'botCount')!;
+  }
+
+  // Regression: after a 1-human + 2-bot game, "start a new game" must let the human pick a fresh
+  // set of bots. The finished game's bots are not humans and must not consume seats, so with a
+  // single human in the lobby the full 0..3 range stays selectable (previous value 2 included).
+  it('keeps the full bot range with a single human — bots do not count as seats', async () => {
+    const fixture = await createFixture();
+    const c = fixture.componentInstance;
+    c.sessionId.set('sess-1');
+    c.playerId.set('me');
+    c.lobbyPlayers.set([{ id: 'me', name: 'Alice' }]);
+
+    expect(c.isRestartMode).toBe(true);
+    expect(c.effectiveMax(botCountOpt())).toBe(3); // not 0, and capped by the option's own max
+    expect(c.integerRange(botCountOpt())).toEqual([0, 1, 2, 3]); // 2 is still selectable/editable
+  });
+
+  it('shrinks the bot range as humans fill the table, keeping total players ≤ 5', async () => {
+    const fixture = await createFixture();
+    const c = fixture.componentInstance;
+    c.sessionId.set('sess-1');
+    c.playerId.set('me');
+    c.lobbyPlayers.set([
+      { id: 'a', name: 'A' },
+      { id: 'b', name: 'B' },
+      { id: 'c', name: 'C' },
+      { id: 'd', name: 'D' },
+    ]);
+
+    expect(c.effectiveMax(botCountOpt())).toBe(1); // 5 total − 4 humans
+    expect(c.integerRange(botCountOpt())).toEqual([0, 1]);
+  });
+});
+
 describe('SettingsComponent — Variant chip toggle', () => {
   it('renders the Variant enum as two chips (no dropdown) and selecting one updates the form', async () => {
     const fixture = await createFixture();

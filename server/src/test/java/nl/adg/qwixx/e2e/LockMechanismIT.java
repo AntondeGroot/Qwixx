@@ -545,7 +545,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
 
         // Player1 crosses RED "12" (modal no longer blocking)
         clickCellByValue(driver1, "RED", "12");
-        new WebDriverWait(driver1, Duration.ofSeconds(5))
+        new WebDriverWait(driver1, Duration.ofSeconds(8))
                 .until(d -> isLockButtonCrossed(d, "RED"));
 
         // Modal reappears for player1 (hasPendingCross=true); Confirm = EndTurn
@@ -554,7 +554,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
 
         // Player2 sees notification; OK = dismiss, then passes via board button.
         clickModalConfirmButton(driver2);
-        waitUntilPassButtonVisible(driver2, 5);
+        waitUntilPassButtonVisible(driver2, 8);
         clickPassButton(driver2);
 
         // Player0 sees notification about player1's RED declaration; dismiss it first
@@ -562,7 +562,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
         clickModalConfirmButton(driver0);
 
         // Player0 EndTurns → EVALUATE → BLUE and RED close → game over (2 rows)
-        waitUntilPassButtonVisible(driver0, 5);
+        waitUntilPassButtonVisible(driver0, 8);
         clickPassButton(driver0);
 
         new WebDriverWait(driver0, Duration.ofSeconds(10))

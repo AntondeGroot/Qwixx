@@ -1,0 +1,27 @@
+name: Mutation Testing
+
+# PIT mutation testing runs on every pull request, failing if the mutation score drops below the
+# ratcheted threshold in the pom's `mutation` profile — catching weak tests that line coverage can't.
+# Note: it re-runs the suite once per mutation, so it adds a few minutes to the PR pipeline.
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  pitest:
+    name: PIT mutation coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: temurin
+          cache: maven
+
+      - name: Run mutation coverage
+        # test-compile (under the mutation profile → Java 22 bytecode for PIT's ASM) must run first;
+        # invoked alone, pitest:mutationCoverage finds no compiled classes on a fresh checkout.
+        run: mvn -Pmutation clean test-compile pitest:mutationCoverage --batch-mode --no-transfer-progress
+        working-directory: server

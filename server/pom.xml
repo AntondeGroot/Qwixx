@@ -549,6 +549,11 @@
               <mutators>
                 <mutator>DEFAULTS</mutator>
               </mutators>
+              <!-- Ratchet: baseline mutation score is 63% (test strength 71%). Floored a few points
+                   below to absorb the bot package's run-to-run variance (its play uses randomness, so
+                   some mutations aren't killed deterministically). Raise toward 80% as tests improve —
+                   a frozen floor that only goes up, like the JaCoCo coverage gate. -->
+              <mutationThreshold>58</mutationThreshold>
               <timestampedReports>false</timestampedReports>
               <outputFormats>
                 <outputFormat>HTML</outputFormat>

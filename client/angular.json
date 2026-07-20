@@ -83,10 +83,10 @@
               "**/*.spec.ts"
             ],
             "coverageThresholds": {
-              "statements": 53,
-              "branches": 48,
-              "functions": 55,
-              "lines": 55
+              "statements": 53.5,
+              "branches": 50,
+              "functions": 55.5,
+              "lines": 56.5
             }
           }
         },

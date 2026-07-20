@@ -1,7 +1,17 @@
 import { Injectable } from '@angular/core';
 import { CellTag, GameState } from '../../generated/model/models';
+import { computeBonusBProgress } from '../row/bonus-b.util';
 
 const EMPTY = new Set<string>();
+
+// Cell tags whose presence on a crossable cell counts as a bonus opportunity: lucky number,
+// lucky cross, Bonus A box, Bonus B box.
+const BONUS_TAGS = new Set<string>([
+  CellTag.TypeEnum.LUCKY_NUMBER,
+  CellTag.TypeEnum.LUCKY_CROSS,
+  CellTag.TypeEnum.BONUS_BOX,
+  CellTag.TypeEnum.BONUS_B,
+]);
 
 @Injectable({ providedIn: 'root' })
 export class CellHighlightService {
@@ -62,5 +72,49 @@ export class CellHighlightService {
       }
     }
     return result;
+  }
+
+  /**
+   * True when this player can cross a bonus-type cell (lucky number, lucky cross, Bonus A/B box)
+   * or the roll's white+white sum hits one of their Longo bonus numbers. Drives the bonus sound
+   * that plays once the dice have settled.
+   */
+  hasCrossableBonus(state: GameState | null | undefined, pid: string): boolean {
+    if (!state) return false;
+    const clickable = new Set((state.availableMoves?.[pid] ?? []).map((m) => m.cellId));
+    for (const row of state.sheetLayouts[pid]?.rows ?? []) {
+      for (const cell of row.cells) {
+        if (clickable.has(cell.id) && cell.tags?.some((t) => BONUS_TAGS.has(t.type))) return true;
+      }
+    }
+    const roll = state.turnState?.currentRoll;
+    return !!roll && (state.bonusNumbers?.[pid] ?? []).includes(roll.white1 + roll.white2);
+  }
+
+  /** Rows this player has locked (their own lock cell is crossed). */
+  private lockCount(state: GameState | null | undefined, pid: string): number {
+    const rowStates = state?.sheetProgress?.[pid]?.rowStates ?? {};
+    return Object.values(rowStates).filter((r) => r.lockCrossed).length;
+  }
+
+  /** True when this player just crossed a lock cell of their own (their lock count went up). */
+  crossedOwnLock(prev: GameState | null | undefined, next: GameState | null | undefined, pid: string): boolean {
+    return this.lockCount(next, pid) > this.lockCount(prev, pid);
+  }
+
+  /** Total punishments across all players — the punishment sound fires when this rises. */
+  private totalPunishments(state: GameState | null | undefined): number {
+    return Object.values(state?.sheetProgress ?? {}).reduce((n, p) => n + (p.punishments ?? 0), 0);
+  }
+
+  newPunishmentTaken(prev: GameState | null | undefined, next: GameState | null | undefined): boolean {
+    return this.totalPunishments(next) > this.totalPunishments(prev);
+  }
+
+  /** True when this player just completed a Bonus B kind (any kind reached its 2/2 requirement). */
+  bonusBJustCompleted(prev: GameState | null | undefined, next: GameState | null | undefined, pid: string): boolean {
+    const before = computeBonusBProgress(prev?.sheetLayouts?.[pid], prev?.sheetProgress?.[pid]);
+    const after = computeBonusBProgress(next?.sheetLayouts?.[pid], next?.sheetProgress?.[pid]);
+    return Object.keys(after).some((kind) => after[kind] === 2 && (before[kind] ?? 0) < 2);
   }
 }

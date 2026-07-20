@@ -664,9 +664,9 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const prev = this.gameState();
     if (prev) {
-      const prevPunishments = Object.values(prev.sheetProgress ?? {}).reduce((n, p) => n + (p.punishments ?? 0), 0);
-      const newPunishments = Object.values(s.sheetProgress ?? {}).reduce((n, p) => n + (p.punishments ?? 0), 0);
-      if (newPunishments > prevPunishments) this.audio.play(AudioService.PUNISHMENT);
+      if (this.highlight.newPunishmentTaken(prev, s)) this.audio.play(AudioService.PUNISHMENT);
+      if (this.highlight.crossedOwnLock(prev, s, this.playerId())) this.audio.play(AudioService.LOCK);
+      if (this.highlight.bonusBJustCompleted(prev, s, this.playerId())) this.audio.play(AudioService.BONUS_B_COMPLETE);
     }
 
     // Track whether this player was re-queued mid-turn (e.g. active declared a lock intent
@@ -690,8 +690,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
         if ((s.version ?? 0) >= (this.gameState()?.version ?? -1)) {
           this.gameState.set(s);
         }
-        this.audio.play(AudioService.DICE);
-        this.rollingDice.set(false);
+        this.settleDice();
       }, remaining);
     } else {
       // Apply state immediately so dice area and values are visible right away.
@@ -699,13 +698,16 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       const lockMove = this.autoLock.checkAndConsume(s, myId);
       if (lockMove) this.sendMove(lockMove);
       // If a roll animation is in progress (passive player watching), clear it after the window.
-      if (this.rollingDice()) {
-        setTimeout(() => {
-          this.audio.play(AudioService.DICE);
-          this.rollingDice.set(false);
-        }, remaining);
-      }
+      if (this.rollingDice()) setTimeout(() => this.settleDice(), remaining);
     }
+  }
+
+  // Called once the roll animation finishes: play the dice sound, reveal the result, and — if this
+  // player can now cross a bonus cell (or the roll hit a Longo bonus number) — play the bonus sound.
+  private settleDice(): void {
+    this.audio.play(AudioService.DICE);
+    this.rollingDice.set(false);
+    if (this.highlight.hasCrossableBonus(this.gameState(), this.playerId())) this.audio.play(AudioService.BONUS);
   }
 
   private fetchState() {

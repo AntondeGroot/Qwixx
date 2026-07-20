@@ -3,9 +3,16 @@ package nl.adg.qwixx.bot;
 import static nl.adg.qwixx.bot.BotDecider.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class BotDeciderTest {
+
+    // Seed the tie-break RNG so a decision among equally-good moves is reproducible across runs.
+    @BeforeEach
+    void seedRng() {
+        seedForTest(1);
+    }
 
     // Standard mode: d6+d6, most common sum = 7, range 2–12
     private static final int STD   = 7;

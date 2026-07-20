@@ -107,8 +107,8 @@ module.exports = defineConfig([
   {
     files: ['src/app/settings/settings.component.ts'],
     rules: {
-      'max-lines-per-function': ['error', { max: 94, skipBlankLines: true, skipComments: true }],
-      // TODO: reduce to the default 15 (ngOnInit — already down from 31; extract the option-loading).
+      // max-lines-per-function override removed: the longest method is now back under the global 80.
+      // TODO: reduce cognitive-complexity to the default 15 by extracting the option-loading from ngOnInit.
       'sonarjs/cognitive-complexity': ['error', 19],
     },
   },

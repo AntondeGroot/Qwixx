@@ -207,8 +207,8 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
     public TurnRules buildTurnRules() {
         if (settings.gameMode() == GameMode.OFFLINE) return new OfflineTurnRules();
         return switch (settings.base()) {
-            case STANDARD -> new StandardTurnRules();
-            case LONGO    -> new LongoTurnRules();
+            case STANDARD -> new StandardTurnRules(random);
+            case LONGO    -> new LongoTurnRules(random);
         };
     }
 

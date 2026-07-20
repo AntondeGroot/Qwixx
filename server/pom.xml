@@ -338,8 +338,10 @@
               <goal>check</goal>
             </goals>
             <configuration>
-              <!-- Ratchet, not a big-bang: pinned just below the current 86.6% line / 77.5% branch
-                   so coverage can only climb, never regress. TODO: raise both to 0.90 as tests fill in. -->
+              <!-- Ratchet, not a big-bang: pinned just below the current ~86.4% line / ~77.6% branch
+                   (as the check counts them). Bot play is seeded in tests (GameSession#seedForTest), so
+                   coverage is deterministic run-to-run and the floors can hug the actuals tightly.
+                   TODO: raise both to 0.90 as tests fill in. -->
               <rules>
                 <rule>
                   <element>BUNDLE</element>
@@ -347,12 +349,12 @@
                     <limit>
                       <counter>LINE</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.85</minimum>
+                      <minimum>0.863</minimum>
                     </limit>
                     <limit>
                       <counter>BRANCH</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.75</minimum>
+                      <minimum>0.775</minimum>
                     </limit>
                   </limits>
                 </rule>
@@ -549,11 +551,11 @@
               <mutators>
                 <mutator>DEFAULTS</mutator>
               </mutators>
-              <!-- Ratchet: baseline mutation score is 63% (test strength 71%). Floored a few points
-                   below to absorb the bot package's run-to-run variance (its play uses randomness, so
-                   some mutations aren't killed deterministically). Raise toward 80% as tests improve —
-                   a frozen floor that only goes up, like the JaCoCo coverage gate. -->
-              <mutationThreshold>58</mutationThreshold>
+              <!-- Ratchet: baseline mutation score is ~63% (test strength 71%). Bot play is now seeded
+                   in tests (GameSession#seedForTest), so the score is stable; the small remaining buffer
+                   below actual absorbs PIT's own timeout-based nondeterminism. Raise toward 80% as tests
+                   improve — a frozen floor that only goes up, like the JaCoCo coverage gate. -->
+              <mutationThreshold>60</mutationThreshold>
               <timestampedReports>false</timestampedReports>
               <outputFormats>
                 <outputFormat>HTML</outputFormat>

@@ -18,6 +18,19 @@ class GameSessionTest {
                 GameSettings.builder().build());
     }
 
+    // Deterministic fuzz: play full bot games across a fixed sweep of seeds. Reproducible (so coverage
+    // and mutation results don't drift run-to-run), yet broad enough to exercise the many random game
+    // paths — dice rolls, bot tie-breaks, layout order — that a single seed would miss.
+    private static final int BOT_SEED_SWEEP = 25;
+
+    private static void assertBotsPlayWithoutError(GameSettings settings, String message) {
+        for (long seed = 0; seed < BOT_SEED_SWEEP; seed++) {
+            GameSession s = new GameSession(UUID.randomUUID().toString(), "test", 4, settings);
+            s.seedForTest(seed);
+            assertDoesNotThrow(() -> s.start(), message + " (seed " + seed + ")");
+        }
+    }
+
     // --- lifecycle ---
 
     @Test
@@ -246,6 +259,7 @@ class GameSessionTest {
     void exitGame_humanWithBots_botsDoNotCountAsPlayers() {
         GameSession s = new GameSession(UUID.randomUUID().toString(), "test", 4,
                 GameSettings.builder().botCount(2).build());
+        s.seedForTest(1);
         Player alice = Player.of("Alice");
         s.addPlayer(alice);
         s.start();
@@ -258,30 +272,22 @@ class GameSessionTest {
 
     @Test
     void doubleA_botsPlayWithoutError() {
-        GameSession s = new GameSession(UUID.randomUUID().toString(), "test", 4,
-                GameSettings.builder().doubleA(true).botCount(2).build());
-        assertDoesNotThrow(() -> s.start(), "bots must play a Double A layout (with twin cells) without error");
+        assertBotsPlayWithoutError(GameSettings.builder().doubleA(true).botCount(2).build(), "bots must play a Double A layout (with twin cells) without error");
     }
 
     @Test
     void doubleB_botsPlayWithoutError() {
-        GameSession s = new GameSession(UUID.randomUUID().toString(), "test", 4,
-                GameSettings.builder().doubleB(true).botCount(2).build());
-        assertDoesNotThrow(() -> s.start(), "bots must play a Double B layout (with twin cells) without error");
+        assertBotsPlayWithoutError(GameSettings.builder().doubleB(true).botCount(2).build(), "bots must play a Double B layout (with twin cells) without error");
     }
 
     @Test
     void bonusA_botsPlayWithoutError() {
-        GameSession s = new GameSession(UUID.randomUUID().toString(), "test", 4,
-                GameSettings.builder().bonusA(true).botCount(2).build());
-        assertDoesNotThrow(() -> s.start(), "bots must play a Bonus A layout (chains + forfeits) without error");
+        assertBotsPlayWithoutError(GameSettings.builder().bonusA(true).botCount(2).build(), "bots must play a Bonus A layout (chains + forfeits) without error");
     }
 
     @Test
     void bonusB_botsPlayWithoutError() {
-        GameSession s = new GameSession(UUID.randomUUID().toString(), "test", 4,
-                GameSettings.builder().bonusB(true).botCount(2).build());
-        assertDoesNotThrow(() -> s.start(), "bots must play a Bonus B layout (pair triggers + score modifiers) without error");
+        assertBotsPlayWithoutError(GameSettings.builder().bonusB(true).botCount(2).build(), "bots must play a Bonus B layout (pair triggers + score modifiers) without error");
     }
 
     @Test
@@ -299,8 +305,9 @@ class GameSessionTest {
     private GameSession sessionWithOneBot() {
         GameSession s = new GameSession(UUID.randomUUID().toString(), "test", 4,
                 GameSettings.builder().botCount(1).build());
+        s.seedForTest(1); // deterministic player order + dice so isBotToAct is reproducible
         s.addPlayer(Player.of("Alice"));
-        s.start(List.of(), false); // seed one bot; do not auto-run initial bot turns
+        s.start(List.of(), false); // one bot added; initial bot turns not auto-run
         return s;
     }
 

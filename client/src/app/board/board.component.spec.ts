@@ -10,6 +10,7 @@ import { GamestatesService, MovesService } from '../../generated/api/api';
 import { Color, GameState, MoveType, TurnPhase } from '../../generated/model/models';
 import { RowClosureModalService } from '../services/row-closure-modal.service';
 import { DiceSvgService } from '../dice/dice-svg.service';
+import { AudioService } from '../services/audio.service';
 import { BoardComponent } from './board.component';
 
 const mockDiceSvgService = { getUrl: () => Promise.resolve('') };
@@ -899,6 +900,56 @@ describe('BoardComponent — state-sync race guards', () => {
 
     expect(component.rollingDice()).toBe(false);
     vi.useRealTimers();
+  });
+
+  // 1b. Roll sounds are tied to the animation, not to SSE push count ─────────
+
+  it('settleDice: plays the dice sound once per animation cycle, not once per settle call', () => {
+    const play = vi.spyOn((component as any).audio, 'play');
+    component.gameState.set(
+      makeState({
+        turnState: { activePlayerId: OTHER_ID, currentRoll: { white1: 3, white2: 4, coloredDice: {} } } as any,
+      }),
+    );
+    // One animation cycle: several state updates (own fetch + each bot's push) all call settleDice.
+    component.rollingDice.set(true);
+    (component as any).settleDice();
+    (component as any).settleDice();
+    (component as any).settleDice();
+
+    const diceCalls = play.mock.calls.filter((c) => c[0] === AudioService.DICE);
+    expect(diceCalls).toHaveLength(1);
+    expect(component.rollingDice()).toBe(false);
+  });
+
+  it("settleDice: plays this player's own bonus even on another player's roll (Longo passive bonus)", () => {
+    const play = vi.spyOn((component as any).audio, 'play');
+    // In Longo the bonus triggers whenever THIS player's number comes up — including on an opponent's
+    // roll while they are a passive participant. hasCrossableBonus is pid-scoped, so this is their bonus.
+    vi.spyOn((component as any).highlight, 'hasCrossableBonus').mockReturnValue(true);
+    component.gameState.set(
+      makeState({
+        turnState: { activePlayerId: OTHER_ID, currentRoll: { white1: 3, white2: 4, coloredDice: {} } } as any,
+      }),
+    );
+    component.rollingDice.set(true);
+    (component as any).settleDice();
+
+    expect(play.mock.calls.filter((c) => c[0] === AudioService.BONUS)).toHaveLength(1);
+  });
+
+  it('settleDice: does not play the bonus sound when no bonus is crossable for this player', () => {
+    const play = vi.spyOn((component as any).audio, 'play');
+    vi.spyOn((component as any).highlight, 'hasCrossableBonus').mockReturnValue(false);
+    component.gameState.set(
+      makeState({
+        turnState: { activePlayerId: PLAYER_ID, currentRoll: { white1: 3, white2: 4, coloredDice: {} } } as any,
+      }),
+    );
+    component.rollingDice.set(true);
+    (component as any).settleDice();
+
+    expect(play.mock.calls.filter((c) => c[0] === AudioService.BONUS)).toHaveLength(0);
   });
 
   // 2. fetchState on rejection ──────────────────────────────────────────────

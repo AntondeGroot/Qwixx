@@ -702,11 +702,14 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // Called once the roll animation finishes: play the dice sound, reveal the result, and — if this
-  // player can now cross a bonus cell (or the roll hit a Longo bonus number) — play the bonus sound.
+  // Ties the roll sounds to the client's own animation, not to SSE push count: plays once, on the
+  // true→false transition that actually stops the animation (later duplicate settles for the same
+  // roll find it already stopped). The bonus is personal — hasCrossableBonus is scoped to this player,
+  // so it fires for their own bonus (their Longo number came up, or they can cross a bonus), whoever rolled.
   private settleDice(): void {
-    this.audio.play(AudioService.DICE);
+    if (!this.rollingDice()) return;
     this.rollingDice.set(false);
+    this.audio.play(AudioService.DICE);
     if (this.highlight.hasCrossableBonus(this.gameState(), this.playerId())) this.audio.play(AudioService.BONUS);
   }
 

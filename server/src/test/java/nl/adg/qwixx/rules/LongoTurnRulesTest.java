@@ -934,6 +934,78 @@ class LongoTurnRulesTest {
                 "bonus cell must be crossed after applying the action");
     }
 
+    @Test
+    void bonusTargetsFewestColouredRow_notTheXChangeRow() {
+        // Bug: the x-change row (no lock, not part of the closing race) was counted in the
+        // fewest-crosses computation. With 0 crosses it always won "fewest", so the bonus lit up
+        // on the x-change row and never on the coloured row that actually has the fewest crosses.
+        GameState state = stateWithLongoXChangeAfterRoll(p1, p1, p2);
+        state.setVariantData(new LongoVariantData(Map.of(p1, List.of(7))));
+        state.turnState().setCurrentRoll(
+                new RollResult(3, 4, state.turnState().currentRoll().coloredDice())); // WW = 7 = bonus
+
+        SheetLayout layout = state.sheetLayouts().get(p1);
+        SheetProgress prog = state.boardState().sheetProgress().get(p1);
+
+        // RED (row 0): 1 cross → the fewest among the coloured rows.
+        prog.updateRowState(0, new RowState(
+                new HashSet<>(Set.of(layout.rows().getFirst().cells().getFirst().id())), false));
+        // YELLOW/GREEN/BLUE: 2 crosses each, so RED is strictly the fewest coloured row.
+        for (int r = 1; r <= 3; r++) {
+            prog.updateRowState(r, new RowState(new HashSet<>(Set.of(
+                    layout.rows().get(r).cells().getFirst().id(),
+                    layout.rows().get(r).cells().get(1).id())), false));
+        }
+        // The x-change row (index 4) has 0 crosses — it must NOT steal the bonus.
+
+        String redBonus = layout.rows().getFirst().cells().get(1).id(); // RED leftmost available = pos 1
+        assertTrue(rules.getValidActions(state, p1).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction cc
+                                && cc.rowIndex() == 0 && cc.cellId().equals(redBonus)
+                                && cc.combination() == DiceCombination.WHITE_WHITE),
+                "bonus must target the fewest-crosses coloured row (RED), not the x-change row");
+    }
+
+    @Test
+    void exchangingIntoBonusNumberTargetsFewestColouredRow() {
+        // Bug 2: rolling a non-bonus WW, then x-changing INTO a bonus number must light up the leftmost
+        // cell of the fewest-crosses coloured row — not the x-change row (which itself now has a cross).
+        GameState state = stateWithLongoXChangeAfterRoll(p1, p1, p2);
+        state.setVariantData(new LongoVariantData(Map.of(p1, List.of(7))));
+        state.turnState().setCurrentRoll(
+                new RollResult(5, 5, state.turnState().currentRoll().coloredDice())); // WW = 10, not a bonus
+
+        SheetLayout layout = state.sheetLayouts().get(p1);
+        SheetProgress prog = state.boardState().sheetProgress().get(p1);
+
+        // YELLOW (row 1): 2 crosses = fewest coloured row; RED/GREEN/BLUE: 3 crosses each.
+        prog.updateRowState(0, new RowState(new HashSet<>(Set.of(
+                layout.rows().getFirst().cells().getFirst().id(),
+                layout.rows().getFirst().cells().get(1).id(),
+                layout.rows().getFirst().cells().get(2).id())), false));
+        prog.updateRowState(1, new RowState(new HashSet<>(Set.of(
+                layout.rows().get(1).cells().getFirst().id(),
+                layout.rows().get(1).cells().get(1).id())), false));
+        for (int r = 2; r <= 3; r++) {
+            prog.updateRowState(r, new RowState(new HashSet<>(Set.of(
+                    layout.rows().get(r).cells().getFirst().id(),
+                    layout.rows().get(r).cells().get(1).id(),
+                    layout.rows().get(r).cells().get(2).id())), false));
+        }
+
+        // Exchange WW 10 → 7 (a bonus number); this puts one cross on the x-change row.
+        rules.apply(state, longoXChangeCrossForPair(state, p1, 10, 7));
+        assertEquals(7, state.turnState().xChangeEffectiveWW().get(p1));
+
+        // Bonus must now target YELLOW (fewest coloured = 2 crosses), leftmost available = position 2.
+        String yellowBonus = layout.rows().get(1).cells().get(2).id();
+        assertTrue(rules.getValidActions(state, p1).stream()
+                        .anyMatch(a -> a instanceof CrossCellAction cc
+                                && cc.rowIndex() == 1 && cc.cellId().equals(yellowBonus)
+                                && cc.combination() == DiceCombination.WHITE_WHITE),
+                "after exchanging into a bonus number, the bonus must target the fewest coloured row");
+    }
+
     // ── Passive co-closer: second-to-last cell crossed this turn ─────────────────
     //
     // Regression: endTurnInPassiveMove previously cleared the undo buffer BEFORE calling

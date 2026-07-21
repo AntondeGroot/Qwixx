@@ -67,6 +67,7 @@ public class LongoTurnRules extends StandardTurnRules {
 
         OptionalInt fewest = IntStream.range(0, layout.rows().size())
                 .filter(i -> !state.isRowClosed(i))
+                .filter(i -> isNormalRow(layout.rows().get(i)))
                 .map(i -> getRowState(progress, i).crossedCells().size())
                 .min();
         if (fewest.isEmpty()) return List.of();
@@ -75,12 +76,19 @@ public class LongoTurnRules extends StandardTurnRules {
         List<GameAction> actions = new ArrayList<>();
         for (int i = 0; i < layout.rows().size(); i++) {
             if (state.isRowClosed(i)) continue;
+            if (!isNormalRow(layout.rows().get(i))) continue;
             if (getRowState(progress, i).crossedCells().size() != minCrosses) continue;
             leftmostBonusCellAction(playerId, i, layout.rows().get(i), getRowState(progress, i))
                     .filter(bonus -> !existing.contains(bonus))
                     .ifPresent(actions::add);
         }
         return actions;
+    }
+
+    // The bonus race only concerns the normal coloured number rows — the rows that can be closed.
+    // Special rows (x-change, lucky number) have no lock and never take part in the fewest-crosses race.
+    private static boolean isNormalRow(Row row) {
+        return row.lock() != null;
     }
 
     private boolean whiteSumMatchesBonusNumber(GameState state, UUID playerId) {

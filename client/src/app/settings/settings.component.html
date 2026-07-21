@@ -91,6 +91,31 @@
               <span class="opt-cell opt-cell--double-b" style="--db: #388e3c"></span>
             </div>
           }
+          @case ('bonusA') {
+            <div class="opt-chip">
+              <span class="opt-cell opt-cell--red opt-cell--bonus-ring"></span>
+              <span class="opt-cell opt-cell--yellow opt-cell--bonus-ring"></span>
+              <span class="opt-cell opt-cell--green opt-cell--bonus-ring"></span>
+            </div>
+          }
+          @case ('bonusB') {
+            <div class="opt-chip opt-chip--bb">
+              <span class="opt-bb">
+                <app-silver-mark shape="triangle" />
+                <span class="opt-bb-tag bb-chip">✕✕</span>
+              </span>
+              <span class="opt-bb"><app-silver-mark shape="plus" /></span>
+              <span class="opt-bb">
+                <app-silver-mark shape="triangle" />
+                <span class="opt-bb-tag bb-chip">×2</span>
+              </span>
+              <span class="opt-bb">
+                <app-silver-mark shape="plus" />
+                <span class="opt-bb-tag bb-chip">+13</span>
+              </span>
+              <span class="opt-bb"><app-silver-mark shape="shield" /></span>
+            </div>
+          }
         }
       </div>
 

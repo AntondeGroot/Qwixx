@@ -156,6 +156,32 @@ class OfflineTurnRulesTest {
     }
 
     @Test
+    void crossLockRejectedWhenClosingCellCrossedButTooFewNonClosingCrosses() {
+        // Cross ONLY the closing cell: the closing-cell requirement is met, but there are zero
+        // non-closing crosses (< the required minimum). This isolates the "enough crosses" guard —
+        // rejection here must come from the count check, not the closing-cell check.
+        GameState state = buildState(p1, p2);
+        Row row = layout(state, p1).rows().get(0);
+        Set<String> crosses = new HashSet<>(row.lock().closingCells());
+        state.boardState().sheetProgress().get(p1).updateRowState(0, new RowState(crosses, false));
+        assertThrows(IllegalMoveException.class,
+                () -> rules.apply(state, new DeclareLockIntentAction(p1, 0)));
+    }
+
+    @Test
+    void crossLockRejectedWhenEnoughCrossesButClosingCellMissing() {
+        // Cross 5 non-closing cells (positions 0-4): enough total crosses, but the required closing
+        // cell is not among them. This isolates the "must have crossed a closing cell" guard.
+        GameState state = buildState(p1, p2);
+        Row row = layout(state, p1).rows().get(0);
+        Set<String> crosses = new HashSet<>();
+        for (int i = 0; i < 5; i++) crosses.add(row.cells().get(i).id());
+        state.boardState().sheetProgress().get(p1).updateRowState(0, new RowState(crosses, false));
+        assertThrows(IllegalMoveException.class,
+                () -> rules.apply(state, new DeclareLockIntentAction(p1, 0)));
+    }
+
+    @Test
     void crossLockRejectedIfAlreadyLocked() {
         GameState state = buildState(p1, p2);
         crossEnoughForLock(state, p1, 0);
@@ -171,6 +197,15 @@ class OfflineTurnRulesTest {
         GameState state = buildState(p1, p2);
         rules.apply(state, new TakePunishmentAction(p1));
         assertEquals(1, state.boardState().sheetProgress().get(p1).punishments());
+    }
+
+    @Test
+    void applyIncrementsTheStateVersion() {
+        // Every applied action must bump the version so clients can detect state changes.
+        GameState state = buildState(p1, p2);
+        long before = state.version();
+        rules.apply(state, new TakePunishmentAction(p1));
+        assertEquals(before + 1, state.version());
     }
 
     // --- game-over conditions ---
@@ -332,6 +367,16 @@ class OfflineTurnRulesTest {
         assertTrue(state.boardState().sheetProgress().get(p1)
                         .rowStates().get(BP_BONUS_RY).crossedCells().contains(bonus7),
                 "bonus '7' must be recorded in progress after a valid apply");
+    }
+
+    @Test
+    void offlineApply_rejectsUnknownBonusCellId() {
+        // Crossing a non-existent cell id in a bonus row must be rejected as an illegal move
+        // (the cell lookup fails before any prerequisite check).
+        GameState state = buildBigPointsState(p1, p2);
+        assertThrows(IllegalMoveException.class,
+                () -> rules.apply(state,
+                        new CrossCellAction(p1, BP_BONUS_RY, "no-such-cell", DiceCombination.WHITE_WHITE)));
     }
 
     @Test

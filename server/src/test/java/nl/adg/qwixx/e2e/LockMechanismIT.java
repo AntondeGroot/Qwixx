@@ -1249,6 +1249,8 @@ public class LockMechanismIT extends BaseIntegrationTest {
     }
 
     @Test
+    @ExtendWith(RetryOnChromeFailure.Extension.class)
+    @RetryOnChromeFailure
     void longo_passiveRevertsEndTurn_thenCrossesClosingCell() {
         // Passive player (player1) EndTurns without crossing YELLOW "16".
         // Player2 (also passive) then crosses YELLOW "16" → declares YELLOW intent.

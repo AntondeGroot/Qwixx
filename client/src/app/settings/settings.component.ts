@@ -22,6 +22,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { GamesService, PlayersService } from '../../generated/api/api';
 import { GameOption, SheetLayout } from '../../generated/model/models';
 import { RowComponent } from '../row/row.component';
+import { SilverMarkComponent } from '../silver-mark/silver-mark.component';
 import { LobbyService } from '../services/lobby.service';
 import { EmbedModeService } from '../services/embed-mode.service';
 
@@ -31,7 +32,7 @@ const MAX_TOTAL_PLAYERS = 5;
 
 @Component({
   selector: 'app-settings',
-  imports: [ReactiveFormsModule, RowComponent],
+  imports: [ReactiveFormsModule, RowComponent, SilverMarkComponent],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.css',
 })

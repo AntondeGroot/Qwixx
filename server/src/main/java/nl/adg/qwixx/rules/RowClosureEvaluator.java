@@ -4,6 +4,7 @@ import static nl.adg.qwixx.rules.CellCrosser.getRowState;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -133,6 +134,8 @@ class RowClosureEvaluator {
 
     private static boolean qualifiesForAutoClose(GameState state, UUID playerId, int rowIndex, int minCrossesRequired) {
         if (state.isRowClosed(rowIndex)) return false;
+        // Row-level guard: don't re-declare (or re-notify) a row another player already declared this
+        // round — the player is still credited the lock cross via canCrossLock at EVALUATE.
         if (rowHasPendingClosure(state, rowIndex)) return false;
         if (getRow(state, playerId, rowIndex).lock() == null) return false;
         if (!crossedThisTurn(state, playerId, rowIndex, getLastClosingCell(state, playerId, rowIndex))) return false;
@@ -148,7 +151,7 @@ class RowClosureEvaluator {
      */
     static boolean activePlayerCouldClaimAnyPendingRow(GameState state, UUID activeId, int minCrossesRequired) {
         return state.pendingClosures().entrySet().stream()
-                .anyMatch(e -> !e.getValue().equals(activeId)
+                .anyMatch(e -> !e.getValue().contains(activeId)
                         && couldActivePlayerLockRow(state, activeId, e.getKey(), minCrossesRequired));
     }
 
@@ -159,7 +162,7 @@ class RowClosureEvaluator {
      */
     private static boolean couldActivePlayerLockRow(GameState state, UUID activeId, int rowIndex, int minCrossesRequired) {
         if (rowIsNotLockable(state, activeId, rowIndex)) return false;
-        if (activeId.equals(state.pendingClosures().get(rowIndex))) return false;
+        if (playerAlreadyDeclared(state, activeId, rowIndex)) return false;
         Set<String> allCrosses = allCrossesForPlayer(state, activeId, rowIndex);
         if (allCrosses.contains(getLastClosingCell(state, activeId, rowIndex))) return false;
         return hasEnoughNonClosingCrosses(state, activeId, rowIndex, allCrosses, minCrossesRequired);
@@ -167,21 +170,20 @@ class RowClosureEvaluator {
 
     // ── Row closure application ───────────────────────────────────────────────
 
-    static void applyRowClosure(GameState state, int rowIndex, UUID declarant, int minCrossesRequired) {
+    static void applyRowClosure(GameState state, int rowIndex, Set<UUID> declarants, int minCrossesRequired) {
         if (state.isRowClosed(rowIndex)) return;
-        markLockCrossed(state, declarant, rowIndex);
+        // Every player who declared this row's closure this round is credited the lock cross — even one
+        // whose qualifying second-to-last ("15"/"3") cross was already cleared when their turn ended.
+        UUID primary = declarants.iterator().next();
+        for (UUID d : declarants) markLockCrossed(state, d, rowIndex);
         for (UUID pid : state.players()) {
-            if (otherPlayerAlsoQualifiesForLockCross(state, pid, declarant, rowIndex, minCrossesRequired)) {
+            if (!declarants.contains(pid)
+                    && !getRowState(state.sheetProgress(pid), rowIndex).lockCrossed()
+                    && canCrossLock(state, pid, rowIndex, minCrossesRequired)) {
                 markLockCrossed(state, pid, rowIndex);
             }
         }
-        closeRowGlobally(state, declarant, rowIndex);
-    }
-
-    private static boolean otherPlayerAlsoQualifiesForLockCross(GameState state, UUID pid, UUID declarant, int rowIndex, int minCrossesRequired) {
-        return !pid.equals(declarant)
-                && !getRowState(state.sheetProgress(pid), rowIndex).lockCrossed()
-                && canCrossLock(state, pid, rowIndex, minCrossesRequired);
+        closeRowGlobally(state, primary, rowIndex);
     }
 
     static void markLockCrossed(GameState state, UUID playerId, int rowIndex) {
@@ -223,12 +225,16 @@ class RowClosureEvaluator {
     // ── Closure intent ────────────────────────────────────────────────────────
 
     static void recordClosureIntent(GameState state, UUID declarerId, int rowIndex) {
-        state.pendingClosures().put(rowIndex, declarerId);
+        state.pendingClosures().computeIfAbsent(rowIndex, k -> new LinkedHashSet<>()).add(declarerId);
         state.closureNotifications().add(new ClosureNotification(declarerId, getLockColor(state, declarerId, rowIndex)));
     }
 
     static boolean rowHasPendingClosure(GameState state, int rowIndex) {
         return state.pendingClosures().containsKey(rowIndex);
+    }
+
+    static boolean playerAlreadyDeclared(GameState state, UUID pid, int rowIndex) {
+        return state.pendingClosures().getOrDefault(rowIndex, Set.of()).contains(pid);
     }
 
     // ── Validation ────────────────────────────────────────────────────────────
@@ -245,8 +251,8 @@ class RowClosureEvaluator {
         }
         if (!canCrossLock(state, declarerId, rowIndex, minCrossesRequired))
             throw new IllegalMoveException("lock pre-conditions not met");
-        if (rowHasPendingClosure(state, rowIndex))
-            throw new IllegalMoveException("row is already declared for closure this turn");
+        if (playerAlreadyDeclared(state, declarerId, rowIndex))
+            throw new IllegalMoveException("player already declared this row for closure this turn");
     }
 
     // ── Pending-cross queries ─────────────────────────────────────────────────

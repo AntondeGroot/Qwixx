@@ -666,9 +666,11 @@ components:
           description: Pending row closure notifications for the UI.
         pendingClosures:
           type: object
-          description: Map of rowId to the playerId who declared closing intent; rows in this map close at EVALUATE.
+          description: Map of rowId to the list of playerIds who declared closing intent; rows in this map close at EVALUATE.
           additionalProperties:
-            type: string
+            type: array
+            items:
+              type: string
         availableMoves:
           type: object
           description: Map of playerId to available cross-cell moves for this state; absent in offline mode.

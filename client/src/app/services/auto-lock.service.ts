@@ -76,7 +76,7 @@ export class AutoLockService {
     const row = state.sheetLayouts?.[pid]?.rows.find((r) => r.id === rowId);
     if (!row?.lock) return false;
     if ((state.closedRows ?? {})[rowId]) return false;
-    if ((state.pendingClosures ?? {})[rowId]) return false; // already declared
+    if (((state.pendingClosures ?? {})[rowId] ?? []).length > 0) return false; // already declared
     const rowState = state.sheetProgress?.[pid]?.rowStates?.[rowId];
     if (rowState?.lockCrossed) return false;
     const permanent = new Set(rowState?.crossedCells ?? []);

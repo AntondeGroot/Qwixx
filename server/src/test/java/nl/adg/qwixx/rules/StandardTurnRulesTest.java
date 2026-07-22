@@ -500,7 +500,7 @@ class StandardTurnRulesTest {
         rules.apply(state, new DeclareLockIntentAction(p1, 0));
         assertTrue(state.pendingClosures().containsKey(0),
                 "pendingClosures must contain row 0 after declaration");
-        assertEquals(p1, state.pendingClosures().get(0),
+        assertEquals(Set.of(p1), state.pendingClosures().get(0),
                 "declarant must be recorded in pendingClosures");
     }
 
@@ -649,7 +649,7 @@ class StandardTurnRulesTest {
                 "Active dice flag must be cleared after reset");
         assertTrue(state.pendingClosures().containsKey(0),
                 "p2's closing intent must survive the active player's reset");
-        assertEquals(p2, state.pendingClosures().get(0),
+        assertEquals(Set.of(p2), state.pendingClosures().get(0),
                 "p2 must still be the declarant after active resets");
     }
 

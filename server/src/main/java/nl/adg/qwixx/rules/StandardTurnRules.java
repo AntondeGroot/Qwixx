@@ -344,9 +344,9 @@ public class StandardTurnRules implements TurnRules {
             progress.updateRowState(idx, new RowState(updated, current.lockCrossed()));
 
             // Cancel any closing intent the player declared for this row.
-            UUID declarant = state.pendingClosures().get(idx);
-            if (playerId.equals(declarant)) {
-                state.pendingClosures().remove(idx);
+            Set<UUID> declarants = state.pendingClosures().get(idx);
+            if (declarants != null && declarants.remove(playerId)) {
+                if (declarants.isEmpty()) state.pendingClosures().remove(idx);
                 state.closureNotifications().removeIf(r -> r.playerId().equals(playerId));
             }
         }
@@ -398,7 +398,8 @@ public class StandardTurnRules implements TurnRules {
 
     /** Removes all pending closures and notifications declared by this player this turn. */
     private void cancelPlayerRowClosure(GameState state, UUID playerId) {
-        state.pendingClosures().entrySet().removeIf(e -> e.getValue().equals(playerId));
+        state.pendingClosures().values().forEach(declarants -> declarants.remove(playerId));
+        state.pendingClosures().values().removeIf(Set::isEmpty);
         state.closureNotifications().removeIf(r -> r.playerId().equals(playerId));
     }
 

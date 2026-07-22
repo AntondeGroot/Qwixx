@@ -124,7 +124,7 @@ async function interceptOptions(page: Parameters<typeof test>[1]['page']) {
   await page.route('**/game-options', (route) =>
     route.fulfill({ contentType: 'application/json', body: JSON.stringify(GAME_OPTIONS) }),
   );
-  await page.route('**/games/preview**', (route) =>
+  await page.route('**/game-options/preview**', (route) =>
     route.fulfill({ contentType: 'application/json', body: JSON.stringify(null) }),
   );
 }

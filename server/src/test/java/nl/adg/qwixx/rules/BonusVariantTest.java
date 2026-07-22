@@ -238,7 +238,7 @@ class BonusVariantTest {
                 new BoardState(progresses, dice, new HashMap<>()), turn);
 
         // Close yellow through the real close entry point (as the turn evaluation does).
-        RowClosureEvaluator.applyRowClosure(state, YELLOW, p1, 5);
+        RowClosureEvaluator.applyRowClosure(state, YELLOW, Set.of(p1), 5);
 
         // (1) yellow is closed, and BOTH players forfeit their yellow bonus-bar cells.
         assertTrue(state.isRowClosed(YELLOW), "yellow row is closed");

@@ -814,6 +814,42 @@ class LongoTurnRulesTest {
     }
 
     @Test
+    void multiDeclarant_secondToLastDeclarerKeepsLockCross_whenAnotherAlsoDeclares() {
+        // The reported Longo closing-race bug. p3 declares RED first; then p2 crosses the second-to-last
+        // "15" this turn and ALSO declares RED. p2 ends its turn (clearing its pending "15"), so p2 is no
+        // longer live lock-eligible. With multi-declarant closures p2 stays a recorded declarant and must
+        // still get the lock cross when RED closes at EVALUATE.
+        UUID p3 = UUID.randomUUID();
+        GameState state = stateAfterRoll(p1, p1, p2, p3);
+        state.turnState().setCurrentRoll(
+                new RollResult(8, 7, state.turnState().currentRoll().coloredDice())); // ww = 15
+
+        crossOnlyLastCell(state, p3, 0); // p3 qualifies to declare RED via the last cell "16"
+        Row red = state.sheetLayouts().get(p2).rows().get(0);
+        Set<String> p2Crosses = new HashSet<>();
+        for (int i = 0; i < 6; i++) p2Crosses.add(red.cells().get(i).id()); // 6 non-closing crosses
+        state.boardState().sheetProgress().get(p2).updateRowState(0, new RowState(p2Crosses, false));
+
+        // Active p1 crosses and ends → PASSIVE_MOVE with p2, p3 queued.
+        rules.apply(state, completeCrossAction(state, p1));
+        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p1));
+        assertEquals(TurnPhase.PASSIVE_MOVE, state.turnState().phase());
+
+        rules.apply(state, new DeclareLockIntentAction(p3, 0)); // p3 declares RED first
+        // p2 crosses "15" this turn, then also declares RED — must be accepted (multi-declarant).
+        rules.apply(state, new CrossCellAction(p2, 0, red.cells().get(13).id(), DiceCombination.WHITE_WHITE));
+        rules.apply(state, new DeclareLockIntentAction(p2, 0));
+
+        // p2 ends first (clears its pending "15"), then p3 ends → EVALUATE closes RED.
+        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p2));
+        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p3));
+
+        assertTrue(state.isRowClosed(0), "RED must close at EVALUATE");
+        assertTrue(state.boardState().sheetProgress().get(p2).rowStates().get(0).lockCrossed(),
+                "p2 declared RED's closure — it must get the lock cross even though its pending '15' was cleared");
+    }
+
+    @Test
     void passiveDeclares_longoRow_activeCanCrossBeforeAcknowledging() {
         GameState state = stateAfterRoll(p1, p1, p2);
         crossOnlyLastCell(state, p2, 0);

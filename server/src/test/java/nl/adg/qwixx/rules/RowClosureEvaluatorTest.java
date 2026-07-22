@@ -235,7 +235,7 @@ class RowClosureEvaluatorTest {
         GameState state = singlePlayer(layoutOf(twoClosingRow(Color.RED)), emptyProgress());
         setPermanent(state, 0, firstNonClosing(state, 5));
         putPending(state, p1, 0, secondToLastClosingCell(state, 0));
-        state.pendingClosures().put(0, p1); // already declared this turn
+        state.pendingClosures().put(0, new LinkedHashSet<>(Set.of(p1))); // already declared this turn
         assertTrue(RowClosureEvaluator.declareLockIntentActions(state, p1, MIN).isEmpty(),
                 "no declaration offered for a row that already has a pending closure");
     }
@@ -282,10 +282,19 @@ class RowClosureEvaluatorTest {
     }
 
     @Test
-    void requireMayDeclareIntent_throwsWhenRowAlreadyPendingClosure() {
+    void requireMayDeclareIntent_throwsWhenSamePlayerAlreadyDeclaredThisRow() {
         GameState state = qualifiedTwoClosing(TurnPhase.ACTIVE_MOVE, p1);
-        state.pendingClosures().put(0, p2);
+        state.pendingClosures().put(0, new LinkedHashSet<>(Set.of(p1))); // p1 already declared this row
         assertThrows(IllegalMoveException.class, () -> RowClosureEvaluator
+                .requireMayDeclareIntent(state, state.turnState(), p1, 0, true, MIN));
+    }
+
+    @Test
+    void requireMayDeclareIntent_allowsDifferentPlayerToAlsoDeclareTheRow() {
+        // Multi-declarant: another player having declared the row must NOT block this player's declaration.
+        GameState state = qualifiedTwoClosing(TurnPhase.ACTIVE_MOVE, p1);
+        state.pendingClosures().put(0, new LinkedHashSet<>(Set.of(p2))); // a different player declared it
+        assertDoesNotThrow(() -> RowClosureEvaluator
                 .requireMayDeclareIntent(state, state.turnState(), p1, 0, true, MIN));
     }
 
@@ -295,7 +304,7 @@ class RowClosureEvaluatorTest {
     void activePlayerCouldClaimAnyPendingRow_trueWhenActiveCouldStillLockADeclaredRow() {
         GameState state = twoPlayer(layoutOf(standardRow(Color.RED)));
         setPermanentFor(state, p1, 0, firstNonClosingFor(state, p1, 5)); // enough, NOT the closing cell
-        state.pendingClosures().put(0, p2); // p2 declared it
+        state.pendingClosures().put(0, new LinkedHashSet<>(Set.of(p2))); // p2 declared it
         assertTrue(RowClosureEvaluator.activePlayerCouldClaimAnyPendingRow(state, p1, MIN),
                 "active player has enough non-closing crosses and could still cross the closing cell");
     }
@@ -304,7 +313,7 @@ class RowClosureEvaluatorTest {
     void activePlayerCouldClaimAnyPendingRow_falseWhenActiveIsTheDeclarant() {
         GameState state = twoPlayer(layoutOf(standardRow(Color.RED)));
         setPermanentFor(state, p1, 0, firstNonClosingFor(state, p1, 5));
-        state.pendingClosures().put(0, p1); // p1 already declared it
+        state.pendingClosures().put(0, new LinkedHashSet<>(Set.of(p1))); // p1 already declared it
         assertFalse(RowClosureEvaluator.activePlayerCouldClaimAnyPendingRow(state, p1, MIN),
                 "the declarant is never re-invited to claim their own pending row");
     }
@@ -315,7 +324,7 @@ class RowClosureEvaluatorTest {
         Set<String> crosses = firstNonClosingFor(state, p1, 5);
         crosses.add(lastClosingCellFor(state, p1, 0));
         setPermanentFor(state, p1, 0, crosses);
-        state.pendingClosures().put(0, p2);
+        state.pendingClosures().put(0, new LinkedHashSet<>(Set.of(p2)));
         assertFalse(RowClosureEvaluator.activePlayerCouldClaimAnyPendingRow(state, p1, MIN),
                 "no final look needed if the active player already crossed the closing cell");
     }
@@ -324,7 +333,7 @@ class RowClosureEvaluatorTest {
     void activePlayerCouldClaimAnyPendingRow_falseWhenActiveLacksEnoughCrosses() {
         GameState state = twoPlayer(layoutOf(standardRow(Color.RED)));
         setPermanentFor(state, p1, 0, firstNonClosingFor(state, p1, 4)); // one short
-        state.pendingClosures().put(0, p2);
+        state.pendingClosures().put(0, new LinkedHashSet<>(Set.of(p2)));
         assertFalse(RowClosureEvaluator.activePlayerCouldClaimAnyPendingRow(state, p1, MIN));
     }
 
@@ -334,7 +343,7 @@ class RowClosureEvaluatorTest {
     void recordClosureIntent_recordsDeclarantAndAddsNotification() {
         GameState state = singlePlayer(layoutOf(standardRow(Color.RED)), emptyProgress());
         RowClosureEvaluator.recordClosureIntent(state, p1, 0);
-        assertEquals(p1, state.pendingClosures().get(0), "declarant recorded for the row");
+        assertEquals(Set.of(p1), state.pendingClosures().get(0), "declarant recorded for the row");
         assertEquals(1, state.closureNotifications().size(), "a closure notification is emitted");
         assertEquals(Color.RED, state.closureNotifications().get(0).rowColor(),
                 "notification carries the lock colour");
@@ -344,7 +353,7 @@ class RowClosureEvaluatorTest {
     void rowHasPendingClosure_reflectsPresenceOfPendingClosure() {
         GameState state = singlePlayer(layoutOf(standardRow(Color.RED)), emptyProgress());
         assertFalse(RowClosureEvaluator.rowHasPendingClosure(state, 0));
-        state.pendingClosures().put(0, p1);
+        state.pendingClosures().put(0, new LinkedHashSet<>(Set.of(p1)));
         assertTrue(RowClosureEvaluator.rowHasPendingClosure(state, 0));
     }
 
@@ -379,7 +388,7 @@ class RowClosureEvaluatorTest {
     void applyRowClosure_closesRowAndMarksDeclarantLockCrossed() {
         GameState state = twoPlayer(layoutOf(standardRow(Color.RED)));
         setPermanentFor(state, p1, 0, closingCrosses(state, p1, 0)); // p1 qualifies
-        RowClosureEvaluator.applyRowClosure(state, 0, p1, MIN);
+        RowClosureEvaluator.applyRowClosure(state, 0, Set.of(p1), MIN);
         assertTrue(state.isRowClosed(0), "row is closed");
         assertTrue(state.sheetProgress(p1).rowStates().get(0).lockCrossed(),
                 "the declarant is marked lock-crossed");
@@ -390,7 +399,7 @@ class RowClosureEvaluatorTest {
         GameState state = twoPlayer(layoutOf(standardRow(Color.RED)));
         setPermanentFor(state, p1, 0, closingCrosses(state, p1, 0));
         setPermanentFor(state, p2, 0, closingCrosses(state, p2, 0)); // p2 also qualifies
-        RowClosureEvaluator.applyRowClosure(state, 0, p1, MIN);
+        RowClosureEvaluator.applyRowClosure(state, 0, Set.of(p1), MIN);
         assertTrue(state.sheetProgress(p2).rowStates().get(0).lockCrossed(),
                 "a non-declarant who also qualifies is marked lock-crossed too");
     }
@@ -400,10 +409,26 @@ class RowClosureEvaluatorTest {
         GameState state = twoPlayer(layoutOf(standardRow(Color.RED)));
         setPermanentFor(state, p1, 0, closingCrosses(state, p1, 0));
         setPermanentFor(state, p2, 0, firstNonClosingFor(state, p2, 3)); // p2 does NOT qualify
-        RowClosureEvaluator.applyRowClosure(state, 0, p1, MIN);
+        RowClosureEvaluator.applyRowClosure(state, 0, Set.of(p1), MIN);
         RowState p2Row = state.sheetProgress(p2).rowStates().get(0);
         assertFalse(p2Row != null && p2Row.lockCrossed(),
                 "a player who does not qualify is not marked lock-crossed");
+    }
+
+    @Test
+    void applyRowClosure_marksEveryDeclarantEvenIfNoLongerLockEligible() {
+        // Reproduces the Longo closing-race bug: p2 crossed the second-to-last closing cell ("15") this
+        // turn and declared the closure, but that cross was cleared when p2's turn ended. p2 is no longer
+        // lock-eligible (enough crosses but no closing cell now), yet — being a recorded declarant of the
+        // row — must still get the lock cross when the row closes alongside the other declarant p1.
+        GameState state = twoPlayer(layoutOf(standardRow(Color.RED)));
+        setPermanentFor(state, p1, 0, closingCrosses(state, p1, 0)); // p1 qualifies live
+        setPermanentFor(state, p2, 0, firstNonClosingFor(state, p2, 5)); // enough crosses, no closing cell
+
+        RowClosureEvaluator.applyRowClosure(state, 0, new LinkedHashSet<>(List.of(p1, p2)), MIN);
+
+        assertTrue(state.sheetProgress(p2).rowStates().get(0).lockCrossed(),
+                "a declarant gets the lock cross even if no longer lock-eligible");
     }
 
     @Test
@@ -411,7 +436,7 @@ class RowClosureEvaluatorTest {
         GameState state = twoPlayer(layoutOf(standardRow(Color.RED)));
         state.boardState().closedRows().put(0, p2);
         setPermanentFor(state, p1, 0, closingCrosses(state, p1, 0));
-        RowClosureEvaluator.applyRowClosure(state, 0, p1, MIN);
+        RowClosureEvaluator.applyRowClosure(state, 0, Set.of(p1), MIN);
         assertEquals(p2, state.boardState().closedRows().get(0),
                 "an already-closed row keeps its original closer and p1 is not marked");
         RowState p1Row = state.sheetProgress(p1).rowStates().get(0);

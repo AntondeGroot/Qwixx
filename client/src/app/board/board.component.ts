@@ -271,8 +271,8 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     if (turn.whiteWhiteUsed === true || turn.colorDieUsed === true || turn.luckyNumberUsed === true) return true;
     // Allow EndTurn when this player has a pending lock-closure intent (declared without dice).
     const pid = this.playerId();
-    const pendingClosures: Record<string, string> = this.gameState()?.pendingClosures ?? {};
-    return Object.values(pendingClosures).some((v) => v === pid);
+    const pendingClosures: Record<string, string[]> = this.gameState()?.pendingClosures ?? {};
+    return Object.values(pendingClosures).some((ids) => ids.includes(pid));
   });
 
   canGiveUp = computed(() => {

@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 // Top-level envelope. SheetLayout lives here as it is static; BoardState holds only what changes.
@@ -17,7 +18,7 @@ public class GameState {
     BoardState             boardState;
     @Nullable TurnState    turnState;
     List<ClosureNotification> closureNotifications; // pending row closure notifications (UI)
-    Map<Integer, UUID>     pendingClosures;     // rows queued to close at EVALUATE: rowIndex → declarerId
+    Map<Integer, Set<UUID>> pendingClosures;   // rows queued to close at EVALUATE: rowIndex → declarerIds
     boolean                gameOver;
     long                   version;        // increments on every applyAction
 
@@ -43,7 +44,7 @@ public class GameState {
     public BoardState boardState()                    { return boardState; }
     @Nullable public TurnState turnState()            { return turnState; }
     public List<ClosureNotification> closureNotifications() { return closureNotifications; }
-    public Map<Integer, UUID> pendingClosures()       { return pendingClosures; }
+    public Map<Integer, Set<UUID>> pendingClosures()  { return pendingClosures; }
     public boolean gameOver()                         { return gameOver; }
     public long version()                             { return version; }
 

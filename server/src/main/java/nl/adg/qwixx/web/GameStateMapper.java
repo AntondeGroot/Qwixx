@@ -342,11 +342,15 @@ class GameStateMapper {
         };
     }
 
-    private static Map<String, String> mapPendingClosures(GameState state) {
-        Map<String, String> result = new HashMap<>();
-        state.pendingClosures().forEach((rowIndex, declarantId) -> {
-            SheetLayout layout = state.sheetLayouts().get(declarantId);
-            if (layout != null) result.put(layout.rows().get(rowIndex).id(), declarantId.toString());
+    private static Map<String, List<String>> mapPendingClosures(GameState state) {
+        Map<String, List<String>> result = new HashMap<>();
+        state.pendingClosures().forEach((rowIndex, declarantIds) -> {
+            UUID any = declarantIds.iterator().next();
+            SheetLayout layout = state.sheetLayouts().get(any);
+            if (layout != null) {
+                result.put(layout.rows().get(rowIndex).id(),
+                        declarantIds.stream().map(UUID::toString).toList());
+            }
         });
         return result;
     }

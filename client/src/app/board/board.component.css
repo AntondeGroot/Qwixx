@@ -131,8 +131,54 @@
   border: 2px solid #e0e0e0;
   align-self: stretch;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+
+/* Holds the roll / confirm / pass button, centred; the punishment button (when shown) sits below it. */
+.confirm-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Active player's take-punishment (give up) button: below the play/pass button, level with the
+   punishments row. A red cross signals the –5 penalty. */
+.btn-punishment {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 10px;
+  background: #d32f2f;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.15s,
+    transform 0.1s;
+}
+
+.btn-punishment:hover:not(:disabled) {
+  background: #b71c1c;
+  transform: scale(1.06);
+}
+
+.btn-punishment:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.punishment-cross-icon {
+  width: 26px;
+  height: 26px;
+  stroke: #ef9a9a;
+  stroke-width: 14;
+  stroke-linecap: round;
 }
 
 .btn-confirm {

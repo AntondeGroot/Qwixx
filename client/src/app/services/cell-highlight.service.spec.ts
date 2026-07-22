@@ -23,14 +23,15 @@ function stateWith(opts: {
 describe('CellHighlightService.hasCrossableBonus', () => {
   const svc = new CellHighlightService();
 
-  it('is true when a crossable cell carries a bonus tag (lucky number/cross, Bonus A/B box)', () => {
-    for (const tag of [
-      CellTag.TypeEnum.LUCKY_NUMBER,
-      CellTag.TypeEnum.LUCKY_CROSS,
-      CellTag.TypeEnum.BONUS_BOX,
-      CellTag.TypeEnum.BONUS_B,
-    ]) {
+  it('is true when a crossable cell carries a lucky-number or lucky-cross tag', () => {
+    for (const tag of [CellTag.TypeEnum.LUCKY_NUMBER, CellTag.TypeEnum.LUCKY_CROSS]) {
       expect(svc.hasCrossableBonus(stateWith({ tag }), 'p')).toBe(true);
+    }
+  });
+
+  it('is false for a crossable Bonus A/B box — those sound on the cross, not on availability', () => {
+    for (const tag of [CellTag.TypeEnum.BONUS_BOX, CellTag.TypeEnum.BONUS_B]) {
+      expect(svc.hasCrossableBonus(stateWith({ tag }), 'p')).toBe(false);
     }
   });
 
@@ -114,5 +115,30 @@ describe('CellHighlightService.newPunishmentTaken', () => {
 
   it('is false when unchanged', () => {
     expect(svc.newPunishmentTaken(punish(2), punish(2))).toBe(false);
+  });
+});
+
+/** State where player 'p' has crossed `crossed` (0–2) of two Bonus A box cells. */
+function bonusBoxState(crossed: number): GameState {
+  const cells = ['a1', 'a2'].map((id) => ({ id, tags: [{ type: CellTag.TypeEnum.BONUS_BOX }] }));
+  return {
+    sheetLayouts: { p: { rows: [{ id: 'r', cells }] } },
+    sheetProgress: { p: { rowStates: { r: { crossedCells: ['a1', 'a2'].slice(0, crossed) } } } },
+  } as unknown as GameState;
+}
+
+describe('CellHighlightService.justCrossedBonusBox', () => {
+  const svc = new CellHighlightService();
+
+  it('is true when a new Bonus A/B box is crossed', () => {
+    expect(svc.justCrossedBonusBox(bonusBoxState(0), bonusBoxState(1), 'p')).toBe(true);
+  });
+
+  it('is false when the crossed-box count is unchanged', () => {
+    expect(svc.justCrossedBonusBox(bonusBoxState(1), bonusBoxState(1), 'p')).toBe(false);
+  });
+
+  it('treats a missing previous state as zero crossed boxes', () => {
+    expect(svc.justCrossedBonusBox(null, bonusBoxState(1), 'p')).toBe(true);
   });
 });

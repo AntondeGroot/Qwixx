@@ -4,14 +4,13 @@ import { computeBonusBProgress } from '../row/bonus-b.util';
 
 const EMPTY = new Set<string>();
 
-// Cell tags whose presence on a crossable cell counts as a bonus opportunity: lucky number,
-// lucky cross, Bonus A box, Bonus B box.
-const BONUS_TAGS = new Set<string>([
-  CellTag.TypeEnum.LUCKY_NUMBER,
-  CellTag.TypeEnum.LUCKY_CROSS,
-  CellTag.TypeEnum.BONUS_BOX,
-  CellTag.TypeEnum.BONUS_B,
-]);
+// Cell tags whose crossability triggers the bonus sound once the dice settle: lucky number and
+// lucky cross. Bonus A/B boxes are excluded here — they are almost always crossable, so they would
+// fire the sound constantly; instead they sound on the actual cross (see justCrossedBonusBox).
+const BONUS_TAGS = new Set<string>([CellTag.TypeEnum.LUCKY_NUMBER, CellTag.TypeEnum.LUCKY_CROSS]);
+
+// Bonus A (box) and Bonus B (box) tags: these sound when the player crosses one, not when crossable.
+const BONUS_BOX_TAGS = new Set<string>([CellTag.TypeEnum.BONUS_BOX, CellTag.TypeEnum.BONUS_B]);
 
 @Injectable({ providedIn: 'root' })
 export class CellHighlightService {
@@ -75,9 +74,9 @@ export class CellHighlightService {
   }
 
   /**
-   * True when this player can cross a bonus-type cell (lucky number, lucky cross, Bonus A/B box)
-   * or the roll's white+white sum hits one of their Longo bonus numbers. Drives the bonus sound
-   * that plays once the dice have settled.
+   * True when this player can cross a lucky-number or lucky-cross cell, or the roll's white+white
+   * sum hits one of their Longo bonus numbers. Drives the bonus sound that plays once the dice have
+   * settled. Bonus A/B boxes are excluded — they sound when crossed, not when merely crossable.
    */
   hasCrossableBonus(state: GameState | null | undefined, pid: string): boolean {
     if (!state) return false;
@@ -100,6 +99,26 @@ export class CellHighlightService {
   /** True when this player just crossed a lock cell of their own (their lock count went up). */
   crossedOwnLock(prev: GameState | null | undefined, next: GameState | null | undefined, pid: string): boolean {
     return this.lockCount(next, pid) > this.lockCount(prev, pid);
+  }
+
+  /** How many crossed cells carry a Bonus A or Bonus B box tag — the bonus sound fires when this rises. */
+  private bonusBoxesCrossed(state: GameState | null | undefined, pid: string): number {
+    const layout = state?.sheetLayouts?.[pid];
+    const progress = state?.sheetProgress?.[pid];
+    if (!layout) return 0;
+    let count = 0;
+    for (const row of layout.rows) {
+      const crossed = new Set(progress?.rowStates[row.id]?.crossedCells ?? []);
+      for (const cell of row.cells) {
+        if (crossed.has(cell.id) && cell.tags?.some((t) => BONUS_BOX_TAGS.has(t.type))) count++;
+      }
+    }
+    return count;
+  }
+
+  /** True when this player just crossed a Bonus A or Bonus B box (their crossed-box count rose). */
+  justCrossedBonusBox(prev: GameState | null | undefined, next: GameState | null | undefined, pid: string): boolean {
+    return this.bonusBoxesCrossed(next, pid) > this.bonusBoxesCrossed(prev, pid);
   }
 
   /** Total punishments across all players — the punishment sound fires when this rises. */

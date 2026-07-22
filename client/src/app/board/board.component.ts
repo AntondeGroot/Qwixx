@@ -667,6 +667,7 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       if (this.highlight.newPunishmentTaken(prev, s)) this.audio.play(AudioService.PUNISHMENT);
       if (this.highlight.crossedOwnLock(prev, s, this.playerId())) this.audio.play(AudioService.LOCK);
       if (this.highlight.bonusBJustCompleted(prev, s, this.playerId())) this.audio.play(AudioService.BONUS_B_COMPLETE);
+      if (this.highlight.justCrossedBonusBox(prev, s, this.playerId())) this.audio.play(AudioService.BONUS);
     }
 
     // Track whether this player was re-queued mid-turn (e.g. active declared a lock intent

@@ -65,6 +65,7 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
                 if (settings.randomOrder()) shuffleDisplayValues(colored);
                 if (settings.extraRow()) applyExtraRow(colored);
                 if (settings.connectedCells()) applyConnectedCells(colored);
+                if (settings.connectedDiagonal()) applyConnectedCellsDirectional(colored);
                 result.put(player, interleaveWithBonusRows(colored));
             }
         } else {
@@ -76,6 +77,7 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
                         : buildStandardRows();
                 if (settings.randomOrder()) shuffleDisplayValues(shared);
                 if (settings.connectedCells()) applyConnectedCells(shared);
+                if (settings.connectedDiagonal()) applyConnectedCellsDirectional(shared);
                 applyDoubleVariants(shared);
                 if (settings.bonusA()) { applyBonusBoxes(shared); shared.add(buildBonusBar(false)); }
                 if (settings.bonusB()) { applyBonusBBoxes(shared); shared.add(buildBonusBStrip()); }
@@ -97,6 +99,7 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
                     if (settings.randomOrder()) shuffleDisplayValues(playerRows);
                     if (settings.extraRow()) applyExtraRow(playerRows);
                     if (settings.connectedCells()) applyConnectedCells(playerRows);
+                    if (settings.connectedDiagonal()) applyConnectedCellsDirectional(playerRows);
                     applyDoubleVariants(playerRows);
                     if (settings.bonusA()) { applyBonusBoxes(playerRows); playerRows.add(buildBonusBar(true)); }
                     if (settings.bonusB()) { applyBonusBBoxes(playerRows); playerRows.add(buildBonusBStrip()); }
@@ -478,7 +481,8 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
         return row;
     }
 
-    private void applyConnectedCells(List<Row> rows) {
+    // Positions that may not anchor a connection: column 0 and every closing-eligible (lock) column.
+    private Set<Integer> forbiddenConnectPositions(List<Row> rows) {
         Set<Integer> forbidden = new HashSet<>();
         forbidden.add(0);
         for (Row row : rows) {
@@ -486,11 +490,20 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
                 if (cell.isClosingEligible()) forbidden.add(cell.position());
             }
         }
+        return forbidden;
+    }
 
-        List<Integer> validPositions = new ArrayList<>();
-        for (Cell cell : rows.get(0).cells()) {
-            if (!forbidden.contains(cell.position())) validPositions.add(cell.position());
+    private List<Integer> validConnectPositions(List<Row> rows, Set<Integer> forbidden) {
+        List<Integer> valid = new ArrayList<>();
+        for (Cell cell : rows.getFirst().cells()) {
+            if (!forbidden.contains(cell.position())) valid.add(cell.position());
         }
+        return valid;
+    }
+
+    private void applyConnectedCells(List<Row> rows) {
+        Set<Integer> forbidden = forbiddenConnectPositions(rows);
+        List<Integer> validPositions = validConnectPositions(rows, forbidden);
 
         List<int[]> allPairs;
         do {
@@ -515,6 +528,71 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
                 addAutoTag(cellB, cellA.id());
             }
         }
+    }
+
+    // Connected Cells B (admin): one-way diagonal links. Crossing the upper cell auto-crosses the
+    // cell one row below and one column to the left or right — never the reverse. Chain-avoidance
+    // ensures a fired target is not itself a source, so a single cross triggers at most one auto-cross.
+    private void applyConnectedCellsDirectional(List<Row> rows) {
+        Set<Integer> forbidden = forbiddenConnectPositions(rows);
+        List<Integer> validPositions = validConnectPositions(rows, forbidden);
+        int last = rows.getFirst().cells().size() - 1;
+
+        List<int[]> allPairs;
+        List<int[]> allOffsets;
+        do {
+            allPairs = new ArrayList<>();
+            allOffsets = new ArrayList<>();
+            int[] prevPair = null;
+            for (int pair = 0; pair < rows.size() - 1; pair++) {
+                List<Integer> shuffled = new ArrayList<>(validPositions);
+                Collections.shuffle(shuffled, random);
+                int[] chosen = pickPairPositions(shuffled, prevPair);
+                int[] offsets = new int[chosen.length];
+                for (int k = 0; k < chosen.length; k++) offsets[k] = chooseDiagonalOffset(chosen[k], last, forbidden);
+                allPairs.add(chosen);
+                allOffsets.add(offsets);
+                prevPair = chosen;
+            }
+        } while (!hasNoDirectionalChains(allPairs, allOffsets));
+
+        for (int pair = 0; pair < rows.size() - 1; pair++) {
+            Row upper = rows.get(pair);
+            Row lower = rows.get(pair + 1);
+            int[] positions = allPairs.get(pair);
+            int[] offsets = allOffsets.get(pair);
+            for (int k = 0; k < positions.length; k++) {
+                Cell source = upper.cells().get(positions[k]);               // trigger: the upper cell
+                Cell target = lower.cells().get(positions[k] + offsets[k]);  // fires the diagonal cell below
+                addAutoTag(source, target.id());                            // one-way: source → target only
+            }
+        }
+    }
+
+    // Picks a −1 or +1 diagonal offset whose target column is in range and not a forbidden (closing)
+    // cell; random when both sides are valid, the open side when one is, and 0 (straight down) if neither.
+    private int chooseDiagonalOffset(int pos, int last, Set<Integer> forbidden) {
+        boolean leftOk  = pos - 1 >= 0    && !forbidden.contains(pos - 1);
+        boolean rightOk = pos + 1 <= last && !forbidden.contains(pos + 1);
+        if (leftOk && rightOk) return random.nextBoolean() ? -1 : 1;
+        if (leftOk)  return -1;
+        if (rightOk) return 1;
+        return 0;
+    }
+
+    // No directional chain: a gap's target columns must not be source columns of the gap below it,
+    // so crossing one source fires exactly one target (never a cascade down the sheet).
+    private boolean hasNoDirectionalChains(List<int[]> allPairs, List<int[]> allOffsets) {
+        for (int g = 0; g < allPairs.size() - 1; g++) {
+            Set<Integer> nextSources = new HashSet<>();
+            for (int p : allPairs.get(g + 1)) nextSources.add(p);
+            int[] pos = allPairs.get(g);
+            int[] off = allOffsets.get(g);
+            for (int k = 0; k < pos.length; k++) {
+                if (nextSources.contains(pos[k] + off[k])) return false;
+            }
+        }
+        return true;
     }
 
     private boolean hasNoChainedConnections(List<int[]> allPairs) {

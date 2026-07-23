@@ -231,6 +231,31 @@ p {
   border: 1px dashed rgba(0, 0, 0, 0.6);
 }
 
+/* Connected B: source cell top-left, target cell bottom-right, one-way diagonal arrow between them. */
+.opt-diag {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+.opt-diag-a {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.opt-diag-b {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+}
+.opt-diag-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
 /* Bonus A: bonus-bar cells, each with the same gold ring as the bonus boxes on the board. */
 .opt-cell--bonus-ring {
   position: relative;

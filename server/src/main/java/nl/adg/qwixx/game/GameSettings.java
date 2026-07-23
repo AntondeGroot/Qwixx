@@ -9,6 +9,7 @@ public class GameSettings {
     private final BaseVariant  base;
     private final boolean      randomOrder;
     private final boolean      connectedCells;
+    private final boolean      connectedDiagonal;
     private final boolean      extraRow;
     private final boolean      bigPoints;
     private final boolean      xChange;
@@ -32,6 +33,7 @@ public class GameSettings {
         this.base        = builder.base;
         this.randomOrder = builder.randomOrder;
         this.connectedCells = builder.connectedCells;
+        this.connectedDiagonal = builder.connectedDiagonal;
         this.extraRow    = builder.extraRow;
         this.bigPoints   = builder.bigPoints;
         this.xChange     = builder.xChange;
@@ -53,6 +55,7 @@ public class GameSettings {
     public BaseVariant     base()           { return base; }
     public boolean         randomOrder()    { return randomOrder; }
     public boolean         connectedCells() { return connectedCells; }
+    public boolean         connectedDiagonal() { return connectedDiagonal; }
     public boolean         extraRow()       { return extraRow; }
     public boolean         bigPoints()      { return bigPoints; }
     public boolean         xChange()        { return xChange; }
@@ -82,6 +85,7 @@ public class GameSettings {
         private BaseVariant    base = BaseVariant.STANDARD;
         private boolean        randomOrder;
         private boolean        connectedCells;
+        private boolean        connectedDiagonal;
         private boolean        extraRow;
         private boolean        bigPoints;
         private boolean        xChange;
@@ -102,6 +106,7 @@ public class GameSettings {
         public Builder base(BaseVariant base)              { this.base = base; return this; }
         public Builder randomOrder(boolean v)              { this.randomOrder = v; return this; }
         public Builder connectedCells(boolean v)           { this.connectedCells = v; return this; }
+        public Builder connectedDiagonal(boolean v)        { this.connectedDiagonal = v; return this; }
         public Builder extraRow(boolean v)                 { this.extraRow = v; return this; }
         public Builder bigPoints(boolean v)                { this.bigPoints = v; return this; }
         public Builder xChange(boolean v)                  { this.xChange = v; return this; }
@@ -133,19 +138,24 @@ public class GameSettings {
                 throw new IllegalArgumentException(
                     "doubleA and doubleB cannot be combined: they are alternative double-variant layouts");
             }
-            if ((doubleA || doubleB) && (bigPoints || luckyCross || connectedCells)) {
+            if (connectedCells && connectedDiagonal) {
                 throw new IllegalArgumentException(
-                    "the double variants cannot be combined with bigPoints, luckyCross or connectedCells: " +
+                    "connectedCells and connectedDiagonal cannot be combined: they are alternative " +
+                    "connection layouts (straight vs one-way diagonal)");
+            }
+            if ((doubleA || doubleB) && (bigPoints || luckyCross || connectedCells || connectedDiagonal)) {
+                throw new IllegalArgumentException(
+                    "the double variants cannot be combined with bigPoints, luckyCross or connected cells: " +
                     "each restructures the coloured rows in an incompatible way");
             }
-            if (bonusB && (bigPoints || doubleA || doubleB || connectedCells || luckyCross || extraRow || randomOrder || bonusA)) {
+            if (bonusB && (bigPoints || doubleA || doubleB || connectedCells || connectedDiagonal || luckyCross || extraRow || randomOrder || bonusA)) {
                 throw new IllegalArgumentException(
-                    "bonusB cannot be combined with bigPoints, doubleA/doubleB, connectedCells, luckyCross, " +
+                    "bonusB cannot be combined with bigPoints, doubleA/doubleB, connected cells, luckyCross, " +
                     "extraRow, randomOrder or bonusA: the bonus boxes rely on the standard row layout");
             }
-            if (bonusA && (bigPoints || doubleA || doubleB || connectedCells || luckyCross || extraRow || randomOrder)) {
+            if (bonusA && (bigPoints || doubleA || doubleB || connectedCells || connectedDiagonal || luckyCross || extraRow || randomOrder)) {
                 throw new IllegalArgumentException(
-                    "bonusA cannot be combined with bigPoints, doubleA/doubleB, connectedCells, luckyCross, " +
+                    "bonusA cannot be combined with bigPoints, doubleA/doubleB, connected cells, luckyCross, " +
                     "extraRow or randomOrder: bonus boxes sit at fixed numbers and rely on the standard row layout");
             }
             return new GameSettings(this);

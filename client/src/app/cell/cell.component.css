@@ -93,12 +93,15 @@
   border-width: 5px;
 }
 
-.cell.auto-cross::before {
+/* Connected-cell ring — a solid ring at the cell edge. Used by Connected A (both linked cells) and
+   Connected B (the source cell AND the diagonal target cell), so both ends look identical. */
+.cell.auto-cross::before,
+.cell.auto-cross-target::before {
   content: '';
   position: absolute;
-  inset: 4px;
+  inset: -1px;
   border-radius: 50%;
-  border: 2px dashed rgba(0, 0, 0, 0.7);
+  border: 3px solid rgba(20, 20, 20, 0.72);
   pointer-events: none;
 }
 

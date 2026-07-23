@@ -124,6 +124,7 @@
           [crossed]="isCrossed(cell.id)"
           [pending]="pendingCellIds().has(cell.id)"
           [clickable]="clickableCellIds().has(cell.id)"
+          [autoCrossTarget]="autoCrossTargetCellIds().has(cell.id)"
           [showClickable]="showClickableCellIds()?.has(cell.id)"
           [showDieHint]="whiteWhiteClickableCellIds().has(cell.id)"
           [maxedColors]="maxedColors()"

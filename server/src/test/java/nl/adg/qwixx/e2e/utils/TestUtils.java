@@ -145,6 +145,11 @@ public class TestUtils {
 
     private static ChromeOptions buildOptions(String windowSize) {
         ChromeOptions options = new ChromeOptions();
+        // Force Selenium Manager to resolve a version-matched Chrome for Testing browser +
+        // driver pair, instead of falling back to the developer's system Chrome with a stale
+        // cached driver (the version-skew that made these ITs flaky). CfT is also what the
+        // deploy.sh cleanup targets by process name.
+        options.setBrowserVersion("stable");
         options.addArguments("--headless=new");
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");

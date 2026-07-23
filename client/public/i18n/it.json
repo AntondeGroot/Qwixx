@@ -27,6 +27,8 @@
     "extraRowDescription": "Aggiungi una riga bonus di celle che forma un'onda su quattro righe.",
     "connectedCells": "Celle collegate",
     "connectedCellsDescription": "Collega celle tra righe adiacenti: segnare una cella segna automaticamente la cella collegata nella riga successiva.",
+    "connectedDiagonal": "Collegate B",
+    "connectedDiagonalDescription": "Collegamenti diagonali a senso unico: segnare una cella segna anche la cella in diagonale sotto (una riga più in basso, una colonna di lato) — mai il contrario.",
     "seeOtherCards": "Vedi le carte degli altri",
     "seeOtherCardsDescription": "Mostra una miniatura della scheda di ogni altro giocatore. Disattiva per nascondere le carte degli altri giocatori.",
     "doubleA": "Doppio A",

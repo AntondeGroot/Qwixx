@@ -29,6 +29,7 @@ export class RowComponent {
   // Bonus B: kind string → how many of its two boxes are crossed (0–2). Drives the strip's N/2 counter.
   bonusBProgress = input<Record<string, number>>({});
   clickableCellIds = input<Set<string>>(new Set());
+  autoCrossTargetCellIds = input<Set<string>>(new Set());
   showClickableCellIds = input<Set<string> | null>(null);
   whiteWhiteClickableCellIds = input<Set<string>>(new Set());
   pendingCellIds = input<Set<string>>(new Set());

@@ -7,7 +7,7 @@ import type { Mocked } from 'vitest';
 import { provideTranslateService, TranslateLoader, TranslateService, TranslationObject } from '@ngx-translate/core';
 import { Observable } from 'rxjs';
 import { GamestatesService, MovesService } from '../../generated/api/api';
-import { Color, GameState, MoveType, TurnPhase } from '../../generated/model/models';
+import { CellTag, Color, GameState, MoveType, TurnPhase } from '../../generated/model/models';
 import { RowClosureModalService } from '../services/row-closure-modal.service';
 import { DiceSvgService } from '../dice/dice-svg.service';
 import { AudioService } from '../services/audio.service';
@@ -1751,5 +1751,80 @@ describe('BoardComponent — pass button vs roll animation', () => {
     component.rollingDice.set(false);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.btn-pass-arrow')).not.toBeNull();
+  });
+});
+
+describe('BoardComponent — connector classification (Connected A vs B)', () => {
+  let component: BoardComponent;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [BoardComponent],
+      providers: [
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '' } } } },
+        { provide: GamestatesService, useValue: { getGameState: () => of(makeState()) } },
+        { provide: MovesService, useValue: { makeMove: vi.fn().mockReturnValue(of({})) } },
+        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+      ],
+    }).compileComponents();
+    component = TestBed.createComponent(BoardComponent).componentInstance;
+    component.playerId.set(PLAYER_ID);
+  });
+
+  const auto = (target: string) => ({ type: CellTag.TypeEnum.AUTO_CROSS, target });
+  const centerX = (pos: number) => 8 + pos * 48 + 22;
+
+  const setLayout = () =>
+    component.gameState.set(
+      makeState({
+        sheetLayouts: {
+          [PLAYER_ID]: {
+            rows: [
+              {
+                id: 'r0',
+                cells: [
+                  { id: 'src', position: 3, color: 'RED', tags: [auto('tgt')] }, // one-way → diagonal
+                  { id: 'twoA', position: 7, color: 'RED', tags: [auto('twoB')] }, // mutual → vertical
+                ],
+              },
+              {
+                id: 'r1',
+                cells: [
+                  { id: 'tgt', position: 2, color: 'YELLOW', tags: [] }, // no back-ref
+                  { id: 'twoB', position: 7, color: 'YELLOW', tags: [auto('twoA')] }, // back-ref
+                ],
+              },
+            ],
+          },
+        },
+      } as unknown as Partial<GameState>),
+    );
+
+  it('classifies a one-way link (target has no back-reference) as a diagonal pair, two-way as a vertical line', () => {
+    setLayout();
+    // Two-way link → a vertical line under r0; one-way link is NOT a vertical line.
+    expect(component.myRowConnectors().get('r0')!.below).toEqual([centerX(7)]);
+    // One-way link → a diagonal pair (source → target one row below); the mutual pair is excluded.
+    expect(component.diagonalPairs()).toEqual([{ sourceId: 'src', targetId: 'tgt' }]);
+  });
+
+  it('measureDiagonalLinks: derives the arrow line from cell layout offsets (source bottom-centre → target top-centre)', () => {
+    setLayout();
+    const sheet = {} as HTMLElement;
+    const cell = (offsetLeft: number, offsetTop: number) =>
+      ({ offsetLeft, offsetTop, offsetWidth: 44, offsetHeight: 44, offsetParent: sheet }) as unknown as HTMLElement;
+    const nodes: Record<string, unknown> = {
+      '.diag-overlay': { parentElement: sheet },
+      '[data-cell-id="src"]': cell(60, 40),
+      '[data-cell-id="tgt"]': cell(110, 100),
+    };
+    const el = (component as unknown as { host: { nativeElement: HTMLElement } }).host.nativeElement;
+    vi.spyOn(el, 'querySelector').mockImplementation((sel: string) => (nodes[sel] ?? null) as Element | null);
+
+    (component as unknown as { measureDiagonalLinks: () => void }).measureDiagonalLinks();
+
+    // src offset (60,40), size 44 → bottom-edge centre (82, 84), +4 (outside, into gap) → (82, 88).
+    // tgt offset (110,100) → top-edge centre (132, 100), −4 (outside, into gap) → (132, 96).
+    expect(component.diagonalLinks()).toEqual([{ x1: 82, y1: 88, x2: 132, y2: 96 }]);
   });
 });

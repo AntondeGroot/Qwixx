@@ -124,6 +124,108 @@ class ConnectedCellsFactoryTest {
     }
 
     // -------------------------------------------------------------------------
+    // Connected B — one-way diagonal links
+    // -------------------------------------------------------------------------
+
+    @Test
+    void diagonalLinksAreOneWay_sourceTaggedTargetIsNot() {
+        for (int seed = 0; seed < 50; seed++) {
+            List<Row> rows = buildDiagonalRows(BaseVariant.STANDARD, new Random(seed));
+            Map<String, Cell> byId = cellsById(rows);
+            for (Row row : rows) {
+                for (Cell source : row.cells()) {
+                    for (CellTag tag : source.tags()) {
+                        if (tag instanceof CellTag.AutoCross ac) {
+                            Cell target = byId.get(ac.target());
+                            assertNotNull(target, "target must exist (seed=" + seed + ")");
+                            boolean pointsBack = target.tags().stream().anyMatch(
+                                    t -> t instanceof CellTag.AutoCross back && back.target().equals(source.id()));
+                            assertFalse(pointsBack,
+                                    "Connected B links are one-way: target must not point back (seed=" + seed + ")");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    void diagonalTargetIsOneRowBelowAndOneColumnOver() {
+        for (int seed = 0; seed < 50; seed++) {
+            List<Row> rows = buildDiagonalRows(BaseVariant.STANDARD, new Random(seed));
+            for (int r = 0; r < rows.size(); r++) {
+                for (Cell source : rows.get(r).cells()) {
+                    for (CellTag tag : source.tags()) {
+                        if (tag instanceof CellTag.AutoCross ac) {
+                            assertTrue(r + 1 < rows.size(), "source must have a row below (seed=" + seed + ")");
+                            Cell target = findById(rows.get(r + 1), ac.target());
+                            assertNotNull(target, "target must be in the row directly below (seed=" + seed + ")");
+                            int diff = Math.abs(target.position() - source.position());
+                            assertEquals(1, diff,
+                                    "target column must be source ±1 (seed=" + seed + ", diff=" + diff + ")");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    void diagonalTargetsAvoidForbiddenColumns() {
+        for (int seed = 0; seed < 50; seed++) {
+            List<Row> rows = buildDiagonalRows(BaseVariant.STANDARD, new Random(seed));
+            Map<String, Cell> byId = cellsById(rows);
+            for (Row row : rows) {
+                for (Cell source : row.cells()) {
+                    for (CellTag tag : source.tags()) {
+                        if (tag instanceof CellTag.AutoCross ac) {
+                            Cell target = byId.get(ac.target());
+                            assertNotEquals(0, target.position(),
+                                    "diagonal target must not be column 0 (seed=" + seed + ")");
+                            assertFalse(target.isClosingEligible(),
+                                    "diagonal target must not be closing-eligible (seed=" + seed + ")");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    void noDirectionalChain_aTargetColumnIsNeverASourceColumnBelow() {
+        for (int seed = 0; seed < 100; seed++) {
+            List<Row> rows = buildDiagonalRows(BaseVariant.STANDARD, new Random(seed));
+            Map<String, Cell> byId = cellsById(rows);
+            for (int r = 0; r + 1 < rows.size(); r++) {
+                Set<Integer> targetCols = new HashSet<>();
+                for (Cell source : rows.get(r).cells()) {
+                    for (CellTag tag : source.tags()) {
+                        if (tag instanceof CellTag.AutoCross ac) targetCols.add(byId.get(ac.target()).position());
+                    }
+                }
+                for (Cell source : rows.get(r + 1).cells()) {
+                    boolean isSource = source.tags().stream().anyMatch(t -> t instanceof CellTag.AutoCross);
+                    if (isSource) {
+                        assertFalse(targetCols.contains(source.position()),
+                                "a fired target must not itself be a source one row down (seed=" + seed + ")");
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    void connectedCellsAndConnectedDiagonalCannotCombine() {
+        assertThrows(IllegalArgumentException.class,
+                () -> GameSettings.builder().connectedCells(true).connectedDiagonal(true).build());
+    }
+
+    @Test
+    void connectedDiagonalAloneBuilds() {
+        assertDoesNotThrow(() -> GameSettings.builder().connectedDiagonal(true).build());
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 
@@ -131,6 +233,23 @@ class ConnectedCellsFactoryTest {
         UUID player = UUID.randomUUID();
         GameSettings settings = GameSettings.builder().base(base).connectedCells(true).build();
         return new ConfigurableGameStyleFactory(settings, rng).buildRows(List.of(player)).get(player);
+    }
+
+    private List<Row> buildDiagonalRows(BaseVariant base, Random rng) {
+        UUID player = UUID.randomUUID();
+        GameSettings settings = GameSettings.builder().base(base).connectedDiagonal(true).build();
+        return new ConfigurableGameStyleFactory(settings, rng).buildRows(List.of(player)).get(player);
+    }
+
+    private Map<String, Cell> cellsById(List<Row> rows) {
+        Map<String, Cell> byId = new HashMap<>();
+        for (Row row : rows) for (Cell c : row.cells()) byId.put(c.id(), c);
+        return byId;
+    }
+
+    private Cell findById(Row row, String id) {
+        for (Cell c : row.cells()) if (c.id().equals(id)) return c;
+        return null;
     }
 
     /** Positions in rowA that have an AutoCross pointing to a cell in rowB. */

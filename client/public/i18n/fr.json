@@ -13,6 +13,7 @@
   "startGame": "Démarrer le jeu",
   "starting": "Démarrage en cours…",
   "gameOption": {
+    "section": { "general": "Paramètres généraux", "modes": "Variantes de jeu" },
     "base": "Variante",
     "baseDescription": "STANDARD utilise les cellules 2–12 par ligne. LONGO utilise les cellules 2–16 avec des numéros bonus.",
     "gameMode": "Mode de jeu",

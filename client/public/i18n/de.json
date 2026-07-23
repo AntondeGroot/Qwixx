@@ -13,6 +13,7 @@
   "startGame": "Spiel starten",
   "starting": "Wird gestartet…",
   "gameOption": {
+    "section": { "general": "Allgemeine Einstellungen", "modes": "Spielvarianten" },
     "base": "Variante",
     "baseDescription": "STANDARD verwendet Zellen 2–12 pro Reihe. LONGO verwendet Zellen 2–16 mit Bonusnummern.",
     "gameMode": "Spielmodus",

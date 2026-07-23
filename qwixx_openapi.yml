@@ -731,6 +731,13 @@ components:
         adminOnly:
           type: boolean
           description: When true, this option is hidden from regular users and only shown to administrators.
+        category:
+          type: string
+          enum: [GENERAL, MODE]
+          description: >
+            Grouping for the settings UI. GENERAL options configure the match and players
+            (game mode, cards, bots); MODE options change the sheet layout and scoring rules.
+            Absent is treated as MODE by the client.
         incompatibleWith:
           type: array
           items:

@@ -3,6 +3,16 @@
   background: #fff;
 }
 
+/* Freeze every animation/transition inside the catalog so the screenshots are byte-deterministic.
+   Without this the silver-mark sheen (a forever-sweeping gleam) is caught at a random phase and the
+   Bonus B preview — which has ~15 marks — changes on every run. */
+:host ::ng-deep *,
+:host ::ng-deep *::before,
+:host ::ng-deep *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
 .catalog {
   display: flex;
   flex-direction: column;

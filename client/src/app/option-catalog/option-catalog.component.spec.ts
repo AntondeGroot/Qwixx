@@ -35,22 +35,23 @@ function setup(options: GameOption[]) {
 }
 
 describe('OptionCatalogComponent', () => {
-  it('lists only the sheet-changing (MODE) options, skipping GENERAL ones', () => {
+  it('lists MODE options (base split into standard + longo), skipping GENERAL ones', () => {
     const { fixture } = setup([
       opt('base', GameOption.TypeEnum.ENUM, GameOption.CategoryEnum.MODE),
       opt('doubleA', GameOption.TypeEnum.BOOLEAN, GameOption.CategoryEnum.MODE),
       opt('seeOtherCards', GameOption.TypeEnum.BOOLEAN, GameOption.CategoryEnum.GENERAL),
     ]);
     const keys = fixture.componentInstance.items().map((i) => i.key);
-    expect(keys).toEqual(['base', 'doubleA']);
+    expect(keys).toEqual(['standard', 'longo', 'doubleA']);
     expect(fixture.componentInstance.ready()).toBe(true);
   });
 
-  it('requests LONGO for base and toggles the flag on for other variants', () => {
+  it('requests both STANDARD and LONGO for base, and toggles the flag on for other variants', () => {
     const { previewLayout } = setup([
       opt('base', GameOption.TypeEnum.ENUM, GameOption.CategoryEnum.MODE),
       opt('bigPoints', GameOption.TypeEnum.BOOLEAN, GameOption.CategoryEnum.MODE),
     ]);
+    expect(previewLayout).toHaveBeenCalledWith({ base: 'STANDARD' });
     expect(previewLayout).toHaveBeenCalledWith({ base: 'LONGO' });
     expect(previewLayout).toHaveBeenCalledWith({ base: 'STANDARD', bigPoints: true });
   });

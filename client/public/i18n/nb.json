@@ -16,6 +16,8 @@
     "section": { "general": "Generelle innstillinger", "modes": "Spillvarianter" },
     "base": "Variant",
     "baseDescription": "STANDARD bruker celler 2–12 per rad. LONGO bruker celler 2–16 med bonusnumre.",
+    "standardDescription": "Standardarket: ruter 2–12 i hver farget rad.",
+    "longoDescription": "Longo-arket: ruter 2–16, som ender med bonustall.",
     "gameMode": "Spillmodus",
     "gameModeDescription": "Offline lar spillere spille rundt et bord med ekte terninger.",
     "cardMode": "Alle spillere får",

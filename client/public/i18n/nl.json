@@ -16,6 +16,8 @@
     "section": { "general": "Algemene instellingen", "modes": "Spelvarianten" },
     "base": "Variant",
     "baseDescription": "STANDARD gebruikt cellen 2–12 per rij. LONGO gebruikt cellen 2–16 met bonusnummers.",
+    "standardDescription": "Het standaard speelblad: vakjes 2–12 in elke gekleurde rij.",
+    "longoDescription": "Het Longo-speelblad: vakjes 2–16, eindigend op bonusnummers.",
     "gameMode": "Spelmodus",
     "gameModeDescription": "Offline laat spelers om een tafel met echte dobbelstenen spelen.",
     "cardMode": "Alle spelers krijgen",

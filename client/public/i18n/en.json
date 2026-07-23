@@ -16,6 +16,8 @@
     "section": { "general": "General settings", "modes": "Game variants" },
     "base": "Variant",
     "baseDescription": "STANDARD uses cells 2–12 per row. LONGO uses cells 2–16 with bonus numbers.",
+    "standardDescription": "The standard sheet: cells 2–12 in each colour row.",
+    "longoDescription": "The Longo sheet: cells 2–16, ending in bonus numbers.",
     "gameMode": "Game mode",
     "gameModeDescription": "Offline lets players play around a table with real dice.",
     "cardMode": "All players get",

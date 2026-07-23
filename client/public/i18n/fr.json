@@ -16,6 +16,8 @@
     "section": { "general": "Paramètres généraux", "modes": "Variantes de jeu" },
     "base": "Variante",
     "baseDescription": "STANDARD utilise les cellules 2–12 par ligne. LONGO utilise les cellules 2–16 avec des numéros bonus.",
+    "standardDescription": "La grille standard : cases 2–12 dans chaque rangée colorée.",
+    "longoDescription": "La grille Longo : cases 2–16, se terminant par des nombres bonus.",
     "gameMode": "Mode de jeu",
     "gameModeDescription": "Offline permet aux joueurs de jouer autour d'une table avec de vrais dés.",
     "cardMode": "Tous les joueurs reçoivent",

@@ -37,19 +37,28 @@ export class OptionCatalogComponent implements OnInit {
       // Only MODE options change the sheet and have a meaningful preview (base + variant toggles).
       const modeOptions = opts.filter((o) => o.category === GameOption.CategoryEnum.MODE);
       forkJoin(
-        modeOptions.map((o) =>
+        this.catalogEntries(modeOptions).map((e) =>
           this.gamesService
-            .previewLayout(this.previewRequestFor(o.key))
-            .pipe(map((layout) => ({ key: o.key, layout, doubleVariant: this.doubleVariantFor(o.key) }))),
+            .previewLayout(e.request)
+            .pipe(map((layout) => ({ key: e.key, layout, doubleVariant: this.doubleVariantFor(e.key) }))),
         ),
       ).subscribe((items) => this.items.set(items));
     });
   }
 
-  // base → show the LONGO sheet (its non-default value); every other MODE option is a boolean
-  // toggled on over the standard sheet.
-  private previewRequestFor(key: string): Record<string, unknown> {
-    return key === 'base' ? { base: 'LONGO' } : { base: 'STANDARD', [key]: true };
+  // The Variant option becomes two entries (standard, longo); every other MODE option is a
+  // boolean toggled on over the standard sheet. Order matches the README catalog.
+  private catalogEntries(modeOptions: GameOption[]): { key: string; request: Record<string, unknown> }[] {
+    const entries: { key: string; request: Record<string, unknown> }[] = [];
+    for (const o of modeOptions) {
+      if (o.key === 'base') {
+        entries.push({ key: 'standard', request: { base: 'STANDARD' } });
+        entries.push({ key: 'longo', request: { base: 'LONGO' } });
+      } else {
+        entries.push({ key: o.key, request: { base: 'STANDARD', [o.key]: true } });
+      }
+    }
+    return entries;
   }
 
   private doubleVariantFor(key: string): 'A' | 'B' | null {

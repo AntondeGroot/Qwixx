@@ -18,7 +18,8 @@ class AdminOptionReleaseTest {
 
     /** Every option that is admin-only during the trial. */
     private static final Set<String> TRIAL_OPTIONS = Set.of(
-            "bigPoints", "xChange", "luckyNumber", "luckyCross", "doubleA", "doubleB", "bonusA", "bonusB");
+            "bigPoints", "xChange", "luckyNumber", "luckyCross", "doubleA", "doubleB", "bonusA", "bonusB",
+            "connectedDiagonal");
 
     private static final Instant RELEASE = AdminOptionRelease.RELEASE_MOMENT.toInstant();
 

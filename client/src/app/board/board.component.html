@@ -58,6 +58,7 @@
                 [bonusBProgress]="bonusBProgress()"
                 [closed]="isRowClosed(row.id)"
                 [clickableCellIds]="isOffline() ? offlineClickableCellIds(playerId()) : visibleClickableCellIds()"
+                [autoCrossTargetCellIds]="autoCrossTargetCellIds()"
                 [showClickableCellIds]="isOffline() ? emptySet : null"
                 [whiteWhiteClickableCellIds]="isOffline() ? emptySet : whiteWhiteClickableCellIds()"
                 [pendingCellIds]="pendingCellIds()"
@@ -74,6 +75,37 @@
                 [doubleVariant]="state.doubleA ? 'A' : state.doubleB ? 'B' : null"
                 (lockClicked)="onLockClicked(row.id, playerId())"
               />
+            }
+            @if (diagonalPairs().length > 0) {
+              <!-- Connected B: one overlay above all rows so arrows + target circles paint on top.
+                   Coordinates are measured from the real cell rects (see measureDiagonalLinks). -->
+              <svg class="diag-overlay" aria-hidden="true">
+                <defs>
+                  <marker
+                    id="connb-arrow"
+                    markerWidth="14"
+                    markerHeight="12"
+                    refX="7"
+                    refY="6"
+                    orient="auto"
+                    markerUnits="userSpaceOnUse"
+                  >
+                    <path d="M0,0 L12,6 L0,12 L4,6 Z" fill="rgb(20, 20, 20)" />
+                  </marker>
+                </defs>
+                @for (d of diagonalLinks(); track $index) {
+                  <line
+                    [attr.x1]="d.x1"
+                    [attr.y1]="d.y1"
+                    [attr.x2]="d.x2"
+                    [attr.y2]="d.y2"
+                    stroke="rgb(20, 20, 20)"
+                    stroke-width="2.75"
+                    stroke-linecap="round"
+                    marker-end="url(#connb-arrow)"
+                  />
+                }
+              </svg>
             }
             @if (hasLuckyCross() && !hasLuckyNumberRow()) {
               <div class="lucky-cross-indicator">

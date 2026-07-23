@@ -27,6 +27,8 @@
     "extraRowDescription": "Legg til en bonusrad med celler som danner en bølge over fire rader.",
     "connectedCells": "Forbundne celler",
     "connectedCellsDescription": "Kobler celler mellom tilstøtende rader: å krysse én celle krysser automatisk den forbundne cellen i neste rad.",
+    "connectedDiagonal": "Forbundne B",
+    "connectedDiagonalDescription": "Enveis diagonale koblinger: å krysse en celle krysser også cellen diagonalt under (én rad ned, én kolonne til siden) — aldri motsatt.",
     "seeOtherCards": "Se andres kort",
     "seeOtherCardsDescription": "Viser en miniatyr av hver av de andre spillernes ark. Slå av for å skjule de andre spillernes kort.",
     "doubleA": "Dobbel A",

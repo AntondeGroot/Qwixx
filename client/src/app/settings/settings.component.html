@@ -55,6 +55,29 @@
               <span class="opt-cell opt-cell--yellow opt-cell--connected"></span>
             </div>
           }
+          @case ('connectedDiagonal') {
+            <div class="opt-diag">
+              <span class="opt-cell opt-cell--red opt-diag-a"></span>
+              <span class="opt-cell opt-cell--yellow opt-diag-b"></span>
+              <svg class="opt-diag-svg" viewBox="0 0 40 40" aria-hidden="true">
+                <defs>
+                  <marker id="optDiagArrow" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto">
+                    <path d="M0,0 L5,3 L0,6 Z" fill="#555" />
+                  </marker>
+                </defs>
+                <line
+                  x1="13"
+                  y1="13"
+                  x2="26"
+                  y2="26"
+                  stroke="#555"
+                  stroke-width="2.5"
+                  stroke-dasharray="3 2"
+                  marker-end="url(#optDiagArrow)"
+                />
+              </svg>
+            </div>
+          }
           @case ('extraRow') {
             <div class="opt-chip">
               <div class="opt-chip-track opt-chip-track--yellow">

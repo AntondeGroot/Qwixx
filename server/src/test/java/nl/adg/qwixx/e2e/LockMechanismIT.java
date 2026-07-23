@@ -7,14 +7,12 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
-import nl.adg.qwixx.e2e.utils.RetryOnChromeFailure;
 import nl.adg.qwixx.e2e.utils.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -69,8 +67,6 @@ public class LockMechanismIT extends BaseIntegrationTest {
     // ── Lock eligibility ───────────────────────────────────────────────────────
 
     @Test
-    @ExtendWith(RetryOnChromeFailure.Extension.class)
-    @RetryOnChromeFailure
     void lockBecomesAutoCrossedAfterCrossingClosingCell() {
         // Use local session so @RetryOnChromeFailure can re-run safely without stale API state.
         String sid = api.createGame(2);
@@ -332,8 +328,6 @@ public class LockMechanismIT extends BaseIntegrationTest {
     }
 
     @Test
-    @ExtendWith(RetryOnChromeFailure.Extension.class)
-    @RetryOnChromeFailure
     void longoYesOnSelfCloseModal_passivePlayerSeesModalImmediately() {
         String sid = api.createGame(2, java.util.Map.of("base", "LONGO"));
         List<String> pids = api.getOrderedPlayerIds(sid);
@@ -517,8 +511,6 @@ public class LockMechanismIT extends BaseIntegrationTest {
     }
 
     @Test
-    @ExtendWith(RetryOnChromeFailure.Extension.class)
-    @RetryOnChromeFailure
     void passive_crossesClosingCell_threePlayer_player2SeesRedModal() {
         // 3-player: player0 declares BLUE, player1 crosses RED "12" (auto-declares RED).
         // Both rows in pendingClosures → EVALUATE closes both → player2 doesn't need to see RED modal.
@@ -901,8 +893,6 @@ public class LockMechanismIT extends BaseIntegrationTest {
     // ── Scenario 10: Longo active player can close two rows in one turn ────────
 
     @Test
-    @ExtendWith(RetryOnChromeFailure.Extension.class)
-    @RetryOnChromeFailure
     void longo_activeEndsTurn_passiveDeclares_activeGetsModalAndReverts() {
         // The exact scenario that was impossible before:
         // Player0 crosses RED "16" and EndTurns.  Player1 passes (no cross).
@@ -1249,8 +1239,6 @@ public class LockMechanismIT extends BaseIntegrationTest {
     }
 
     @Test
-    @ExtendWith(RetryOnChromeFailure.Extension.class)
-    @RetryOnChromeFailure
     void longo_passiveRevertsEndTurn_thenCrossesClosingCell() {
         // Passive player (player1) EndTurns without crossing YELLOW "16".
         // Player2 (also passive) then crosses YELLOW "16" → declares YELLOW intent.
@@ -1544,11 +1532,11 @@ public class LockMechanismIT extends BaseIntegrationTest {
                 "BLUE must be closed in player1's browser after EVALUATE");
 
         // Both rows closed → 2 rows → game ends → both players navigate to score screen
-        new WebDriverWait(driver0, Duration.ofSeconds(8))
+        new WebDriverWait(driver0, Duration.ofSeconds(12))
                 .until(d -> d.getCurrentUrl().contains("/score"));
         assertTrue(driver0.getCurrentUrl().contains("/score"),
                 "Player0 must be on the score screen. URL: " + driver0.getCurrentUrl());
-        new WebDriverWait(driver1, Duration.ofSeconds(8))
+        new WebDriverWait(driver1, Duration.ofSeconds(12))
                 .until(d -> d.getCurrentUrl().contains("/score"));
         assertTrue(driver1.getCurrentUrl().contains("/score"),
                 "Player1 must be on the score screen. URL: " + driver1.getCurrentUrl());

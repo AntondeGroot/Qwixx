@@ -40,12 +40,12 @@ public class QwixxTestApplication {
 	@EventListener
 	public void onApplicationEvent(ContextRefreshedEvent event) {
 		// Only initialize test game once
-		if (GameRegistry.getAllGames().size() > 0) {
+		if (!GameRegistry.getAllGames().isEmpty()) {
 			return;
 		}
 
 		System.out.println("\n╔═══════════════════════════════════════════════════════════════╗");
-		System.out.println("║           QWIXX TEST APPLICATION - CREATING TEST GAME           ║");
+		System.out.println("║           QWIXX TEST APPLICATION - CREATING TEST GAME         ║");
 		System.out.println("╚═══════════════════════════════════════════════════════════════╝\n");
 
 		// Create game with 2 players

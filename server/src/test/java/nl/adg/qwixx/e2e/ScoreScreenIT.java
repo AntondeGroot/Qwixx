@@ -6,14 +6,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.time.Duration;
 import java.util.List;
 import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
-import nl.adg.qwixx.e2e.utils.RetryOnChromeFailure;
 import nl.adg.qwixx.e2e.utils.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -111,8 +109,6 @@ public class ScoreScreenIT extends BaseIntegrationTest {
     }
 
     @Test
-    @ExtendWith(RetryOnChromeFailure.Extension.class)
-    @RetryOnChromeFailure
     void winnerIsAtTopOfRankingAfterAnimation() {
         TestUtils.navigateToScore(driver, sessionId);
 
@@ -162,8 +158,6 @@ public class ScoreScreenIT extends BaseIntegrationTest {
     // ── "View Scores" button: dismiss modal, reveal action bar ───────────────
 
     @Test
-    @ExtendWith(RetryOnChromeFailure.Extension.class)
-    @RetryOnChromeFailure
     void viewScoresButtonDismissesModal() {
         TestUtils.navigateToScore(driver, sessionId);
         waitUntilWinnerModalVisible(driver, 30);

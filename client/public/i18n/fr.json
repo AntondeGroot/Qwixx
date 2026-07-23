@@ -27,6 +27,8 @@
     "extraRowDescription": "Ajouter une rangée bonus de cellules formant une vague sur quatre rangées.",
     "connectedCells": "Cellules connectées",
     "connectedCellsDescription": "Relie les cellules entre rangées adjacentes : cocher une cellule coche automatiquement la cellule connectée dans la rangée suivante.",
+    "connectedDiagonal": "Connectées B",
+    "connectedDiagonalDescription": "Liens diagonaux à sens unique : cocher une cellule coche aussi la cellule en diagonale en dessous (une rangée plus bas, une colonne de côté) — jamais l'inverse.",
     "seeOtherCards": "Voir les cartes des autres",
     "seeOtherCardsDescription": "Affiche une miniature de la feuille de chaque autre joueur. Désactivez pour masquer les cartes des autres joueurs.",
     "doubleA": "Double A",

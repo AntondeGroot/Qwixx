@@ -27,6 +27,8 @@
     "extraRowDescription": "Voeg een bonusrij cellen toe die een golf over vier rijen vormt.",
     "connectedCells": "Verbonden cellen",
     "connectedCellsDescription": "Verbindt cellen tussen aangrenzende rijen: het aankruisen van één cel kruist automatisch de verbonden cel in de volgende rij.",
+    "connectedDiagonal": "Verbonden B",
+    "connectedDiagonalDescription": "Eenrichtings diagonale verbindingen: het aankruisen van een cel kruist ook de cel schuin eronder (één rij lager, één kolom opzij) — nooit andersom.",
     "seeOtherCards": "Kaarten van anderen zien",
     "seeOtherCardsDescription": "Toont een miniatuur van het spelblad van elke andere speler. Schakel uit om de kaarten van de andere spelers te verbergen.",
     "doubleA": "Dubbel A",

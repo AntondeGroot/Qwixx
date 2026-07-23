@@ -19,6 +19,8 @@ echo "🧹 Killing leftover test drivers/servers..."
 pkill -f chromedriver 2>/dev/null || true
 pkill -f "Chrome for Testing" 2>/dev/null || true
 port_pids=$(lsof -ti:5300 2>/dev/null || true); [ -n "$port_pids" ] && kill -9 $port_pids 2>/dev/null || true
+# Reap the unique per-instance profile dirs these tests create (chrome-user-data-<nanoTime>).
+rm -rf /tmp/chrome-user-data-* 2>/dev/null || true
 
 echo "🔨 Linting client..."
 (cd client && npm run lint)

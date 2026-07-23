@@ -24,6 +24,7 @@ export class CellComponent {
   crossed = input(false);
   pending = input(false);
   clickable = input(false);
+  autoCrossTarget = input(false);
   // Double A twin: render a small hollow cell (white fill, coloured border, no number).
   outline = input(false);
   // Bonus B strip indicators: suppress the row-colour background (they're neutral tiles).

@@ -17,6 +17,7 @@ public class QwixxGameOptions {
     private static final String BOT_STRATEGY = "botStrategy";
     private static final String CARD_MODE = "cardMode";
     private static final String CONNECTED_CELLS = "connectedCells";
+    private static final String CONNECTED_DIAGONAL = "connectedDiagonal";
     private static final String EXTRA_ROW = "extraRow";
     private static final String GAME_MODE = "gameMode";
     private static final String BIG_POINTS   = "bigPoints";
@@ -58,20 +59,22 @@ public class QwixxGameOptions {
             GameOption.boolOption(EXTRA_ROW, "gameOption.extraRow", "gameOption.extraRowDescription")
                     .withIncompatibleWith(List.of(BONUS_A, BONUS_B)),
             GameOption.boolOption(CONNECTED_CELLS, "gameOption.connectedCells", "gameOption.connectedCellsDescription")
-                    .withIncompatibleWith(List.of(DOUBLE_A, DOUBLE_B, BONUS_A, BONUS_B)),
+                    .withIncompatibleWith(List.of(CONNECTED_DIAGONAL, DOUBLE_A, DOUBLE_B, BONUS_A, BONUS_B)),
+            trialBoolOption(CONNECTED_DIAGONAL, "gameOption.connectedDiagonal", "gameOption.connectedDiagonalDescription")
+                    .withIncompatibleWith(List.of(CONNECTED_CELLS, DOUBLE_A, DOUBLE_B, BONUS_A, BONUS_B)),
             GameOption.boolOption(SEE_OTHER_CARDS, "gameOption.seeOtherCards", "gameOption.seeOtherCardsDescription", true),
             trialBoolOption(X_CHANGE, "gameOption.xchange", "gameOption.xchangeDescription"),
             trialBoolOption(LUCKY_NUMBER, "gameOption.luckyNumber", "gameOption.luckyNumberDescription"),
             trialBoolOption(LUCKY_CROSS,  "gameOption.luckyCross",  "gameOption.luckyCrossDescription")
                     .withIncompatibleWith(List.of(BIG_POINTS, DOUBLE_A, DOUBLE_B, BONUS_A, BONUS_B)),
             trialBoolOption(DOUBLE_A, "gameOption.doubleA", "gameOption.doubleADescription")
-                    .withIncompatibleWith(List.of(DOUBLE_B, BIG_POINTS, LUCKY_CROSS, CONNECTED_CELLS, BONUS_A, BONUS_B)),
+                    .withIncompatibleWith(List.of(DOUBLE_B, BIG_POINTS, LUCKY_CROSS, CONNECTED_CELLS, CONNECTED_DIAGONAL, BONUS_A, BONUS_B)),
             trialBoolOption(DOUBLE_B, "gameOption.doubleB", "gameOption.doubleBDescription")
-                    .withIncompatibleWith(List.of(DOUBLE_A, BIG_POINTS, LUCKY_CROSS, CONNECTED_CELLS, BONUS_A, BONUS_B)),
+                    .withIncompatibleWith(List.of(DOUBLE_A, BIG_POINTS, LUCKY_CROSS, CONNECTED_CELLS, CONNECTED_DIAGONAL, BONUS_A, BONUS_B)),
             trialBoolOption(BONUS_A, "gameOption.bonusA", "gameOption.bonusADescription")
-                    .withIncompatibleWith(List.of(BIG_POINTS, DOUBLE_A, DOUBLE_B, CONNECTED_CELLS, LUCKY_CROSS, EXTRA_ROW, RANDOM_ORDER, BONUS_B)),
+                    .withIncompatibleWith(List.of(BIG_POINTS, DOUBLE_A, DOUBLE_B, CONNECTED_CELLS, CONNECTED_DIAGONAL, LUCKY_CROSS, EXTRA_ROW, RANDOM_ORDER, BONUS_B)),
             trialBoolOption(BONUS_B, "gameOption.bonusB", "gameOption.bonusBDescription")
-                    .withIncompatibleWith(List.of(BIG_POINTS, DOUBLE_A, DOUBLE_B, CONNECTED_CELLS, LUCKY_CROSS, EXTRA_ROW, RANDOM_ORDER, BONUS_A)),
+                    .withIncompatibleWith(List.of(BIG_POINTS, DOUBLE_A, DOUBLE_B, CONNECTED_CELLS, CONNECTED_DIAGONAL, LUCKY_CROSS, EXTRA_ROW, RANDOM_ORDER, BONUS_A)),
             GameOption.intOption(BOT_COUNT, "gameOption.botCount", "gameOption.botCountDescription",
                 "0", 0, 3),
             GameOption.enumOption(BOT_STRATEGY, "gameOption.botStrategy", "gameOption.botStrategyDescription",
@@ -89,6 +92,7 @@ public class QwixxGameOptions {
         map.put(RANDOM_ORDER,    s.randomOrder());
         map.put(EXTRA_ROW,       s.extraRow());
         map.put(CONNECTED_CELLS, s.connectedCells());
+        map.put(CONNECTED_DIAGONAL, s.connectedDiagonal());
         map.put(SEE_OTHER_CARDS, s.seeOtherCards());
         map.put(X_CHANGE,        s.xChange());
         map.put(LUCKY_NUMBER,    s.luckyNumber());
@@ -114,6 +118,7 @@ public class QwixxGameOptions {
                 case RANDOM_ORDER    -> builder.randomOrder(bool(entry.getValue()));
                 case EXTRA_ROW       -> builder.extraRow(bool(entry.getValue()));
                 case CONNECTED_CELLS -> builder.connectedCells(bool(entry.getValue()));
+                case CONNECTED_DIAGONAL -> builder.connectedDiagonal(bool(entry.getValue()));
                 case SEE_OTHER_CARDS -> builder.seeOtherCards(bool(entry.getValue()));
                 case X_CHANGE        -> builder.xChange(bool(entry.getValue()));
                 case LUCKY_NUMBER    -> builder.luckyNumber(bool(entry.getValue()));

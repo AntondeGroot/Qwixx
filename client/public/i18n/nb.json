@@ -13,6 +13,7 @@
   "startGame": "Start spillet",
   "starting": "Starter…",
   "gameOption": {
+    "section": { "general": "Generelle innstillinger", "modes": "Spillvarianter" },
     "base": "Variant",
     "baseDescription": "STANDARD bruker celler 2–12 per rad. LONGO bruker celler 2–16 med bonusnumre.",
     "gameMode": "Spillmodus",

@@ -49,9 +49,9 @@ public class QwixxGameOptions {
             GameOption.enumOption(BASE, "gameOption.base", "gameOption.baseDescription",
                 "STANDARD", List.of("STANDARD", "LONGO")),
             GameOption.enumOption(GAME_MODE, "gameOption.gameMode", "gameOption.gameModeDescription",
-                "ONLINE", List.of("ONLINE", "OFFLINE")),
+                "ONLINE", List.of("ONLINE", "OFFLINE")).withCategory(OptionCategory.GENERAL),
             GameOption.enumOption(CARD_MODE, "gameOption.cardMode", "gameOption.cardModeDescription",
-                "SAME_CARDS", List.of("SAME_CARDS", "DIFFERENT_CARDS")),
+                "SAME_CARDS", List.of("SAME_CARDS", "DIFFERENT_CARDS")).withCategory(OptionCategory.GENERAL),
             trialBoolOption(BIG_POINTS, "gameOption.bigPoints", "gameOption.bigPointsDescription")
                     .withIncompatibleWith(List.of(RANDOM_ORDER, LUCKY_CROSS, DOUBLE_A, DOUBLE_B, BONUS_A, BONUS_B)),
             GameOption.boolOption(RANDOM_ORDER, "gameOption.randomOrder", "gameOption.randomOrderDescription")
@@ -62,7 +62,8 @@ public class QwixxGameOptions {
                     .withIncompatibleWith(List.of(CONNECTED_DIAGONAL, DOUBLE_A, DOUBLE_B, BONUS_A, BONUS_B)),
             trialBoolOption(CONNECTED_DIAGONAL, "gameOption.connectedDiagonal", "gameOption.connectedDiagonalDescription")
                     .withIncompatibleWith(List.of(CONNECTED_CELLS, DOUBLE_A, DOUBLE_B, BONUS_A, BONUS_B)),
-            GameOption.boolOption(SEE_OTHER_CARDS, "gameOption.seeOtherCards", "gameOption.seeOtherCardsDescription", true),
+            GameOption.boolOption(SEE_OTHER_CARDS, "gameOption.seeOtherCards", "gameOption.seeOtherCardsDescription", true)
+                    .withCategory(OptionCategory.GENERAL),
             trialBoolOption(X_CHANGE, "gameOption.xchange", "gameOption.xchangeDescription"),
             trialBoolOption(LUCKY_NUMBER, "gameOption.luckyNumber", "gameOption.luckyNumberDescription"),
             trialBoolOption(LUCKY_CROSS,  "gameOption.luckyCross",  "gameOption.luckyCrossDescription")
@@ -76,9 +77,10 @@ public class QwixxGameOptions {
             trialBoolOption(BONUS_B, "gameOption.bonusB", "gameOption.bonusBDescription")
                     .withIncompatibleWith(List.of(BIG_POINTS, DOUBLE_A, DOUBLE_B, CONNECTED_CELLS, CONNECTED_DIAGONAL, LUCKY_CROSS, EXTRA_ROW, RANDOM_ORDER, BONUS_A)),
             GameOption.intOption(BOT_COUNT, "gameOption.botCount", "gameOption.botCountDescription",
-                "0", 0, 3),
+                "0", 0, 3).withCategory(OptionCategory.GENERAL),
             GameOption.enumOption(BOT_STRATEGY, "gameOption.botStrategy", "gameOption.botStrategyDescription",
                 "BALANCED", List.of("UNTRAINED", "MOST_POINTS", "MOST_WINS", "BALANCED"))
+                    .withCategory(OptionCategory.GENERAL)
         );
     }
 

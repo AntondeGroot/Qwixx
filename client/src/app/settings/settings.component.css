@@ -29,6 +29,25 @@ label {
   letter-spacing: 0.05em;
 }
 
+/* Section header that groups options (General settings / Game variants): a blue pill. */
+.settings-section {
+  align-self: flex-start; /* hug the text instead of stretching full width */
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: #1565c0;
+  padding: 5px 14px;
+  border-radius: 999px;
+  box-shadow: 0 1px 3px rgba(21, 101, 192, 0.35);
+}
+/* Extra breathing room above every section after the first (the form gap spaces the first). */
+.settings-section:not(:first-child) {
+  margin-top: 10px;
+}
+
 input[type='text'],
 input[type='number'],
 select {

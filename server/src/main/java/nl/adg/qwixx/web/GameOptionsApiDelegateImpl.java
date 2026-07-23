@@ -49,6 +49,7 @@ public class GameOptionsApiDelegateImpl implements GameOptionsApiDelegate {
                 typeEnum,
                 o.defaultValue());
         dto.setDescriptionKey(o.descriptionKey());
+        dto.setCategory(GameOption.CategoryEnum.fromValue(o.category().name()));
         if (!o.choices().isEmpty()) dto.setChoices(o.choices());
         if (o.minValue() != null) dto.setMinValue(o.minValue());
         if (o.maxValue() != null) dto.setMaxValue(o.maxValue());

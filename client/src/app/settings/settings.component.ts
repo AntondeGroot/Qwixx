@@ -59,6 +59,23 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   gameOptions = signal<GameOption[]>([]);
   availableGameOptions = computed(() => this.gameOptions().filter((o) => !o.adminOnly || this.embedMode.isAdmin()));
+
+  // Group options for the settings UI under section headers. GENERAL (match/player setup)
+  // renders first, then MODE (sheet-layout variants); an absent category is treated as MODE.
+  // Order within a group follows the server's option order. Empty groups are dropped.
+  readonly optionSections: { category: GameOption.CategoryEnum; labelKey: string }[] = [
+    { category: GameOption.CategoryEnum.GENERAL, labelKey: 'gameOption.section.general' },
+    { category: GameOption.CategoryEnum.MODE, labelKey: 'gameOption.section.modes' },
+  ];
+  groupedOptions = computed(() => {
+    const opts = this.availableGameOptions();
+    return this.optionSections
+      .map((section) => ({
+        labelKey: section.labelKey,
+        options: opts.filter((o) => (o.category ?? GameOption.CategoryEnum.MODE) === section.category),
+      }))
+      .filter((group) => group.options.length > 0);
+  });
   lobbyPlayers = signal<{ id: string; name: string }[]>([]);
   previewLayout = signal<SheetLayout | null>(null);
   // Which double variant the preview should render (derived from the doubleA/doubleB options),

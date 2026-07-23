@@ -10,191 +10,194 @@
 }
 
 <form [formGroup]="form" (ngSubmit)="startGame()" [attr.translate]="'no'">
-  @for (opt of availableGameOptions(); track opt.key) {
-    <div [class.option-disabled]="form.get(opt.key)?.disabled" [class.option-variant]="opt.key === 'base'">
-      <div class="option-header">
-        <label [for]="opt.key">{{ t(opt.labelKey) }}</label>
-        @switch (opt.key) {
-          @case ('luckyNumber') {
-            <div class="opt-chip">
-              <div class="opt-chip-track opt-chip-track--orange">
-                <span class="opt-cell opt-cell--diamond opt-cell--orange"></span>
-                <span class="opt-cell opt-cell--diamond opt-cell--orange"></span>
-                <span class="opt-cell opt-cell--diamond opt-cell--orange"></span>
+  @for (group of groupedOptions(); track group.labelKey) {
+    <h2 class="settings-section">{{ t(group.labelKey) }}</h2>
+    @for (opt of group.options; track opt.key) {
+      <div [class.option-disabled]="form.get(opt.key)?.disabled" [class.option-variant]="opt.key === 'base'">
+        <div class="option-header">
+          <label [for]="opt.key">{{ t(opt.labelKey) }}</label>
+          @switch (opt.key) {
+            @case ('luckyNumber') {
+              <div class="opt-chip">
+                <div class="opt-chip-track opt-chip-track--orange">
+                  <span class="opt-cell opt-cell--diamond opt-cell--orange"></span>
+                  <span class="opt-cell opt-cell--diamond opt-cell--orange"></span>
+                  <span class="opt-cell opt-cell--diamond opt-cell--orange"></span>
+                </div>
               </div>
-            </div>
-          }
-          @case ('luckyCross') {
-            <div class="opt-chip">
-              <div class="opt-chip-track opt-chip-track--red">
-                <span class="opt-cell opt-cell--red"></span>
-                <span class="opt-cell opt-cell--red"></span>
-                <span class="opt-cell opt-cell--diamond opt-cell--orange opt-cell--sm"></span>
-                <span class="opt-cell opt-cell--red"></span>
-                <span class="opt-cell opt-cell--red"></span>
+            }
+            @case ('luckyCross') {
+              <div class="opt-chip">
+                <div class="opt-chip-track opt-chip-track--red">
+                  <span class="opt-cell opt-cell--red"></span>
+                  <span class="opt-cell opt-cell--red"></span>
+                  <span class="opt-cell opt-cell--diamond opt-cell--orange opt-cell--sm"></span>
+                  <span class="opt-cell opt-cell--red"></span>
+                  <span class="opt-cell opt-cell--red"></span>
+                </div>
               </div>
-            </div>
-          }
-          @case ('xChange') {
-            <div class="opt-chip">
-              <div class="opt-chip-track opt-chip-track--purple">
-                <span class="opt-cell opt-cell--diamond opt-cell--xchange"></span>
-                <span class="opt-cell opt-cell--diamond opt-cell--xchange"></span>
+            }
+            @case ('xChange') {
+              <div class="opt-chip">
+                <div class="opt-chip-track opt-chip-track--purple">
+                  <span class="opt-cell opt-cell--diamond opt-cell--xchange"></span>
+                  <span class="opt-cell opt-cell--diamond opt-cell--xchange"></span>
+                </div>
               </div>
-            </div>
-          }
-          @case ('bigPoints') {
-            <div class="opt-chip">
-              <span class="opt-cell opt-cell--split" style="--split-a: #d32f2f; --split-b: #f9a825"></span>
-              <span class="opt-cell opt-cell--split" style="--split-a: #388e3c; --split-b: #1565c0"></span>
-            </div>
-          }
-          @case ('connectedCells') {
-            <div class="opt-chip">
-              <span class="opt-cell opt-cell--red opt-cell--connected"></span>
-              <span class="opt-cell opt-cell--yellow opt-cell--connected"></span>
-            </div>
-          }
-          @case ('connectedDiagonal') {
-            <div class="opt-diag">
-              <span class="opt-cell opt-cell--red opt-diag-a"></span>
-              <span class="opt-cell opt-cell--yellow opt-diag-b"></span>
-              <svg class="opt-diag-svg" viewBox="0 0 40 40" aria-hidden="true">
-                <defs>
-                  <marker id="optDiagArrow" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto">
-                    <path d="M0,0 L5,3 L0,6 Z" fill="#555" />
-                  </marker>
-                </defs>
-                <line
-                  x1="13"
-                  y1="13"
-                  x2="26"
-                  y2="26"
-                  stroke="#555"
-                  stroke-width="2.5"
-                  stroke-dasharray="3 2"
-                  marker-end="url(#optDiagArrow)"
-                />
-              </svg>
-            </div>
-          }
-          @case ('extraRow') {
-            <div class="opt-chip">
-              <div class="opt-chip-track opt-chip-track--yellow">
-                <span class="opt-cell opt-cell--yellow"></span>
-                <span class="opt-cell opt-cell--yellow opt-cell--extra"></span>
-                <span class="opt-cell opt-cell--yellow"></span>
+            }
+            @case ('bigPoints') {
+              <div class="opt-chip">
+                <span class="opt-cell opt-cell--split" style="--split-a: #d32f2f; --split-b: #f9a825"></span>
+                <span class="opt-cell opt-cell--split" style="--split-a: #388e3c; --split-b: #1565c0"></span>
               </div>
-            </div>
-          }
-          @case ('randomOrder') {
-            <div class="opt-chip">
-              <div class="opt-chip-track opt-chip-track--green">
-                <span class="opt-cell opt-cell--green opt-cell--num">8</span>
-                <span class="opt-cell opt-cell--green opt-cell--num">3</span>
-                <span class="opt-cell opt-cell--green opt-cell--num">11</span>
+            }
+            @case ('connectedCells') {
+              <div class="opt-chip">
+                <span class="opt-cell opt-cell--red opt-cell--connected"></span>
+                <span class="opt-cell opt-cell--yellow opt-cell--connected"></span>
               </div>
-            </div>
+            }
+            @case ('connectedDiagonal') {
+              <div class="opt-diag">
+                <span class="opt-cell opt-cell--red opt-diag-a"></span>
+                <span class="opt-cell opt-cell--yellow opt-diag-b"></span>
+                <svg class="opt-diag-svg" viewBox="0 0 40 40" aria-hidden="true">
+                  <defs>
+                    <marker id="optDiagArrow" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto">
+                      <path d="M0,0 L5,3 L0,6 Z" fill="#555" />
+                    </marker>
+                  </defs>
+                  <line
+                    x1="13"
+                    y1="13"
+                    x2="26"
+                    y2="26"
+                    stroke="#555"
+                    stroke-width="2.5"
+                    stroke-dasharray="3 2"
+                    marker-end="url(#optDiagArrow)"
+                  />
+                </svg>
+              </div>
+            }
+            @case ('extraRow') {
+              <div class="opt-chip">
+                <div class="opt-chip-track opt-chip-track--yellow">
+                  <span class="opt-cell opt-cell--yellow"></span>
+                  <span class="opt-cell opt-cell--yellow opt-cell--extra"></span>
+                  <span class="opt-cell opt-cell--yellow"></span>
+                </div>
+              </div>
+            }
+            @case ('randomOrder') {
+              <div class="opt-chip">
+                <div class="opt-chip-track opt-chip-track--green">
+                  <span class="opt-cell opt-cell--green opt-cell--num">8</span>
+                  <span class="opt-cell opt-cell--green opt-cell--num">3</span>
+                  <span class="opt-cell opt-cell--green opt-cell--num">11</span>
+                </div>
+              </div>
+            }
+            @case ('doubleA') {
+              <div class="opt-chip">
+                <span class="opt-double">
+                  <span class="opt-cell opt-cell--red"></span>
+                  <span class="opt-cell opt-cell--twin" style="border-color: #d32f2f"></span>
+                </span>
+                <span class="opt-double">
+                  <span class="opt-cell opt-cell--green"></span>
+                  <span class="opt-cell opt-cell--twin" style="border-color: #388e3c"></span>
+                </span>
+              </div>
+            }
+            @case ('doubleB') {
+              <div class="opt-chip">
+                <span class="opt-cell opt-cell--double-b" style="--db: #d32f2f"></span>
+                <span class="opt-cell opt-cell--double-b" style="--db: #388e3c"></span>
+              </div>
+            }
+            @case ('bonusA') {
+              <div class="opt-chip">
+                <span class="opt-cell opt-cell--red opt-cell--bonus-ring"></span>
+                <span class="opt-cell opt-cell--yellow opt-cell--bonus-ring"></span>
+                <span class="opt-cell opt-cell--green opt-cell--bonus-ring"></span>
+              </div>
+            }
+            @case ('bonusB') {
+              <div class="opt-chip opt-chip--bb">
+                <span class="opt-bb">
+                  <app-silver-mark shape="triangle" />
+                  <span class="opt-bb-tag bb-chip">✕✕</span>
+                </span>
+                <span class="opt-bb"><app-silver-mark shape="plus" /></span>
+                <span class="opt-bb">
+                  <app-silver-mark shape="triangle" />
+                  <span class="opt-bb-tag bb-chip">×2</span>
+                </span>
+                <span class="opt-bb">
+                  <app-silver-mark shape="plus" />
+                  <span class="opt-bb-tag bb-chip">+13</span>
+                </span>
+                <span class="opt-bb"><app-silver-mark shape="shield" /></span>
+              </div>
+            }
           }
-          @case ('doubleA') {
-            <div class="opt-chip">
-              <span class="opt-double">
-                <span class="opt-cell opt-cell--red"></span>
-                <span class="opt-cell opt-cell--twin" style="border-color: #d32f2f"></span>
-              </span>
-              <span class="opt-double">
-                <span class="opt-cell opt-cell--green"></span>
-                <span class="opt-cell opt-cell--twin" style="border-color: #388e3c"></span>
-              </span>
+        </div>
+
+        @if (opt.type === TypeEnum.BOOLEAN) {
+          <input [id]="opt.key" type="checkbox" [formControlName]="opt.key" />
+        } @else if (opt.type === TypeEnum.ENUM) {
+          @if (opt.key === 'base') {
+            <div
+              class="variant-toggle"
+              role="radiogroup"
+              [attr.aria-label]="t(opt.labelKey)"
+              [style.--sel]="variantIndex(opt)"
+            >
+              <span class="variant-thumb" aria-hidden="true"></span>
+              @for (val of opt.choices ?? []; track val) {
+                <button
+                  type="button"
+                  class="variant-chip"
+                  role="radio"
+                  [class.selected]="form.get(opt.key)?.value === val"
+                  [attr.aria-checked]="form.get(opt.key)?.value === val"
+                  [disabled]="form.get(opt.key)?.disabled"
+                  (click)="setOption(opt.key, val)"
+                >
+                  {{ t('gameOption.choice.' + val) }}
+                </button>
+              }
             </div>
+          } @else {
+            <select [id]="opt.key" [formControlName]="opt.key">
+              @for (val of opt.choices ?? []; track val) {
+                <option [value]="val">{{ t('gameOption.choice.' + val) }}</option>
+              }
+            </select>
           }
-          @case ('doubleB') {
-            <div class="opt-chip">
-              <span class="opt-cell opt-cell--double-b" style="--db: #d32f2f"></span>
-              <span class="opt-cell opt-cell--double-b" style="--db: #388e3c"></span>
-            </div>
+        } @else if (opt.type === TypeEnum.INTEGER) {
+          @if (isSmallIntegerRange(opt)) {
+            <select [id]="opt.key" [formControlName]="opt.key">
+              @for (n of integerRange(opt); track n) {
+                <option [ngValue]="n">{{ n }}</option>
+              }
+            </select>
+          } @else {
+            <input
+              [id]="opt.key"
+              type="number"
+              [formControlName]="opt.key"
+              [min]="opt.minValue ?? null"
+              [max]="effectiveMax(opt)"
+            />
           }
-          @case ('bonusA') {
-            <div class="opt-chip">
-              <span class="opt-cell opt-cell--red opt-cell--bonus-ring"></span>
-              <span class="opt-cell opt-cell--yellow opt-cell--bonus-ring"></span>
-              <span class="opt-cell opt-cell--green opt-cell--bonus-ring"></span>
-            </div>
-          }
-          @case ('bonusB') {
-            <div class="opt-chip opt-chip--bb">
-              <span class="opt-bb">
-                <app-silver-mark shape="triangle" />
-                <span class="opt-bb-tag bb-chip">✕✕</span>
-              </span>
-              <span class="opt-bb"><app-silver-mark shape="plus" /></span>
-              <span class="opt-bb">
-                <app-silver-mark shape="triangle" />
-                <span class="opt-bb-tag bb-chip">×2</span>
-              </span>
-              <span class="opt-bb">
-                <app-silver-mark shape="plus" />
-                <span class="opt-bb-tag bb-chip">+13</span>
-              </span>
-              <span class="opt-bb"><app-silver-mark shape="shield" /></span>
-            </div>
-          }
+        }
+        @if (opt.descriptionKey) {
+          <p class="option-desc">{{ t(opt.descriptionKey) }}</p>
         }
       </div>
-
-      @if (opt.type === TypeEnum.BOOLEAN) {
-        <input [id]="opt.key" type="checkbox" [formControlName]="opt.key" />
-      } @else if (opt.type === TypeEnum.ENUM) {
-        @if (opt.key === 'base') {
-          <div
-            class="variant-toggle"
-            role="radiogroup"
-            [attr.aria-label]="t(opt.labelKey)"
-            [style.--sel]="variantIndex(opt)"
-          >
-            <span class="variant-thumb" aria-hidden="true"></span>
-            @for (val of opt.choices ?? []; track val) {
-              <button
-                type="button"
-                class="variant-chip"
-                role="radio"
-                [class.selected]="form.get(opt.key)?.value === val"
-                [attr.aria-checked]="form.get(opt.key)?.value === val"
-                [disabled]="form.get(opt.key)?.disabled"
-                (click)="setOption(opt.key, val)"
-              >
-                {{ t('gameOption.choice.' + val) }}
-              </button>
-            }
-          </div>
-        } @else {
-          <select [id]="opt.key" [formControlName]="opt.key">
-            @for (val of opt.choices ?? []; track val) {
-              <option [value]="val">{{ t('gameOption.choice.' + val) }}</option>
-            }
-          </select>
-        }
-      } @else if (opt.type === TypeEnum.INTEGER) {
-        @if (isSmallIntegerRange(opt)) {
-          <select [id]="opt.key" [formControlName]="opt.key">
-            @for (n of integerRange(opt); track n) {
-              <option [ngValue]="n">{{ n }}</option>
-            }
-          </select>
-        } @else {
-          <input
-            [id]="opt.key"
-            type="number"
-            [formControlName]="opt.key"
-            [min]="opt.minValue ?? null"
-            [max]="effectiveMax(opt)"
-          />
-        }
-      }
-      @if (opt.descriptionKey) {
-        <p class="option-desc">{{ t(opt.descriptionKey) }}</p>
-      }
-    </div>
+    }
   }
 
   @if (previewLayout(); as layout) {

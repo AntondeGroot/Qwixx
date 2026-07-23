@@ -13,6 +13,7 @@
   "startGame": "Inizia partita",
   "starting": "Avvio in corso…",
   "gameOption": {
+    "section": { "general": "Impostazioni generali", "modes": "Varianti di gioco" },
     "base": "Variante",
     "baseDescription": "STANDARD usa celle 2–12 per riga. LONGO usa celle 2–16 con numeri bonus.",
     "gameMode": "Modalità di gioco",

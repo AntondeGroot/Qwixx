@@ -13,6 +13,7 @@
   "startGame": "Spel starten",
   "starting": "Aan het starten…",
   "gameOption": {
+    "section": { "general": "Algemene instellingen", "modes": "Spelvarianten" },
     "base": "Variant",
     "baseDescription": "STANDARD gebruikt cellen 2–12 per rij. LONGO gebruikt cellen 2–16 met bonusnummers.",
     "gameMode": "Spelmodus",

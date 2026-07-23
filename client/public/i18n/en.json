@@ -13,6 +13,7 @@
   "startGame": "Start game",
   "starting": "Starting…",
   "gameOption": {
+    "section": { "general": "General settings", "modes": "Game variants" },
     "base": "Variant",
     "baseDescription": "STANDARD uses cells 2–12 per row. LONGO uses cells 2–16 with bonus numbers.",
     "gameMode": "Game mode",

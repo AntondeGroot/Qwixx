@@ -5,6 +5,16 @@
         @for (row of item.layout.rows; track row.id) {
           <app-row [row]="row" [doubleVariant]="item.doubleVariant" />
         }
+        @if (item.bonusNumbers.length > 0) {
+          <div class="bonus-track">
+            @for (n of item.bonusNumbers; track n) {
+              <div class="bonus-chip">
+                <img src="star_icon.svg" alt="" class="bonus-star" />
+                <span class="bonus-number">{{ n }}</span>
+              </div>
+            }
+          </div>
+        }
       </div>
     </div>
   }

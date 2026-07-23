@@ -1,1 +1,17 @@
-cd client && npm run build && npm test -- --watch=false
+cd client && npm run build && npm test -- --watch=false || exit 1
+cd ..
+
+# Regenerate the game-option preview docs and block the push if they're now out of date — i.e. an
+# option's styling or the option list changed without refreshing docs/option-previews + the README
+# block. Generation is local-only (CI never touches these files), and previews use a fixed seed so
+# a clean tree regenerates byte-identical images.
+./scripts/generate-option-docs.sh || exit 1
+if [ -n "$(git status --porcelain docs/option-previews README.md)" ]; then
+  echo ""
+  echo "❌ Game-option preview docs are out of date — they were just regenerated."
+  echo "   Review, then commit the refresh and push again:"
+  echo "     git add docs/option-previews README.md && git commit -m 'docs: refresh option previews'"
+  echo ""
+  git status --short docs/option-previews README.md
+  exit 1
+fi

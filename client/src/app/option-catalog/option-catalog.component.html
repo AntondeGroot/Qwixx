@@ -1,0 +1,14 @@
+<div class="catalog">
+  @for (item of items(); track item.key) {
+    <div class="preview-shot" [attr.data-opt-key]="item.key">
+      <div class="sheet">
+        @for (row of item.layout.rows; track row.id) {
+          <app-row [row]="row" [doubleVariant]="item.doubleVariant" />
+        }
+      </div>
+    </div>
+  }
+</div>
+@if (ready()) {
+  <div data-catalog-ready="true"></div>
+}

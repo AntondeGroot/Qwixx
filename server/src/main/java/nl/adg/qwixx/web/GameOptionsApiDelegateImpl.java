@@ -11,6 +11,7 @@ import nl.adg.qwixx.game.QwixxGameOptions;
 import nl.adg.qwixx.generated.api.GameOptionsApiDelegate;
 import nl.adg.qwixx.generated.model.GameOption;
 import nl.adg.qwixx.generated.model.SheetLayout;
+import nl.adg.qwixx.state.LongoVariantData;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -36,7 +37,12 @@ public class GameOptionsApiDelegateImpl implements GameOptionsApiDelegate {
         UUID dummy = new UUID(0L, 0L);
         List<Row> rows = Objects.requireNonNull(factory.buildRows(List.of(dummy)).get(dummy));
         var layout = new nl.adg.qwixx.state.SheetLayout(rows);
-        return ResponseEntity.ok(GameStateMapper.toSheetLayoutDto(layout));
+        SheetLayout dto = GameStateMapper.toSheetLayoutDto(layout);
+        // Longo also shows two bonus-number star chips; surface them so the preview can render them.
+        if (factory.buildVariantData(List.of(dummy)) instanceof LongoVariantData longo) {
+            dto.setBonusNumbers(longo.bonusNumbersPerPlayer().get(dummy));
+        }
+        return ResponseEntity.ok(dto);
     }
 
     private GameOption toDto(nl.adg.qwixx.game.GameOption o) {

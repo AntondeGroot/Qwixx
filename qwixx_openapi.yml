@@ -881,6 +881,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SheetRow'
+        bonusNumbers:
+          type: array
+          items:
+            type: integer
+          description: >
+            Longo bonus numbers (the star chips) for this sheet. Only populated by the layout
+            preview; empty or absent for non-Longo variants.
 
     ScoreCard:
       type: object

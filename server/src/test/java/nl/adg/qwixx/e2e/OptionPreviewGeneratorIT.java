@@ -18,6 +18,7 @@ import nl.adg.qwixx.game.QwixxGameOptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -88,9 +89,18 @@ class OptionPreviewGeneratorIT extends BaseIntegrationTest {
         // The page sets [data-catalog-ready] once every preview layout has loaded and rendered.
         new WebDriverWait(driver, Duration.ofSeconds(30))
                 .until(d -> !d.findElements(By.cssSelector("[data-catalog-ready]")).isEmpty());
+        // Wait for every <img> (the Longo bonus-number stars) to finish loading, or a screenshot
+        // taken before they paint would be non-deterministic.
+        new WebDriverWait(driver, Duration.ofSeconds(10)).until(d -> Boolean.TRUE.equals(
+                ((JavascriptExecutor) d).executeScript(
+                        "return Array.from(document.images).every(i => i.complete && i.naturalWidth > 0)")));
 
         for (CatalogEntry entry : entries) {
             WebElement shot = driver.findElement(By.cssSelector("[data-opt-key='" + entry.key() + "']"));
+            // Scroll the element to the top of the viewport first: ChromeDriver's element screenshot
+            // clips a tall element that extends past the current scroll position (it cut Longo's
+            // bonus-number track off the bottom otherwise).
+            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'start'});", shot);
             File png = shot.getScreenshotAs(OutputType.FILE);
             Files.copy(png.toPath(), IMG_DIR.resolve(entry.key() + ".png"),
                     java.nio.file.StandardCopyOption.REPLACE_EXISTING);

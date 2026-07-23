@@ -11,6 +11,7 @@ interface CatalogItem {
   key: string;
   layout: SheetLayout;
   doubleVariant: 'A' | 'B' | null;
+  bonusNumbers: number[];
 }
 
 /**
@@ -38,9 +39,14 @@ export class OptionCatalogComponent implements OnInit {
       const modeOptions = opts.filter((o) => o.category === GameOption.CategoryEnum.MODE);
       forkJoin(
         this.catalogEntries(modeOptions).map((e) =>
-          this.gamesService
-            .previewLayout(e.request)
-            .pipe(map((layout) => ({ key: e.key, layout, doubleVariant: this.doubleVariantFor(e.key) }))),
+          this.gamesService.previewLayout(e.request).pipe(
+            map((layout) => ({
+              key: e.key,
+              layout,
+              doubleVariant: this.doubleVariantFor(e.key),
+              bonusNumbers: layout.bonusNumbers ?? [],
+            })),
+          ),
         ),
       ).subscribe((items) => this.items.set(items));
     });

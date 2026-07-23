@@ -56,7 +56,8 @@ class GameOptionsApiDelegateImplTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"base\":\"LONGO\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.rows[0].cells.length()").value(15));
+                .andExpect(jsonPath("$.rows[0].cells.length()").value(15))
+                .andExpect(jsonPath("$.bonusNumbers.length()").value(2));
     }
 
     @Test

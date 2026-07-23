@@ -56,6 +56,28 @@ describe('OptionCatalogComponent', () => {
     expect(previewLayout).toHaveBeenCalledWith({ base: 'STANDARD', bigPoints: true });
   });
 
+  it('renders the bonus-number star chips when the layout carries them', () => {
+    const previewLayout = vi.fn().mockReturnValue(of({ rows: [], bonusNumbers: [7, 12] } as SheetLayout));
+    TestBed.configureTestingModule({
+      imports: [OptionCatalogComponent],
+      providers: [
+        {
+          provide: GamesService,
+          useValue: {
+            getGameOptions: () => of([opt('bigPoints', GameOption.TypeEnum.BOOLEAN, GameOption.CategoryEnum.MODE)]),
+            previewLayout,
+          },
+        },
+      ],
+    });
+    const fixture = TestBed.createComponent(OptionCatalogComponent);
+    fixture.detectChanges();
+    const numbers = Array.from(fixture.nativeElement.querySelectorAll('.bonus-number')).map((el) =>
+      (el as HTMLElement).textContent?.trim(),
+    );
+    expect(numbers).toEqual(['7', '12']);
+  });
+
   it('maps doubleA/doubleB to the row double-variant', () => {
     const { fixture } = setup([
       opt('doubleA', GameOption.TypeEnum.BOOLEAN, GameOption.CategoryEnum.MODE),

@@ -36,3 +36,34 @@
   border: 1px solid #e0e0e0;
   width: fit-content;
 }
+
+/* Longo's two bonus-number star chips, shown below the rows (mirrors the in-game HUD). */
+.bonus-track {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+.bonus-chip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 80px;
+  height: 80px;
+}
+.bonus-star {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.bonus-number {
+  position: absolute;
+  top: 55%;
+  left: 47.5%;
+  transform: translate(-50%, -50%);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  color: orange;
+  pointer-events: none;
+}

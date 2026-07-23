@@ -30,8 +30,10 @@ public class GameOptionsApiDelegateImpl implements GameOptionsApiDelegate {
         GameSettings.Builder builder = GameSettings.builder();
         QwixxGameOptions.apply(builder, requestBody);
         GameSettings settings = builder.build();
-        ConfigurableGameStyleFactory factory = new ConfigurableGameStyleFactory(settings);
-        UUID dummy = UUID.randomUUID();
+        // Deterministic factory + a fixed player id so a given option set always previews the same
+        // sheet — no reshuffling on each change, and reproducible option-preview images.
+        ConfigurableGameStyleFactory factory = ConfigurableGameStyleFactory.deterministic(settings);
+        UUID dummy = new UUID(0L, 0L);
         List<Row> rows = Objects.requireNonNull(factory.buildRows(List.of(dummy)).get(dummy));
         var layout = new nl.adg.qwixx.state.SheetLayout(rows);
         return ResponseEntity.ok(GameStateMapper.toSheetLayoutDto(layout));

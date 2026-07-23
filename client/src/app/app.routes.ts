@@ -37,5 +37,10 @@ export const routes: Routes = [
     path: 'rules',
     loadComponent: () => import('./rules/rules.component').then((m) => m.RulesComponent),
   },
+  {
+    // Not linked from the UI — rendered by the docs option-preview image generator.
+    path: 'option-catalog',
+    loadComponent: () => import('./option-catalog/option-catalog.component').then((m) => m.OptionCatalogComponent),
+  },
   { path: '**', redirectTo: 'settings' },
 ];

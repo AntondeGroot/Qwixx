@@ -32,6 +32,8 @@ import nl.adg.qwixx.state.VariantData;
 
 public class ConfigurableGameStyleFactory implements GameStyleFactory {
 
+    private static final long PREVIEW_SEED = 42L;
+
     private final GameSettings settings;
     private final Random       random;
 
@@ -42,6 +44,15 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
     ConfigurableGameStyleFactory(GameSettings settings, Random random) {
         this.settings = settings;
         this.random   = random;
+    }
+
+    /**
+     * A factory whose randomness is fixed, so a given option set always renders the exact same
+     * sheet. Used by the read-only layout preview: it keeps the settings preview from reshuffling
+     * on every change, and makes the auto-generated option-preview images reproducible.
+     */
+    public static ConfigurableGameStyleFactory deterministic(GameSettings settings) {
+        return new ConfigurableGameStyleFactory(settings, new Random(PREVIEW_SEED));
     }
 
     @Override

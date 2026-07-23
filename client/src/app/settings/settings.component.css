@@ -63,6 +63,18 @@ input[type='checkbox'] {
   height: 18px;
 }
 
+/* Boolean option: checkbox on the left, description to its right, checkbox vertically
+   centered against the (possibly multi-line) description text. */
+.check-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.check-row input[type='checkbox'] {
+  flex-shrink: 0;
+}
+
 div.option-disabled {
   opacity: 0.4;
   cursor: not-allowed;

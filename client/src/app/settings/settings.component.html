@@ -145,7 +145,12 @@
         </div>
 
         @if (opt.type === TypeEnum.BOOLEAN) {
-          <input [id]="opt.key" type="checkbox" [formControlName]="opt.key" />
+          <div class="check-row">
+            <input [id]="opt.key" type="checkbox" [formControlName]="opt.key" />
+            @if (opt.descriptionKey) {
+              <p class="option-desc">{{ t(opt.descriptionKey) }}</p>
+            }
+          </div>
         } @else if (opt.type === TypeEnum.ENUM) {
           @if (opt.key === 'base') {
             <div
@@ -193,7 +198,7 @@
             />
           }
         }
-        @if (opt.descriptionKey) {
+        @if (opt.descriptionKey && opt.type !== TypeEnum.BOOLEAN) {
           <p class="option-desc">{{ t(opt.descriptionKey) }}</p>
         }
       </div>

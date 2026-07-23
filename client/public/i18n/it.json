@@ -16,6 +16,8 @@
     "section": { "general": "Impostazioni generali", "modes": "Varianti di gioco" },
     "base": "Variante",
     "baseDescription": "STANDARD usa celle 2–12 per riga. LONGO usa celle 2–16 con numeri bonus.",
+    "standardDescription": "La scheda standard: caselle 2–12 in ogni riga colorata.",
+    "longoDescription": "La scheda Longo: caselle 2–16, che terminano con numeri bonus.",
     "gameMode": "Modalità di gioco",
     "gameModeDescription": "Offline permette ai giocatori di giocare attorno a un tavolo con dadi veri.",
     "cardMode": "Tutti i giocatori ricevono",

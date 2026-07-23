@@ -16,6 +16,8 @@
     "section": { "general": "Allgemeine Einstellungen", "modes": "Spielvarianten" },
     "base": "Variante",
     "baseDescription": "STANDARD verwendet Zellen 2–12 pro Reihe. LONGO verwendet Zellen 2–16 mit Bonusnummern.",
+    "standardDescription": "Das Standard-Spielblatt: Felder 2–12 in jeder farbigen Reihe.",
+    "longoDescription": "Das Longo-Spielblatt: Felder 2–16, die auf Bonuszahlen enden.",
     "gameMode": "Spielmodus",
     "gameModeDescription": "Offline lässt Spieler an einem Tisch mit echten Würfeln spielen.",
     "cardMode": "Alle Spieler erhalten",

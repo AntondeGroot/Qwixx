@@ -10,13 +10,13 @@ A Raspberry Pi game made in Angular
 
 ### 1. Standard
 
-The standard sheet: cells 2–12 in each colour row.
+The standard game: each row has the numbers 2 to 12
 
 ![Standard](docs/option-previews/standard.png)
 
 ### 2. Longo
 
-The Longo sheet: cells 2–16, ending in bonus numbers.
+Each row has the numbers 2 to 16. Each player has 2 bonus numbers; when they are rolled you can cross off the first cell of your lowest row.
 
 ![Longo](docs/option-previews/longo.png)
 

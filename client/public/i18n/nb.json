@@ -38,6 +38,8 @@
     "doubleADescription": "Hver farget rute får en mindre tvillingrute under seg i samme rad. Du kan krysse av tvillingen når ruten over den er krysset av og ingenting til høyre for den er krysset ennå – et ekstra kryss for samme tall.",
     "doubleB": "Dobbel B",
     "doubleBDescription": "Noen ruter kan krysses av to ganger.",
+    "mixedColors": "Blandede farger",
+    "mixedColorsDescription": "Tallene i hver rad er delt inn i fargeblokker. En farget terning krysser av en tilsvarende rute i hvilken som helst rad; en rad lukkes fortsatt som helhet.",
     "bonusA": "Bonus A",
     "bonusADescription": "12 bonusruter (gullring) ligger i de fargede radene. Krysser du av én, må du krysse av neste rute i bonuslinjen under; fargen tvinger fram et kryss i neste rute i den raden – som kan gi kjedetrekk. Når en rad låses, går de resterende bonuslinje-rutene tapt.",
     "bonusB": "Bonus B",

@@ -38,6 +38,8 @@
     "doubleADescription": "Elke gekleurde cel krijgt eronder een kleinere tweelingcel in dezelfde rij. Je mag de tweeling kruisen zodra de cel erboven is gekruist en er nog niets rechts ervan is gekruist — een extra kruis voor hetzelfde getal.",
     "doubleB": "Dubbel B",
     "doubleBDescription": "Een paar vakjes kun je dubbel afkruisen.",
+    "mixedColors": "Gemengde kleuren",
+    "mixedColorsDescription": "De getallen in elke rij zijn verdeeld in kleurenblokken. Een gekleurde dobbelsteen kruist een bijpassend vakje in elke rij; een rij sluit nog steeds als geheel.",
     "bonusA": "Bonus A",
     "bonusADescription": "12 bonusvakjes (gouden ring) staan in de gekleurde rijen. Kruis je er één, dan moet je het volgende vakje van de bonusbalk eronder kruisen; de kleur ervan dwingt een kruis in het volgende vakje van die rij — wat kan doorschakelen. Wanneer een rij wordt gesloten, vervallen de resterende bonusbalk-vakjes.",
     "bonusB": "Bonus B",

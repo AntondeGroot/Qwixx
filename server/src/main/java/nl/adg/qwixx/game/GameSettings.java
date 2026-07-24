@@ -138,6 +138,14 @@ public class GameSettings {
                 throw new IllegalArgumentException(
                     "doubleA and doubleB cannot be combined: they are alternative double-variant layouts");
             }
+            if (mixedColors && (bigPoints || bonusA || bonusB || doubleA || doubleB || luckyCross || randomOrder)) {
+                throw new IllegalArgumentException(
+                    "mixedColors cannot be combined with bigPoints, bonusA/bonusB, doubleA/doubleB, " +
+                    "luckyCross or randomOrder: those restructure the coloured rows, rely on one colour " +
+                    "per row, or (randomOrder) reshuffle numbers so a colour no longer spans 2..max once " +
+                    "— which would duplicate number+colour pairs. (extraRow is fine: the wave is laid " +
+                    "over the already-coloured rows.)");
+            }
             if (connectedCells && connectedDiagonal) {
                 throw new IllegalArgumentException(
                     "connectedCells and connectedDiagonal cannot be combined: they are alternative " +

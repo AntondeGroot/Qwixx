@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 
+# Resolve the repo root from this script's location (it lives in scripts/) so the relative paths
+# below work no matter where the script is invoked from.
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$REPO_ROOT"
+
 if [ -n "$1" ]; then
   TARGET="$1"
 elif ssh -o ConnectTimeout=3 -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectionAttempts=1 my-pi true 2>/dev/null; then

@@ -25,6 +25,7 @@ public class QwixxGameOptions {
     private static final String X_CHANGE     = "xChange";
     private static final String LUCKY_NUMBER = "luckyNumber";
     private static final String LUCKY_CROSS  = "luckyCross";
+    private static final String MIXED_COLORS = "mixedColors";
     private static final String DOUBLE_A     = "doubleA";
     private static final String DOUBLE_B     = "doubleB";
     private static final String BONUS_A      = "bonusA";
@@ -55,7 +56,10 @@ public class QwixxGameOptions {
             trialBoolOption(BIG_POINTS, "gameOption.bigPoints", "gameOption.bigPointsDescription")
                     .withIncompatibleWith(List.of(RANDOM_ORDER, LUCKY_CROSS, DOUBLE_A, DOUBLE_B, BONUS_A, BONUS_B)),
             GameOption.boolOption(RANDOM_ORDER, "gameOption.randomOrder", "gameOption.randomOrderDescription")
-                    .withIncompatibleWith(List.of(BIG_POINTS, BONUS_A, BONUS_B)),
+                    .withIncompatibleWith(List.of(BIG_POINTS, BONUS_A, BONUS_B, MIXED_COLORS)),
+            trialBoolOption(MIXED_COLORS, "gameOption.mixedColors", "gameOption.mixedColorsDescription")
+                    .withIncompatibleWith(List.of(BIG_POINTS, BONUS_A, BONUS_B, DOUBLE_A, DOUBLE_B,
+                        LUCKY_CROSS, RANDOM_ORDER)),
             GameOption.boolOption(EXTRA_ROW, "gameOption.extraRow", "gameOption.extraRowDescription")
                     .withIncompatibleWith(List.of(BONUS_A, BONUS_B)),
             GameOption.boolOption(CONNECTED_CELLS, "gameOption.connectedCells", "gameOption.connectedCellsDescription")
@@ -67,7 +71,7 @@ public class QwixxGameOptions {
             trialBoolOption(X_CHANGE, "gameOption.xchange", "gameOption.xchangeDescription"),
             trialBoolOption(LUCKY_NUMBER, "gameOption.luckyNumber", "gameOption.luckyNumberDescription"),
             trialBoolOption(LUCKY_CROSS,  "gameOption.luckyCross",  "gameOption.luckyCrossDescription")
-                    .withIncompatibleWith(List.of(BIG_POINTS, DOUBLE_A, DOUBLE_B, BONUS_A, BONUS_B)),
+                    .withIncompatibleWith(List.of(BIG_POINTS, DOUBLE_A, DOUBLE_B, BONUS_A, BONUS_B, MIXED_COLORS)),
             trialBoolOption(DOUBLE_A, "gameOption.doubleA", "gameOption.doubleADescription")
                     .withIncompatibleWith(List.of(DOUBLE_B, BIG_POINTS, LUCKY_CROSS, CONNECTED_CELLS, CONNECTED_DIAGONAL, BONUS_A, BONUS_B)),
             trialBoolOption(DOUBLE_B, "gameOption.doubleB", "gameOption.doubleBDescription")
@@ -99,6 +103,7 @@ public class QwixxGameOptions {
         map.put(X_CHANGE,        s.xChange());
         map.put(LUCKY_NUMBER,    s.luckyNumber());
         map.put(LUCKY_CROSS,     s.luckyCross());
+        map.put(MIXED_COLORS,    s.mixedColors());
         map.put(DOUBLE_A,        s.doubleA());
         map.put(DOUBLE_B,        s.doubleB());
         map.put(BONUS_A,         s.bonusA());
@@ -125,6 +130,7 @@ public class QwixxGameOptions {
                 case X_CHANGE        -> builder.xChange(bool(entry.getValue()));
                 case LUCKY_NUMBER    -> builder.luckyNumber(bool(entry.getValue()));
                 case LUCKY_CROSS     -> builder.luckyCross(bool(entry.getValue()));
+                case MIXED_COLORS    -> builder.mixedColors(bool(entry.getValue()));
                 case DOUBLE_A        -> builder.doubleA(bool(entry.getValue()));
                 case DOUBLE_B        -> builder.doubleB(bool(entry.getValue()));
                 case BONUS_A         -> builder.bonusA(bool(entry.getValue()));

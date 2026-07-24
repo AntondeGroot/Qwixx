@@ -30,9 +30,12 @@
               [class.mini-row-lucky-number]="isLuckyRow(row)"
               [class.mini-row-bonus-bar]="row.bonusBar"
               [class.mini-row-bstrip]="row.bonusBStrip"
+              [class.mini-row-mixed]="isMixedRow(row)"
               [class.row-closed]="isRowClosed(row.id)"
               [attr.data-color]="
-                isXChangeRow(row) || isLuckyRow(row) || row.bonusBar || row.bonusBStrip ? null : row.cells[0]?.color
+                isXChangeRow(row) || isLuckyRow(row) || row.bonusBar || row.bonusBStrip || isMixedRow(row)
+                  ? null
+                  : row.cells[0]?.color
               "
               [style.--mini-primary]="colorHex[row.cells[0]?.color ?? '']"
               [style.--mini-secondary]="colorHex[secondaryColorOf(row.cells[0]) ?? '']"

@@ -76,6 +76,10 @@ export class RowComponent {
   isBonusBar = computed(() => this.row().bonusBar === true);
   isBonusBStrip = computed(() => this.row().bonusBStrip === true);
 
+  // Mixed-colours variant: a colour row whose cells aren't all one colour. Its translucent single-
+  // colour band would be misleading, so the row leaves the tint to each cell's own background.
+  isMixedRow = computed(() => new Set(this.row().cells.map((c) => c.color)).size > 1);
+
   // How many of a strip indicator's two boxes are crossed (0–2), for the N/2 counter.
   bonusBCount(cell: SheetCell): number {
     const kind = bonusKindOf(cell);

@@ -108,6 +108,21 @@ class GameSettingsTest {
                 forbidden("bonusA + connectedCells", b -> b.bonusA(true).connectedCells(true)),
                 forbidden("bonusA + luckyCross", b -> b.bonusA(true).luckyCross(true)),
                 forbidden("bonusA + extraRow", b -> b.bonusA(true).extraRow(true)),
-                forbidden("bonusA + randomOrder", b -> b.bonusA(true).randomOrder(true)));
+                forbidden("bonusA + randomOrder", b -> b.bonusA(true).randomOrder(true)),
+                // guard: mixedColors && (bigPoints|bonusA|bonusB|doubleA|doubleB|luckyCross|randomOrder)
+                forbidden("mixedColors + bigPoints", b -> b.mixedColors(true).bigPoints(true)),
+                forbidden("mixedColors + bonusA", b -> b.mixedColors(true).bonusA(true)),
+                forbidden("mixedColors + bonusB", b -> b.mixedColors(true).bonusB(true)),
+                forbidden("mixedColors + doubleA", b -> b.mixedColors(true).doubleA(true)),
+                forbidden("mixedColors + doubleB", b -> b.mixedColors(true).doubleB(true)),
+                forbidden("mixedColors + luckyCross", b -> b.mixedColors(true).luckyCross(true)),
+                // randomOrder would reshuffle numbers so a colour no longer spans 2..max once.
+                forbidden("mixedColors + randomOrder", b -> b.mixedColors(true).randomOrder(true)));
+    }
+
+    @Test
+    void mixedColoursIsCompatibleWithExtraRow() {
+        // extraRow lays its wave over the already-coloured rows, so the two combine cleanly.
+        assertTrue(GameSettings.builder().mixedColors(true).extraRow(true).build().mixedColors());
     }
 }

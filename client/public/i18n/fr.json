@@ -38,6 +38,8 @@
     "doubleADescription": "Chaque case colorée gagne une petite case jumelle en dessous, dans la même rangée. Vous pouvez cocher la jumelle une fois la case du dessus cochée et si rien n'est coché à sa droite — une croix supplémentaire pour le même numéro.",
     "doubleB": "Double B",
     "doubleBDescription": "Quelques cases peuvent être cochées deux fois.",
+    "mixedColors": "Couleurs mélangées",
+    "mixedColorsDescription": "Les numéros de chaque rangée sont répartis en blocs de couleur. Un dé coloré coche une case correspondante dans n'importe quelle rangée ; une rangée se ferme toujours en entier.",
     "bonusA": "Bonus A",
     "bonusADescription": "12 cases bonus (anneau doré) sont réparties dans les rangées colorées. En cocher une force à cocher la case suivante de la barre bonus en dessous ; sa couleur force une croix dans la case suivante de cette rangée — ce qui peut s'enchaîner. Quand une rangée est fermée, ses cases bonus restantes sont perdues.",
     "bonusB": "Bonus B",

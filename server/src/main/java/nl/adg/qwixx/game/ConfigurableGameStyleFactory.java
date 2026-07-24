@@ -85,13 +85,15 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
             if (!perPlayer) {
                 List<Row> shared = settings.luckyCross()
                         ? buildStandardRowsWithLuckyCross(0)
+                        : settings.mixedColors()
+                        ? buildMixedColorRows()
                         : buildStandardRows();
                 if (settings.randomOrder()) shuffleDisplayValues(shared);
                 if (settings.connectedCells()) applyConnectedCells(shared);
                 if (settings.connectedDiagonal()) applyConnectedCellsDirectional(shared);
                 applyDoubleVariants(shared);
                 if (settings.bonusA()) { applyBonusBoxes(shared); shared.add(buildBonusBar(false)); }
-                if (settings.bonusB()) { applyBonusBBoxes(shared); shared.add(buildBonusBStrip()); }
+                if (settings.bonusB()) { applyBonusBBoxes(shared, IDENTITY_SLOTS); shared.add(buildBonusBStrip()); }
                 if (settings.xChange()) shared.add(buildXChangeRow());
                 if (settings.luckyNumber()) shared.add(buildLuckyRow());
                 for (UUID player : players) result.put(player, shared);
@@ -100,10 +102,10 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
                 int[] gaps = luckyCrossGaps();
                 for (UUID player : players) {
                     List<Row> playerRows;
-                    if (settings.bonusB()) {
-                        playerRows = buildStandardRowsShuffledColors(); // unique cards: shuffle row colours
-                    } else if (settings.luckyCross()) {
+                    if (settings.luckyCross()) {
                         playerRows = buildStandardRowsWithLuckyCross(random.nextInt(gaps.length));
+                    } else if (settings.mixedColors()) {
+                        playerRows = buildMixedColorRows(); // each player gets an independent colour scramble
                     } else {
                         playerRows = buildStandardRows();
                     }
@@ -113,7 +115,9 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
                     if (settings.connectedDiagonal()) applyConnectedCellsDirectional(playerRows);
                     applyDoubleVariants(playerRows);
                     if (settings.bonusA()) { applyBonusBoxes(playerRows); playerRows.add(buildBonusBar(true)); }
-                    if (settings.bonusB()) { applyBonusBBoxes(playerRows); playerRows.add(buildBonusBStrip()); }
+                    // Bonus B unique cards: keep the standard row colours (so row index ≡ lock colour and
+                    // closures stay correct) and instead give each player a different row→bonus mapping.
+                    if (settings.bonusB()) { applyBonusBBoxes(playerRows, randomSlotPermutation()); playerRows.add(buildBonusBStrip()); }
                     result.put(player, playerRows);
                 }
             }
@@ -297,12 +301,171 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
         return rows;
     }
 
-    /** The four standard rows with their colours randomly permuted across all four positions
-     *  (Bonus B unique cards): any colour can land on any row, so a colour may end up descending. */
-    private List<Row> buildStandardRowsShuffledColors() {
-        List<Color> colors = new ArrayList<>(List.of(Color.RED, Color.YELLOW, Color.GREEN, Color.BLUE));
-        Collections.shuffle(colors, random);
-        return buildStandardRows(colors.get(0), colors.get(1), colors.get(2), colors.get(3));
+
+    // ── Mixed colours variant ───────────────────────────────────────────────────
+    // Each row runs 2..max (ascending rows 0-1) or max..2 (descending rows 2-3) but its cell colours
+    // are scrambled into contiguous blocks — never a lone cell. The lock is the final position of the
+    // last block, so a row spans (number cells + 1) positions: Standard 12, Longo 16. Two rows use the
+    // even composition and two use the 2-4-2-4 one. Two further rules make it a proper sheet:
+    //   • every number 2..max carries all four colours across the four rows, so each colour spans the
+    //     whole range exactly once — no duplicate numbers within a colour;
+    //   • the four lock (last-block) colours all differ, so closing a row still removes exactly one die.
+    // A backtracking search finds a block colouring that satisfies both.
+    // Longo's varied composition is {3,4,4,2,3}, not the mirror of Standard's: it's the only islands-≤4
+    // shape that lets every number 2..16 still carry all four colours (a colour repeats in the varied
+    // row). See the composition search notes.
+    private static final int[][] MIXED_BLOCKS_STANDARD = {{3, 3, 3, 3}, {2, 4, 2, 4}};
+    private static final int[][] MIXED_BLOCKS_LONGO    = {{4, 4, 4, 4}, {3, 4, 4, 2, 3}};
+    private static final List<Color> DICE_COLORS =
+            List.of(Color.RED, Color.YELLOW, Color.GREEN, Color.BLUE);
+
+    /** One mixed row's block layout: how many blocks it has and, for each number 2..max, the index of
+     *  the block that number sits in. The last block owns the lock. (Uses a List, not an int[], so the
+     *  record exposes no mutable array.) */
+    private record MixedRowPlan(boolean ascending, int blockCount, List<Integer> numberToBlock) {}
+
+    private List<Row> buildMixedColorRows() {
+        int[][] comps = settings.base() == BaseVariant.LONGO ? MIXED_BLOCKS_LONGO : MIXED_BLOCKS_STANDARD;
+        // Try the ways to split the four rows 2-and-2 across the two compositions until one admits a
+        // valid colouring. Shuffled so a seed/player varies; exhaustive so it always terminates.
+        List<int[]> assignments = twoAndTwoAssignments();
+        Collections.shuffle(assignments, random);
+        for (int[] assignment : assignments) {
+            List<MixedRowPlan> plans = new ArrayList<>();
+            for (int i = 0; i < 4; i++) plans.add(planMixedRow(i < 2, comps[assignment[i]]));
+            int[][] colours = solveMixedColours(plans);
+            if (colours.length > 0) {              // non-empty = a solution was found
+                List<Row> rows = new ArrayList<>();
+                for (int i = 0; i < 4; i++) rows.add(buildMixedRow(plans.get(i), colours[i]));
+                return rows;
+            }
+        }
+        throw new IllegalStateException("no valid mixed-colour layout found"); // both bases always solve
+    }
+
+    /** The six ways to pick which two of the four rows use composition 0 (the other two use 1). */
+    private static List<int[]> twoAndTwoAssignments() {
+        List<int[]> out = new ArrayList<>();
+        for (int a = 0; a < 4; a++) {
+            for (int b = a + 1; b < 4; b++) {
+                int[] which = {1, 1, 1, 1};
+                which[a] = 0;
+                which[b] = 0;
+                out.add(which);
+            }
+        }
+        return out;
+    }
+
+    private MixedRowPlan planMixedRow(boolean ascending, int[] composition) {
+        int max = maxDisplayValue();
+        int[] sizes = composition.clone();
+        sizes[sizes.length - 1] -= 1;              // the last block's lock is not a number cell
+        List<Integer> numberToBlock = new ArrayList<>(Collections.nCopies(max - 1, 0));
+        int p = 0;
+        for (int block = 0; block < sizes.length; block++) {
+            for (int j = 0; j < sizes[block]; j++) {
+                int number = ascending ? p + 2 : max - p;
+                numberToBlock.set(number - 2, block);
+                p++;
+            }
+        }
+        return new MixedRowPlan(ascending, composition.length, List.copyOf(numberToBlock));
+    }
+
+    /** Backtracking search for block colours (0-3): each row uses every colour with no lone block,
+     *  every number column shows four distinct colours, and row i's lock (its last block) is pinned to
+     *  the canonical colour i (RED/YELLOW/GREEN/BLUE). Returns colours[row][block], or an empty array
+     *  if this row layout can't be coloured. */
+    private int[][] solveMixedColours(List<MixedRowPlan> plans) {
+        List<List<int[]>> candidates = new ArrayList<>();
+        for (int row = 0; row < plans.size(); row++) {
+            // Pin the lock colour to the row index so lock colours follow a standard sheet's order
+            // (RED, YELLOW, GREEN, BLUE) for EVERY player. That keeps row index ≡ lock colour globally,
+            // which the (index-based) row-closure logic relies on — no per-player colour drift. Colours
+            // are symmetric, so pinning the locks never loses a solution.
+            int lockColour = row;
+            List<int[]> c = new ArrayList<>();
+            for (int[] colouring : validBlockColourings(plans.get(row).blockCount())) {
+                if (colouring[colouring.length - 1] == lockColour) c.add(colouring);
+            }
+            Collections.shuffle(c, random);
+            candidates.add(c);
+        }
+        return backtrackColours(plans, candidates, new ArrayList<>());
+    }
+
+    private int[][] backtrackColours(List<MixedRowPlan> plans, List<List<int[]>> candidates,
+            List<int[]> chosen) {
+        int row = chosen.size();
+        if (row == 4) {
+            return chosen.toArray(new int[0][]);   // lock colours already pinned to 0-3 by row
+        }
+        for (int[] colouring : candidates.get(row)) {
+            if (columnsStayDistinct(plans, chosen, colouring)) {
+                List<int[]> next = new ArrayList<>(chosen);
+                next.add(colouring);
+                int[][] result = backtrackColours(plans, candidates, next);
+                if (result.length > 0) return result;
+            }
+        }
+        return new int[0][];
+    }
+
+    /** True if giving the next row this colouring keeps every number distinct from the rows already set. */
+    private boolean columnsStayDistinct(List<MixedRowPlan> plans, List<int[]> chosen, int[] colouring) {
+        int row = chosen.size();
+        List<Integer> map = plans.get(row).numberToBlock();
+        for (int number = 2; number <= maxDisplayValue(); number++) {
+            int colour = colouring[map.get(number - 2)];
+            for (int r = 0; r < chosen.size(); r++) {
+                if (chosen.get(r)[plans.get(r).numberToBlock().get(number - 2)] == colour) return false;
+            }
+        }
+        return true;
+    }
+
+    /** Every colouring of {@code blockCount} contiguous blocks that uses all four colours and never
+     *  repeats a colour on adjacent blocks (adjacent equals would merge into one block). */
+    private static List<int[]> validBlockColourings(int blockCount) {
+        List<int[]> out = new ArrayList<>();
+        buildColourings(new int[blockCount], 0, out);
+        return out;
+    }
+
+    private static void buildColourings(int[] current, int idx, List<int[]> out) {
+        if (idx == current.length) {
+            boolean[] present = new boolean[4];
+            for (int c : current) present[c] = true;
+            for (boolean p : present) {
+                if (!p) return;                    // every colour must appear
+            }
+            out.add(current.clone());
+            return;
+        }
+        for (int c = 0; c < 4; c++) {
+            if (idx > 0 && current[idx - 1] == c) continue;  // no adjacent duplicates
+            current[idx] = c;
+            buildColourings(current, idx + 1, out);
+        }
+    }
+
+    private Row buildMixedRow(MixedRowPlan plan, int[] blockColours) {
+        int max = maxDisplayValue();
+        Row row = new Row();
+        List<Cell> cells = new ArrayList<>();
+        for (int p = 0; p < max - 1; p++) {
+            int number = plan.ascending() ? p + 2 : max - p;
+            Cell cell = new Cell(p);
+            cell.setColor(DICE_COLORS.get(blockColours[plan.numberToBlock().get(number - 2)]));
+            cell.setDisplayValue(String.valueOf(number));
+            cell.setTags(List.of());
+            row.addCell(cell);
+            cells.add(cell);
+        }
+        Color lockColour = DICE_COLORS.get(blockColours[blockColours.length - 1]);
+        row.addLock(buildLock(lockColour, cells));
+        return row;
     }
 
     private int lockMinCrosses() {
@@ -755,9 +918,20 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
     // ── Bonus B ────────────────────────────────────────────────────────────────
 
     /** One bonus box: the coloured row's position (0-3), its display value, and the bonus kind.
-     *  Placement is keyed on position (not colour) so the row colours can be shuffled per player
-     *  (unique cards) while the box numbers/kinds — the "distances" — stay identical. */
+     *  Placement is keyed on row slot, so unique cards can send each row's boxes to a different row
+     *  (a slot permutation) while the row colours stay in standard order. */
     private record BonusBSpec(int slot, int value, BonusBKind kind) {}
+
+    /** Identity slot mapping: shared cards keep the boxes on their canonical rows. */
+    private static final int[] IDENTITY_SLOTS = {0, 1, 2, 3};
+
+    /** A random permutation of the four row slots — unique cards send each row's bonus boxes to a
+     *  different row, so cards differ by their row→bonus mapping rather than by shuffled colours. */
+    private int[] randomSlotPermutation() {
+        List<Integer> slots = new ArrayList<>(List.of(0, 1, 2, 3));
+        Collections.shuffle(slots, random);
+        return slots.stream().mapToInt(Integer::intValue).toArray();
+    }
 
     /** Fixed left-to-right order of the 5 indicator cells in the bonus strip. */
     private static final BonusBKind[] BONUS_B_STRIP = {
@@ -794,11 +968,15 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
         };
     }
 
-    /** Tags the 10 bonus-box numbers by row position with {@link CellTag.BonusB}. */
-    private void applyBonusBBoxes(List<Row> colored) {
+    /** Tags the 10 bonus-box numbers with {@link CellTag.BonusB}, sending each spec's row slot through
+     *  {@code slotMap} (identity for shared cards; a permutation for unique cards). Every box value
+     *  avoids the lock cells (Standard 2/12, Longo 2/3/15/16), so a box never lands on a lock whichever
+     *  row it maps to. */
+    private void applyBonusBBoxes(List<Row> colored, int[] slotMap) {
         for (BonusBSpec spec : bonusBBoxes()) {
-            if (spec.slot() >= colored.size()) continue;
-            Row row = colored.get(spec.slot());
+            int slot = slotMap[spec.slot()];
+            if (slot >= colored.size()) continue;
+            Row row = colored.get(slot);
             for (Cell cell : row.cells()) {
                 if (cell.displayValue().equals(String.valueOf(spec.value()))) {
                     List<CellTag> tags = new ArrayList<>(cell.tags());

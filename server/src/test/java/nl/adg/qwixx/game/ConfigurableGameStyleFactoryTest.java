@@ -174,29 +174,34 @@ class ConfigurableGameStyleFactoryTest {
     }
 
     @Test
-    void bonusBUniqueCardsShuffleColoursButKeepBonusPositions() {
+    void bonusBUniqueCardsKeepStandardColoursButVaryBonusRows() {
         var factory = new ConfigurableGameStyleFactory(
                 GameSettings.builder().bonusB(true).cardMode(CardMode.DIFFERENT_CARDS).build(), new Random(3));
         List<UUID> players = List.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
         Map<UUID, List<Row>> cards = factory.buildRows(players);
 
-        Set<Color> row0Colours = new HashSet<>();
+        List<Color> canonical = List.of(Color.RED, Color.YELLOW, Color.GREEN, Color.BLUE);
+        Set<Integer> groupRow = new HashSet<>();
         for (List<Row> rows : cards.values()) {
-            // The bonus KIND at each (position, value) is identical for every player — distances fixed.
-            assertKind(rows.get(0), "6", BonusBKind.PLUS_13);
-            assertKind(rows.get(1), "11", BonusBKind.FEWEST_TWO);
-            assertKind(rows.get(2), "9", BonusBKind.FEWEST_TWO);
-            assertKind(rows.get(3), "4", BonusBKind.PLUS_13);
-            row0Colours.add(rows.get(0).cells().get(0).color());
+            // Row colours (and locks) stay in standard order for every player, so row index ≡ lock
+            // colour and index-based closures remain correct.
+            for (int i = 0; i < 4; i++) {
+                assertEquals(canonical.get(i), rows.get(i).cells().get(0).color(), "row " + i + " colour");
+                assertEquals(canonical.get(i), rows.get(i).lock().color(), "row " + i + " lock colour");
+            }
+            // Instead the bonuses move: the group carrying "6 = PLUS_13" lands on a different row per card.
+            groupRow.add(rowOfBox(rows, "6", BonusBKind.PLUS_13));
         }
-        // ...but the colour of a given row position varies across players.
-        assertTrue(row0Colours.size() > 1, "row-0 colour should differ across shuffled cards");
+        assertTrue(groupRow.size() > 1, "the row a bonus group lands on should differ across unique cards");
     }
 
-    private void assertKind(Row row, String value, BonusBKind expected) {
-        Cell cell = row.cells().stream().filter(c -> c.displayValue().equals(value)).findFirst().orElseThrow();
-        assertTrue(cell.tags().stream().anyMatch(t -> t instanceof CellTag.BonusB(BonusBKind k) && k == expected),
-                "cell " + value + " should be " + expected);
+    private int rowOfBox(List<Row> rows, String value, BonusBKind kind) {
+        for (int i = 0; i < rows.size(); i++) {
+            boolean match = rows.get(i).cells().stream().anyMatch(c -> c.displayValue().equals(value)
+                    && c.tags().stream().anyMatch(t -> t instanceof CellTag.BonusB(BonusBKind k) && k == kind));
+            if (match) return i;
+        }
+        return -1;
     }
 
     // --- extra row ---
@@ -1009,5 +1014,123 @@ class ConfigurableGameStyleFactoryTest {
             }
         }
         return result;
+    }
+
+    // --- mixed colours ---
+
+    private List<Row> mixedRows(BaseVariant base, long seed) {
+        GameSettings settings = GameSettings.builder().base(base).mixedColors(true).build();
+        ConfigurableGameStyleFactory f = new ConfigurableGameStyleFactory(settings, new Random(seed));
+        return f.buildRows(List.of(UUID.randomUUID())).values().iterator().next();
+    }
+
+    @Test
+    void mixedColoursWithExtraRowKeepsFullRangeAndLaysTheWaveOnTop() {
+        GameSettings settings = GameSettings.builder().mixedColors(true).extraRow(true).build();
+        List<Row> rows = new ConfigurableGameStyleFactory(settings, new Random(7))
+                .buildRows(List.of(UUID.randomUUID())).values().iterator().next();
+
+        // The wave only tags cells, so the four colour rows still each span 2..12 once.
+        assertEquals(4, rows.size());
+        Map<Color, List<Integer>> byColour = new java.util.EnumMap<>(Color.class);
+        for (Row row : rows) {
+            for (Cell cell : row.cells()) {
+                byColour.computeIfAbsent(cell.color(), k -> new ArrayList<>())
+                        .add(Integer.parseInt(cell.displayValue()));
+            }
+        }
+        List<Integer> fullRange = new ArrayList<>();
+        for (int n = 2; n <= 12; n++) fullRange.add(n);
+        for (Color c : List.of(Color.RED, Color.YELLOW, Color.GREEN, Color.BLUE)) {
+            List<Integer> nums = new ArrayList<>(byColour.getOrDefault(c, List.of()));
+            java.util.Collections.sort(nums);
+            assertEquals(fullRange, nums, "colour " + c + " still spans 2..12 once with extraRow");
+        }
+
+        // extraRow tagged one cell per column (11) as an extra bucket — the wave across the four rows.
+        long waveCells = rows.stream().flatMap(r -> r.cells().stream())
+                .filter(c -> c.tags().stream().anyMatch(t -> t instanceof CellTag.ExtraBucket))
+                .count();
+        assertEquals(11, waveCells, "extraRow lays one extra-bucket cell per column over the mixed rows");
+    }
+
+    @Test
+    void mixedColoursEachColourSpansTheFullRangeOnceAndLocksFollowCanonicalOrder() {
+        List<Color> canonicalLocks = List.of(Color.RED, Color.YELLOW, Color.GREEN, Color.BLUE);
+        for (BaseVariant base : BaseVariant.values()) {
+            int max = base == BaseVariant.LONGO ? 16 : 12;
+            List<Integer> fullRange = new ArrayList<>();
+            for (int n = 2; n <= max; n++) fullRange.add(n);
+            for (long seed = 0; seed < 300; seed++) {
+                List<Row> rows = mixedRows(base, seed);
+                assertEquals(4, rows.size(), "four colour rows");
+
+                // Each colour carries every number 2..max exactly once across the four rows.
+                Map<Color, List<Integer>> numbersByColour = new java.util.EnumMap<>(Color.class);
+                for (Row row : rows) {
+                    for (Cell cell : row.cells()) {
+                        numbersByColour.computeIfAbsent(cell.color(), k -> new ArrayList<>())
+                                .add(Integer.parseInt(cell.displayValue()));
+                    }
+                }
+                for (Color c : List.of(Color.RED, Color.YELLOW, Color.GREEN, Color.BLUE)) {
+                    List<Integer> nums = new ArrayList<>(numbersByColour.getOrDefault(c, List.of()));
+                    java.util.Collections.sort(nums);
+                    assertEquals(fullRange, nums,
+                            "colour " + c + " must span 2.." + max + " once (base " + base + ", seed " + seed + ")");
+                }
+
+                // Lock colours are pinned to the standard row order for every player, so row index ≡
+                // lock colour and index-based row closure stays correct across different cards.
+                List<Color> lockColours = rows.stream().map(r -> r.lock().color()).toList();
+                assertEquals(canonicalLocks, lockColours,
+                        "lock colours follow RED,YELLOW,GREEN,BLUE by row (base " + base + ", seed " + seed + ")");
+            }
+        }
+    }
+
+    @Test
+    void mixedColoursHasNoLoneCellsAndSplitsCompositionsTwoAndTwo() {
+        for (BaseVariant base : BaseVariant.values()) {
+            // number-cell run signatures: even composition vs varied composition.
+            // Standard {3,3,3,3}->[2,3,3,3], {2,4,2,4}->[2,2,3,4].
+            // Longo    {4,4,4,4}->[3,4,4,4], {3,4,4,2,3}->[2,2,3,4,4] (a colour repeats: five runs).
+            List<Integer> evenSig   = base == BaseVariant.LONGO ? List.of(3, 4, 4, 4)    : List.of(2, 3, 3, 3);
+            List<Integer> variedSig = base == BaseVariant.LONGO ? List.of(2, 2, 3, 4, 4) : List.of(2, 2, 3, 4);
+            for (long seed = 0; seed < 200; seed++) {
+                List<Row> rows = mixedRows(base, seed);
+                int evenRows = 0;
+                int variedRows = 0;
+                for (Row row : rows) {
+                    List<Integer> runs = new ArrayList<>(colourRunLengths(row));
+                    for (int len : runs) {
+                        assertTrue(len >= 2, "no lone colour cell (base " + base + ", seed " + seed + ")");
+                    }
+                    java.util.Collections.sort(runs);
+                    if (runs.equals(evenSig)) evenRows++;
+                    else if (runs.equals(variedSig)) variedRows++;
+                    else fail("unexpected run lengths " + runs + " (base " + base + ", seed " + seed + ")");
+                }
+                assertEquals(2, evenRows, "two even-composition rows (base " + base + ", seed " + seed + ")");
+                assertEquals(2, variedRows, "two varied-composition rows (base " + base + ", seed " + seed + ")");
+            }
+        }
+    }
+
+    private static List<Integer> colourRunLengths(Row row) {
+        List<Integer> runs = new ArrayList<>();
+        Color prev = null;
+        int len = 0;
+        for (Cell cell : row.cells()) {
+            if (cell.color() == prev) {
+                len++;
+            } else {
+                if (prev != null) runs.add(len);
+                prev = cell.color();
+                len = 1;
+            }
+        }
+        if (prev != null) runs.add(len);
+        return runs;
     }
 }

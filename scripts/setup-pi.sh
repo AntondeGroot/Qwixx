@@ -29,4 +29,4 @@ EOF"
 
 echo ""
 echo "✅ Pi setup complete."
-echo "   Run ./deploy.sh to deploy the application."
+echo "   Run ./scripts/deploy.sh to deploy the application."

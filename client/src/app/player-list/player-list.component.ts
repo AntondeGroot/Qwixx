@@ -117,4 +117,11 @@ export class PlayerListComponent {
   isLuckyRow(row: SheetRow): boolean {
     return row.luckyRow === true;
   }
+
+  /** Mixed-colours variant: a normal colour row whose cells aren't all one colour. Its mini-cells must
+   *  be tinted individually (by each cell's own colour) rather than by the row's first cell. */
+  isMixedRow(row: SheetRow): boolean {
+    if (this.isXChangeRow(row) || this.isLuckyRow(row) || row.bonusBar || row.bonusBStrip) return false;
+    return new Set(row.cells.map((c) => c.color)).size > 1;
+  }
 }

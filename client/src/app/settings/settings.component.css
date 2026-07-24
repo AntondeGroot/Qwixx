@@ -148,6 +148,9 @@ p {
   color: #888;
   margin: 0;
   line-height: 1.4;
+  /* Honour explicit newlines in a description (e.g. Bonus B's bulleted list) while still wrapping
+     normally. Single-line descriptions are unaffected. */
+  white-space: pre-line;
 }
 
 /* ── Option header: label + chip side by side ── */

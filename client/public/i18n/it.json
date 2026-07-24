@@ -38,6 +38,8 @@
     "doubleADescription": "Ogni cella colorata ottiene sotto di sé una cella gemella più piccola nella stessa riga. Puoi sbarrare la gemella una volta sbarrata la cella sopra e se nulla è sbarrato alla sua destra — una croce extra per lo stesso numero.",
     "doubleB": "Doppio B",
     "doubleBDescription": "Alcune caselle possono essere sbarrate due volte.",
+    "mixedColors": "Colori misti",
+    "mixedColorsDescription": "I numeri di ogni riga sono divisi in blocchi di colore. Un dado colorato sbarra una casella corrispondente in qualsiasi riga; una riga si chiude comunque per intero.",
     "bonusA": "Bonus A",
     "bonusADescription": "12 caselle bonus (anello dorato) si trovano nelle righe colorate. Sbarrarne una obbliga a sbarrare la casella successiva della barra bonus in basso; il suo colore forza una croce nella casella successiva di quella riga — e può concatenarsi. Quando una riga viene chiusa, le sue caselle bonus rimanenti sono perdute.",
     "bonusB": "Bonus B",

@@ -7,7 +7,7 @@
   [class.bonus-bar-row]="isBonusBar()"
   [class.bonus-bstrip-row]="isBonusBStrip()"
   [class.row-double-a]="doubleVariant() === 'A'"
-  [attr.data-color]="isBonusBar() || isBonusBStrip() ? null : row().cells[0]?.color"
+  [attr.data-color]="isBonusBar() || isBonusBStrip() || isMixedRow() ? null : row().cells[0]?.color"
   [attr.translate]="'no'"
   [style.width]="xChangeRowWidth()"
 >
@@ -147,7 +147,7 @@
         }
         <div
           class="lock-cell"
-          [attr.data-color]="row().cells[0]?.color"
+          [attr.data-color]="lock.color"
           [class.lock-crossed]="rowState()?.lockCrossed"
           [class.lock-closed]="closed()"
         >

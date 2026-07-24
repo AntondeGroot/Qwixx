@@ -220,6 +220,9 @@ p {
 .opt-cell--green {
   background: #388e3c;
 }
+.opt-cell--blue {
+  background: #1565c0;
+}
 
 .opt-cell--diamond {
   transform: rotate(45deg);

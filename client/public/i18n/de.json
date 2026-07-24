@@ -38,6 +38,8 @@
     "doubleADescription": "Jede farbige Zelle erhält darunter eine kleinere Zwillingszelle in derselben Reihe. Du darfst den Zwilling ankreuzen, sobald die Zelle darüber angekreuzt ist und rechts davon noch nichts angekreuzt wurde – ein zusätzliches Kreuz für dieselbe Zahl.",
     "doubleB": "Doppel B",
     "doubleBDescription": "Ein paar Felder kannst du doppelt ankreuzen.",
+    "mixedColors": "Gemischte Farben",
+    "mixedColorsDescription": "Die Zahlen jeder Reihe sind in Farbblöcke aufgeteilt. Ein farbiger Würfel kreuzt ein passendes Feld in jeder Reihe an; eine Reihe wird weiterhin als Ganzes geschlossen.",
     "bonusA": "Bonus A",
     "bonusADescription": "12 Bonusfelder (goldener Ring) liegen in den farbigen Reihen. Kreuzt du eines an, musst du das nächste Feld der Bonusleiste darunter ankreuzen; dessen Farbe erzwingt ein Kreuz im nächsten Feld dieser Reihe – das kann sich verketten. Wird eine Reihe gesperrt, verfallen ihre restlichen Bonusleisten-Felder.",
     "bonusB": "Bonus B",

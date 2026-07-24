@@ -38,6 +38,8 @@
     "doubleADescription": "Every colored cell gains a smaller twin cell below it in the same row. You may cross the twin once the cell above it is crossed and nothing to its right is crossed yet — an extra cross for the same number.",
     "doubleB": "Double B",
     "doubleBDescription": "A few cells can be crossed off twice.",
+    "mixedColors": "Mixed colours",
+    "mixedColorsDescription": "Each row's numbers are split into colour blocks. A coloured die crosses a matching cell in any row; a row still closes as a whole.",
     "bonusA": "Bonus A",
     "bonusADescription": "12 bonus boxes (gold ring) sit in the coloured rows. Crossing one forces you to cross the next cell of the bonus bar below; its colour forces a cross in that row's next box — which can chain. When a row locks, its remaining bonus-bar cells are forfeited.",
     "bonusB": "Bonus B",

@@ -32,61 +32,67 @@ Shuffle the numbers within each row.
 
 ![Random order](docs/option-previews/randomOrder.png)
 
-### 5. Extra row
+### 5. Mixed colours
+
+Each row's numbers are split into colour blocks. A coloured die crosses a matching cell in any row; a row still closes as a whole.
+
+![Mixed colours](docs/option-previews/mixedColors.png)
+
+### 6. Extra row
 
 Add a bonus row that forms a wave across the four rows.
 
 ![Extra row](docs/option-previews/extraRow.png)
 
-### 6. Connected rows
+### 7. Connected rows
 
 Links cells between rows: crossing one cell automatically crosses the other cell too.
 
 ![Connected rows](docs/option-previews/connectedCells.png)
 
-### 7. Connected B
+### 8. Connected B
 
 One-way diagonal links: crossing a cell also crosses the cell diagonally below it.
 
 ![Connected B](docs/option-previews/connectedDiagonal.png)
 
-### 8. X-Change
+### 9. X-Change
 
 Adds an extra row with the option to change your white+white combination for the other number in that cell.
 
 ![X-Change](docs/option-previews/xChange.png)
 
-### 9. Lucky Number
+### 10. Lucky Number
 
 Adds a bonus row with 4 bonus points (5, 6, 7, 8). Only the active player can cross this when white die 1 + white die 2 + any colored die equals 15. He can only cross this bonus OR do his regular moves.
 
 ![Lucky Number](docs/option-previews/luckyNumber.png)
 
-### 10. Lucky Cross
+### 11. Lucky Cross
 
 Adds 3 bonus cross fields to each colored row (4 for Longo). When any two dice show a 1 and a 5, every player may cross the next available bonus field once. White+white: free choice of row. White+colored: that colored row. Colored+colored: either of those two rows. Can be used before or after the regular move.
 
 ![Lucky Cross](docs/option-previews/luckyCross.png)
 
-### 11. Double A
+### 12. Double A
 
 Every colored cell gains a smaller twin cell below it in the same row. You may cross the twin once the cell above it is crossed and nothing to its right is crossed yet — an extra cross for the same number.
 
 ![Double A](docs/option-previews/doubleA.png)
 
-### 12. Double B
+### 13. Double B
 
 A few cells can be crossed off twice.
 
 ![Double B](docs/option-previews/doubleB.png)
 
-### 13. Bonus A
+### 14. Bonus A
 
 12 bonus boxes (gold ring) sit in the coloured rows. Crossing one forces you to cross the next cell of the bonus bar below; its colour forces a cross in that row's next box — which can chain. When a row locks, its remaining bonus-bar cells are forfeited.
 
 ![Bonus A](docs/option-previews/bonusA.png)
 
-### 14. Bonus B
+### 15. Bonus B
 
 5 bonuses. Cross each one off twice to earn it.
 - 2 crosses in your lowest row

@@ -23,7 +23,7 @@ class GameOptionsApiDelegateImplTest {
     void getGameOptionsReturnsNonEmptyList() throws Exception {
         mvc.perform(get("/game-options"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(18));
+                .andExpect(jsonPath("$.length()").value(19));
     }
 
     @Test

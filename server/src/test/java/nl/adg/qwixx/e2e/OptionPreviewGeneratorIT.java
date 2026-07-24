@@ -85,7 +85,9 @@ class OptionPreviewGeneratorIT extends BaseIntegrationTest {
     }
 
     private void captureScreenshots(WebDriver driver, List<CatalogEntry> entries) throws Exception {
-        driver.get("http://127.0.0.1:" + SpringAppTestHelper.getPort() + "/option-catalog");
+        // Force English so the rendered previews (currently only Bonus B shows translated text) never
+        // pick up the headless browser's own locale — the app honours ?locale=en (see detectLocale()).
+        driver.get("http://127.0.0.1:" + SpringAppTestHelper.getPort() + "/option-catalog?locale=en");
         // The page sets [data-catalog-ready] once every preview layout has loaded and rendered.
         new WebDriverWait(driver, Duration.ofSeconds(30))
                 .until(d -> !d.findElements(By.cssSelector("[data-catalog-ready]")).isEmpty());

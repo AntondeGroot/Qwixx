@@ -42,6 +42,13 @@
     <Bug pattern="EI_EXPOSE_REP2"/>
   </Match>
 
+  <!-- ConfigurableGameStyleFactory stores an injected Random by design (a caller-shared, seeded RNG
+       for reproducible layouts); a defensive copy would defeat the purpose -->
+  <Match>
+    <Class name="nl.adg.qwixx.game.factory.ConfigurableGameStyleFactory"/>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+  </Match>
+
   <!-- GameSession returns live state and settings references that callers legitimately mutate -->
   <Match>
     <Class name="nl.adg.qwixx.game.GameSession"/>

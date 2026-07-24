@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.function.Function;
-import nl.adg.qwixx.game.GameSettings;
+import nl.adg.qwixx.game.options.GameSettings;
 
 /**
  * Hill-climbing trainer for {@link BotProfile}.

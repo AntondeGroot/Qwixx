@@ -1,4 +1,4 @@
-package nl.adg.qwixx.game;
+package nl.adg.qwixx.game.options;
 
 import java.util.List;
 import nl.adg.qwixx.bot.BotProfile;

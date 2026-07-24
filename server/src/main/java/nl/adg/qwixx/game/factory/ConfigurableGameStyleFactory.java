@@ -1,4 +1,4 @@
-package nl.adg.qwixx.game;
+package nl.adg.qwixx.game.factory;
 
 import jakarta.annotation.Nullable;
 import java.util.ArrayList;
@@ -19,6 +19,9 @@ import nl.adg.qwixx.data.Color;
 import nl.adg.qwixx.data.Die;
 import nl.adg.qwixx.data.LockCell;
 import nl.adg.qwixx.data.Row;
+import nl.adg.qwixx.game.options.BaseVariant;
+import nl.adg.qwixx.game.options.GameMode;
+import nl.adg.qwixx.game.options.GameSettings;
 import nl.adg.qwixx.rules.BigPointsScoringEngine;
 import nl.adg.qwixx.rules.LongoTurnRules;
 import nl.adg.qwixx.rules.OfflineTurnRules;
@@ -41,7 +44,9 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
         this(settings, new Random());
     }
 
-    ConfigurableGameStyleFactory(GameSettings settings, Random random) {
+    // Public so callers in other packages (GameSession, tests) can inject a seeded Random for
+    // reproducible layouts — the same purpose as the deterministic(...) factory.
+    public ConfigurableGameStyleFactory(GameSettings settings, Random random) {
         this.settings = settings;
         this.random   = random;
     }

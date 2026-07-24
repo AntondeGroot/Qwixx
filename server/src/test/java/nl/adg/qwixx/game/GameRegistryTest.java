@@ -2,6 +2,8 @@ package nl.adg.qwixx.game;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import nl.adg.qwixx.game.options.BaseVariant;
+import nl.adg.qwixx.game.options.GameSettings;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

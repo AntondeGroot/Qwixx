@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import nl.adg.qwixx.game.options.BaseVariant;
+import nl.adg.qwixx.game.options.GameSettings;
 import nl.adg.qwixx.state.CardMode;
 
 public class GameRegistry {

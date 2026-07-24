@@ -76,7 +76,7 @@ Every colored cell gains a smaller twin cell below it in the same row. You may c
 
 ### 12. Double B
 
-Some cells show their number twice on a diagonal and can be crossed twice. The second cross is allowed once the first is made and nothing to its right is crossed yet — an extra cross for the same number.
+A few cells can be crossed off twice.
 
 ![Double B](docs/option-previews/doubleB.png)
 
@@ -88,7 +88,12 @@ Some cells show their number twice on a diagonal and can be crossed twice. The s
 
 ### 14. Bonus B
 
-10 bonus boxes (2 each of 5 kinds) sit in the coloured rows. Cross both of a kind to trigger its bonus, marked on the strip below: ✕✕ two crosses in your fewest-crossed row, ✕ one in every colour, ×2 double that row's score, +13 points, or your mis-rolls don't count.
+5 bonuses. Cross each one off twice to earn it.
+- 2 crosses in your lowest row
+- one cross in every row
+- your lowest row's score is doubled
+- 13 extra points
+- penalty points become 0
 
 ![Bonus B](docs/option-previews/bonusB.png)
 

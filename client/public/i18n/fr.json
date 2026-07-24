@@ -37,11 +37,11 @@
     "doubleA": "Double A",
     "doubleADescription": "Chaque case colorée gagne une petite case jumelle en dessous, dans la même rangée. Vous pouvez cocher la jumelle une fois la case du dessus cochée et si rien n'est coché à sa droite — une croix supplémentaire pour le même numéro.",
     "doubleB": "Double B",
-    "doubleBDescription": "Certaines cases affichent leur numéro deux fois en diagonale et peuvent être cochées deux fois. La seconde croix est permise une fois la première faite et si rien n'est coché à sa droite — une croix supplémentaire pour le même numéro.",
+    "doubleBDescription": "Quelques cases peuvent être cochées deux fois.",
     "bonusA": "Bonus A",
     "bonusADescription": "12 cases bonus (anneau doré) sont réparties dans les rangées colorées. En cocher une force à cocher la case suivante de la barre bonus en dessous ; sa couleur force une croix dans la case suivante de cette rangée — ce qui peut s'enchaîner. Quand une rangée est fermée, ses cases bonus restantes sont perdues.",
     "bonusB": "Bonus B",
-    "bonusBDescription": "10 cases bonus (2 de chacun des 5 types) dans les rangées colorées. Cochez les deux d'un type pour déclencher son bonus, indiqué sur la barre en dessous : ✕✕ deux croix dans votre rangée la plus vide, ✕ une dans chaque couleur, ×2 doublez le score de cette rangée, +13 points, ou vos lancers ratés ne comptent pas.",
+    "bonusBDescription": "5 bonus. Cochez chacun deux fois pour l'obtenir.\n- 2 croix dans votre rangée la plus basse\n- une croix dans chaque rangée\n- le score de votre rangée la plus basse est doublé\n- 13 points en plus\n- les points de pénalité deviennent 0",
     "xchange": "X-Échange",
     "xchangeDescription": "Ajoute une rangée supplémentaire avec la possibilité d'échanger votre combinaison blanc+blanc contre l'autre nombre de cette case.",
     "botCount": "Adversaires ordinateur",
@@ -122,8 +122,8 @@
     "no": "Non"
   },
   "bonusB": {
-    "fewestTwo": "✕✕ dans votre rangée la plus vide",
-    "doubleFewest": "×2 le score de votre rangée la plus vide",
+    "fewestTwo": "✕✕ dans votre rangée la plus basse",
+    "doubleFewest": "×2 le score de votre rangée la plus basse",
     "oneEach": "✕ dans chaque rangée colorée",
     "plus13": "+13 points à la fin de la partie",
     "noPenalty": "les lancers ratés ne comptent pas comme points négatifs"

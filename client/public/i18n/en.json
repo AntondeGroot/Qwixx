@@ -37,11 +37,11 @@
     "doubleA": "Double A",
     "doubleADescription": "Every colored cell gains a smaller twin cell below it in the same row. You may cross the twin once the cell above it is crossed and nothing to its right is crossed yet — an extra cross for the same number.",
     "doubleB": "Double B",
-    "doubleBDescription": "Some cells show their number twice on a diagonal and can be crossed twice. The second cross is allowed once the first is made and nothing to its right is crossed yet — an extra cross for the same number.",
+    "doubleBDescription": "A few cells can be crossed off twice.",
     "bonusA": "Bonus A",
     "bonusADescription": "12 bonus boxes (gold ring) sit in the coloured rows. Crossing one forces you to cross the next cell of the bonus bar below; its colour forces a cross in that row's next box — which can chain. When a row locks, its remaining bonus-bar cells are forfeited.",
     "bonusB": "Bonus B",
-    "bonusBDescription": "10 bonus boxes (2 each of 5 kinds) sit in the coloured rows. Cross both of a kind to trigger its bonus, marked on the strip below: ✕✕ two crosses in your fewest-crossed row, ✕ one in every colour, ×2 double that row's score, +13 points, or your mis-rolls don't count.",
+    "bonusBDescription": "5 bonuses. Cross each one off twice to earn it.\n- 2 crosses in your lowest row\n- one cross in every row\n- your lowest row's score is doubled\n- 13 extra points\n- penalty points become 0",
     "xchange": "X-Change",
     "xchangeDescription": "Adds an extra row with the option to change your white+white combination for the other number in that cell.",
     "botCount": "Computer opponents",
@@ -122,8 +122,8 @@
     "no": "No"
   },
   "bonusB": {
-    "fewestTwo": "✕✕ in your fewest-crossed row",
-    "doubleFewest": "×2 the score of your fewest-crossed row",
+    "fewestTwo": "✕✕ in your lowest row",
+    "doubleFewest": "×2 the score of your lowest row",
     "oneEach": "✕ in every colour row",
     "plus13": "+13 points at the end of the game",
     "noPenalty": "mis-rolls don't count as minus points"

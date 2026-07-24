@@ -105,7 +105,7 @@ Each time you restart the application, a new test game is created with a new ses
 
 ## Implementation Details
 
-- **Location**: `server/src/main/java/nl/adg/qwixx/testapp/QwixxTestApplication.java`
+- **Location**: `../server/src/main/java/nl/adg/qwixx/testapp/QwixxTestApplication.java`
 - **Package**: `nl.adg.qwixx.testapp` (separate from main app to avoid Spring Boot conflicts)
 - **Main method**: Runs `QwixxApplication` with this component active
 - **Setup method**: `@EventListener` on `ContextRefreshedEvent` creates the test game

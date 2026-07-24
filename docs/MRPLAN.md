@@ -184,7 +184,7 @@ Fills the remaining gap in the online lock flow and turn management.
 
 ## MR 15 — Frontend: API service layer
 
-Package: `client/`
+Package: `../client`
 
 - Configure OpenAPI Generator for TypeScript/Angular; generate services + models
 - HTTP client setup, CORS proxy config, environment base URL
@@ -193,7 +193,7 @@ Package: `client/`
 
 ## MR 16 — Frontend: Settings page + routing
 
-Package: `client/`
+Package: `../client`
 
 GameRoom creates the game session via the Qwixx API and navigates to `/game/:sessionId/:playerId` directly — no lobby needed. The settings page is only shown on fresh standalone load or after game over.
 
@@ -206,7 +206,7 @@ GameRoom creates the game session via the Qwixx API and navigates to `/game/:ses
 
 ## MR 17 — Layout preview endpoint
 
-Packages: `server/`, OpenAPI spec, `client/`
+Packages: `../server`, OpenAPI spec, `../client`
 
 Stateless endpoint that returns a sample `SheetLayout` for given settings without creating a game session. Used by the settings page to render a visual preview of each variant's board before starting.
 
@@ -219,7 +219,7 @@ Stateless endpoint that returns a sample `SheetLayout` for given settings withou
 
 ## MR 18 — Frontend: Board rendering (static)
 
-Package: `client/`
+Package: `../client`
 
 - Row and Cell components driven by `SheetLayout` from game state
 - Crossed / closed / lock visual states; no interaction yet
@@ -229,7 +229,7 @@ Package: `client/`
 
 ## MR 19 — Frontend: Styling
 
-Package: `client/`
+Package: `../client`
 
 All visual polish in one place; components from MR 18 already exist and carry the right CSS classes/structure.
 
@@ -244,7 +244,7 @@ All visual polish in one place; components from MR 18 already exist and carry th
 
 ## MR 20 — Frontend: Online play — roll & cross
 
-Package: `client/`
+Package: `../client`
 
 - Active player: roll button → dice display → tap cell to cross
 - Passive player: tap matching white+white cell or pass
@@ -255,7 +255,7 @@ Package: `client/`
 
 ## MR 21 — Frontend: Online play — lock flow
 
-Package: `client/`
+Package: `../client`
 
 - Declare lock intent, lock-pending acknowledge screen, cross-lock or undo
 
@@ -263,7 +263,7 @@ Package: `client/`
 
 ## MR 22 — Frontend: Game over + scores
 
-Package: `client/`
+Package: `../client`
 
 - Score breakdown screen, per-color points, punishment deductions, winner highlight
 
@@ -271,7 +271,7 @@ Package: `client/`
 
 ## MR 23 — Frontend: Offline mode
 
-Package: `client/`
+Package: `../client`
 
 - No turn indicator; any player can cross any reachable cell; take-punishment button; lock button per row
 
@@ -279,7 +279,7 @@ Package: `client/`
 
 ## MR 24 — Frontend: Longo bonus number display
 
-Package: `client/`
+Package: `../client`
 
 Board rows need no special treatment — they render longer via the existing cell component.
 The only Longo-specific UI is surfacing each player's personal bonus numbers.
@@ -291,7 +291,7 @@ The only Longo-specific UI is surfacing each player's personal bonus numbers.
 
 ## MR 25 — Audio + attributions
 
-Packages: `server/`, `client/`
+Packages: `../server`, `../client`
 
 Audio files are served as static resources by the Spring Boot server; the Angular client fetches and plays them by URL.
 
@@ -305,11 +305,11 @@ Audio files are served as static resources by the Spring Boot server; the Angula
 
 ## MR 26 — Deployment wiring
 
-Packages: `server/`, `client/`, `GWT_GameRoom/nginx.conf`
+Packages: `../server`, `../client`, `GWT_GameRoom/nginx.conf`
 
 Connects the Angular frontend to the Spring Boot backend in the same way as GWT_GameRoom and GWT_Keezenspel2: the compiled Angular app is served as static files from inside the Spring Boot server, and the shared nginx routes Qwixx traffic to port 4300.
 
-- Add a Maven Exec/Resources plugin step (or npm build hook) that copies `client/dist/client/browser/` into `server/src/main/resources/public/` as part of `mvn package`
+- Add a Maven Exec/Resources plugin step (or npm build hook) that copies `../client/dist/client/browser` into `server/src/main/resources/public/` as part of `mvn package`
 - Verify Spring Boot serves the Angular `index.html` for all non-API paths (may need a catch-all controller for client-side routing)
 - Add a `/qwixx/` block to `GWT_GameRoom/nginx.conf` that strips the prefix and proxies to `localhost:4300`, matching the pattern used for `/keezen/` → 4200
 - Add a `server.servlet.context-path=/qwixx` production override (equivalent to Keezenspel's `/opt/keezen/application-override.yaml`)

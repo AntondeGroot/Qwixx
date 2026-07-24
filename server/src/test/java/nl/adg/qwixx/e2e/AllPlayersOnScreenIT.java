@@ -54,8 +54,8 @@ public class AllPlayersOnScreenIT extends BaseIntegrationTest {
         sessionId = api.createGame(5);
         List<String> pids = api.getPlayerIds(sessionId);
 
-        api.setCrosses(sessionId, pids.get(0), RED_ROW_INDEX,  4);
-        api.setCrosses(sessionId, pids.get(0), BLUE_ROW_INDEX, 5);
+        api.setCrosses(sessionId, pids.getFirst(), RED_ROW_INDEX,  4);
+        api.setCrosses(sessionId, pids.getFirst(), BLUE_ROW_INDEX, 5);
         api.setCrosses(sessionId, pids.get(1), RED_ROW_INDEX,  5);
         api.setCrosses(sessionId, pids.get(2), RED_ROW_INDEX,  3);
         api.setCrosses(sessionId, pids.get(2), BLUE_ROW_INDEX, 4);

@@ -238,9 +238,9 @@ class BotDeciderTest {
     void roll_action_is_returned_before_any_scoring() {
         // decide must return the RollAction outright (and the 3-arg overload must not return null).
         GameState state = buildState(Mode.ACTIVE_SINGLE, layout(stdRow(Color.RED)), emptyProg());
-        Row r = state.sheetLayout(BOT).rows().get(0);
+        Row r = state.sheetLayout(BOT).rows().getFirst();
         List<GameAction> actions = List.of(
-                new CrossCellAction(BOT, 0, r.cells().get(0).id(), DiceCombination.WHITE_WHITE),
+                new CrossCellAction(BOT, 0, r.cells().getFirst().id(), DiceCombination.WHITE_WHITE),
                 new RollAction(BOT));
         GameAction chosen = BotDecider.decide(state, BOT, actions);   // 3-arg overload
         assertInstanceOf(RollAction.class, chosen, "RollAction must take absolute priority");
@@ -249,9 +249,9 @@ class BotDeciderTest {
     @Test
     void declare_lock_intent_is_returned_before_any_cross() {
         GameState state = buildState(Mode.ACTIVE_SINGLE, layout(stdRow(Color.RED)), emptyProg());
-        Row r = state.sheetLayout(BOT).rows().get(0);
+        Row r = state.sheetLayout(BOT).rows().getFirst();
         List<GameAction> actions = new ArrayList<>();
-        actions.add(new CrossCellAction(BOT, 0, r.cells().get(0).id(), DiceCombination.WHITE_WHITE));
+        actions.add(new CrossCellAction(BOT, 0, r.cells().getFirst().id(), DiceCombination.WHITE_WHITE));
         actions.add(new DeclareLockIntentAction(BOT, 0));
         GameAction chosen = BotDecider.decide(state, BOT, actions);
         assertInstanceOf(DeclareLockIntentAction.class, chosen,
@@ -401,7 +401,7 @@ class BotDeciderTest {
         GameState state = buildState(Mode.PASSIVE, layout(red), prog);
 
         List<GameAction> actions = List.of(ww(0, red, 0), new EndTurnAction(BOT));
-        assertEquals(red.cells().get(0).id(), chosenId(BotDecider.decide(state, BOT, actions, BotProfile.DEFAULT)),
+        assertEquals(red.cells().getFirst().id(), chosenId(BotDecider.decide(state, BOT, actions, BotProfile.DEFAULT)),
                 "Passive bot must cross a beneficial cell rather than passing");
     }
 
@@ -530,7 +530,7 @@ class BotDeciderTest {
 
         // RED value 2 at pos0 → firstLoss -25 (better). Worse candidate listed first.
         List<GameAction> actions = List.of(ww(1, yellow, 5), ww(0, red, 0));
-        assertEquals(red.cells().get(0).id(), chosenId(BotDecider.decide(state, BOT, actions, BotProfile.DEFAULT)),
+        assertEquals(red.cells().getFirst().id(), chosenId(BotDecider.decide(state, BOT, actions, BotProfile.DEFAULT)),
                 "Two-move lookahead must pick the first cross with the lower loss (-25 over 0)");
     }
 

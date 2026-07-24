@@ -163,8 +163,8 @@ class StandardTurnRulesUnitTest {
         // Passive p2 has enough permanent crosses to declare, crosses the closing cell this turn,
         // declares intent, then undoes — the pending closure they declared must be cancelled.
         GameState state = stateAfterRoll(p1, p1, p2);
-        Row row = state.sheetLayouts().get(p2).rows().get(0);
-        String closingId = row.lock().closingCells().get(0);
+        Row row = state.sheetLayouts().get(p2).rows().getFirst();
+        String closingId = row.lock().closingCells().getFirst();
 
         // 5 permanent non-closing crosses for p2.
         Set<String> permanent = new HashSet<>();

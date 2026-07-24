@@ -148,7 +148,7 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
      * list with bonus rows inserted: [RED(0), BONUS-RY(1), YELLOW(2), GREEN(3), BONUS-GB(4), BLUE(5)].
      */
     private List<Row> interleaveWithBonusRows(List<Row> colored) {
-        Row red    = colored.get(0);
+        Row red    = colored.getFirst();
         Row yellow = colored.get(1);
         Row green  = colored.get(2);
         Row blue   = colored.get(3);
@@ -190,7 +190,7 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
 
     private void applyExtraRow(List<Row> rows) {
         int startOffset = random.nextInt(BOUNCE.length);
-        int numCols = rows.get(0).cells().size();
+        int numCols = rows.getFirst().cells().size();
         for (int col = 0; col < numCols; col++) {
             int rowIndex = BOUNCE[(startOffset + col) % BOUNCE.length];
             Cell cell = rows.get(rowIndex).cells().get(col);
@@ -870,7 +870,7 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
         for (Row row : colored) {
             if (row.cells().isEmpty()) continue;
             Set<String> targets = new HashSet<>();
-            for (int v : bonusBoxValues(row.cells().get(0).color())) targets.add(String.valueOf(v));
+            for (int v : bonusBoxValues(row.cells().getFirst().color())) targets.add(String.valueOf(v));
             for (Cell cell : row.cells()) {
                 if (targets.contains(cell.displayValue())) {
                     List<CellTag> tags = new ArrayList<>(cell.tags());

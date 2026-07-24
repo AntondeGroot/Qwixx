@@ -68,7 +68,7 @@ class ConfigurableGameStyleFactoryTest {
     void standardAscendingRowDisplayValues() {
         List<Row> rows = rows(factory(BaseVariant.STANDARD, CardMode.SAME_CARDS));
         assertEquals(List.of("2","3","4","5","6","7","8","9","10","11","12"),
-            rows.get(0).cells().stream().map(Cell::displayValue).toList());
+            rows.getFirst().cells().stream().map(Cell::displayValue).toList());
         assertEquals(List.of("2","3","4","5","6","7","8","9","10","11","12"),
             rows.get(1).cells().stream().map(Cell::displayValue).toList());
     }
@@ -86,7 +86,7 @@ class ConfigurableGameStyleFactoryTest {
     void longoAscendingRowDisplayValues() {
         List<Row> rows = rows(factory(BaseVariant.LONGO, CardMode.SAME_CARDS));
         assertEquals(List.of("2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"),
-            rows.get(0).cells().stream().map(Cell::displayValue).toList());
+            rows.getFirst().cells().stream().map(Cell::displayValue).toList());
     }
 
     @Test
@@ -101,7 +101,7 @@ class ConfigurableGameStyleFactoryTest {
     @Test
     void rowColorsAreCorrect() {
         List<Row> rows = rows(factory(CardMode.SAME_CARDS));
-        assertTrue(rows.get(0).cells().stream().allMatch(c -> c.color() == Color.RED));
+        assertTrue(rows.getFirst().cells().stream().allMatch(c -> c.color() == Color.RED));
         assertTrue(rows.get(1).cells().stream().allMatch(c -> c.color() == Color.YELLOW));
         assertTrue(rows.get(2).cells().stream().allMatch(c -> c.color() == Color.GREEN));
         assertTrue(rows.get(3).cells().stream().allMatch(c -> c.color() == Color.BLUE));
@@ -151,7 +151,7 @@ class ConfigurableGameStyleFactoryTest {
     @Test
     void lockColorMatchesRowColor() {
         List<Row> rows = rows(factory(CardMode.SAME_CARDS));
-        assertEquals(Color.RED,    rows.get(0).lock().color());
+        assertEquals(Color.RED,    rows.getFirst().lock().color());
         assertEquals(Color.YELLOW, rows.get(1).lock().color());
         assertEquals(Color.GREEN,  rows.get(2).lock().color());
         assertEquals(Color.BLUE,   rows.get(3).lock().color());
@@ -188,7 +188,7 @@ class ConfigurableGameStyleFactoryTest {
             // Row colours (and locks) stay in standard order for every player, so row index ≡ lock
             // colour and index-based closures remain correct.
             for (int i = 0; i < 4; i++) {
-                assertEquals(canonical.get(i), rows.get(i).cells().get(0).color(), "row " + i + " colour");
+                assertEquals(canonical.get(i), rows.get(i).cells().getFirst().color(), "row " + i + " colour");
                 assertEquals(canonical.get(i), rows.get(i).lock().color(), "row " + i + " lock colour");
             }
             // Instead the bonuses move: the group carrying "6 = PLUS_13" lands on a different row per card.
@@ -222,7 +222,7 @@ class ConfigurableGameStyleFactoryTest {
         ConfigurableGameStyleFactory f = new ConfigurableGameStyleFactory(
             GameSettings.builder().extraRow(true).build(), new Random(0));
         List<Row> rows = f.buildRows(List.of(UUID.randomUUID())).values().iterator().next();
-        int numCols = rows.get(0).cells().size();
+        int numCols = rows.getFirst().cells().size();
         for (int col = 0; col < numCols; col++) {
             final int c = col;
             long tagged = rows.stream()
@@ -237,7 +237,7 @@ class ConfigurableGameStyleFactoryTest {
         ConfigurableGameStyleFactory f = new ConfigurableGameStyleFactory(
             GameSettings.builder().extraRow(true).build(), new Random(0));
         List<Row> rows = f.buildRows(List.of(UUID.randomUUID())).values().iterator().next();
-        int numCols = rows.get(0).cells().size();
+        int numCols = rows.getFirst().cells().size();
         int[] assigned = new int[numCols];
         for (int col = 0; col < numCols; col++) {
             for (int r = 0; r < rows.size(); r++) {
@@ -279,7 +279,7 @@ class ConfigurableGameStyleFactoryTest {
             GameSettings.builder().randomOrder(true).build(), new Random(1));
         List<Row> rows = rows(f);
         assertNotEquals(List.of("2","3","4","5","6","7","8","9","10","11","12"),
-            rows.get(0).cells().stream().map(Cell::displayValue).toList());
+            rows.getFirst().cells().stream().map(Cell::displayValue).toList());
     }
 
     @Test
@@ -308,7 +308,7 @@ class ConfigurableGameStyleFactoryTest {
             GameSettings.builder().base(BaseVariant.STANDARD).bigPoints(true).build());
         List<Row> rows = rows(f);
         // rows: [RED(0), BONUS-RY(1), YELLOW(2), GREEN(3), BONUS-GB(4), BLUE(5)]
-        List<String> redValues   = rows.get(0).cells().stream().map(Cell::displayValue).toList();
+        List<String> redValues   = rows.getFirst().cells().stream().map(Cell::displayValue).toList();
         List<String> bonusValues = rows.get(1).cells().stream().map(Cell::displayValue).toList();
         assertEquals(redValues, bonusValues,
             "Bonus row display values must match RED row for all positions");
@@ -319,7 +319,7 @@ class ConfigurableGameStyleFactoryTest {
         ConfigurableGameStyleFactory f = new ConfigurableGameStyleFactory(
             GameSettings.builder().base(BaseVariant.LONGO).bigPoints(true).build());
         List<Row> rows = rows(f);
-        List<String> redValues   = rows.get(0).cells().stream().map(Cell::displayValue).toList();
+        List<String> redValues   = rows.getFirst().cells().stream().map(Cell::displayValue).toList();
         List<String> bonusValues = rows.get(1).cells().stream().map(Cell::displayValue).toList();
         assertEquals(redValues, bonusValues,
             "Bonus row display values must match RED row for all positions");
@@ -469,7 +469,7 @@ class ConfigurableGameStyleFactoryTest {
 
     @Test
     void luckyCross_normalCellsHaveCorrectDisplayValuesAscending() {
-        Row red = luckyCrossRows(BaseVariant.STANDARD).get(0); // RED = ascending
+        Row red = luckyCrossRows(BaseVariant.STANDARD).getFirst(); // RED = ascending
         List<String> normalValues = red.cells().stream()
                 .filter(c -> c.tags().stream().noneMatch(t -> t instanceof CellTag.LuckyCross))
                 .map(Cell::displayValue)
@@ -636,8 +636,8 @@ class ConfigurableGameStyleFactoryTest {
             List<Integer> pair = lvd.bonusNumbersPerPlayer().get(player);
             assertEquals(2, pair.size(), "each player gets a pair");
             assertTrue(pool.containsAll(pair), "pair values come from the pool");
-            assertTrue(pair.get(0) < pair.get(1), "pair must be sorted ascending");
-            assertNotEquals(pair.get(0), pair.get(1), "the two bonus numbers must differ");
+            assertTrue(pair.getFirst() < pair.get(1), "pair must be sorted ascending");
+            assertNotEquals(pair.getFirst(), pair.get(1), "the two bonus numbers must differ");
             assertNotEquals(List.of(7, 11), pair, "pair (7, 11) must be excluded");
             assertTrue(seen.add(pair), "each pair must be unique across players");
         }
@@ -698,7 +698,7 @@ class ConfigurableGameStyleFactoryTest {
         ConfigurableGameStyleFactory f = new ConfigurableGameStyleFactory(
                 GameSettings.builder().bonusA(true).cardMode(CardMode.SAME_CARDS).build());
         List<Row> rows = rows(f);
-        assertBonusBoxValues(rows.get(0), Set.of("3", "6", "9"));   // RED
+        assertBonusBoxValues(rows.getFirst(), Set.of("3", "6", "9"));   // RED
         assertBonusBoxValues(rows.get(1), Set.of("5", "8", "11"));  // YELLOW
         assertBonusBoxValues(rows.get(2), Set.of("10", "7", "4"));  // GREEN
         assertBonusBoxValues(rows.get(3), Set.of("11", "7", "4"));  // BLUE
@@ -794,7 +794,7 @@ class ConfigurableGameStyleFactoryTest {
     void doubleA_twinsEveryNonClosingCellWithMatchingValueAndColour() {
         ConfigurableGameStyleFactory f = new ConfigurableGameStyleFactory(
                 GameSettings.builder().doubleA(true).cardMode(CardMode.SAME_CARDS).build());
-        Row red = rows(f).get(0);
+        Row red = rows(f).getFirst();
         List<Cell> twins = red.cells().stream()
                 .filter(c -> c.tags().stream().anyMatch(t -> t instanceof CellTag.DoubleTwin))
                 .toList();
@@ -909,7 +909,7 @@ class ConfigurableGameStyleFactoryTest {
     @Test
     void luckyCross_longoCrossPositionsPerRowUseCyclicShift() {
         List<Row> rows = luckyCrossRows(BaseVariant.LONGO);
-        assertEquals(Set.of(2, 6, 11, 16), crossPositions(rows.get(0)), "RED shift 0");
+        assertEquals(Set.of(2, 6, 11, 16), crossPositions(rows.getFirst()), "RED shift 0");
         assertEquals(Set.of(3, 8, 13, 16), crossPositions(rows.get(1)), "YELLOW shift 1");
         assertEquals(Set.of(4, 9, 12, 15), crossPositions(rows.get(2)), "GREEN shift 2");
         assertEquals(Set.of(4, 7, 10, 14), crossPositions(rows.get(3)), "BLUE shift 3");
@@ -956,10 +956,10 @@ class ConfigurableGameStyleFactoryTest {
                 GameSettings.builder().randomOrder(true).cardMode(CardMode.DIFFERENT_CARDS).build(), new Random(1));
         List<Row> rows = f.buildRows(List.of(UUID.randomUUID())).values().iterator().next();
         assertNotEquals(List.of("2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"),
-                rows.get(0).cells().stream().map(Cell::displayValue).toList(),
+                rows.getFirst().cells().stream().map(Cell::displayValue).toList(),
                 "randomOrder must reorder display values in different-cards mode");
         assertEquals(Set.of("2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"),
-                new HashSet<>(rows.get(0).cells().stream().map(Cell::displayValue).toList()),
+                new HashSet<>(rows.getFirst().cells().stream().map(Cell::displayValue).toList()),
                 "shuffle must preserve the set of values");
     }
 
@@ -987,7 +987,7 @@ class ConfigurableGameStyleFactoryTest {
                 Set<Integer> connected = connectedPositions(rows.get(i), rows.get(i + 1));
                 assertEquals(2, connected.size(), "each adjacency connects exactly two positions (seed " + seed + ")");
                 List<Integer> pos = new ArrayList<>(connected);
-                assertTrue(Math.abs(pos.get(0) - pos.get(1)) >= 3,
+                assertTrue(Math.abs(pos.getFirst() - pos.get(1)) >= 3,
                         "intra-pair distance must be >= 3 (seed " + seed + ")");
                 assertFalse(connected.contains(0), "position 0 must never be connected (seed " + seed + ")");
                 pairs.add(connected);

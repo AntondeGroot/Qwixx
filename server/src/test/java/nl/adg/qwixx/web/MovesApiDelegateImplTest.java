@@ -200,8 +200,8 @@ class MovesApiDelegateImplTest {
         Player bob = offlinePlayer(sid);
         nl.adg.qwixx.state.SheetLayout layout =
                 GameRegistry.getGame(sid).currentState().sheetLayouts().get(bob.id());
-        nl.adg.qwixx.data.Row row   = layout.rows().get(0);
-        nl.adg.qwixx.data.Cell cell = row.cells().get(0);
+        nl.adg.qwixx.data.Row row   = layout.rows().getFirst();
+        nl.adg.qwixx.data.Cell cell = row.cells().getFirst();
 
         mvc.perform(post("/moves/{sid}/{pid}", sid, bob.id())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -367,7 +367,7 @@ class MovesApiDelegateImplTest {
         roll(sid, active);
 
         String rowId = GameRegistry.getGame(sid).currentState()
-                .sheetLayouts().get(active).rows().get(0).id();
+                .sheetLayouts().get(active).rows().getFirst().id();
 
         move(sid, active, """
                 {"moveType":"DECLARE_LOCK_INTENT","rowId":"%s"}
@@ -395,7 +395,7 @@ class MovesApiDelegateImplTest {
         setupEnoughCrossesForLock(sid, active, 0);
 
         String rowId = GameRegistry.getGame(sid).currentState()
-                .sheetLayouts().get(active).rows().get(0).id();
+                .sheetLayouts().get(active).rows().getFirst().id();
 
         move(sid, active, """
                 {"moveType":"DECLARE_LOCK_INTENT","rowId":"%s"}
@@ -553,7 +553,7 @@ class MovesApiDelegateImplTest {
         SheetLayout layout = state.sheetLayouts().get(pid);
         SheetProgress progress = state.boardState().sheetProgress().get(pid);
         for (Row row : layout.rows()) {
-            int colorVal = roll.coloredDice().getOrDefault(row.cells().get(0).color(), 0);
+            int colorVal = roll.coloredDice().getOrDefault(row.cells().getFirst().color(), 0);
             if (colorVal == 0) continue;
             for (int sum : new int[]{roll.white1() + colorVal, roll.white2() + colorVal}) {
                 CellTarget t = findCell(state, pid, sum);
@@ -784,7 +784,7 @@ class MovesApiDelegateImplTest {
         var existingColored = stateForCross.turnState().currentRoll().coloredDice();
         stateForCross.turnState().setCurrentRoll(new nl.adg.qwixx.data.RollResult(3, 4, existingColored));
 
-        var redRow = layout.rows().get(0); // RED ascending row
+        var redRow = layout.rows().getFirst(); // RED ascending row
         // Cell at pos 5 has displayValue "7" (matches white+white=3+4=7).
         Cell redCell7 = redRow.cells().get(5);
         mvc.perform(post("/moves/{sid}/{pid}", sessionId, alice.id())

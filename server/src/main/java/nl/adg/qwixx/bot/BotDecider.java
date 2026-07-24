@@ -160,7 +160,7 @@ public class BotDecider {
         }
 
         for (GameAction a : usable) if (a instanceof EndTurnAction) return a;
-        return usable.get(0);
+        return usable.getFirst();
     }
 
     /** Greedy single-move decision — used for passive players and the second move of a turn. */
@@ -196,7 +196,7 @@ public class BotDecider {
         }
 
         for (GameAction a : usable) if (a instanceof EndTurnAction) return a;
-        return usable.get(0);
+        return usable.getFirst();
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

@@ -196,8 +196,8 @@ class GameStateMapperTest {
         assertEquals(2, dto.getClosureNotifications().size());
 
         // Check first request
-        assertEquals("Alice", dto.getClosureNotifications().get(0).getPlayerName());
-        assertEquals(nl.adg.qwixx.generated.model.Color.RED, dto.getClosureNotifications().get(0).getRowColor());
+        assertEquals("Alice", dto.getClosureNotifications().getFirst().getPlayerName());
+        assertEquals(nl.adg.qwixx.generated.model.Color.RED, dto.getClosureNotifications().getFirst().getRowColor());
 
         // Check second request
         assertEquals("Bob", dto.getClosureNotifications().get(1).getPlayerName());
@@ -356,7 +356,7 @@ class GameStateMapperTest {
 
         // For each player, check that their row 0 entry says p1 closed it.
         for (Player player : List.of(p1, p2)) {
-            String row0Id = state.sheetLayouts().get(player.id()).rows().get(0).id();
+            String row0Id = state.sheetLayouts().get(player.id()).rows().getFirst().id();
             String row1Id = state.sheetLayouts().get(player.id()).rows().get(1).id();
             assertEquals(p1.id().toString(), closed.get(row0Id),
                     player.name() + "'s view: row 0 must be attributed to p1");
@@ -395,8 +395,8 @@ class GameStateMapperTest {
         var dto = GameStateMapper.toDto(state, GameRegistry.getGame(sid));
         Map<String, String> closed = dto.getClosedRows();
 
-        String p1RowId = state.sheetLayouts().get(p1.id()).rows().get(0).id();
-        String p2RowId = state.sheetLayouts().get(p2.id()).rows().get(0).id();
+        String p1RowId = state.sheetLayouts().get(p1.id()).rows().getFirst().id();
+        String p2RowId = state.sheetLayouts().get(p2.id()).rows().getFirst().id();
         assertNotEquals(p1RowId, p2RowId, "DIFFERENT_CARDS layouts must have distinct row IDs");
 
         assertEquals(2, closed.size(),
@@ -470,7 +470,7 @@ class GameStateMapperTest {
         var rows     = dto.getSheetLayouts().get(p.id().toString()).getRows();
         var bonusRY  = rows.get(1);
         var bonusGB  = rows.get(4);
-        var redId    = rows.get(0).getId();
+        var redId    = rows.getFirst().getId();
         var yellowId = rows.get(2).getId();
         var greenId  = rows.get(3).getId();
         var blueId   = rows.get(5).getId();

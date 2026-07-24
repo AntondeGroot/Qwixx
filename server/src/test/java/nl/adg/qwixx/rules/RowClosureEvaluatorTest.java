@@ -227,7 +227,7 @@ class RowClosureEvaluatorTest {
 
         List<GameAction> actions = RowClosureEvaluator.declareLockIntentActions(state, p1, MIN);
         assertEquals(1, actions.size(), "exactly one declaration is offered for the qualifying row");
-        assertEquals(new DeclareLockIntentAction(p1, 0), actions.get(0));
+        assertEquals(new DeclareLockIntentAction(p1, 0), actions.getFirst());
     }
 
     @Test
@@ -345,7 +345,7 @@ class RowClosureEvaluatorTest {
         RowClosureEvaluator.recordClosureIntent(state, p1, 0);
         assertEquals(Set.of(p1), state.pendingClosures().get(0), "declarant recorded for the row");
         assertEquals(1, state.closureNotifications().size(), "a closure notification is emitted");
-        assertEquals(Color.RED, state.closureNotifications().get(0).rowColor(),
+        assertEquals(Color.RED, state.closureNotifications().getFirst().rowColor(),
                 "notification carries the lock colour");
     }
 
@@ -564,7 +564,7 @@ class RowClosureEvaluatorTest {
     }
 
     private Set<String> firstNonClosingFor(GameState state, UUID playerId, int count) {
-        Row row = state.sheetLayout(playerId).rows().get(0);
+        Row row = state.sheetLayout(playerId).rows().getFirst();
         Set<String> closing = new HashSet<>(row.lock().closingCells());
         Set<String> crosses = new HashSet<>();
         for (Cell c : row.cells()) {

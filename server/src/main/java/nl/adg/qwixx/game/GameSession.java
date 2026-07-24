@@ -180,7 +180,7 @@ public class GameSession {
         TurnState turn = null;
         if (settings.gameMode() != GameMode.OFFLINE) {
             turn = new TurnState();
-            turn.setActivePlayerId(playerIds.get(0));
+            turn.setActivePlayerId(playerIds.getFirst());
             turn.setPhase(TurnPhase.ROLL);
         }
 
@@ -294,7 +294,7 @@ public class GameSession {
         TurnState turn = null;
         if (newSettings.gameMode() != GameMode.OFFLINE) {
             turn = new TurnState();
-            turn.setActivePlayerId(playerIds.get(0));
+            turn.setActivePlayerId(playerIds.getFirst());
             turn.setPhase(TurnPhase.ROLL);
         }
 

@@ -55,9 +55,9 @@ class BonusVariantTest {
         rules.apply(state, new CrossCellAction(p1, RED, redBonus.id(), DiceCombination.WHITE_WHITE));
 
         assertTrue(crossed(state, RED).contains(redBonus.id()), "the bonus box itself is crossed");
-        assertTrue(crossed(state, BAR).contains(rows.get(BAR).cells().get(0).id()), "bar cell 0 consumed");
+        assertTrue(crossed(state, BAR).contains(rows.get(BAR).cells().getFirst().id()), "bar cell 0 consumed");
         assertEquals(1, crossed(state, GREEN).size(), "one forced cross in the green row");
-        assertTrue(crossed(state, GREEN).contains(rows.get(GREEN).cells().get(0).id()),
+        assertTrue(crossed(state, GREEN).contains(rows.get(GREEN).cells().getFirst().id()),
                 "forced cross is the green row's next (left-most) box");
     }
 
@@ -66,7 +66,7 @@ class BonusVariantTest {
         List<Row> rows = board();
         Cell redBonus = rows.get(RED).cells().get(5);
         addBonusBox(redBonus);
-        Cell greenFirst = rows.get(GREEN).cells().get(0); // the forced green box — also a bonus box
+        Cell greenFirst = rows.get(GREEN).cells().getFirst(); // the forced green box — also a bonus box
         addBonusBox(greenFirst);
         // Bar: GREEN then YELLOW → red-bonus → green forced (bonus) → yellow forced.
         GameState state = stateWithBar(rows, List.of(Color.GREEN, Color.YELLOW, Color.RED));
@@ -77,7 +77,7 @@ class BonusVariantTest {
         assertTrue(crossed(state, GREEN).contains(greenFirst.id()), "green forced box crossed");
         assertEquals(2, crossed(state, BAR).size(), "two bar cells consumed by the chain");
         assertEquals(1, crossed(state, YELLOW).size(), "chain forced one cross in the yellow row");
-        assertTrue(crossed(state, YELLOW).contains(rows.get(YELLOW).cells().get(0).id()),
+        assertTrue(crossed(state, YELLOW).contains(rows.get(YELLOW).cells().getFirst().id()),
                 "yellow forced cross is its next box");
     }
 
@@ -307,7 +307,7 @@ class BonusVariantTest {
         addBonusBox(redBonus);
         // Bar: [GREEN, YELLOW, RED]; the green cell is already forfeited/crossed.
         GameState state = stateWithBar(rows, List.of(Color.GREEN, Color.YELLOW, Color.RED));
-        Cell barGreen = rows.get(BAR).cells().get(0);
+        Cell barGreen = rows.get(BAR).cells().getFirst();
         state.boardState().sheetProgress().get(p1).updateRowState(BAR, new RowState(Set.of(barGreen.id()), false));
         rules.apply(state, new RollAction(p1));
 
@@ -326,7 +326,7 @@ class BonusVariantTest {
         addBonusBox(redBonus);
         GameState state = stateWithBar(rows, List.of(Color.GREEN)); // single-cell bar...
         state.boardState().sheetProgress().get(p1)
-                .updateRowState(BAR, new RowState(Set.of(rows.get(BAR).cells().get(0).id()), false)); // ...already used
+                .updateRowState(BAR, new RowState(Set.of(rows.get(BAR).cells().getFirst().id()), false)); // ...already used
         rules.apply(state, new RollAction(p1));
 
         rules.apply(state, new CrossCellAction(p1, RED, redBonus.id(), DiceCombination.WHITE_WHITE));
@@ -368,7 +368,7 @@ class BonusVariantTest {
         // right-most crossed cell becomes index 8.
         RowClosureEvaluator.closeRowGlobally(state, p1, RED);
         List<Cell> bar = rows.get(BAR).cells();
-        assertTrue(crossed(state, BAR).containsAll(List.of(bar.get(0).id(), bar.get(5).id(), bar.get(8).id())),
+        assertTrue(crossed(state, BAR).containsAll(List.of(bar.getFirst().id(), bar.get(5).id(), bar.get(8).id())),
                 "all red bar cells are forfeited when red closes");
 
         rules.apply(state, new RollAction(p1));

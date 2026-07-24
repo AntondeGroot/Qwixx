@@ -66,10 +66,10 @@ public class DoubleRowCloseIT extends BaseIntegrationTest {
         pids      = api.getPlayerIds(sessionId);
 
         // player0: 5 crosses in RED and YELLOW — "12" is the next and final cell
-        api.setCrosses(sessionId, pids.get(0), RED_ROW_INDEX,    5);
-        api.setCrosses(sessionId, pids.get(0), YELLOW_ROW_INDEX, 5);
+        api.setCrosses(sessionId, pids.getFirst(), RED_ROW_INDEX,    5);
+        api.setCrosses(sessionId, pids.getFirst(), YELLOW_ROW_INDEX, 5);
 
-        api.roll(sessionId, pids.get(0));
+        api.roll(sessionId, pids.getFirst());
         api.setDice(sessionId, 6, 6);              // white+white = 12  → RED "12"
         api.setColoredDie(sessionId, "YELLOW", 6); // white+yellow = 12 → YELLOW "12"
     }
@@ -78,7 +78,7 @@ public class DoubleRowCloseIT extends BaseIntegrationTest {
 
     @Test
     void clickingRed12AutoCrossesRedLock() {
-        TestUtils.navigateTo(driver0, sessionId, pids.get(0));
+        TestUtils.navigateTo(driver0, sessionId, pids.getFirst());
         TestUtils.navigateTo(driver1, sessionId, pids.get(1));
 
         assertFalse(isLockButtonCrossed(driver0, "RED"),
@@ -114,7 +114,7 @@ public class DoubleRowCloseIT extends BaseIntegrationTest {
 
     @Test
     void yellow12IsClickableAndCrossesSecondLockAfterRed12IsCrossed() {
-        TestUtils.navigateTo(driver0, sessionId, pids.get(0));
+        TestUtils.navigateTo(driver0, sessionId, pids.getFirst());
 
         clickCellByValue(driver0, "RED", "12");
         new WebDriverWait(driver0, Duration.ofSeconds(5))
@@ -139,7 +139,7 @@ public class DoubleRowCloseIT extends BaseIntegrationTest {
 
     @Test
     void clickingYellow12AfterRed12AlsoCrossesYellowLock() {
-        TestUtils.navigateTo(driver0, sessionId, pids.get(0));
+        TestUtils.navigateTo(driver0, sessionId, pids.getFirst());
 
         // Click RED "12" — RED lock cross appears (lock intent declared)
         clickCellByValue(driver0, "RED", "12");
@@ -173,7 +173,7 @@ public class DoubleRowCloseIT extends BaseIntegrationTest {
      */
     @Test
     void clickingBothClosingCellsAndConfirmingEndsGame() {
-        TestUtils.navigateTo(driver0, sessionId, pids.get(0));
+        TestUtils.navigateTo(driver0, sessionId, pids.getFirst());
         TestUtils.navigateTo(driver1, sessionId, pids.get(1));
 
         // player0 crosses RED "12" (white+white) then YELLOW "12" (white+yellow).

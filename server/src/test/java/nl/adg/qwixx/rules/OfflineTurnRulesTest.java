@@ -46,7 +46,7 @@ class OfflineTurnRulesTest {
     @Test
     void validActionsIncludeReachableCell() {
         GameState state = buildState(p1, p2);
-        String firstCellId = layout(state, p1).rows().get(0).cells().get(0).id();
+        String firstCellId = layout(state, p1).rows().getFirst().cells().getFirst().id();
         assertTrue(rules.getValidActions(state, p1).stream()
                 .anyMatch(a -> a instanceof CrossCellAction cc && cc.cellId().equals(firstCellId)));
     }
@@ -55,7 +55,7 @@ class OfflineTurnRulesTest {
     void validActionsExcludeCellsInClosedRow() {
         GameState state = buildState(p1, p2);
         state.boardState().closedRows().put(0, p1);
-        String firstCellId = layout(state, p1).rows().get(0).cells().get(0).id();
+        String firstCellId = layout(state, p1).rows().getFirst().cells().getFirst().id();
         assertFalse(rules.getValidActions(state, p1).stream()
                 .anyMatch(a -> a instanceof CrossCellAction cc && cc.rowIndex() == 0));
     }
@@ -98,7 +98,7 @@ class OfflineTurnRulesTest {
     @Test
     void crossCellAddsToProgress() {
         GameState state = buildState(p1, p2);
-        String cellId = layout(state, p1).rows().get(0).cells().get(0).id();
+        String cellId = layout(state, p1).rows().getFirst().cells().getFirst().id();
         rules.apply(state, new CrossCellAction(p1, 0, cellId, DiceCombination.WHITE_WHITE));
         assertTrue(state.boardState().sheetProgress().get(p1)
                 .rowStates().get(0).crossedCells().contains(cellId));
@@ -108,8 +108,8 @@ class OfflineTurnRulesTest {
     void crossCellEnforcesProgressionCheck() {
         GameState state = buildState(p1, p2);
         // Cross cell 2 first, then try to cross cell 1 (backwards — position 1 < rightmost 2)
-        String cell2Id = layout(state, p1).rows().get(0).cells().get(2).id();
-        String cell1Id = layout(state, p1).rows().get(0).cells().get(1).id();
+        String cell2Id = layout(state, p1).rows().getFirst().cells().get(2).id();
+        String cell1Id = layout(state, p1).rows().getFirst().cells().get(1).id();
         state.boardState().sheetProgress().get(p1)
                 .updateRowState(0, new RowState(new HashSet<>(Set.of(cell2Id)), false));
         assertThrows(IllegalMoveException.class,
@@ -120,7 +120,7 @@ class OfflineTurnRulesTest {
     void crossCellBlockedForGloballyClosed() {
         GameState state = buildState(p1, p2);
         state.boardState().closedRows().put(0, p2);
-        String cellId = layout(state, p1).rows().get(0).cells().get(0).id();
+        String cellId = layout(state, p1).rows().getFirst().cells().getFirst().id();
         assertThrows(IllegalMoveException.class,
                 () -> rules.apply(state, new CrossCellAction(p1, 0, cellId, DiceCombination.WHITE_WHITE)));
     }
@@ -161,7 +161,7 @@ class OfflineTurnRulesTest {
         // non-closing crosses (< the required minimum). This isolates the "enough crosses" guard —
         // rejection here must come from the count check, not the closing-cell check.
         GameState state = buildState(p1, p2);
-        Row row = layout(state, p1).rows().get(0);
+        Row row = layout(state, p1).rows().getFirst();
         Set<String> crosses = new HashSet<>(row.lock().closingCells());
         state.boardState().sheetProgress().get(p1).updateRowState(0, new RowState(crosses, false));
         assertThrows(IllegalMoveException.class,
@@ -173,7 +173,7 @@ class OfflineTurnRulesTest {
         // Cross 5 non-closing cells (positions 0-4): enough total crosses, but the required closing
         // cell is not among them. This isolates the "must have crossed a closing cell" guard.
         GameState state = buildState(p1, p2);
-        Row row = layout(state, p1).rows().get(0);
+        Row row = layout(state, p1).rows().getFirst();
         Set<String> crosses = new HashSet<>();
         for (int i = 0; i < 5; i++) crosses.add(row.cells().get(i).id());
         state.boardState().sheetProgress().get(p1).updateRowState(0, new RowState(crosses, false));

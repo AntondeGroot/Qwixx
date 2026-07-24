@@ -85,7 +85,7 @@ class LongoTurnRulesTest {
 
         // 6 permanent regular crosses (not closing-eligible)
         Set<String> perm = new HashSet<>();
-        String secondLast = lock.closingCells().get(0); // "15"
+        String secondLast = lock.closingCells().getFirst(); // "15"
         String last       = lock.closingCells().get(1); // "16"
         for (Cell c : row.cells()) {
             if (perm.size() >= 6) break;
@@ -133,7 +133,7 @@ class LongoTurnRulesTest {
         // white sum = 7; give p1 bonus numbers [7, 12]
         state.setVariantData(new LongoVariantData(Map.of(p1, List.of(7, 12))));
         SheetLayout layout = state.sheetLayouts().get(p1);
-        String firstCellId = layout.rows().get(0).cells().get(0).id();
+        String firstCellId = layout.rows().getFirst().cells().getFirst().id();
         assertTrue(rules.getValidActions(state, p1).stream()
                 .anyMatch(a -> a instanceof CrossCellAction cc
                         && cc.rowIndex() == 0 && cc.cellId().equals(firstCellId)));
@@ -145,7 +145,7 @@ class LongoTurnRulesTest {
         // white sum = 7; p1's bonus numbers do NOT include 7
         state.setVariantData(new LongoVariantData(Map.of(p1, List.of(5, 12))));
         SheetLayout layout = state.sheetLayouts().get(p1);
-        String firstCellId = layout.rows().get(0).cells().get(0).id();
+        String firstCellId = layout.rows().getFirst().cells().getFirst().id();
         assertFalse(rules.getValidActions(state, p1).stream()
                 .anyMatch(a -> a instanceof CrossCellAction cc
                         && cc.rowIndex() == 0 && cc.cellId().equals(firstCellId)));
@@ -157,7 +157,7 @@ class LongoTurnRulesTest {
         state.setVariantData(new LongoVariantData(Map.of(p1, List.of(7, 12))));
         state.turnState().activeTurnState().setWhiteWhiteUsed();
         SheetLayout layout = state.sheetLayouts().get(p1);
-        String firstCellId = layout.rows().get(0).cells().get(0).id();
+        String firstCellId = layout.rows().getFirst().cells().getFirst().id();
         assertFalse(rules.getValidActions(state, p1).stream()
                 .anyMatch(a -> a instanceof CrossCellAction cc
                         && cc.rowIndex() == 0 && cc.cellId().equals(firstCellId)));
@@ -169,12 +169,12 @@ class LongoTurnRulesTest {
         state.setVariantData(new LongoVariantData(Map.of(p1, List.of(7, 12))));
         SheetLayout layout = state.sheetLayouts().get(p1);
         // Cross two cells in row 0 so row 1 has fewer crosses
-        String row0Cell0 = layout.rows().get(0).cells().get(0).id();
-        String row0Cell1 = layout.rows().get(0).cells().get(1).id();
+        String row0Cell0 = layout.rows().getFirst().cells().getFirst().id();
+        String row0Cell1 = layout.rows().getFirst().cells().get(1).id();
         state.boardState().sheetProgress().get(p1)
                 .updateRowState(0, new RowState(new HashSet<>(Set.of(row0Cell0, row0Cell1)), false));
         // Bonus should now target row 1 (0 crosses < 2 crosses), leftmost cell
-        String row1FirstCell = layout.rows().get(1).cells().get(0).id();
+        String row1FirstCell = layout.rows().get(1).cells().getFirst().id();
         assertTrue(rules.getValidActions(state, p1).stream()
                 .anyMatch(a -> a instanceof CrossCellAction cc
                         && cc.rowIndex() == 1 && cc.cellId().equals(row1FirstCell)));
@@ -193,20 +193,20 @@ class LongoTurnRulesTest {
         SheetProgress prog  = state.boardState().sheetProgress().get(p1);
 
         prog.updateRowState(0, new RowState(new HashSet<>(Set.of(
-                layout.rows().get(0).cells().get(0).id())), false));          // RED:    1 cross at pos 0
+                layout.rows().getFirst().cells().getFirst().id())), false));          // RED:    1 cross at pos 0
         prog.updateRowState(1, new RowState(new HashSet<>(Set.of(
                 layout.rows().get(1).cells().get(2).id())), false));          // YELLOW: 1 cross at pos 2
         // GREEN and BLUE must have MORE than 1 cross so RED and YELLOW are actually the fewest.
         Set<String> twoGreen = new HashSet<>(Set.of(
-                layout.rows().get(2).cells().get(0).id(),
+                layout.rows().get(2).cells().getFirst().id(),
                 layout.rows().get(2).cells().get(1).id()));
         prog.updateRowState(2, new RowState(twoGreen, false));                // GREEN:  2 crosses
         Set<String> twoBlue = new HashSet<>(Set.of(
-                layout.rows().get(3).cells().get(0).id(),
+                layout.rows().get(3).cells().getFirst().id(),
                 layout.rows().get(3).cells().get(1).id()));
         prog.updateRowState(3, new RowState(twoBlue, false));                 // BLUE:   2 crosses
 
-        String redBonus    = layout.rows().get(0).cells().get(1).id();        // RED leftmost avail = pos 1
+        String redBonus    = layout.rows().getFirst().cells().get(1).id();        // RED leftmost avail = pos 1
         String yellowBonus = layout.rows().get(1).cells().get(3).id();        // YELLOW leftmost avail = pos 3
 
         // Both bonus cells must be available before the cross.
@@ -242,16 +242,16 @@ class LongoTurnRulesTest {
 
         // RED: 1 cross (fewest) → bonus targets RED, leftmost available = pos 1.
         prog.updateRowState(0, new RowState(new HashSet<>(Set.of(
-                layout.rows().get(0).cells().get(0).id())), false));
+                layout.rows().getFirst().cells().getFirst().id())), false));
         // YELLOW, GREEN, BLUE: 2 crosses each so they are not the fewest.
         for (int r = 1; r <= 3; r++) {
             Set<String> two = new HashSet<>();
-            two.add(layout.rows().get(r).cells().get(0).id());
+            two.add(layout.rows().get(r).cells().getFirst().id());
             two.add(layout.rows().get(r).cells().get(1).id());
             prog.updateRowState(r, new RowState(two, false));
         }
 
-        String redBonusCell = layout.rows().get(0).cells().get(1).id(); // RED pos 1 (value "3")
+        String redBonusCell = layout.rows().getFirst().cells().get(1).id(); // RED pos 1 (value "3")
 
         assertTrue(rules.getValidActions(state, p1).stream()
                 .anyMatch(a -> a instanceof CrossCellAction cc && cc.cellId().equals(redBonusCell)),
@@ -294,7 +294,7 @@ class LongoTurnRulesTest {
 
         // RED: 4 crosses at positions 0–3
         Set<String> redCrossed = new HashSet<>();
-        for (int i = 0; i < 4; i++) redCrossed.add(layout.rows().get(0).cells().get(i).id());
+        for (int i = 0; i < 4; i++) redCrossed.add(layout.rows().getFirst().cells().get(i).id());
         prog.updateRowState(0, new RowState(redCrossed, false));
 
         // YELLOW: 1 cross at position 2 (value "4")
@@ -346,7 +346,7 @@ class LongoTurnRulesTest {
         SheetProgress prog  = state.boardState().sheetProgress().get(p1);
 
         // RED: 1 cross at position 0
-        Set<String> redCrossed = new HashSet<>(Set.of(layout.rows().get(0).cells().get(0).id()));
+        Set<String> redCrossed = new HashSet<>(Set.of(layout.rows().getFirst().cells().getFirst().id()));
         prog.updateRowState(0, new RowState(redCrossed, false));
 
         // YELLOW: 1 cross at position 2
@@ -360,7 +360,7 @@ class LongoTurnRulesTest {
             prog.updateRowState(rowIdx, new RowState(crossed, false));
         }
 
-        String redBonus    = layout.rows().get(0).cells().get(1).id(); // position 1 ("3")
+        String redBonus    = layout.rows().getFirst().cells().get(1).id(); // position 1 ("3")
         String yellowBonus = layout.rows().get(1).cells().get(3).id(); // position 3 ("5")
 
         List<CrossCellAction> bonusCrosses = rules.getValidActions(state, p1).stream()
@@ -382,7 +382,7 @@ class LongoTurnRulesTest {
         GameState state = stateAfterRoll(p1, p1, p2);
         state.setVariantData(new LongoVariantData(Map.of(p2, List.of(FIXED_WHITE_SUM)))); // p2 bonus = 7
         SheetLayout layout = state.sheetLayouts().get(p2);
-        String firstCellId = layout.rows().get(0).cells().get(0).id();
+        String firstCellId = layout.rows().getFirst().cells().getFirst().id();
         assertTrue(rules.getValidActions(state, p2).stream()
                 .anyMatch(a -> a instanceof CrossCellAction cc
                         && cc.rowIndex() == 0 && cc.cellId().equals(firstCellId)),
@@ -395,7 +395,7 @@ class LongoTurnRulesTest {
         GameState state = stateAfterRoll(p1, p1, p2);
         state.setVariantData(new LongoVariantData(Map.of(p2, List.of(FIXED_WHITE_SUM))));
         SheetLayout layout = state.sheetLayouts().get(p2);
-        String firstCellId = layout.rows().get(0).cells().get(0).id();
+        String firstCellId = layout.rows().getFirst().cells().getFirst().id();
         // p2 makes their white+white cross → passivesActed now contains p2
         rules.apply(state, new CrossCellAction(p2, 0, firstCellId, DiceCombination.WHITE_WHITE));
         assertFalse(rules.getValidActions(state, p2).stream()
@@ -521,7 +521,7 @@ class LongoTurnRulesTest {
         SheetLayout layout = state.sheetLayouts().get(playerId);
         Row row = layout.rows().get(rowIndex);
         LockCell lock = row.lock();
-        String secondRequired = lock.closingCells().get(0);
+        String secondRequired = lock.closingCells().getFirst();
         String lastRequired   = lock.closingCells().get(1);
         Set<String> crossed = new HashSet<>();
         crossed.add(lastRequired);
@@ -537,7 +537,7 @@ class LongoTurnRulesTest {
         SheetLayout layout = state.sheetLayouts().get(playerId);
         Row row = layout.rows().get(rowIndex);
         LockCell lock = row.lock();
-        String secondRequired = lock.closingCells().get(0);
+        String secondRequired = lock.closingCells().getFirst();
         String lastRequired   = lock.closingCells().get(1);
         Set<String> crossed = new HashSet<>();
         crossed.add(secondRequired);
@@ -750,7 +750,7 @@ class LongoTurnRulesTest {
         state.turnState().setCurrentRoll(
                 new RollResult(8, 7, state.turnState().currentRoll().coloredDice())); // ww=15
 
-        Row red = state.sheetLayouts().get(p1).rows().get(0);
+        Row red = state.sheetLayouts().get(p1).rows().getFirst();
         Set<String> crosses = new HashSet<>();
         for (int i = 0; i < 5; i++) crosses.add(red.cells().get(i).id());
         state.boardState().sheetProgress().get(p1).updateRowState(0, new RowState(crosses, false));
@@ -770,7 +770,7 @@ class LongoTurnRulesTest {
         state.turnState().setCurrentRoll(
                 new RollResult(8, 7, state.turnState().currentRoll().coloredDice()));
 
-        Row red = state.sheetLayouts().get(p1).rows().get(0);
+        Row red = state.sheetLayouts().get(p1).rows().getFirst();
         Set<String> crosses = new HashSet<>();
         for (int i = 0; i < 6; i++) crosses.add(red.cells().get(i).id());
         state.boardState().sheetProgress().get(p1).updateRowState(0, new RowState(crosses, false));
@@ -825,7 +825,7 @@ class LongoTurnRulesTest {
                 new RollResult(8, 7, state.turnState().currentRoll().coloredDice())); // ww = 15
 
         crossOnlyLastCell(state, p3, 0); // p3 qualifies to declare RED via the last cell "16"
-        Row red = state.sheetLayouts().get(p2).rows().get(0);
+        Row red = state.sheetLayouts().get(p2).rows().getFirst();
         Set<String> p2Crosses = new HashSet<>();
         for (int i = 0; i < 6; i++) p2Crosses.add(red.cells().get(i).id()); // 6 non-closing crosses
         state.boardState().sheetProgress().get(p2).updateRowState(0, new RowState(p2Crosses, false));
@@ -891,7 +891,7 @@ class LongoTurnRulesTest {
         state.setVariantData(new LongoVariantData(Map.of(p1, List.of(7))));
 
         SheetLayout layout     = state.sheetLayouts().get(p1);
-        String      bonusCellId = layout.rows().get(0).cells().get(0).id(); // displayValue "2"
+        String      bonusCellId = layout.rows().getFirst().cells().getFirst().id(); // displayValue "2"
 
         // The server must accept this — it's a valid bonus cross even though "2" ≠ 7.
         assertDoesNotThrow(
@@ -910,14 +910,14 @@ class LongoTurnRulesTest {
         state.setVariantData(new LongoVariantData(Map.of(p1, List.of(7))));
 
         SheetLayout layout     = state.sheetLayouts().get(p1);
-        String      bonusCellId = layout.rows().get(0).cells().get(0).id();
+        String      bonusCellId = layout.rows().getFirst().cells().getFirst().id();
         rules.apply(state, new CrossCellAction(p1, 0, bonusCellId, DiceCombination.WHITE_WHITE));
 
         assertTrue(state.turnState().activeTurnState().whiteWhiteUsed(),
                 "whiteWhiteUsed must be set after a bonus cross");
 
         // Attempting a second WHITE_WHITE cross must be rejected.
-        String secondCellId = layout.rows().get(0).cells().get(1).id(); // displayValue "3"
+        String secondCellId = layout.rows().getFirst().cells().get(1).id(); // displayValue "3"
         assertThrows(IllegalMoveException.class,
                 () -> rules.apply(state, new CrossCellAction(p1, 0, secondCellId, DiceCombination.WHITE_WHITE)),
                 "a second white+white cross must be rejected after the bonus cross");
@@ -941,7 +941,7 @@ class LongoTurnRulesTest {
                 new RollResult(5, 5, state.turnState().currentRoll().coloredDice())); // WW=10
 
         SheetLayout layout = state.sheetLayouts().get(p1);
-        String bonusCellId = layout.rows().get(0).cells().get(0).id(); // RED row pos 0
+        String bonusCellId = layout.rows().getFirst().cells().getFirst().id(); // RED row pos 0
 
         assertFalse(
                 rules.getValidActions(state, p1).stream()
@@ -1063,9 +1063,9 @@ class LongoTurnRulesTest {
         Row blueRowP2 = state.sheetLayouts().get(p2).rows().get(rowIndex);
         LockCell lockP1 = blueRowP1.lock();
         LockCell lockP2 = blueRowP2.lock();
-        String p1SecondLast = lockP1.closingCells().get(0); // p1's "3" cell ID
+        String p1SecondLast = lockP1.closingCells().getFirst(); // p1's "3" cell ID
         String p1Last       = lockP1.closingCells().get(1); // p1's "2" cell ID
-        String p2SecondLast = lockP2.closingCells().get(0); // p2's "3" cell ID
+        String p2SecondLast = lockP2.closingCells().getFirst(); // p2's "3" cell ID
         String p2Last       = lockP2.closingCells().get(1); // p2's "2" cell ID
 
         // p1: 6 normal crosses (no closing cells) — p1 will cross "2" this turn to reach minCrosses.
@@ -1147,7 +1147,7 @@ class LongoTurnRulesTest {
         // Give p1 enough crosses on row 0 (RED): both closing cells + fill to 8 total.
         {
             SheetLayout layout = state.sheetLayouts().get(p1);
-            Row row = layout.rows().get(0);
+            Row row = layout.rows().getFirst();
             LockCell lock = row.lock();
             Set<String> closingCells = new HashSet<>(lock.closingCells());
             Set<String> crossed = new HashSet<>(closingCells);
@@ -1272,11 +1272,11 @@ class LongoTurnRulesTest {
 
         // RED (0): 3 crosses (positions 0-2) — the MOST. YELLOW/GREEN/BLUE: 0 crosses (fewest).
         Set<String> redCrossed = new HashSet<>();
-        for (int i = 0; i < 3; i++) redCrossed.add(layout.rows().get(0).cells().get(i).id());
+        for (int i = 0; i < 3; i++) redCrossed.add(layout.rows().getFirst().cells().get(i).id());
         prog.updateRowState(0, new RowState(redCrossed, false));
 
         // RED's leftmost available cell is position 3 (value "5") — never a bonus target here.
-        String redLeftmostAvail = layout.rows().get(0).cells().get(3).id();
+        String redLeftmostAvail = layout.rows().getFirst().cells().get(3).id();
         assertFalse(rules.getValidActions(state, p1).stream()
                         .anyMatch(a -> a instanceof CrossCellAction cc
                                 && cc.rowIndex() == 0 && cc.cellId().equals(redLeftmostAvail)
@@ -1284,7 +1284,7 @@ class LongoTurnRulesTest {
                 "RED (3 crosses) must not receive a bonus — only fewest-crosses rows do");
 
         // Sanity: a fewest row (YELLOW, 0 crosses) IS offered its leftmost cell.
-        String yellowFirst = layout.rows().get(1).cells().get(0).id();
+        String yellowFirst = layout.rows().get(1).cells().getFirst().id();
         assertTrue(rules.getValidActions(state, p1).stream()
                         .anyMatch(a -> a instanceof CrossCellAction cc
                                 && cc.rowIndex() == 1 && cc.cellId().equals(yellowFirst)),
@@ -1301,7 +1301,7 @@ class LongoTurnRulesTest {
         // All rows have 0 crosses → fewest = 0. Close RED (row 0): it would otherwise qualify.
         state.boardState().closedRows().put(0, p2);
 
-        String redFirst = layout.rows().get(0).cells().get(0).id(); // "2" ≠ white sum → bonus-only
+        String redFirst = layout.rows().getFirst().cells().getFirst().id(); // "2" ≠ white sum → bonus-only
         assertFalse(rules.getValidActions(state, p1).stream()
                         .anyMatch(a -> a instanceof CrossCellAction cc
                                 && cc.rowIndex() == 0 && cc.cellId().equals(redFirst)),
@@ -1319,7 +1319,7 @@ class LongoTurnRulesTest {
         state.boardState().closedRows().put(0, p2); // RED closed with 0 crosses
         for (int r = 1; r <= 3; r++) {              // open rows each have 2 crosses
             Set<String> two = new HashSet<>(Set.of(
-                    layout.rows().get(r).cells().get(0).id(),
+                    layout.rows().get(r).cells().getFirst().id(),
                     layout.rows().get(r).cells().get(1).id()));
             prog.updateRowState(r, new RowState(two, false));
         }
@@ -1343,7 +1343,7 @@ class LongoTurnRulesTest {
 
         // RED (0): 5 crosses (positions 0-4) → leftmost available = position 5 (value "7" = white sum).
         Set<String> redCrossed = new HashSet<>();
-        for (int i = 0; i < 5; i++) redCrossed.add(layout.rows().get(0).cells().get(i).id());
+        for (int i = 0; i < 5; i++) redCrossed.add(layout.rows().getFirst().cells().get(i).id());
         prog.updateRowState(0, new RowState(redCrossed, false));
         // Other rows: 6 crosses so RED (5) is the unique fewest.
         for (int r = 1; r <= 3; r++) {
@@ -1352,7 +1352,7 @@ class LongoTurnRulesTest {
             prog.updateRowState(r, new RowState(six, false));
         }
 
-        String redSeven = layout.rows().get(0).cells().get(5).id(); // value "7"
+        String redSeven = layout.rows().getFirst().cells().get(5).id(); // value "7"
         long count = rules.getValidActions(state, p1).stream()
                 .filter(a -> a instanceof CrossCellAction cc
                         && cc.cellId().equals(redSeven) && cc.combination() == DiceCombination.WHITE_WHITE)
@@ -1366,7 +1366,7 @@ class LongoTurnRulesTest {
         GameState state = stateAfterRoll(p1, p1, p2);
         state.setVariantData(null); // not a LongoVariantData
         SheetLayout layout = state.sheetLayouts().get(p1);
-        String firstCell = layout.rows().get(0).cells().get(0).id(); // "2" ≠ white sum → bonus-only
+        String firstCell = layout.rows().getFirst().cells().getFirst().id(); // "2" ≠ white sum → bonus-only
 
         assertDoesNotThrow(() -> rules.getValidActions(state, p1),
                 "missing Longo variant data must not throw");
@@ -1383,7 +1383,7 @@ class LongoTurnRulesTest {
         GameState state = stateAfterRoll(p1, p1, p2);
         state.setVariantData(new LongoVariantData(Map.of())); // p1 has no bonus numbers
         SheetLayout layout = state.sheetLayouts().get(p1);
-        String firstCell = layout.rows().get(0).cells().get(0).id(); // "2" ≠ white sum → bonus-only
+        String firstCell = layout.rows().getFirst().cells().getFirst().id(); // "2" ≠ white sum → bonus-only
 
         assertFalse(rules.getValidActions(state, p1).stream()
                         .anyMatch(a -> a instanceof CrossCellAction cc

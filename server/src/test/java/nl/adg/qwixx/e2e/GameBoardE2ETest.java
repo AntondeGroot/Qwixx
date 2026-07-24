@@ -24,13 +24,13 @@ public class GameBoardE2ETest extends BaseIntegrationTest {
         sessionId = api.createGame(2);
         playerIds = api.getPlayerIds(sessionId);
 
-        api.setCrosses(sessionId, playerIds.get(0), 3, 5);
+        api.setCrosses(sessionId, playerIds.getFirst(), 3, 5);
         api.setCrosses(sessionId, playerIds.get(1), 3, 5);
 
-        api.roll(sessionId, playerIds.get(0));
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1);
 
-        driver = getDriver(sessionId, playerIds.get(0));
+        driver = getDriver(sessionId, playerIds.getFirst());
         waitUntilBoardLoaded(driver);
     }
 

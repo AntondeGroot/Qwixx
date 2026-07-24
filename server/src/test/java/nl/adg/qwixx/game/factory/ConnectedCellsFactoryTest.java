@@ -85,7 +85,7 @@ class ConnectedCellsFactoryTest {
                 List<Integer> positions = connectionsBetween(rows.get(pair), rows.get(pair + 1));
                 assertEquals(2, positions.size(),
                         "exactly 2 connections per pair (seed=" + seed + ", pair=" + pair + ")");
-                int diff = Math.abs(positions.get(0) - positions.get(1));
+                int diff = Math.abs(positions.getFirst() - positions.get(1));
                 assertTrue(diff >= 3,
                         "intra-pair distance must be >= 3 (seed=" + seed + ", pair=" + pair + ", diff=" + diff + ")");
             }

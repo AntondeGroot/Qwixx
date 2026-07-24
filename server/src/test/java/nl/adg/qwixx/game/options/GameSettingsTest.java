@@ -1,4 +1,4 @@
-package nl.adg.qwixx.game;
+package nl.adg.qwixx.game.options;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

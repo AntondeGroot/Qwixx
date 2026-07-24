@@ -5,9 +5,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import nl.adg.qwixx.game.GameRegistry;
-import nl.adg.qwixx.game.GameSettings;
 import nl.adg.qwixx.game.Player;
 import nl.adg.qwixx.game.SessionStatus;
+import nl.adg.qwixx.game.options.GameSettings;
 import nl.adg.qwixx.generated.api.GamesApiController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -277,8 +277,8 @@ class GamesApiDelegateImplTest {
 
     @Test
     void getScoresReturns200WithScoreDataAfterGameOver() throws Exception {
-        nl.adg.qwixx.game.GameSettings settings = nl.adg.qwixx.game.GameSettings.builder()
-                .gameMode(nl.adg.qwixx.game.GameMode.OFFLINE).build();
+        nl.adg.qwixx.game.options.GameSettings settings = nl.adg.qwixx.game.options.GameSettings.builder()
+                .gameMode(nl.adg.qwixx.game.options.GameMode.OFFLINE).build();
         String id = GameRegistry.createGame("room", 2, settings);
         Player alice = Player.of("Alice");
         GameRegistry.getGame(id).addPlayer(alice);
@@ -299,8 +299,8 @@ class GamesApiDelegateImplTest {
 
     @Test
     void getScoresReportsTheBonusBScoreTimeModifiers() throws Exception {
-        nl.adg.qwixx.game.GameSettings settings = nl.adg.qwixx.game.GameSettings.builder()
-                .gameMode(nl.adg.qwixx.game.GameMode.OFFLINE).bonusB(true).build();
+        nl.adg.qwixx.game.options.GameSettings settings = nl.adg.qwixx.game.options.GameSettings.builder()
+                .gameMode(nl.adg.qwixx.game.options.GameMode.OFFLINE).bonusB(true).build();
         String id = GameRegistry.createGame("room", 2, settings);
         Player alice = Player.of("Alice");
         GameRegistry.getGame(id).addPlayer(alice);

@@ -1,4 +1,4 @@
-package nl.adg.qwixx.game;
+package nl.adg.qwixx.game.options;
 
 import java.time.Clock;
 import java.time.Instant;

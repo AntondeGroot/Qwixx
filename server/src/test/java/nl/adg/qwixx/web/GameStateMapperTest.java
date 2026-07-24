@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.List;
 import java.util.Map;
 import nl.adg.qwixx.game.GameRegistry;
-import nl.adg.qwixx.game.GameSettings;
 import nl.adg.qwixx.game.Player;
+import nl.adg.qwixx.game.options.GameSettings;
 import nl.adg.qwixx.generated.model.TurnPhase;
 import nl.adg.qwixx.state.CardMode;
 import nl.adg.qwixx.state.GameState;
@@ -87,7 +87,7 @@ class GameStateMapperTest {
     void toDtoTurnStateIsNullInOfflineMode() {
         GameRegistry.clear();
         String sid = GameRegistry.createGame("offline", 4,
-                GameSettings.builder().gameMode(nl.adg.qwixx.game.GameMode.OFFLINE).build());
+                GameSettings.builder().gameMode(nl.adg.qwixx.game.options.GameMode.OFFLINE).build());
         Player p = Player.of("P");
         GameRegistry.getGame(sid).addPlayer(p);
         GameRegistry.getGame(sid).start();

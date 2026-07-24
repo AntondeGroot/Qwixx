@@ -4,8 +4,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import nl.adg.qwixx.game.GameRegistry;
-import nl.adg.qwixx.game.GameSettings;
 import nl.adg.qwixx.game.Player;
+import nl.adg.qwixx.game.options.GameSettings;
 import nl.adg.qwixx.generated.api.GamestatesApiController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -142,8 +142,8 @@ class GameStatesApiDelegateImplTest {
     @Test
     void offlineGameStateHasNoTurnState() throws Exception {
         String offlineId = GameRegistry.createGame("offline", 4,
-                nl.adg.qwixx.game.GameSettings.builder()
-                        .gameMode(nl.adg.qwixx.game.GameMode.OFFLINE).build());
+                nl.adg.qwixx.game.options.GameSettings.builder()
+                        .gameMode(nl.adg.qwixx.game.options.GameMode.OFFLINE).build());
         Player bob = Player.of("Bob");
         GameRegistry.getGame(offlineId).addPlayer(bob);
         GameRegistry.getGame(offlineId).start();

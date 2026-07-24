@@ -6,9 +6,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.IntStream;
-import nl.adg.qwixx.game.GameMode;
 import nl.adg.qwixx.game.GameSession;
-import nl.adg.qwixx.game.GameSettings;
+import nl.adg.qwixx.game.options.GameMode;
+import nl.adg.qwixx.game.options.GameSettings;
 import nl.adg.qwixx.rules.ScoreCard;
 
 /**

@@ -1,4 +1,4 @@
-package nl.adg.qwixx.game;
+package nl.adg.qwixx.game.options;
 
 /**
  * Grouping for the settings UI. GENERAL options configure the match and players

@@ -1,4 +1,4 @@
-package nl.adg.qwixx.game;
+package nl.adg.qwixx.game.factory;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -13,6 +13,8 @@ import java.util.UUID;
 import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.CellTag;
 import nl.adg.qwixx.data.Row;
+import nl.adg.qwixx.game.options.BaseVariant;
+import nl.adg.qwixx.game.options.GameSettings;
 import org.junit.jupiter.api.Test;
 
 class ConnectedCellsFactoryTest {

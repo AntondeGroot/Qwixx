@@ -1,4 +1,4 @@
-package nl.adg.qwixx.game;
+package nl.adg.qwixx.game.factory;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -16,6 +16,8 @@ import nl.adg.qwixx.data.Color;
 import nl.adg.qwixx.data.Die;
 import nl.adg.qwixx.data.LockCell;
 import nl.adg.qwixx.data.Row;
+import nl.adg.qwixx.game.options.BaseVariant;
+import nl.adg.qwixx.game.options.GameSettings;
 import nl.adg.qwixx.state.CardMode;
 import nl.adg.qwixx.state.LongoVariantData;
 import nl.adg.qwixx.state.VariantData;

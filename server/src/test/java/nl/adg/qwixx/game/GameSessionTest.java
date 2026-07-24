@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import nl.adg.qwixx.action.RollAction;
+import nl.adg.qwixx.game.options.GameMode;
+import nl.adg.qwixx.game.options.GameSettings;
 import nl.adg.qwixx.state.CardMode;
 import nl.adg.qwixx.state.GameState;
 import nl.adg.qwixx.state.TurnPhase;

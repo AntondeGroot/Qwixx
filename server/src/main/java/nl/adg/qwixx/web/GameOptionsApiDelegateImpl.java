@@ -5,9 +5,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import nl.adg.qwixx.data.Row;
-import nl.adg.qwixx.game.ConfigurableGameStyleFactory;
-import nl.adg.qwixx.game.GameSettings;
-import nl.adg.qwixx.game.QwixxGameOptions;
+import nl.adg.qwixx.game.factory.ConfigurableGameStyleFactory;
+import nl.adg.qwixx.game.options.GameSettings;
+import nl.adg.qwixx.game.options.QwixxGameOptions;
 import nl.adg.qwixx.generated.api.GameOptionsApiDelegate;
 import nl.adg.qwixx.generated.model.GameOption;
 import nl.adg.qwixx.generated.model.SheetLayout;
@@ -45,7 +45,7 @@ public class GameOptionsApiDelegateImpl implements GameOptionsApiDelegate {
         return ResponseEntity.ok(dto);
     }
 
-    private GameOption toDto(nl.adg.qwixx.game.GameOption o) {
+    private GameOption toDto(nl.adg.qwixx.game.options.GameOption o) {
         GameOption.TypeEnum typeEnum = switch (o.type()) {
             case BOOLEAN -> GameOption.TypeEnum.BOOLEAN;
             case INTEGER -> GameOption.TypeEnum.INTEGER;

@@ -46,7 +46,7 @@ class ConnectedCellsTest {
         // Row 0 (RED ascending): cell@pos4 (dv="6") has AutoCross -> row1 cell@pos3 (dv="5")
         // Row 1 (YELLOW ascending): cell@pos3 has AutoCross -> row0 cell@pos4 (bidirectional)
         List<Row> rows = buildStandardRows();
-        Cell cellA = rows.get(0).cells().get(4); // pos 4, dv "6"
+        Cell cellA = rows.getFirst().cells().get(4); // pos 4, dv "6"
         Cell cellB = rows.get(1).cells().get(3); // pos 3, dv "5"
         cellA.setTags(List.of(new CellTag.AutoCross(cellB.id())));
         cellB.setTags(List.of(new CellTag.AutoCross(cellA.id())));
@@ -68,7 +68,7 @@ class ConnectedCellsTest {
         // Row 1 already has a cross at pos 5 (rightmost=5), so pos2 < 5 would normally fail
         // AutoCross must bypass the progression check
         List<Row> rows = buildStandardRows();
-        Cell cellA = rows.get(0).cells().get(4); // pos 4, dv "6"
+        Cell cellA = rows.getFirst().cells().get(4); // pos 4, dv "6"
         Cell cellB = rows.get(1).cells().get(2); // pos 2, behind the existing cross at pos 5
 
         cellA.setTags(List.of(new CellTag.AutoCross(cellB.id())));
@@ -94,7 +94,7 @@ class ConnectedCellsTest {
         // Both cells point at each other. When A is crossed, it auto-crosses B.
         // B would try to auto-cross A, but A is already crossed — should not loop.
         List<Row> rows = buildStandardRows();
-        Cell cellA = rows.get(0).cells().get(4);
+        Cell cellA = rows.getFirst().cells().get(4);
         Cell cellB = rows.get(1).cells().get(3);
         cellA.setTags(List.of(new CellTag.AutoCross(cellB.id())));
         cellB.setTags(List.of(new CellTag.AutoCross(cellA.id())));
@@ -117,7 +117,7 @@ class ConnectedCellsTest {
         // cellB (row 1), but since row 1 is closed the auto-cross must be silently skipped
         // — neither an exception nor a corrupt state.
         List<Row> rows = buildStandardRows();
-        Cell cellA = rows.get(0).cells().get(4); // pos 4, dv "6"
+        Cell cellA = rows.getFirst().cells().get(4); // pos 4, dv "6"
         Cell cellB = rows.get(1).cells().get(3); // pos 3, dv "5"
         cellA.setTags(List.of(new CellTag.AutoCross(cellB.id())));
         cellB.setTags(List.of(new CellTag.AutoCross(cellA.id())));

@@ -66,12 +66,12 @@ public class LongoDoubleCloseIT extends BaseIntegrationTest {
         sessionId = api.createGame(3, Map.of("base", "LONGO"));
         pids      = api.getPlayerIds(sessionId);
 
-        api.setCrosses(sessionId, pids.get(0), RED_ROW_INDEX,    14);
-        api.setCrosses(sessionId, pids.get(0), YELLOW_ROW_INDEX, 14);
+        api.setCrosses(sessionId, pids.getFirst(), RED_ROW_INDEX,    14);
+        api.setCrosses(sessionId, pids.getFirst(), YELLOW_ROW_INDEX, 14);
         api.setCrosses(sessionId, pids.get(1), 2, 5);
         api.setCrosses(sessionId, pids.get(2), BLUE_ROW_INDEX, 4);
 
-        api.roll(sessionId, pids.get(0));
+        api.roll(sessionId, pids.getFirst());
         api.setDice(sessionId, 8, 8);          // white+white = 16  → RED "16"
         api.setColoredDie(sessionId, "YELLOW", 8); // white+yellow = 16 → YELLOW "16"
     }
@@ -84,7 +84,7 @@ public class LongoDoubleCloseIT extends BaseIntegrationTest {
 
     @Test
     void clickingRed16AutoCrossesRedLockAndClosesRow() {
-        TestUtils.navigateTo(driver0, sessionId, pids.get(0));
+        TestUtils.navigateTo(driver0, sessionId, pids.getFirst());
         TestUtils.navigateTo(driver1, sessionId, pids.get(1));
         TestUtils.navigateTo(driver2, sessionId, pids.get(2));
 
@@ -136,7 +136,7 @@ public class LongoDoubleCloseIT extends BaseIntegrationTest {
 
     @Test
     void yellow16IsClickableAndCrossesSecondLockAfterRed16IsCrossed() {
-        TestUtils.navigateTo(driver0, sessionId, pids.get(0));
+        TestUtils.navigateTo(driver0, sessionId, pids.getFirst());
 
         // Click RED "16" — no YES/NO modal, auto-declares, lock cross appears
         clickCellByValue(driver0, "RED", "16");
@@ -162,7 +162,7 @@ public class LongoDoubleCloseIT extends BaseIntegrationTest {
 
     @Test
     void clickingYellow16AfterRed16AlsoCrossesYellowLock() {
-        TestUtils.navigateTo(driver0, sessionId, pids.get(0));
+        TestUtils.navigateTo(driver0, sessionId, pids.getFirst());
 
         // Step 1: click RED "16" — no modal, auto-declares, lock cross appears
         clickCellByValue(driver0, "RED", "16");
@@ -208,7 +208,7 @@ public class LongoDoubleCloseIT extends BaseIntegrationTest {
 
     @Test
     void eachPassiveModalClosesIndependentlyOnConfirm() {
-        TestUtils.navigateTo(driver0, sessionId, pids.get(0));
+        TestUtils.navigateTo(driver0, sessionId, pids.getFirst());
         TestUtils.navigateTo(driver1, sessionId, pids.get(1));
         TestUtils.navigateTo(driver2, sessionId, pids.get(2));
 
@@ -271,7 +271,7 @@ public class LongoDoubleCloseIT extends BaseIntegrationTest {
 
     @Test
     void closingBothRowsEndsGameAndShowsScoreScreen() {
-        TestUtils.navigateTo(driver0, sessionId, pids.get(0));
+        TestUtils.navigateTo(driver0, sessionId, pids.getFirst());
         TestUtils.navigateTo(driver1, sessionId, pids.get(1));
         TestUtils.navigateTo(driver2, sessionId, pids.get(2));
 
@@ -301,27 +301,27 @@ public class LongoDoubleCloseIT extends BaseIntegrationTest {
         assertTrue(isRowClosed(driver0, "RED"), "RED must be closed after part 1");
 
         // === Part 2: advance player1's and player2's turns via API ===
-        advancePlayerTurnViaApi(pids.get(1), pids.get(0), pids.get(2));
-        advancePlayerTurnViaApi(pids.get(2), pids.get(0), pids.get(1));
+        advancePlayerTurnViaApi(pids.get(1), pids.getFirst(), pids.get(2));
+        advancePlayerTurnViaApi(pids.get(2), pids.getFirst(), pids.get(1));
 
         // === Part 3: player0's second turn — close YELLOW ===
-        api.roll(sessionId, pids.get(0));
+        api.roll(sessionId, pids.getFirst());
         api.setDice(sessionId, 8, 8);
         api.setColoredDie(sessionId, "YELLOW", 8);
 
-        String yellowRowId  = api.getRowId(sessionId, pids.get(0), YELLOW_ROW_INDEX);
-        String yellowLastId = lastCellId(sessionId, pids.get(0), YELLOW_ROW_INDEX);
+        String yellowRowId  = api.getRowId(sessionId, pids.getFirst(), YELLOW_ROW_INDEX);
+        String yellowLastId = lastCellId(sessionId, pids.getFirst(), YELLOW_ROW_INDEX);
 
         // Cross YELLOW-16 via API then declare lock intent, then EndTurn
-        api.crossCell(sessionId, pids.get(0), yellowRowId, yellowLastId, false);
-        api.declareLockIntent(sessionId, pids.get(0), yellowRowId);
+        api.crossCell(sessionId, pids.getFirst(), yellowRowId, yellowLastId, false);
+        api.declareLockIntent(sessionId, pids.getFirst(), yellowRowId);
 
         // Passive players EndTurn (1 step each)
         api.pass(sessionId, pids.get(1));
         api.pass(sessionId, pids.get(2));
 
         // Active player EndTurns → EVALUATE → YELLOW closes → game over
-        api.pass(sessionId, pids.get(0));
+        api.pass(sessionId, pids.getFirst());
 
         // All browsers must navigate to the score screen
         new WebDriverWait(driver0, Duration.ofSeconds(12))
@@ -357,25 +357,25 @@ public class LongoDoubleCloseIT extends BaseIntegrationTest {
         List<String> pids3 = api.getPlayerIds(sid);
 
         // player0: 14 crosses on RED ascending ("2"-"15"), all 15 on BLUE descending (incl. "2")
-        api.setCrosses(sid, pids3.get(0), RED_ROW_INDEX,  14);
-        api.setCrosses(sid, pids3.get(0), BLUE_ROW_INDEX, 15); // positions 0-14 = "16"-"2"
+        api.setCrosses(sid, pids3.getFirst(), RED_ROW_INDEX,  14);
+        api.setCrosses(sid, pids3.getFirst(), BLUE_ROW_INDEX, 15); // positions 0-14 = "16"-"2"
 
         // player2: 6 crosses on BLUE (positions 0-5 = "16"-"11")
         api.setCrosses(sid, pids3.get(2), BLUE_ROW_INDEX, 6);
 
         // Roll; white+white=16 so player0 can cross RED "16" (last closing cell)
-        api.roll(sid, pids3.get(0));
+        api.roll(sid, pids3.getFirst());
         api.setDice(sid, 8, 8);
 
         // player0 declares BLUE lock intent (permanent "2" qualifies — no cell crossed needed)
-        String blueRowId0 = api.getRowId(sid, pids3.get(0), BLUE_ROW_INDEX);
-        api.declareLockIntent(sid, pids3.get(0), blueRowId0);
+        String blueRowId0 = api.getRowId(sid, pids3.getFirst(), BLUE_ROW_INDEX);
+        api.declareLockIntent(sid, pids3.getFirst(), blueRowId0);
 
         // player0 crosses RED "16" (auto-detected as intent at EndTurn) and EndTurns
-        String redRowId0    = api.getRowId(sid, pids3.get(0), RED_ROW_INDEX);
-        String redLastId    = lastCellId(sid, pids3.get(0), RED_ROW_INDEX);
-        api.crossCell(sid, pids3.get(0), redRowId0, redLastId, false);
-        api.pass(sid, pids3.get(0)); // EndTurn → autoDetect RED → phase PASSIVE_MOVE
+        String redRowId0    = api.getRowId(sid, pids3.getFirst(), RED_ROW_INDEX);
+        String redLastId    = lastCellId(sid, pids3.getFirst(), RED_ROW_INDEX);
+        api.crossCell(sid, pids3.getFirst(), redRowId0, redLastId, false);
+        api.pass(sid, pids3.getFirst()); // EndTurn → autoDetect RED → phase PASSIVE_MOVE
 
         // Override dice: white+white=3 so player2 can cross BLUE "3" (second-to-last, value=3)
         api.setDice(sid, 1, 2);
@@ -465,6 +465,6 @@ public class LongoDoubleCloseIT extends BaseIntegrationTest {
         Map<String, Object> layout  = (Map<String, Object>) layouts.get(playerId);
         List<Map<String, Object>> rows  = (List<Map<String, Object>>) layout.get("rows");
         List<Map<String, Object>> cells = (List<Map<String, Object>>) rows.get(rowIndex).get("cells");
-        return (String) cells.get(cells.size() - 1).get("id");
+        return (String) cells.getLast().get("id");
     }
 }

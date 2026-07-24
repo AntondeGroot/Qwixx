@@ -65,7 +65,7 @@ public class TurnFlowIT extends BaseIntegrationTest {
      */
     @Test
     void passivePlayerCanCrossWhiteWhiteCell_duringActiveTurn_viaApi() {
-        api.roll(sessionId, playerIds.get(0));
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1); // white+white = 2
 
         String rowId  = api.getRowId(sessionId, playerIds.get(1), RED_ROW_INDEX);
@@ -86,7 +86,7 @@ public class TurnFlowIT extends BaseIntegrationTest {
     @Test
     void passivePlayerCanCrossCell_inBrowser_duringActiveTurn() {
         // Pre-roll via API so the board loads already in ACTIVE_MOVE with known dice
-        api.roll(sessionId, playerIds.get(0));
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1); // white+white = 2 → RED "2" reachable
 
         TestUtils.navigateTo(driver1, sessionId, playerIds.get(1));
@@ -111,13 +111,13 @@ public class TurnFlowIT extends BaseIntegrationTest {
     @Test
     void newActivePlayerCanRollAndCross_afterTurnTransition_viaApi() {
         // player0 (active) rolls, crosses one cell, then ends turn
-        api.roll(sessionId, playerIds.get(0));
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1);
 
-        String p0RowId  = api.getRowId(sessionId, playerIds.get(0), RED_ROW_INDEX);
-        String p0CellId = getCellId(sessionId, playerIds.get(0), RED_ROW_INDEX, 0); // RED "2"
-        api.crossCell(sessionId, playerIds.get(0), p0RowId, p0CellId, false);
-        api.pass(sessionId, playerIds.get(0)); // active EndTurn → PASSIVE_MOVE
+        String p0RowId  = api.getRowId(sessionId, playerIds.getFirst(), RED_ROW_INDEX);
+        String p0CellId = getCellId(sessionId, playerIds.getFirst(), RED_ROW_INDEX, 0); // RED "2"
+        api.crossCell(sessionId, playerIds.getFirst(), p0RowId, p0CellId, false);
+        api.pass(sessionId, playerIds.getFirst()); // active EndTurn → PASSIVE_MOVE
 
         // player1 (passive) passes without crossing → EVALUATE → player1 becomes active
         api.pass(sessionId, playerIds.get(1));
@@ -149,13 +149,13 @@ public class TurnFlowIT extends BaseIntegrationTest {
     @Test
     void newActivePlayerCanRollAndCross_inBrowser() {
         // Advance turn fully to player1's ACTIVE_MOVE via API before opening the browser.
-        api.roll(sessionId, playerIds.get(0));
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1);
 
-        String p0RowId  = api.getRowId(sessionId, playerIds.get(0), RED_ROW_INDEX);
-        String p0CellId = getCellId(sessionId, playerIds.get(0), RED_ROW_INDEX, 0);
-        api.crossCell(sessionId, playerIds.get(0), p0RowId, p0CellId, false);
-        api.pass(sessionId, playerIds.get(0)); // → PASSIVE_MOVE
+        String p0RowId  = api.getRowId(sessionId, playerIds.getFirst(), RED_ROW_INDEX);
+        String p0CellId = getCellId(sessionId, playerIds.getFirst(), RED_ROW_INDEX, 0);
+        api.crossCell(sessionId, playerIds.getFirst(), p0RowId, p0CellId, false);
+        api.pass(sessionId, playerIds.getFirst()); // → PASSIVE_MOVE
         api.pass(sessionId, playerIds.get(1)); // → EVALUATE → player1 ROLL
 
         // Roll and fix dice before opening the browser
@@ -181,14 +181,14 @@ public class TurnFlowIT extends BaseIntegrationTest {
      */
     @Test
     void passivePlayerCanCrossWhiteWhiteCell_duringPassiveMovPhase_viaApi() {
-        api.roll(sessionId, playerIds.get(0));
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1); // white+white = 2
 
         // Active player crosses with white+white (required before EndTurn)
-        String p0RowId  = api.getRowId(sessionId, playerIds.get(0), RED_ROW_INDEX);
-        String p0CellId = getCellId(sessionId, playerIds.get(0), RED_ROW_INDEX, 0);
-        api.crossCell(sessionId, playerIds.get(0), p0RowId, p0CellId, false);
-        api.pass(sessionId, playerIds.get(0)); // → PASSIVE_MOVE
+        String p0RowId  = api.getRowId(sessionId, playerIds.getFirst(), RED_ROW_INDEX);
+        String p0CellId = getCellId(sessionId, playerIds.getFirst(), RED_ROW_INDEX, 0);
+        api.crossCell(sessionId, playerIds.getFirst(), p0RowId, p0CellId, false);
+        api.pass(sessionId, playerIds.getFirst()); // → PASSIVE_MOVE
 
         // Passive player's cross during PASSIVE_MOVE
         String p1RowId  = api.getRowId(sessionId, playerIds.get(1), RED_ROW_INDEX);
@@ -208,13 +208,13 @@ public class TurnFlowIT extends BaseIntegrationTest {
     @Test
     void passivePlayerCanCrossCell_inBrowser_duringPassiveMovePhase() {
         // Advance to PASSIVE_MOVE before opening the browser
-        api.roll(sessionId, playerIds.get(0));
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1);
 
-        String p0RowId  = api.getRowId(sessionId, playerIds.get(0), RED_ROW_INDEX);
-        String p0CellId = getCellId(sessionId, playerIds.get(0), RED_ROW_INDEX, 0);
-        api.crossCell(sessionId, playerIds.get(0), p0RowId, p0CellId, false);
-        api.pass(sessionId, playerIds.get(0)); // → PASSIVE_MOVE
+        String p0RowId  = api.getRowId(sessionId, playerIds.getFirst(), RED_ROW_INDEX);
+        String p0CellId = getCellId(sessionId, playerIds.getFirst(), RED_ROW_INDEX, 0);
+        api.crossCell(sessionId, playerIds.getFirst(), p0RowId, p0CellId, false);
+        api.pass(sessionId, playerIds.getFirst()); // → PASSIVE_MOVE
 
         TestUtils.navigateTo(driver1, sessionId, playerIds.get(1));
 

@@ -82,8 +82,8 @@ public class MobileLayoutIT extends BaseIntegrationTest {
      */
     @Test
     void boardHostIsRotated90DegreesInPortraitViewport() {
-        api.roll(sessionId, playerIds.get(0));
-        TestUtils.navigateTo(portraitDriver, sessionId, playerIds.get(0));
+        api.roll(sessionId, playerIds.getFirst());
+        TestUtils.navigateTo(portraitDriver, sessionId, playerIds.getFirst());
 
         assertTrue(isBoardHostRotated(portraitDriver),
                 "Board :host must have transform: rotate(90deg) in portrait mode");
@@ -100,8 +100,8 @@ public class MobileLayoutIT extends BaseIntegrationTest {
      */
     @Test
     void boardFitsWithinLandscapeViewportAfterDeviceRotation() {
-        api.roll(sessionId, playerIds.get(0));
-        TestUtils.navigateTo(portraitDriver, sessionId, playerIds.get(0));
+        api.roll(sessionId, playerIds.getFirst());
+        TestUtils.navigateTo(portraitDriver, sessionId, playerIds.getFirst());
 
         assertTrue(isBoardHostRotated(portraitDriver),
                 "Board :host must be CSS-rotated in portrait mode before the test begins");
@@ -139,14 +139,14 @@ public class MobileLayoutIT extends BaseIntegrationTest {
      */
     @Test
     void lockIntentModalAppearsInPortraitViewport() {
-        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
-        api.roll(sessionId, playerIds.get(0));
+        api.setCrosses(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1);
 
         TestUtils.navigateTo(portraitDriver, sessionId, playerIds.get(1));
 
-        String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
-        api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
+        String blueRowId = api.getRowId(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX);
+        api.declareLockIntent(sessionId, playerIds.getFirst(), blueRowId);
 
         waitUntilModalVisible(portraitDriver, 8);
 
@@ -162,14 +162,14 @@ public class MobileLayoutIT extends BaseIntegrationTest {
      */
     @Test
     void lockIntentModalOverlayIsWithinViewportBoundsOnMobile() {
-        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
-        api.roll(sessionId, playerIds.get(0));
+        api.setCrosses(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1);
 
         TestUtils.navigateTo(portraitDriver, sessionId, playerIds.get(1));
 
-        String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
-        api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
+        String blueRowId = api.getRowId(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX);
+        api.declareLockIntent(sessionId, playerIds.getFirst(), blueRowId);
 
         waitUntilModalVisible(portraitDriver, 8);
 
@@ -185,14 +185,14 @@ public class MobileLayoutIT extends BaseIntegrationTest {
      */
     @Test
     void lockIntentModalConfirmButtonIsClickableOnMobile() {
-        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
-        api.roll(sessionId, playerIds.get(0));
+        api.setCrosses(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1);
 
         TestUtils.navigateTo(portraitDriver, sessionId, playerIds.get(1));
 
-        String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
-        api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
+        String blueRowId = api.getRowId(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX);
+        api.declareLockIntent(sessionId, playerIds.getFirst(), blueRowId);
 
         waitUntilModalVisible(portraitDriver, 8);
 
@@ -211,7 +211,7 @@ public class MobileLayoutIT extends BaseIntegrationTest {
      */
     @Test
     void scoreHostIsNotRotatedInPortraitViewport() {
-        api.setCrosses(sessionId, playerIds.get(0), RED_ROW_INDEX, 4);
+        api.setCrosses(sessionId, playerIds.getFirst(), RED_ROW_INDEX, 4);
         api.forceFinish(sessionId);
 
         TestUtils.navigateToScore(portraitDriver, sessionId);
@@ -225,7 +225,7 @@ public class MobileLayoutIT extends BaseIntegrationTest {
      */
     @Test
     void winnerModalAppearsInPortraitViewport() {
-        api.setCrosses(sessionId, playerIds.get(0), RED_ROW_INDEX, 4);
+        api.setCrosses(sessionId, playerIds.getFirst(), RED_ROW_INDEX, 4);
         api.forceFinish(sessionId);
 
         TestUtils.navigateToScore(portraitDriver, sessionId);
@@ -244,7 +244,7 @@ public class MobileLayoutIT extends BaseIntegrationTest {
      */
     @Test
     void winnerModalOverlayIsWithinViewportBoundsOnMobile() {
-        api.setCrosses(sessionId, playerIds.get(0), RED_ROW_INDEX, 4);
+        api.setCrosses(sessionId, playerIds.getFirst(), RED_ROW_INDEX, 4);
         api.forceFinish(sessionId);
 
         TestUtils.navigateToScore(portraitDriver, sessionId);
@@ -262,7 +262,7 @@ public class MobileLayoutIT extends BaseIntegrationTest {
      */
     @Test
     void winnerModalViewScoresButtonIsClickableOnMobile() {
-        api.setCrosses(sessionId, playerIds.get(0), RED_ROW_INDEX, 4);
+        api.setCrosses(sessionId, playerIds.getFirst(), RED_ROW_INDEX, 4);
         api.forceFinish(sessionId);
 
         TestUtils.navigateToScore(portraitDriver, sessionId);
@@ -291,7 +291,7 @@ public class MobileLayoutIT extends BaseIntegrationTest {
     @Test
     void longoSheetElementsAreRenderedOnMobile() {
         String sid = api.createGame(1, Map.of("base", "LONGO"));
-        String pid = api.getPlayerIds(sid).get(0);
+        String pid = api.getPlayerIds(sid).getFirst();
 
         TestUtils.navigateTo(portraitDriver, sid, pid);
 
@@ -344,7 +344,7 @@ public class MobileLayoutIT extends BaseIntegrationTest {
     @Test
     void longoVariantIsFullyWithinCurrentPlayerElement() {
         String sid = api.createGame(1, Map.of("base", "LONGO"));
-        String pid = api.getPlayerIds(sid).get(0);
+        String pid = api.getPlayerIds(sid).getFirst();
 
         TestUtils.navigateTo(portraitDriver, sid, pid);
 
@@ -385,11 +385,11 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         String sid = api.createGame(2, Map.of("base", "LONGO"));
         List<String> pids = api.getPlayerIds(sid);
 
-        api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, 6);
-        api.roll(sid, pids.get(0));
+        api.setCrosses(sid, pids.getFirst(), BLUE_ROW_INDEX, 6);
+        api.roll(sid, pids.getFirst());
         api.setDice(sid, 1, 2); // white+white = 3 → "3" reachable
 
-        TestUtils.navigateTo(desktopDriver, sid, pids.get(0));
+        TestUtils.navigateTo(desktopDriver, sid, pids.getFirst());
 
         assertFalse(isModalVisible(desktopDriver),
                 "No modal should be visible before clicking the second-to-last cell");
@@ -408,11 +408,11 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         String sid = api.createGame(2, Map.of("base", "LONGO"));
         List<String> pids = api.getPlayerIds(sid);
 
-        api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, 6);
-        api.roll(sid, pids.get(0));
+        api.setCrosses(sid, pids.getFirst(), BLUE_ROW_INDEX, 6);
+        api.roll(sid, pids.getFirst());
         api.setDice(sid, 1, 2);
 
-        TestUtils.navigateTo(desktopDriver, sid, pids.get(0));
+        TestUtils.navigateTo(desktopDriver, sid, pids.getFirst());
 
         clickCellByValue(desktopDriver, "BLUE", "3");
         waitUntilModalVisible(desktopDriver, 5);
@@ -437,11 +437,11 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         String sid = api.createGame(2, Map.of("base", "LONGO"));
         List<String> pids = api.getPlayerIds(sid);
 
-        api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, 6);
-        api.roll(sid, pids.get(0));
+        api.setCrosses(sid, pids.getFirst(), BLUE_ROW_INDEX, 6);
+        api.roll(sid, pids.getFirst());
         api.setDice(sid, 1, 2);
 
-        TestUtils.navigateTo(desktopDriver, sid, pids.get(0));
+        TestUtils.navigateTo(desktopDriver, sid, pids.getFirst());
 
         int crossesBefore = getCrossedCellCount(desktopDriver, "BLUE");
 
@@ -471,11 +471,11 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         String sid = api.createGame(2, Map.of("base", "LONGO"));
         List<String> pids = api.getPlayerIds(sid);
 
-        api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, 6);
-        api.roll(sid, pids.get(0));
+        api.setCrosses(sid, pids.getFirst(), BLUE_ROW_INDEX, 6);
+        api.roll(sid, pids.getFirst());
         api.setDice(sid, 1, 2);
 
-        TestUtils.navigateTo(desktopDriver, sid, pids.get(0));
+        TestUtils.navigateTo(desktopDriver, sid, pids.getFirst());
 
         clickCellByValue(desktopDriver, "BLUE", "3");
         waitUntilModalVisible(desktopDriver, 5);

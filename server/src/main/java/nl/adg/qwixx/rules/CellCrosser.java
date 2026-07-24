@@ -334,7 +334,7 @@ class CellCrosser {
         for (int i = 0; i < layout.rows().size(); i++) {
             Row row = layout.rows().get(i);
             if (row.isBonusBar() || row.lock() == null || row.cells().isEmpty()) continue;
-            if (row.cells().get(0).color() != color) continue;
+            if (row.cells().getFirst().color() != color) continue;
             if (state.isRowClosed(i)) return; // row locked → forfeited already, nothing to cross
             Cell forced = nextForcedBox(row, getRowState(prog, i));
             if (forced != null) crossRecursive(state, playerId, i, forced.id(), crossed, true);

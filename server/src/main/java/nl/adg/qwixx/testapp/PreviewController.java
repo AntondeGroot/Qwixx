@@ -278,7 +278,7 @@ public class PreviewController {
     //     Enough crosses to be able to declare lock intent on RED
     private PreviewResult scenario01() {
         GameSetup g = startGame(2, GameSettings.builder().build());
-        setCrosses(g, g.players().get(0), 0, 5); // RED: first 5 cells
+        setCrosses(g, g.players().getFirst(), 0, 5); // RED: first 5 cells
         setCrosses(g, g.players().get(1), 0, 3); // RED: first 3 cells
         UUID you = rollAndSet(g, 4, 4);
         return new PreviewResult(
@@ -290,16 +290,16 @@ public class PreviewController {
     // 2 — 2-player · game finished; player0 scores better on RED+GREEN, player1 on YELLOW+BLUE
     private PreviewResult scenario02() {
         GameSetup g = startGame(2, GameSettings.builder().build());
-        setCrosses(g, g.players().get(0), 0, 7); // RED
-        setCrosses(g, g.players().get(0), 1, 4); // YELLOW
-        setCrosses(g, g.players().get(0), 2, 6); // GREEN
-        setCrosses(g, g.players().get(0), 3, 5); // BLUE
+        setCrosses(g, g.players().getFirst(), 0, 7); // RED
+        setCrosses(g, g.players().getFirst(), 1, 4); // YELLOW
+        setCrosses(g, g.players().getFirst(), 2, 6); // GREEN
+        setCrosses(g, g.players().getFirst(), 3, 5); // BLUE
         setCrosses(g, g.players().get(1), 0, 3);
         setCrosses(g, g.players().get(1), 1, 8);
         setCrosses(g, g.players().get(1), 2, 2);
         setCrosses(g, g.players().get(1), 3, 9);
         g.session().forceFinish();
-        UUID you = g.players().get(0).id();
+        UUID you = g.players().getFirst().id();
         return new PreviewResult(
                 "2-player · game finished (player0 wins on RED+GREEN, player1 on YELLOW+BLUE)",
                 scoreUrl(g.sessionId(), you),
@@ -309,7 +309,7 @@ public class PreviewController {
     // 3 — 5-player · mid-game · each player has a few crosses in different rows
     private PreviewResult scenario03() {
         GameSetup g = startGame(5, GameSettings.builder().build());
-        setCrosses(g, g.players().get(0), 0, 3);
+        setCrosses(g, g.players().getFirst(), 0, 3);
         setCrosses(g, g.players().get(1), 1, 2);
         setCrosses(g, g.players().get(2), 2, 4);
         setCrosses(g, g.players().get(3), 3, 2);
@@ -338,7 +338,7 @@ public class PreviewController {
             }
         }
         g.session().forceFinish();
-        UUID you = g.players().get(0).id();
+        UUID you = g.players().getFirst().id();
         return new PreviewResult(
                 "5-player · game finished (varied scores — see who wins!)",
                 scoreUrl(g.sessionId(), you),
@@ -348,8 +348,8 @@ public class PreviewController {
     // 5 — Longo variant · mid-game
     private PreviewResult scenario05() {
         GameSetup g = startGame(2, GameSettings.builder().base(BaseVariant.LONGO).build());
-        setCrosses(g, g.players().get(0), 0, 3);
-        setCrosses(g, g.players().get(0), 1, 2);
+        setCrosses(g, g.players().getFirst(), 0, 3);
+        setCrosses(g, g.players().getFirst(), 1, 2);
         setCrosses(g, g.players().get(1), 2, 4);
         setCrosses(g, g.players().get(1), 3, 1);
         UUID you = rollAndSet(g, 3, 4);
@@ -362,8 +362,8 @@ public class PreviewController {
     // 6 — Extra-row variant · mid-game (row index 4 is the extra row)
     private PreviewResult scenario06() {
         GameSetup g = startGame(2, GameSettings.builder().extraRow(true).build());
-        setCrosses(g, g.players().get(0), 0, 3);
-        setCrosses(g, g.players().get(0), 4, 2); // extra row
+        setCrosses(g, g.players().getFirst(), 0, 3);
+        setCrosses(g, g.players().getFirst(), 4, 2); // extra row
         setCrosses(g, g.players().get(1), 1, 4);
         setCrosses(g, g.players().get(1), 4, 3); // extra row
         UUID you = rollAndSet(g, 2, 3);
@@ -378,7 +378,7 @@ public class PreviewController {
     // then declares lock intent. Row is pending closure at EVALUATE.
     private PreviewResult scenario07() {
         GameSetup g = startGame(2, GameSettings.builder().build());
-        Player p0 = g.players().get(0); // active player — this is "you"
+        Player p0 = g.players().getFirst(); // active player — this is "you"
         Player p1 = g.players().get(1); // passive declarant
 
         setCrosses(g, p0, 0, 5); // you have 5 crosses in RED (can also cross "12")
@@ -389,7 +389,7 @@ public class PreviewController {
 
         // player1 crosses RED "12" with white+white, then declares lock intent
         var state   = g.session().currentState();
-        var redRow  = state.sheetLayouts().get(p1.id()).rows().get(0);
+        var redRow  = state.sheetLayouts().get(p1.id()).rows().getFirst();
         String red12Id = redRow.cells().stream()
                 .filter(c -> "12".equals(c.displayValue()))
                 .findFirst().orElseThrow().id();
@@ -405,10 +405,10 @@ public class PreviewController {
     // 8 — 2-player · near game end; RED+YELLOW almost full for both players
     private PreviewResult scenario08() {
         GameSetup g = startGame(2, GameSettings.builder().base(BaseVariant.LONGO).build());
-        setCrosses(g, g.players().get(0), 0, 9); // RED: 9/12
-        setCrosses(g, g.players().get(0), 1, 8); // YELLOW: 8/12
-        setCrosses(g, g.players().get(0), 2, 4);
-        setCrosses(g, g.players().get(0), 3, 3);
+        setCrosses(g, g.players().getFirst(), 0, 9); // RED: 9/12
+        setCrosses(g, g.players().getFirst(), 1, 8); // YELLOW: 8/12
+        setCrosses(g, g.players().getFirst(), 2, 4);
+        setCrosses(g, g.players().getFirst(), 3, 3);
         setCrosses(g, g.players().get(1), 0, 6);
         setCrosses(g, g.players().get(1), 1, 7);
         setCrosses(g, g.players().get(1), 2, 5);
@@ -433,7 +433,7 @@ public class PreviewController {
     //  The active player can therefore close BOTH rows in a single turn.
     private PreviewResult scenario10() {
         GameSetup g = startGame(3, GameSettings.builder().base(BaseVariant.LONGO).build());
-        Player p0 = g.players().get(0);
+        Player p0 = g.players().getFirst();
         Player p1 = g.players().get(1);
         Player p2 = g.players().get(2);
 
@@ -481,7 +481,7 @@ public class PreviewController {
             }
         }
         g.session().forceFinish();
-        UUID you = g.players().get(0).id();
+        UUID you = g.players().getFirst().id();
         return new PreviewResult(
                 "5-player · extra-row variant · game finished (5 score columns)",
                 scoreUrl(g.sessionId(), you),
@@ -501,7 +501,7 @@ public class PreviewController {
     // cells reachable (next uncrossed regular cells are "8", unreachable with these dice).
     private PreviewResult scenario12() {
         GameSetup g = startGame(2, GameSettings.builder().bigPoints(true).build());
-        Player p0 = g.players().get(0);
+        Player p0 = g.players().getFirst();
         Player p1 = g.players().get(1);
 
         // player0 (you): 6 crosses in RED and YELLOW → values 2–7 crossed in both
@@ -534,7 +534,7 @@ public class PreviewController {
     //  showing how the x-change cell competes alongside normal options.
     private PreviewResult scenario13() {
         GameSetup g = startGame(2, GameSettings.builder().xChange(true).build());
-        Player p0 = g.players().get(0);
+        Player p0 = g.players().getFirst();
         Player p1 = g.players().get(1);
 
         // player0 (you): a few crosses in RED and YELLOW so the board looks live
@@ -568,7 +568,7 @@ public class PreviewController {
     //        yellow die = 8       →  white1+yellow = 7+8 = 15  →  YELLOW position 13 (value 15)
     private PreviewResult scenario11() {
         GameSetup g = startGame(3, GameSettings.builder().base(BaseVariant.LONGO).build());
-        Player p0 = g.players().get(0);
+        Player p0 = g.players().getFirst();
         Player p1 = g.players().get(1);
         Player p2 = g.players().get(2);
 

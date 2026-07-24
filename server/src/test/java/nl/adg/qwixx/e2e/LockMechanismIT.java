@@ -73,11 +73,11 @@ public class LockMechanismIT extends BaseIntegrationTest {
         List<String> pids = api.getOrderedPlayerIds(sid);
 
         // Setup: 5 crosses (no "2"), dice 1+1 → white+white sum = 2 → "2" cell is reachable
-        api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, 5);
-        api.roll(sid, pids.get(0));
+        api.setCrosses(sid, pids.getFirst(), BLUE_ROW_INDEX, 5);
+        api.roll(sid, pids.getFirst());
         api.setDice(sid, 1, 1);
 
-        TestUtils.navigateTo(driver0, sid, pids.get(0));
+        TestUtils.navigateTo(driver0, sid, pids.getFirst());
         TestUtils.navigateTo(driver1, sid, pids.get(1));
 
         assertFalse(isLockButtonCrossed(driver0, "BLUE"),
@@ -113,11 +113,11 @@ public class LockMechanismIT extends BaseIntegrationTest {
     @Test
     void activePlayerSeesNoModalAfterCrossingClosingCell() {
         // Player 0 has 5 crosses (no "2"); clicking "2" auto-declares lock intent.
-        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, 5);
-        api.roll(sessionId, playerIds.get(0));
+        api.setCrosses(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX, 5);
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1);
 
-        TestUtils.navigateTo(driver0, sessionId, playerIds.get(0));
+        TestUtils.navigateTo(driver0, sessionId, playerIds.getFirst());
 
         clickCellByValue(driver0, "BLUE", "2");
 
@@ -132,15 +132,15 @@ public class LockMechanismIT extends BaseIntegrationTest {
 
     @Test
     void activePlayerSeesNoModalAfterDeclaringLockIntentViaApi() {
-        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.setCrosses(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
         api.setCrosses(sessionId, playerIds.get(1), BLUE_ROW_INDEX, 5);
-        api.roll(sessionId, playerIds.get(0));
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1);
 
-        TestUtils.navigateTo(driver0, sessionId, playerIds.get(0));
+        TestUtils.navigateTo(driver0, sessionId, playerIds.getFirst());
 
-        String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
-        api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
+        String blueRowId = api.getRowId(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX);
+        api.declareLockIntent(sessionId, playerIds.getFirst(), blueRowId);
 
         TestUtils.wait(3000);
 
@@ -152,15 +152,15 @@ public class LockMechanismIT extends BaseIntegrationTest {
 
     @Test
     void otherPlayerSeesModalWhenLockIntentDeclaredViaApi() {
-        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.setCrosses(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
         api.setCrosses(sessionId, playerIds.get(1), BLUE_ROW_INDEX, 5);
-        api.roll(sessionId, playerIds.get(0));
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1);
 
         TestUtils.navigateTo(driver1, sessionId, playerIds.get(1));
 
-        String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
-        api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
+        String blueRowId = api.getRowId(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX);
+        api.declareLockIntent(sessionId, playerIds.getFirst(), blueRowId);
 
         waitUntilModalVisible(driver1, 8);
         assertTrue(isModalVisible(driver1),
@@ -169,34 +169,34 @@ public class LockMechanismIT extends BaseIntegrationTest {
 
     @Test
     void modalContainsDeclaringPlayerName() {
-        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.setCrosses(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
         api.setCrosses(sessionId, playerIds.get(1), BLUE_ROW_INDEX, 5);
-        api.roll(sessionId, playerIds.get(0));
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1);
 
         TestUtils.navigateTo(driver1, sessionId, playerIds.get(1));
 
-        String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
-        api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
+        String blueRowId = api.getRowId(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX);
+        api.declareLockIntent(sessionId, playerIds.getFirst(), blueRowId);
 
         waitUntilModalVisible(driver1, 8);
         String modalText = getModalText(driver1);
-        String declarantName = api.getPlayerName(sessionId, playerIds.get(0));
+        String declarantName = api.getPlayerName(sessionId, playerIds.getFirst());
         assertTrue(modalText.contains(declarantName),
                 "Modal should contain the declaring player's name '" + declarantName + "'. Actual text: " + modalText);
     }
 
     @Test
     void modalContainsCorrectRowColorIndicator() {
-        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.setCrosses(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
         api.setCrosses(sessionId, playerIds.get(1), BLUE_ROW_INDEX, 5);
-        api.roll(sessionId, playerIds.get(0));
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1);
 
         TestUtils.navigateTo(driver1, sessionId, playerIds.get(1));
 
-        String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
-        api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
+        String blueRowId = api.getRowId(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX);
+        api.declareLockIntent(sessionId, playerIds.getFirst(), blueRowId);
 
         waitUntilModalVisible(driver1, 8);
         assertTrue(modalHasColorCell(driver1, "BLUE"),
@@ -205,16 +205,16 @@ public class LockMechanismIT extends BaseIntegrationTest {
 
     @Test
     void bothPlayersSeeLockIntentModalCorrectly() {
-        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.setCrosses(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
         api.setCrosses(sessionId, playerIds.get(1), BLUE_ROW_INDEX, 5);
-        api.roll(sessionId, playerIds.get(0));
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1);
 
-        TestUtils.navigateTo(driver0, sessionId, playerIds.get(0));
+        TestUtils.navigateTo(driver0, sessionId, playerIds.getFirst());
         TestUtils.navigateTo(driver1, sessionId, playerIds.get(1));
 
-        String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
-        api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
+        String blueRowId = api.getRowId(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX);
+        api.declareLockIntent(sessionId, playerIds.getFirst(), blueRowId);
 
         waitUntilModalVisible(driver1, 8);
         TestUtils.wait(1000); // give player 0's board time to poll and NOT show modal
@@ -223,7 +223,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
                 "Player 0 (declarer) should NOT see the modal");
         assertTrue(isModalVisible(driver1),
                 "Player 1 (passive) SHOULD see the modal");
-        String p0Name = api.getPlayerName(sessionId, playerIds.get(0));
+        String p0Name = api.getPlayerName(sessionId, playerIds.getFirst());
         assertTrue(getModalText(driver1).contains(p0Name),
                 "Modal should name player 0 as the one who declared intent");
         assertTrue(modalHasColorCell(driver1, "BLUE"),
@@ -237,16 +237,16 @@ public class LockMechanismIT extends BaseIntegrationTest {
         String sid3 = api.createGame(3);
         List<String> pids = api.getOrderedPlayerIds(sid3);
 
-        api.setCrosses(sid3, pids.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
-        api.roll(sid3, pids.get(0));
+        api.setCrosses(sid3, pids.getFirst(), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.roll(sid3, pids.getFirst());
         api.setDice(sid3, 1, 1);
 
         // Open player2's browser — they are the passive observer
         TestUtils.navigateTo(driver1, sid3, pids.get(2));
 
         // Player0 declares lock intent for BLUE
-        String blueRowId = api.getRowId(sid3, pids.get(0), BLUE_ROW_INDEX);
-        api.declareLockIntent(sid3, pids.get(0), blueRowId);
+        String blueRowId = api.getRowId(sid3, pids.getFirst(), BLUE_ROW_INDEX);
+        api.declareLockIntent(sid3, pids.getFirst(), blueRowId);
 
         // Player2's modal must appear and show exactly 1 request (player0 / BLUE)
         waitUntilModalVisible(driver1, 8);
@@ -267,7 +267,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
         assertTrue(modalHasColorCell(driver1, "RED"),
                 "Modal should display the RED color indicator for player1's intent");
         String modalText = getModalText(driver1);
-        String pid0Name = api.getPlayerName(sid3, pids.get(0));
+        String pid0Name = api.getPlayerName(sid3, pids.getFirst());
         String pid1Name = api.getPlayerName(sid3, pids.get(1));
         assertTrue(modalText.contains(pid0Name),
                 "Modal text should mention " + pid0Name + ". Actual: " + modalText);
@@ -284,7 +284,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
     @Test
     void longoYesOnSelfCloseModal_showsLockCrossPendingThenFiresWhenLastCrossed() {
         String sid = api.createGame(1, java.util.Map.of("base", "LONGO"));
-        String pid = api.getOrderedPlayerIds(sid).get(0);
+        String pid = api.getOrderedPlayerIds(sid).getFirst();
 
         api.setCrosses(sid, pid, BLUE_ROW_INDEX, 6);
         api.roll(sid, pid);
@@ -332,12 +332,12 @@ public class LockMechanismIT extends BaseIntegrationTest {
         String sid = api.createGame(2, java.util.Map.of("base", "LONGO"));
         List<String> pids = api.getOrderedPlayerIds(sid);
 
-        api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, 6);
-        api.roll(sid, pids.get(0));
+        api.setCrosses(sid, pids.getFirst(), BLUE_ROW_INDEX, 6);
+        api.roll(sid, pids.getFirst());
         api.setDice(sid, 1, 2);
         api.setColoredDie(sid, "BLUE", 1);
 
-        TestUtils.navigateTo(driver0, sid, pids.get(0));
+        TestUtils.navigateTo(driver0, sid, pids.getFirst());
         TestUtils.navigateTo(driver1, sid, pids.get(1));
 
         // Active player clicks "3" → YES → DECLARE_LOCK_INTENT sent immediately
@@ -362,12 +362,12 @@ public class LockMechanismIT extends BaseIntegrationTest {
         String sid = api.createGame(2, java.util.Map.of("base", "LONGO"));
         List<String> pids = api.getOrderedPlayerIds(sid);
 
-        api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, 6);
+        api.setCrosses(sid, pids.getFirst(), BLUE_ROW_INDEX, 6);
         api.setCrosses(sid, pids.get(1), BLUE_ROW_INDEX, 6);
-        api.roll(sid, pids.get(0));
+        api.roll(sid, pids.getFirst());
         api.setDice(sid, 1, 2); // white+white = 3 → "3" reachable
 
-        TestUtils.navigateTo(driver0, sid, pids.get(0));
+        TestUtils.navigateTo(driver0, sid, pids.getFirst());
         TestUtils.navigateTo(driver1, sid, pids.get(1));
 
         // player0 (active) crosses "3" → YES/NO modal → YES → DECLARE_LOCK_INTENT fires
@@ -423,19 +423,19 @@ public class LockMechanismIT extends BaseIntegrationTest {
         String sid = api.createGame(2);
         List<String> pids = api.getOrderedPlayerIds(sid);
 
-        api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.setCrosses(sid, pids.getFirst(), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
         api.setCrosses(sid, pids.get(1), RED_ROW_INDEX, 5);
-        api.roll(sid, pids.get(0));
+        api.roll(sid, pids.getFirst());
         api.setDice(sid, 6, 6); // white+white = 12 → RED "12"
 
-        TestUtils.navigateTo(driver0, sid, pids.get(0));
+        TestUtils.navigateTo(driver0, sid, pids.getFirst());
         TestUtils.navigateTo(driver1, sid, pids.get(1));
 
         // Player0 crosses GREEN "12" (not a closing cell) to satisfy hasActed, then declares BLUE.
-        String greenRowId0 = api.getRowId(sid, pids.get(0), 2);
-        api.crossCell(sid, pids.get(0), greenRowId0, getCellId(sid, pids.get(0), 2, 0), false);
-        String blueRowId = api.getRowId(sid, pids.get(0), BLUE_ROW_INDEX);
-        api.declareLockIntent(sid, pids.get(0), blueRowId);
+        String greenRowId0 = api.getRowId(sid, pids.getFirst(), 2);
+        api.crossCell(sid, pids.getFirst(), greenRowId0, getCellId(sid, pids.getFirst(), 2, 0), false);
+        String blueRowId = api.getRowId(sid, pids.getFirst(), BLUE_ROW_INDEX);
+        api.declareLockIntent(sid, pids.getFirst(), blueRowId);
 
         // Player1 sees the BLUE modal; OK = dismiss, then passes via board button.
         waitUntilModalVisible(driver1, 8);
@@ -460,19 +460,19 @@ public class LockMechanismIT extends BaseIntegrationTest {
         String sid = api.createGame(2);
         List<String> pids = api.getOrderedPlayerIds(sid);
 
-        api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.setCrosses(sid, pids.getFirst(), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
         api.setCrosses(sid, pids.get(1), RED_ROW_INDEX, 5);
-        api.roll(sid, pids.get(0));
+        api.roll(sid, pids.getFirst());
         api.setDice(sid, 6, 6); // white+white = 12 → RED "12"
 
-        TestUtils.navigateTo(driver0, sid, pids.get(0));
+        TestUtils.navigateTo(driver0, sid, pids.getFirst());
         TestUtils.navigateTo(driver1, sid, pids.get(1));
 
         // Player0 crosses GREEN "12" (not a closing cell) to satisfy hasActed, then declares BLUE.
-        String greenRowId1 = api.getRowId(sid, pids.get(0), 2);
-        api.crossCell(sid, pids.get(0), greenRowId1, getCellId(sid, pids.get(0), 2, 0), false);
-        String blueRowId = api.getRowId(sid, pids.get(0), BLUE_ROW_INDEX);
-        api.declareLockIntent(sid, pids.get(0), blueRowId);
+        String greenRowId1 = api.getRowId(sid, pids.getFirst(), 2);
+        api.crossCell(sid, pids.getFirst(), greenRowId1, getCellId(sid, pids.getFirst(), 2, 0), false);
+        String blueRowId = api.getRowId(sid, pids.getFirst(), BLUE_ROW_INDEX);
+        api.declareLockIntent(sid, pids.getFirst(), blueRowId);
 
         // Player1 (fresh passive) dismisses the BLUE notification (OK = dismiss, 1-button layout).
         waitUntilModalVisible(driver1, 8);
@@ -517,20 +517,20 @@ public class LockMechanismIT extends BaseIntegrationTest {
         String sid = api.createGame(3);
         List<String> pids = api.getOrderedPlayerIds(sid);
 
-        api.setCrosses(sid, pids.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.setCrosses(sid, pids.getFirst(), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
         api.setCrosses(sid, pids.get(1), RED_ROW_INDEX, 5);
-        api.roll(sid, pids.get(0));
+        api.roll(sid, pids.getFirst());
         api.setDice(sid, 6, 6); // white+white = 12
 
-        TestUtils.navigateTo(driver0, sid, pids.get(0));
+        TestUtils.navigateTo(driver0, sid, pids.getFirst());
         TestUtils.navigateTo(driver1, sid, pids.get(1));
         TestUtils.navigateTo(driver2, sid, pids.get(2));
 
         // Player0 crosses GREEN "12" (not a closing cell) to satisfy hasActed, then declares BLUE.
-        String greenRowId2 = api.getRowId(sid, pids.get(0), 2);
-        api.crossCell(sid, pids.get(0), greenRowId2, getCellId(sid, pids.get(0), 2, 0), false);
-        String blueRowId = api.getRowId(sid, pids.get(0), BLUE_ROW_INDEX);
-        api.declareLockIntent(sid, pids.get(0), blueRowId);
+        String greenRowId2 = api.getRowId(sid, pids.getFirst(), 2);
+        api.crossCell(sid, pids.getFirst(), greenRowId2, getCellId(sid, pids.getFirst(), 2, 0), false);
+        String blueRowId = api.getRowId(sid, pids.getFirst(), BLUE_ROW_INDEX);
+        api.declareLockIntent(sid, pids.getFirst(), blueRowId);
         waitUntilModalVisible(driver1, 8);
         waitUntilModalVisible(driver2, 8);
 
@@ -573,7 +573,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
     void singlePlayerLockIntentClosesRowAfterEndTurn() {
         // In a 1-player game: declareLockIntent records the intent; EndTurn triggers EVALUATE.
         String sid = api.createGame(1);
-        String pid = api.getOrderedPlayerIds(sid).get(0);
+        String pid = api.getOrderedPlayerIds(sid).getFirst();
 
         api.setCrosses(sid, pid, BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
         api.roll(sid, pid);
@@ -596,7 +596,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
     @Test
     void singlePlayerCrossingClosingCellClosesRowInBrowser() {
         String sid = api.createGame(1);
-        String pid = api.getOrderedPlayerIds(sid).get(0);
+        String pid = api.getOrderedPlayerIds(sid).getFirst();
 
         api.setCrosses(sid, pid, BLUE_ROW_INDEX, 5);
         api.roll(sid, pid);
@@ -627,19 +627,19 @@ public class LockMechanismIT extends BaseIntegrationTest {
     @Test
     void activePlayerDeclaresIntent_thenResets_intentCancelled() {
         // In the new architecture, declaring intent does NOT change phase.
-        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
-        api.roll(sessionId, playerIds.get(0));
+        api.setCrosses(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1);
 
-        String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
-        api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
+        String blueRowId = api.getRowId(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX);
+        api.declareLockIntent(sessionId, playerIds.getFirst(), blueRowId);
 
         // Phase must stay ACTIVE_MOVE (not LOCK_PENDING — that no longer exists)
         String phaseBefore = turnPhase(api.getGameState(sessionId));
         assertEquals("ACTIVE_MOVE", phaseBefore,
                 "Declaring intent must NOT change the phase — it stays ACTIVE_MOVE");
 
-        api.resetTurn(sessionId, playerIds.get(0));
+        api.resetTurn(sessionId, playerIds.getFirst());
 
         // Phase stays ACTIVE_MOVE, pending closure is cancelled
         String phaseAfter = turnPhase(api.getGameState(sessionId));
@@ -650,11 +650,11 @@ public class LockMechanismIT extends BaseIntegrationTest {
     @Test
     void activePlayerCanInteractWithBoardAfterResetFromPendingIntent() {
         // Crossing "2" sets pendingAutoLock on client; resetting must cancel it.
-        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, 5);
-        api.roll(sessionId, playerIds.get(0));
+        api.setCrosses(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX, 5);
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1);
 
-        TestUtils.navigateTo(driver0, sessionId, playerIds.get(0));
+        TestUtils.navigateTo(driver0, sessionId, playerIds.getFirst());
 
         clickCellByValue(driver0, "BLUE", "2");
 
@@ -663,7 +663,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
                 .until(d -> isLockButtonCrossed(d, "BLUE"));
 
         // Reset cancels the pending intent
-        api.resetTurn(sessionId, playerIds.get(0));
+        api.resetTurn(sessionId, playerIds.getFirst());
 
         // Lock cross must disappear and row must remain open
         new WebDriverWait(driver0, Duration.ofSeconds(8))
@@ -685,10 +685,10 @@ public class LockMechanismIT extends BaseIntegrationTest {
     @Test
     void passive_declaresIntent_activePlayerSeesNotificationModal() {
         api.setCrosses(sessionId, playerIds.get(1), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
-        api.roll(sessionId, playerIds.get(0));
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 3, 4); // white+white = 7
 
-        TestUtils.navigateTo(driver0, sessionId, playerIds.get(0));
+        TestUtils.navigateTo(driver0, sessionId, playerIds.getFirst());
         TestUtils.navigateTo(driver1, sessionId, playerIds.get(1));
 
         // Player0 (active) crosses RED "7" — creates a pending cross in the undo buffer
@@ -720,10 +720,10 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // Passive declares BEFORE the active has crossed anything → active sees OK-only
         // (notification only, no pending cross). Active dismisses, then crosses normally and EndTurns.
         api.setCrosses(sessionId, playerIds.get(1), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
-        api.roll(sessionId, playerIds.get(0));
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 3, 4); // white+white = 7
 
-        TestUtils.navigateTo(driver0, sessionId, playerIds.get(0));
+        TestUtils.navigateTo(driver0, sessionId, playerIds.getFirst());
         TestUtils.navigateTo(driver1, sessionId, playerIds.get(1));
 
         // Passive declares before active has crossed anything → active sees OK-only modal
@@ -767,10 +767,10 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // "Change" (→ RESET_TURN) and "Confirm" (→ EndTurn/PASS) — same as for passive.
         // Active clicks Change → cross is undone via RESET_TURN.
         api.setCrosses(sessionId, playerIds.get(1), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
-        api.roll(sessionId, playerIds.get(0));
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 3, 4); // white+white = 7
 
-        TestUtils.navigateTo(driver0, sessionId, playerIds.get(0));
+        TestUtils.navigateTo(driver0, sessionId, playerIds.getFirst());
         TestUtils.navigateTo(driver1, sessionId, playerIds.get(1));
 
         // Player0 crosses RED "7" — pending cross in undo buffer
@@ -800,10 +800,10 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // Active has a pending cross → modal shows Change + OK buttons.
         // OK dismisses the notification; active can still interact with the board and EndTurn normally.
         api.setCrosses(sessionId, playerIds.get(1), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
-        api.roll(sessionId, playerIds.get(0));
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 3, 4); // white+white = 7
 
-        TestUtils.navigateTo(driver0, sessionId, playerIds.get(0));
+        TestUtils.navigateTo(driver0, sessionId, playerIds.getFirst());
         TestUtils.navigateTo(driver1, sessionId, playerIds.get(1));
 
         clickCellByValue(driver0, "RED", "7");
@@ -846,12 +846,12 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // Passive player (player1) also qualifies and declares BLUE in PASSIVE_MOVE.
         // Active player sees the notification (informational — no undo after EndTurn).
         // At EVALUATE both players have the closing cell permanently → both get lockCrossed=true.
-        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.setCrosses(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
         api.setCrosses(sessionId, playerIds.get(1), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
-        api.roll(sessionId, playerIds.get(0));
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 3, 4); // white+white = 7 → RED "7" reachable; BLUE not involved
 
-        TestUtils.navigateTo(driver0, sessionId, playerIds.get(0));
+        TestUtils.navigateTo(driver0, sessionId, playerIds.getFirst());
         TestUtils.navigateTo(driver1, sessionId, playerIds.get(1));
 
         // Player0 crosses RED "7" — eligible for BLUE lock but deliberately ignores it
@@ -902,7 +902,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // EndTurns → EVALUATE → both rows close → player0 gets lock crosses for both.
         String sid = api.createGame(3, Map.of("base", "LONGO"));
         List<String> pids3 = api.getOrderedPlayerIds(sid);
-        String p0 = pids3.get(0);
+        String p0 = pids3.getFirst();
         String p1 = pids3.get(1);
         String p2 = pids3.get(2);
 
@@ -1000,7 +1000,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // so they get lockCrossed for YELLOW automatically at EVALUATE even without reverting.
         String sid = api.createGame(3, Map.of("base", "LONGO"));
         List<String> pids3 = api.getOrderedPlayerIds(sid);
-        String p0 = pids3.get(0);
+        String p0 = pids3.getFirst();
         String p1 = pids3.get(1);
         String p2 = pids3.get(2);
 
@@ -1056,7 +1056,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // At EVALUATE both RED and YELLOW close and player0 has lock crosses for both.
         String sid = api.createGame(3, Map.of("base", "LONGO"));
         List<String> pids3 = api.getOrderedPlayerIds(sid);
-        String p0 = pids3.get(0);
+        String p0 = pids3.getFirst();
         String p1 = pids3.get(1);
         String p2 = pids3.get(2);
 
@@ -1157,7 +1157,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // At EVALUATE both RED and YELLOW close; player0 gets lock crosses for both.
         String sid = api.createGame(3, Map.of("base", "LONGO"));
         List<String> pids3 = api.getOrderedPlayerIds(sid);
-        String p0 = pids3.get(0);
+        String p0 = pids3.getFirst();
         String p1 = pids3.get(1);
         String p2 = pids3.get(2);
 
@@ -1247,7 +1247,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
         // also cross YELLOW "16" and get the lock cross bonus.
         String sid = api.createGame(3, Map.of("base", "LONGO"));
         List<String> pids3 = api.getOrderedPlayerIds(sid);
-        String p0 = pids3.get(0);
+        String p0 = pids3.getFirst();
         String p1 = pids3.get(1);
         String p2 = pids3.get(2);
 
@@ -1325,11 +1325,11 @@ public class LockMechanismIT extends BaseIntegrationTest {
     @Test
     void fullLockFlow_passiveConfirms_rowClosesInBothBrowsers() {
         // Active crosses "2" → passive Confirms → active EndTurns → EVALUATE → row closes.
-        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, 5);
-        api.roll(sessionId, playerIds.get(0));
+        api.setCrosses(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX, 5);
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1);
 
-        TestUtils.navigateTo(driver0, sessionId, playerIds.get(0));
+        TestUtils.navigateTo(driver0, sessionId, playerIds.getFirst());
         TestUtils.navigateTo(driver1, sessionId, playerIds.get(1));
 
         // Active crosses "2" (auto-declares intent)
@@ -1370,11 +1370,11 @@ public class LockMechanismIT extends BaseIntegrationTest {
      */
     @Test
     void passive_passesFirst_thenActiveDeclaresLock_passiveIsRequeued_rowClosesAfterBothAct() {
-        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
-        api.roll(sessionId, playerIds.get(0));
+        api.setCrosses(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1);
 
-        TestUtils.navigateTo(driver0, sessionId, playerIds.get(0));
+        TestUtils.navigateTo(driver0, sessionId, playerIds.getFirst());
         TestUtils.navigateTo(driver1, sessionId, playerIds.get(1));
 
         // Player1 (passive) passes BEFORE any declaration has been made.
@@ -1382,10 +1382,10 @@ public class LockMechanismIT extends BaseIntegrationTest {
         clickPassButton(driver1);
 
         // Active crosses RED "2" (not a closing cell) to satisfy hasActed, then declares BLUE.
-        String redRowId0 = api.getRowId(sessionId, playerIds.get(0), RED_ROW_INDEX);
-        api.crossCell(sessionId, playerIds.get(0), redRowId0, getCellId(sessionId, playerIds.get(0), RED_ROW_INDEX, 0), false);
-        String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
-        api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
+        String redRowId0 = api.getRowId(sessionId, playerIds.getFirst(), RED_ROW_INDEX);
+        api.crossCell(sessionId, playerIds.getFirst(), redRowId0, getCellId(sessionId, playerIds.getFirst(), RED_ROW_INDEX, 0), false);
+        String blueRowId = api.getRowId(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX);
+        api.declareLockIntent(sessionId, playerIds.getFirst(), blueRowId);
 
         // Player1 must be re-queued and see the notification modal.
         waitUntilModalVisible(driver1, 8);
@@ -1418,15 +1418,15 @@ public class LockMechanismIT extends BaseIntegrationTest {
      */
     @Test
     void freshPassive_seesOneButtonModal_noChangeButton() {
-        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
-        api.roll(sessionId, playerIds.get(0));
+        api.setCrosses(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1);
 
         TestUtils.navigateTo(driver1, sessionId, playerIds.get(1));
 
         // Player0 declares while player1 is still fresh in the passive queue (never acted).
-        String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
-        api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
+        String blueRowId = api.getRowId(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX);
+        api.declareLockIntent(sessionId, playerIds.getFirst(), blueRowId);
 
         waitUntilModalVisible(driver1, 8);
         assertTrue(isModalVisible(driver1),
@@ -1442,8 +1442,8 @@ public class LockMechanismIT extends BaseIntegrationTest {
      */
     @Test
     void reQueuedPassive_seesTwoButtonModal_changeButtonVisible() {
-        api.setCrosses(sessionId, playerIds.get(0), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
-        api.roll(sessionId, playerIds.get(0));
+        api.setCrosses(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
+        api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1);
 
         TestUtils.navigateTo(driver1, sessionId, playerIds.get(1));
@@ -1453,8 +1453,8 @@ public class LockMechanismIT extends BaseIntegrationTest {
         clickPassButton(driver1);
 
         // Active declares → player1 is re-queued mid-turn.
-        String blueRowId = api.getRowId(sessionId, playerIds.get(0), BLUE_ROW_INDEX);
-        api.declareLockIntent(sessionId, playerIds.get(0), blueRowId);
+        String blueRowId = api.getRowId(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX);
+        api.declareLockIntent(sessionId, playerIds.getFirst(), blueRowId);
 
         // Player1 must see the two-button layout: Change (undo/reconsider) and OK (dismiss).
         waitUntilModalVisible(driver1, 8);
@@ -1469,7 +1469,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
     @Test
     @SuppressWarnings("unchecked")
     void passivePlayerCrossingLockRowSeesRowClosedThenScoreScreen() {
-        String p0 = playerIds.get(0);
+        String p0 = playerIds.getFirst();
         String p1 = playerIds.get(1);
 
         // === Part 1: close RED row via API ===

@@ -76,7 +76,7 @@ class BonusBVariantTest {
 
         // After the cross: RED=1, YELLOW=1, GREEN=0, BLUE=0 → fewest is GREEN; it gets 2 forced crosses.
         assertEquals(2, crossed(state, GREEN).size(), "the fewest row (green) receives 2 bonus crosses");
-        assertTrue(crossed(state, STRIP).contains(rows.get(STRIP).cells().get(0).id()), "FEWEST_TWO indicator marked");
+        assertTrue(crossed(state, STRIP).contains(rows.get(STRIP).cells().getFirst().id()), "FEWEST_TWO indicator marked");
     }
 
     @Test
@@ -140,10 +140,10 @@ class BonusBVariantTest {
         List<Row> rows = new ConfigurableGameStyleFactory(GameSettings.builder().bonusB(true).build())
                 .buildRows(List.of(UUID.randomUUID())).values().iterator().next();
         // Default colours: row 0 = RED (asc), 1 = YELLOW (asc), 2 = GREEN (desc), 3 = BLUE (desc).
-        assertEquals(Color.RED, rows.get(0).cells().get(0).color());
-        assertEquals(Color.BLUE, rows.get(3).cells().get(0).color());
-        assertKind(rows.get(0), "6", BonusBKind.PLUS_13);        // R6
-        assertKind(rows.get(0), "8", BonusBKind.DOUBLE_FEWEST);  // R8
+        assertEquals(Color.RED, rows.getFirst().cells().getFirst().color());
+        assertEquals(Color.BLUE, rows.get(3).cells().getFirst().color());
+        assertKind(rows.getFirst(), "6", BonusBKind.PLUS_13);        // R6
+        assertKind(rows.getFirst(), "8", BonusBKind.DOUBLE_FEWEST);  // R8
         assertKind(rows.get(1), "3", BonusBKind.NO_PENALTY);     // Y3
         assertKind(rows.get(1), "7", BonusBKind.ONE_EACH);       // Y7
         assertKind(rows.get(1), "11", BonusBKind.FEWEST_TWO);    // Y11
@@ -157,7 +157,7 @@ class BonusBVariantTest {
     private void assertKind(Row row, String value, BonusBKind expected) {
         Cell cell = row.cells().stream().filter(c -> c.displayValue().equals(value)).findFirst().orElseThrow();
         assertTrue(cell.tags().stream().anyMatch(t -> t instanceof CellTag.BonusB(BonusBKind k) && k == expected),
-                "cell " + value + " in row " + row.cells().get(0).color() + " should be " + expected);
+                "cell " + value + " in row " + row.cells().getFirst().color() + " should be " + expected);
     }
 
     // ── Scoring modifiers ─────────────────────────────────────────────────────

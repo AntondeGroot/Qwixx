@@ -36,7 +36,7 @@ class StandardTurnRulesTest {
         GameState state = stateInRoll(p1, p1, p2);
         List<GameAction> actions = rules.getValidActions(state, p1);
         assertEquals(1, actions.size());
-        assertInstanceOf(RollAction.class, actions.get(0));
+        assertInstanceOf(RollAction.class, actions.getFirst());
     }
 
     @Test
@@ -294,7 +294,7 @@ class StandardTurnRulesTest {
         // cross is allowed per passive player per turn.
         GameState state = stateAfterRoll(p1, p1, p2);
 
-        Cell red7    = state.sheetLayouts().get(p2).rows().get(0).cells().get(5);
+        Cell red7    = state.sheetLayouts().get(p2).rows().getFirst().cells().get(5);
         Cell yellow7 = state.sheetLayouts().get(p2).rows().get(1).cells().get(5);
 
         // First cross is allowed
@@ -311,7 +311,7 @@ class StandardTurnRulesTest {
         // Same constraint applies in PASSIVE_MOVE phase (after active ends turn).
         GameState state = stateInPassiveMove(p1, p1, p2);
 
-        Cell red7    = state.sheetLayouts().get(p2).rows().get(0).cells().get(5);
+        Cell red7    = state.sheetLayouts().get(p2).rows().getFirst().cells().get(5);
         Cell yellow7 = state.sheetLayouts().get(p2).rows().get(1).cells().get(5);
 
         rules.apply(state, new CrossCellAction(p2, 0, red7.id(), DiceCombination.WHITE_WHITE));
@@ -328,7 +328,7 @@ class StandardTurnRulesTest {
         GameState state = stateAfterRoll(p1, p1, p2);
         // Mark RED row (index 0) as closed.
         state.boardState().closedRows().put(0, p1);
-        Cell red7 = state.sheetLayouts().get(p1).rows().get(0).cells().get(5);
+        Cell red7 = state.sheetLayouts().get(p1).rows().getFirst().cells().get(5);
 
         assertThrows(IllegalMoveException.class,
                 () -> rules.apply(state, new CrossCellAction(p1, 0, red7.id(), DiceCombination.WHITE_WHITE)),
@@ -339,7 +339,7 @@ class StandardTurnRulesTest {
     void passivePlayerCannotCrossCellInClosedRow() {
         GameState state = stateAfterRoll(p1, p1, p2);
         state.boardState().closedRows().put(0, p1);
-        Cell red7 = state.sheetLayouts().get(p2).rows().get(0).cells().get(5);
+        Cell red7 = state.sheetLayouts().get(p2).rows().getFirst().cells().get(5);
 
         assertThrows(IllegalMoveException.class,
                 () -> rules.apply(state, new CrossCellAction(p2, 0, red7.id(), DiceCombination.WHITE_WHITE)),
@@ -546,7 +546,7 @@ class StandardTurnRulesTest {
         state.turnState().setCurrentRoll(
                 new RollResult(6, 6, state.turnState().currentRoll().coloredDice()));
 
-        Row red = state.sheetLayouts().get(p1).rows().get(0);
+        Row red = state.sheetLayouts().get(p1).rows().getFirst();
         Set<String> fiveNormal = new HashSet<>();
         for (int i = 0; i < 5; i++) fiveNormal.add(red.cells().get(i).id());
         state.boardState().sheetProgress().get(p1).updateRowState(0, new RowState(fiveNormal, false));
@@ -569,7 +569,7 @@ class StandardTurnRulesTest {
         state.turnState().setCurrentRoll(
                 new RollResult(6, 6, state.turnState().currentRoll().coloredDice()));
 
-        Row red = state.sheetLayouts().get(p2).rows().get(0);
+        Row red = state.sheetLayouts().get(p2).rows().getFirst();
         Set<String> fiveNormal = new HashSet<>();
         for (int i = 0; i < 5; i++) fiveNormal.add(red.cells().get(i).id());
         state.boardState().sheetProgress().get(p2).updateRowState(0, new RowState(fiveNormal, false));
@@ -696,8 +696,8 @@ class StandardTurnRulesTest {
         rules.apply(state, firstCrossAction(state, p1));   // p1 makes a real move (sets whiteWhiteUsed)
 
         // Put row-0's closing cell in p1's undo buffer only (not permanent crosses).
-        String closingCellId = state.sheetLayouts().get(p1).rows().get(0)
-                .lock().closingCells().get(0);
+        String closingCellId = state.sheetLayouts().get(p1).rows().getFirst()
+                .lock().closingCells().getFirst();
         state.turnState().undoBuffer()
                 .computeIfAbsent(p1, k -> new HashMap<>())
                 .computeIfAbsent(0, k -> new HashSet<>())
@@ -722,7 +722,7 @@ class StandardTurnRulesTest {
         // After row closes at EVALUATE, the colored die for that row's color must be removed.
         GameState state = stateAfterRoll(p1, p1, p2);
         crossEnoughForLock(state, p1, 0);
-        Color lockColor = state.sheetLayouts().get(p1).rows().get(0).lock().color();
+        Color lockColor = state.sheetLayouts().get(p1).rows().getFirst().lock().color();
         rules.apply(state, new DeclareLockIntentAction(p1, 0));
         rules.apply(state, firstCrossAction(state, p1)); // must cross something to EndTurn
         rules.apply(state, new EndTurnAction(p1));
@@ -968,7 +968,7 @@ class StandardTurnRulesTest {
                 new RollResult(6, 6, state.turnState().currentRoll().coloredDice()));
 
         // Give p1 five normal crosses at positions 0-4 (displayValues "2"-"6").
-        Row red = state.sheetLayouts().get(p1).rows().get(0); // RED ascending row
+        Row red = state.sheetLayouts().get(p1).rows().getFirst(); // RED ascending row
         Set<String> fiveNormal = new HashSet<>();
         for (int i = 0; i < 5; i++) fiveNormal.add(red.cells().get(i).id());
         state.boardState().sheetProgress().get(p1).updateRowState(0, new RowState(fiveNormal, false));
@@ -1006,7 +1006,7 @@ class StandardTurnRulesTest {
         updatedColored.put(Color.RED, 6);
         state.turnState().setCurrentRoll(new RollResult(6, 5, updatedColored));
 
-        Row red = state.sheetLayouts().get(p1).rows().get(0);
+        Row red = state.sheetLayouts().get(p1).rows().getFirst();
         Set<String> fiveNormal = new HashSet<>();
         for (int i = 0; i < 5; i++) fiveNormal.add(red.cells().get(i).id());
         state.boardState().sheetProgress().get(p1).updateRowState(0, new RowState(fiveNormal, false));
@@ -1084,7 +1084,7 @@ class StandardTurnRulesTest {
         state.turnState().setCurrentRoll(
                 new RollResult(6, 6, state.turnState().currentRoll().coloredDice()));
 
-        Row red = state.sheetLayouts().get(p1).rows().get(0);
+        Row red = state.sheetLayouts().get(p1).rows().getFirst();
         // 5 normal permanent crosses (not the closing cell)
         Set<String> fiveNormal = new HashSet<>();
         for (int i = 0; i < 5; i++) fiveNormal.add(red.cells().get(i).id());
@@ -1110,11 +1110,11 @@ class StandardTurnRulesTest {
         // Setup: state in ACTIVE_MOVE with insufficient permanent crosses
         GameState state = stateAfterRoll(p1, p1, p2);
         SheetLayout layout = state.sheetLayouts().get(p1);
-        Row row = layout.rows().get(0);
+        Row row = layout.rows().getFirst();
         SheetProgress progress = state.boardState().sheetProgress().get(p1);
 
         // Add only 1 permanent cross (less than minCrosses which is 5)
-        Set<String> crossed = Set.of(row.cells().get(0).id());
+        Set<String> crossed = Set.of(row.cells().getFirst().id());
         progress.updateRowState(0, new RowState(crossed, false));
 
         // No pending crosses
@@ -1129,13 +1129,13 @@ class StandardTurnRulesTest {
     void lockRequiresClosingCellPermanentOrPending() {
         GameState state = stateAfterRoll(p1, p1, p2);
         SheetLayout layout = state.sheetLayouts().get(p1);
-        Row row = layout.rows().get(0);
+        Row row = layout.rows().getFirst();
         LockCell lock = row.lock();
         SheetProgress progress = state.boardState().sheetProgress().get(p1);
 
         // Add minCrosses permanent crosses but NOT the closing cell
         Set<String> crossed = new HashSet<>();
-        String closingCell = lock.closingCells().get(0);
+        String closingCell = lock.closingCells().getFirst();
         for (int i = 0; i < lock.minCrosses() && i < row.cells().size(); i++) {
             String cellId = row.cells().get(i).id();
             // Skip the closing cell
@@ -1158,13 +1158,13 @@ class StandardTurnRulesTest {
         // meaning the server correctly identifies the lock eligibility even before EndTurn.
         GameState state = stateAfterRoll(p1, p1, p2);
         SheetLayout layout = state.sheetLayouts().get(p1);
-        Row row = layout.rows().get(0);
+        Row row = layout.rows().getFirst();
         LockCell lock = row.lock();
         SheetProgress progress = state.boardState().sheetProgress().get(p1);
 
         // Add minCrosses-1 permanent crosses (not the closing cell)
         Set<String> crossed = new HashSet<>();
-        String closingCell = lock.closingCells().get(0);
+        String closingCell = lock.closingCells().getFirst();
         int count = 0;
         for (Cell c : row.cells()) {
             if (count >= lock.minCrosses() - 1) break;
@@ -1438,8 +1438,8 @@ class StandardTurnRulesTest {
 
         // p1 crosses the closing cell → auto-declares row-0 intent
         rules.apply(state, firstCrossAction(state, p1));
-        String closingCellId = state.sheetLayouts().get(p1).rows().get(0)
-                .lock().closingCells().get(0);
+        String closingCellId = state.sheetLayouts().get(p1).rows().getFirst()
+                .lock().closingCells().getFirst();
         state.turnState().undoBuffer()
                 .computeIfAbsent(p1, k -> new HashMap<>())
                 .computeIfAbsent(0, k -> new HashSet<>())
@@ -1658,7 +1658,7 @@ class StandardTurnRulesTest {
         Set<String> crossed = new HashSet<>();
 
         // always include the last closing cell (any one suffices in new architecture)
-        String lastClosing = lock.closingCells().get(lock.closingCells().size() - 1);
+        String lastClosing = lock.closingCells().getLast();
         crossed.add(lastClosing);
 
         // fill remaining crosses from the start of the row (skip closing cells)
@@ -1698,7 +1698,7 @@ class StandardTurnRulesTest {
      */
     private String seedUndoBufferForP2(GameState state, UUID playerId, int rowIndex) {
         SheetLayout layout = state.sheetLayouts().get(playerId);
-        Cell cell = layout.rows().get(rowIndex).cells().get(0);
+        Cell cell = layout.rows().get(rowIndex).cells().getFirst();
         SheetProgress progress = state.boardState().sheetProgress().get(playerId);
         RowState current = progress.rowStates().getOrDefault(rowIndex, new RowState(new HashSet<>(), false));
         Set<String> updated = new HashSet<>(current.crossedCells());
@@ -2269,7 +2269,7 @@ class StandardTurnRulesTest {
         setRoll(state, 1, 4, Map.of(Color.RED, 5, Color.YELLOW, 3, Color.GREEN, 4, Color.BLUE, 2));
         List<CrossCellAction> offered = luckyCrossActions(rules.getValidActions(state, p1), state, p1);
         assertEquals(1, offered.size(), "white+colored 1+5 must offer exactly one Lucky Cross field");
-        assertEquals(Color.RED, rowColor(state, p1, offered.get(0).rowIndex()),
+        assertEquals(Color.RED, rowColor(state, p1, offered.getFirst().rowIndex()),
                 "Offered Lucky Cross field must be in the RED row");
     }
 
@@ -2472,7 +2472,7 @@ class StandardTurnRulesTest {
                 row.addCell(lc);
             }
         }
-        Cell last = normalCells.get(normalCells.size() - 1);
+        Cell last = normalCells.getLast();
         last.setClosingEligible(true);
         row.addLock(new LockCell(UUID.randomUUID().toString(), color, 6, List.of(last.id())));
         return row;

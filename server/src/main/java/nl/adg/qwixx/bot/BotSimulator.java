@@ -86,7 +86,7 @@ public class BotSimulator {
                     List<UUID> ids = result.keySet().stream().toList();
 
                     // seat 0 = "first" player; the rest use the second profile
-                    UUID firstId = ids.get(0);
+                    UUID firstId = ids.getFirst();
                     int firstScore = Objects.requireNonNull(result.get(firstId)).total();
                     int othersMax  = ids.stream().skip(1)
                             .mapToInt(id -> Objects.requireNonNull(result.get(id)).total()).max().orElse(firstScore);

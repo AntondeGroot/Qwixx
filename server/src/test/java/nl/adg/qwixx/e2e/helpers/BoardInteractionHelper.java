@@ -230,7 +230,7 @@ public class BoardInteractionHelper {
      */
     public static void clickPassButton(WebDriver driver) {
         List<WebElement> arrowBtns = driver.findElements(By.className("btn-pass-arrow"));
-        if (!arrowBtns.isEmpty()) { arrowBtns.get(0).click(); return; }
+        if (!arrowBtns.isEmpty()) { arrowBtns.getFirst().click(); return; }
         driver.findElement(By.className("btn-confirm")).click();
     }
 

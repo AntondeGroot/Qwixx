@@ -1,6 +1,6 @@
 # Qwixx — Implementation
 
-This document describes how the server is structured and how the pieces fit together. It assumes familiarity with `DESIGN.md` (the domain model) and `qwixx_openapi.yml` (the HTTP API).
+This document describes how the server is structured and how the pieces fit together. It assumes familiarity with `DESIGN.md` (the domain model) and `../qwixx_openapi.yml` (the HTTP API).
 
 ---
 
@@ -24,7 +24,7 @@ Each layer depends only on the layers below it. Nothing below `web` imports Spri
 
 ## OpenAPI generator and the delegate pattern
 
-The server uses the OpenAPI generator to produce Spring controller boilerplate from `qwixx_openapi.yml`. The generator emits a controller class and a companion delegate interface per tag (e.g. `GamesApi` + `GamesApiDelegate`). You only implement the delegate — the generated controller forwards every request to it automatically.
+The server uses the OpenAPI generator to produce Spring controller boilerplate from `../qwixx_openapi.yml`. The generator emits a controller class and a companion delegate interface per tag (e.g. `GamesApi` + `GamesApiDelegate`). You only implement the delegate — the generated controller forwards every request to it automatically.
 
 ```java
 @Service

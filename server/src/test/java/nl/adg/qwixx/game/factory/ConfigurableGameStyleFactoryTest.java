@@ -132,7 +132,7 @@ class ConfigurableGameStyleFactoryTest {
         List<Row> rows = rows(factory(CardMode.SAME_CARDS));
         for (Row row : rows) {
             assertEquals(6, row.lock().minCrosses());
-            Cell lastCell = row.cells().get(row.cells().size() - 1);
+            Cell lastCell = row.cells().getLast();
             assertEquals(List.of(lastCell.id()), row.lock().closingCells());
         }
     }
@@ -844,7 +844,7 @@ class ConfigurableGameStyleFactoryTest {
             LockCell lock = row.lock();
             assertEquals(2, lock.closingCells().size(), "Longo rows have two closing cells");
             Cell second = row.cells().get(row.cells().size() - 2);
-            Cell last = row.cells().get(row.cells().size() - 1);
+            Cell last = row.cells().getLast();
             assertEquals(List.of(second.id(), last.id()), lock.closingCells());
             assertTrue(second.isClosingEligible(), "second-to-last cell must be closing-eligible");
             assertTrue(last.isClosingEligible(), "last cell must be closing-eligible");

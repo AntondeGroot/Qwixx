@@ -635,7 +635,7 @@ class BotDeciderTest {
     /** Standard row carrying a lock whose single closing cell is the last cell. */
     private static Row rowWithLock(Color color, int minCrosses) {
         Row row = stdRow(color);
-        Cell last = row.cells().get(row.cells().size() - 1);
+        Cell last = row.cells().getLast();
         row.addLock(new LockCell(UUID.randomUUID().toString(), color, minCrosses, List.of(last.id())));
         return row;
     }

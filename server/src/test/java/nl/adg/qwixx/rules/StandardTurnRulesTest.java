@@ -1658,7 +1658,7 @@ class StandardTurnRulesTest {
         Set<String> crossed = new HashSet<>();
 
         // always include the last closing cell (any one suffices in new architecture)
-        String lastClosing = lock.closingCells().get(lock.closingCells().size() - 1);
+        String lastClosing = lock.closingCells().getLast();
         crossed.add(lastClosing);
 
         // fill remaining crosses from the start of the row (skip closing cells)
@@ -2472,7 +2472,7 @@ class StandardTurnRulesTest {
                 row.addCell(lc);
             }
         }
-        Cell last = normalCells.get(normalCells.size() - 1);
+        Cell last = normalCells.getLast();
         last.setClosingEligible(true);
         row.addLock(new LockCell(UUID.randomUUID().toString(), color, 6, List.of(last.id())));
         return row;

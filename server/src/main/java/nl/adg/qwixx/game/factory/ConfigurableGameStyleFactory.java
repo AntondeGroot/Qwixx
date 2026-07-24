@@ -1013,13 +1013,13 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
         int minCrosses = lockMinCrosses();
         if (settings.base() == BaseVariant.LONGO) {
             Cell second = cells.get(cells.size() - 2);
-            Cell last   = cells.get(cells.size() - 1);
+            Cell last   = cells.getLast();
             second.setClosingEligible(true);
             last.setClosingEligible(true);
             return new LockCell(UUID.randomUUID().toString(), color, minCrosses,
                     List.of(second.id(), last.id()));
         }
-        Cell last = cells.get(cells.size() - 1);
+        Cell last = cells.getLast();
         last.setClosingEligible(true);
         return new LockCell(UUID.randomUUID().toString(), color, minCrosses, List.of(last.id()));
     }

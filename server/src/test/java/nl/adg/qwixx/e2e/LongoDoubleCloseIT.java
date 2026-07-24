@@ -465,6 +465,6 @@ public class LongoDoubleCloseIT extends BaseIntegrationTest {
         Map<String, Object> layout  = (Map<String, Object>) layouts.get(playerId);
         List<Map<String, Object>> rows  = (List<Map<String, Object>>) layout.get("rows");
         List<Map<String, Object>> cells = (List<Map<String, Object>>) rows.get(rowIndex).get("cells");
-        return (String) cells.get(cells.size() - 1).get("id");
+        return (String) cells.getLast().get("id");
     }
 }

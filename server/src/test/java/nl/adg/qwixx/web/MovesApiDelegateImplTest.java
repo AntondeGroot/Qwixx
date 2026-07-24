@@ -745,7 +745,7 @@ class MovesApiDelegateImplTest {
         var greenRow = layout.rows().get(2);  // GREEN is rowIndex 2
 
         // Get the lock-eligible (closing) cell for GREEN (last cell, displayValue "2")
-        Cell lockEligibleCell = greenRow.cells().get(greenRow.cells().size() - 1);
+        Cell lockEligibleCell = greenRow.cells().getLast();
         assertEquals("2", lockEligibleCell.displayValue(), "Lock-eligible cell should have displayValue 2");
 
         // Add 5 normal crosses + the closing cell as PERMANENT crosses (enables explicit declare)

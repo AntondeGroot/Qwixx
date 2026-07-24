@@ -595,7 +595,7 @@ class RowClosureEvaluatorTest {
 
     private String lastClosingCellFor(GameState state, UUID playerId, int rowIndex) {
         List<String> closing = state.sheetLayout(playerId).rows().get(rowIndex).lock().closingCells();
-        return closing.get(closing.size() - 1);
+        return closing.getLast();
     }
 
     private String secondToLastClosingCell(GameState state, int rowIndex) {

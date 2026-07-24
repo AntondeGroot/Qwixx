@@ -149,23 +149,23 @@ describe('SettingsComponent — admin-only options', () => {
     expect(await optionKeys({ adminOnly: false }, false)).toContain('bonusB');
   });
 
-  // Labels must render via the server's labelKey, not a key derived from opt.key. The two match for
-  // every option except xChange (key "xChange" vs label "gameOption.xchange"), which is why that one
-  // was the only untranslated label. In the test harness translate returns the key verbatim, so the
+  // Labels must render via the server-provided labelKey, not a key the client re-derives from opt.key.
+  // Server keys follow "gameOption.<key>", but the client must not assume that: here labelKey is
+  // deliberately unrelated to the key. In the test harness translate returns the key verbatim, so the
   // rendered text is exactly the key that was looked up.
-  it('renders a label via labelKey, so xChange (key ≠ labelKey suffix) is not left untranslated', async () => {
-    const xchange = {
+  it('renders a label via labelKey, not a key derived from opt.key', async () => {
+    const option = {
       ...makeOptions()[0],
-      key: 'xChange',
-      labelKey: 'gameOption.xchange',
+      key: 'someOption',
+      labelKey: 'gameOption.aCustomLabelKey',
       type: GameOption.TypeEnum.BOOLEAN,
       choices: [],
       adminOnly: false,
     } as GameOption;
-    const fixture = await createFixture({}, [xchange]);
+    const fixture = await createFixture({}, [option]);
 
-    const label = fixture.nativeElement.querySelector('label[for="xChange"]') as HTMLLabelElement;
-    expect(label.textContent?.trim()).toBe('gameOption.xchange');
+    const label = fixture.nativeElement.querySelector('label[for="someOption"]') as HTMLLabelElement;
+    expect(label.textContent?.trim()).toBe('gameOption.aCustomLabelKey');
   });
 });
 

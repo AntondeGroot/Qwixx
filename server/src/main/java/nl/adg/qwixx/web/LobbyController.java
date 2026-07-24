@@ -7,7 +7,7 @@ import java.util.Map;
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSession;
 import nl.adg.qwixx.game.exception.SessionNotFoundException;
-import nl.adg.qwixx.game.options.QwixxGameOptions;
+import nl.adg.qwixx.game.options.GameOptionCatalog;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -78,7 +78,7 @@ public class LobbyController {
                 .map(p -> new PlayerEntry(p.id().toString(), p.name()))
                 .toList();
         // Current settings act as the baseline; proposed options override individual keys.
-        Map<String, Object> effectiveOptions = new LinkedHashMap<>(QwixxGameOptions.toMap(session.settings()));
+        Map<String, Object> effectiveOptions = new LinkedHashMap<>(GameOptionCatalog.toMap(session.settings()));
         effectiveOptions.putAll(session.proposedOptions());
         return new LobbyState(players, effectiveOptions, session.maxPlayers());
     }

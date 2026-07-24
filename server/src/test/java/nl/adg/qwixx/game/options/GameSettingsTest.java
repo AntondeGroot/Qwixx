@@ -64,7 +64,7 @@ class GameSettingsTest {
     // ── build() incompatibility guards ────────────────────────────────────────────────────
     // Each combination below is minimal and trips exactly ONE guard (no earlier guard short-circuits
     // it), so every boolean operand in that guard's condition is load-bearing for the thrown exception.
-    // randomOrder + bigPoints (guard 1) is already covered in QwixxGameOptionsTest.
+    // randomOrder + bigPoints (guard 1) is already covered in GameOptionCatalogTest.
 
     @ParameterizedTest(name = "{0} cannot be combined")
     @MethodSource("forbiddenCombinations")

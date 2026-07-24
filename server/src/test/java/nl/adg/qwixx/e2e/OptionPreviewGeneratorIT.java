@@ -13,8 +13,8 @@ import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
 import nl.adg.qwixx.e2e.utils.SpringAppTestHelper;
 import nl.adg.qwixx.e2e.utils.TestUtils;
 import nl.adg.qwixx.game.options.GameOption;
+import nl.adg.qwixx.game.options.GameOptionCatalog;
 import nl.adg.qwixx.game.options.OptionCategory;
-import nl.adg.qwixx.game.options.QwixxGameOptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.openqa.selenium.By;
@@ -69,7 +69,7 @@ class OptionPreviewGeneratorIT extends BaseIntegrationTest {
      */
     private List<CatalogEntry> catalogEntries(JsonNode i18n) {
         List<CatalogEntry> entries = new ArrayList<>();
-        for (GameOption option : QwixxGameOptions.all()) {
+        for (GameOption option : GameOptionCatalog.all()) {
             if (option.category() != OptionCategory.MODE) continue;
             if ("base".equals(option.key())) {
                 entries.add(new CatalogEntry("standard",

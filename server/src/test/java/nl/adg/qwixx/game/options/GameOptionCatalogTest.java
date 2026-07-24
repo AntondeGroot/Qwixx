@@ -9,20 +9,41 @@ import nl.adg.qwixx.bot.BotStrategy;
 import nl.adg.qwixx.state.CardMode;
 import org.junit.jupiter.api.Test;
 
-class QwixxGameOptionsTest {
+class GameOptionCatalogTest {
 
     @Test
     void allReturnsNonEmptyList() {
-        assertFalse(QwixxGameOptions.all().isEmpty());
+        assertFalse(GameOptionCatalog.all().isEmpty());
     }
 
     @Test
     void allIncludesGameModeCardModeRandomOrderExtraRow() {
-        List<String> keys = QwixxGameOptions.all().stream().map(GameOption::key).toList();
+        List<String> keys = GameOptionCatalog.all().stream().map(GameOption::key).toList();
         assertTrue(keys.contains("gameMode"));
         assertTrue(keys.contains("cardMode"));
         assertTrue(keys.contains("randomOrder"));
         assertTrue(keys.contains("extraRow"));
+    }
+
+    @Test
+    void everyCatalogOptionIsOpenToEveryoneAndAdminBoolOptionCanStillGateFutureOnes() {
+        // All current options are released (none admin-only)…
+        assertTrue(GameOptionCatalog.all().stream().noneMatch(GameOption::adminOnly),
+                "no catalog option is admin-only");
+        // …but adminBoolOption remains available to gate a future experimental option.
+        assertTrue(GameOption.adminBoolOption("someExperimentalOption").adminOnly());
+        assertFalse(GameOption.boolOption("someReleasedOption").adminOnly());
+    }
+
+    @Test
+    void labelAndDescriptionKeysAreDerivedFromTheOptionKey() {
+        GameOption bigPoints = optionByKey("bigPoints");
+        assertEquals("gameOption.bigPoints", bigPoints.labelKey());
+        assertEquals("gameOption.bigPointsDescription", bigPoints.descriptionKey());
+        // xChange now follows the same rule (i18n key matches the option key's casing).
+        GameOption xChange = optionByKey("xChange");
+        assertEquals("gameOption.xChange", xChange.labelKey());
+        assertEquals("gameOption.xChangeDescription", xChange.descriptionKey());
     }
 
     @Test
@@ -46,34 +67,34 @@ class QwixxGameOptionsTest {
     @Test
     void applyNullOptionsIsNoop() {
         GameSettings.Builder builder = GameSettings.builder();
-        assertDoesNotThrow(() -> QwixxGameOptions.apply(builder, null));
+        assertDoesNotThrow(() -> GameOptionCatalog.apply(builder, null));
     }
 
     @Test
     void applyGameModeOffline() {
         GameSettings.Builder builder = GameSettings.builder();
-        QwixxGameOptions.apply(builder, Map.of("gameMode", "OFFLINE"));
+        GameOptionCatalog.apply(builder, Map.of("gameMode", "OFFLINE"));
         assertEquals(GameMode.OFFLINE, builder.build().gameMode());
     }
 
     @Test
     void applyCardModeDifferentCards() {
         GameSettings.Builder builder = GameSettings.builder();
-        QwixxGameOptions.apply(builder, Map.of("cardMode", "DIFFERENT_CARDS"));
+        GameOptionCatalog.apply(builder, Map.of("cardMode", "DIFFERENT_CARDS"));
         assertEquals(CardMode.DIFFERENT_CARDS, builder.build().cardMode());
     }
 
     @Test
     void applyRandomOrderTrue() {
         GameSettings.Builder builder = GameSettings.builder();
-        QwixxGameOptions.apply(builder, Map.of("randomOrder", true));
+        GameOptionCatalog.apply(builder, Map.of("randomOrder", true));
         assertTrue(builder.build().randomOrder());
     }
 
     @Test
     void applyExtraRowTrue() {
         GameSettings.Builder builder = GameSettings.builder();
-        QwixxGameOptions.apply(builder, Map.of("extraRow", "true"));
+        GameOptionCatalog.apply(builder, Map.of("extraRow", "true"));
         assertTrue(builder.build().extraRow());
     }
 
@@ -92,20 +113,20 @@ class QwixxGameOptionsTest {
     @Test
     void applySeeOtherCardsFalse() {
         GameSettings.Builder builder = GameSettings.builder();
-        QwixxGameOptions.apply(builder, Map.of("seeOtherCards", false));
+        GameOptionCatalog.apply(builder, Map.of("seeOtherCards", false));
         assertFalse(builder.build().seeOtherCards());
     }
 
     @Test
     void applyUnknownKeyIsIgnored() {
         GameSettings.Builder builder = GameSettings.builder();
-        assertDoesNotThrow(() -> QwixxGameOptions.apply(builder, Map.of("bogus", "value")));
+        assertDoesNotThrow(() -> GameOptionCatalog.apply(builder, Map.of("bogus", "value")));
     }
 
     @Test
     void applyMultipleOptions() {
         GameSettings.Builder builder = GameSettings.builder();
-        QwixxGameOptions.apply(builder, Map.of(
+        GameOptionCatalog.apply(builder, Map.of(
                 "gameMode", "OFFLINE",
                 "cardMode", "DIFFERENT_CARDS",
                 "randomOrder", "true"
@@ -137,7 +158,7 @@ class QwixxGameOptionsTest {
     @Test
     void applyingBothOptionsViaMapThrows() {
         GameSettings.Builder builder = GameSettings.builder();
-        QwixxGameOptions.apply(builder, Map.of("randomOrder", true, "bigPoints", true));
+        GameOptionCatalog.apply(builder, Map.of("randomOrder", true, "bigPoints", true));
         assertThrows(IllegalArgumentException.class, builder::build);
     }
 
@@ -148,7 +169,7 @@ class QwixxGameOptionsTest {
         // seeOtherCards defaults to true; the String "false" must flip it off. This exercises the
         // Boolean.parseBoolean branch returning the parsed false (not a hard-coded true).
         GameSettings.Builder builder = GameSettings.builder();
-        QwixxGameOptions.apply(builder, Map.of("seeOtherCards", "false"));
+        GameOptionCatalog.apply(builder, Map.of("seeOtherCards", "false"));
         assertFalse(builder.build().seeOtherCards(), "String \"false\" must parse to false");
     }
 
@@ -156,7 +177,7 @@ class QwixxGameOptionsTest {
     void applyBoolFromBooleanTrueStaysTrue() {
         // The instanceof-Boolean branch must return the actual value, so a real Boolean.TRUE stays on.
         GameSettings.Builder builder = GameSettings.builder();
-        QwixxGameOptions.apply(builder, Map.of("randomOrder", Boolean.TRUE));
+        GameOptionCatalog.apply(builder, Map.of("randomOrder", Boolean.TRUE));
         assertTrue(builder.build().randomOrder());
     }
 
@@ -166,7 +187,7 @@ class QwixxGameOptionsTest {
     void applyBotCountFromNumberReturnsExactValue() {
         // A real Number must be returned via intValue() — exactly 2, not 0.
         GameSettings.Builder builder = GameSettings.builder();
-        QwixxGameOptions.apply(builder, Map.of("botCount", 2));
+        GameOptionCatalog.apply(builder, Map.of("botCount", 2));
         assertEquals(2, builder.build().botCount());
     }
 
@@ -174,7 +195,7 @@ class QwixxGameOptionsTest {
     void applyBotCountFromStringReturnsExactValue() {
         // A String must be parsed via Integer.parseInt — exactly 3, not 0.
         GameSettings.Builder builder = GameSettings.builder();
-        QwixxGameOptions.apply(builder, Map.of("botCount", "3"));
+        GameOptionCatalog.apply(builder, Map.of("botCount", "3"));
         assertEquals(3, builder.build().botCount());
     }
 
@@ -184,7 +205,7 @@ class QwixxGameOptionsTest {
         GameSettings.Builder builder = GameSettings.builder();
         Map<String, Object> options = new HashMap<>();
         options.put("botCount", null);
-        QwixxGameOptions.apply(builder, options);
+        GameOptionCatalog.apply(builder, options);
         assertEquals(0, builder.build().botCount());
     }
 
@@ -198,7 +219,7 @@ class QwixxGameOptionsTest {
                 .botStrategy(BotStrategy.MOST_WINS)
                 .build();
 
-        Map<String, Object> map = QwixxGameOptions.toMap(settings);
+        Map<String, Object> map = GameOptionCatalog.toMap(settings);
 
         assertFalse(map.isEmpty(), "toMap must serialize the settings, not an empty map");
         assertEquals("STANDARD", map.get("base"));
@@ -213,14 +234,14 @@ class QwixxGameOptionsTest {
     void toMapUsesBalancedWhenStrategyIsNull() {
         GameSettings settings = GameSettings.builder().botStrategy(null).build();
 
-        Map<String, Object> map = QwixxGameOptions.toMap(settings);
+        Map<String, Object> map = GameOptionCatalog.toMap(settings);
 
         // Null-strategy branch of the ternary: fall back to BALANCED's name.
         assertEquals(BotStrategy.BALANCED.name(), map.get("botStrategy"));
     }
 
     private GameOption optionByKey(String key) {
-        return QwixxGameOptions.all().stream()
+        return GameOptionCatalog.all().stream()
                 .filter(o -> o.key().equals(key))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("option not found: " + key));

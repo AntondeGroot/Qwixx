@@ -13,8 +13,8 @@ import nl.adg.qwixx.game.SessionStatus;
 import nl.adg.qwixx.game.exception.GameAlreadyStartedException;
 import nl.adg.qwixx.game.exception.GameNotFinishedException;
 import nl.adg.qwixx.game.exception.SessionNotFoundException;
+import nl.adg.qwixx.game.options.GameOptionCatalog;
 import nl.adg.qwixx.game.options.GameSettings;
-import nl.adg.qwixx.game.options.QwixxGameOptions;
 import nl.adg.qwixx.generated.api.GamesApiDelegate;
 import nl.adg.qwixx.generated.model.AddPlayerToGame201Response;
 import nl.adg.qwixx.generated.model.CreateNewGame201Response;
@@ -192,7 +192,7 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
 
     private static GameSettings buildSettings(@Nullable Map<String, Object> options) {
         GameSettings.Builder builder = GameSettings.builder();
-        QwixxGameOptions.apply(builder, options);
+        GameOptionCatalog.apply(builder, options);
         return builder.build();
     }
 

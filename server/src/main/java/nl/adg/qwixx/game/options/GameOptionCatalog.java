@@ -1,5 +1,9 @@
 package nl.adg.qwixx.game.options;
 
+import static nl.adg.qwixx.game.options.GameOption.boolOption;
+import static nl.adg.qwixx.game.options.GameOption.enumOption;
+import static nl.adg.qwixx.game.options.GameOption.intOption;
+
 import jakarta.annotation.Nullable;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -9,9 +13,9 @@ import java.util.logging.Logger;
 import nl.adg.qwixx.bot.BotStrategy;
 import nl.adg.qwixx.state.CardMode;
 
-public class QwixxGameOptions {
+public class GameOptionCatalog {
 
-    private static final Logger log = Logger.getLogger(QwixxGameOptions.class.getName());
+    private static final Logger log = Logger.getLogger(GameOptionCatalog.class.getName());
     private static final String BASE = "base";
     private static final String BOT_COUNT = "botCount";
     private static final String BOT_STRATEGY = "botStrategy";
@@ -32,59 +36,44 @@ public class QwixxGameOptions {
     private static final String BONUS_B      = "bonusB";
     private static final String SEE_OTHER_CARDS = "seeOtherCards";
 
-    private QwixxGameOptions() {}
+    private GameOptionCatalog() {}
 
-    /**
-     * A variant that is admin-only until {@link AdminOptionRelease#RELEASE_MOMENT}, and an ordinary
-     * option for everyone after it. Both forms default to off, so the release only widens who may
-     * pick the variant — it never turns one on for an existing game.
-     */
-    private static GameOption trialBoolOption(String key, String labelKey, String descriptionKey) {
-        return AdminOptionRelease.released()
-                ? GameOption.boolOption(key, labelKey, descriptionKey)
-                : GameOption.adminBoolOption(key, labelKey, descriptionKey);
-    }
-
+    // Label/description i18n keys are derived from each option's key (see GameOption.labelKeyFor):
+    // "gameOption.<key>" and "gameOption.<key>Description". Only the non-derivable bits are listed here.
     public static List<GameOption> all() {
         return List.of(
-            GameOption.enumOption(BASE, "gameOption.base", "gameOption.baseDescription",
-                "STANDARD", List.of("STANDARD", "LONGO")),
-            GameOption.enumOption(GAME_MODE, "gameOption.gameMode", "gameOption.gameModeDescription",
-                "ONLINE", List.of("ONLINE", "OFFLINE")).withCategory(OptionCategory.GENERAL),
-            GameOption.enumOption(CARD_MODE, "gameOption.cardMode", "gameOption.cardModeDescription",
-                "SAME_CARDS", List.of("SAME_CARDS", "DIFFERENT_CARDS")).withCategory(OptionCategory.GENERAL),
-            trialBoolOption(BIG_POINTS, "gameOption.bigPoints", "gameOption.bigPointsDescription")
+            enumOption(BASE, BaseVariant.STANDARD),
+            enumOption(GAME_MODE, GameMode.ONLINE).withCategory(OptionCategory.GENERAL),
+            enumOption(CARD_MODE, CardMode.SAME_CARDS).withCategory(OptionCategory.GENERAL),
+            boolOption(BIG_POINTS)
                     .withIncompatibleWith(List.of(RANDOM_ORDER, LUCKY_CROSS, DOUBLE_A, DOUBLE_B, BONUS_A, BONUS_B)),
-            GameOption.boolOption(RANDOM_ORDER, "gameOption.randomOrder", "gameOption.randomOrderDescription")
+            boolOption(RANDOM_ORDER)
                     .withIncompatibleWith(List.of(BIG_POINTS, BONUS_A, BONUS_B, MIXED_COLORS)),
-            trialBoolOption(MIXED_COLORS, "gameOption.mixedColors", "gameOption.mixedColorsDescription")
+            boolOption(MIXED_COLORS)
                     .withIncompatibleWith(List.of(BIG_POINTS, BONUS_A, BONUS_B, DOUBLE_A, DOUBLE_B,
                         LUCKY_CROSS, RANDOM_ORDER)),
-            GameOption.boolOption(EXTRA_ROW, "gameOption.extraRow", "gameOption.extraRowDescription")
+            boolOption(EXTRA_ROW)
                     .withIncompatibleWith(List.of(BONUS_A, BONUS_B)),
-            GameOption.boolOption(CONNECTED_CELLS, "gameOption.connectedCells", "gameOption.connectedCellsDescription")
+            boolOption(CONNECTED_CELLS)
                     .withIncompatibleWith(List.of(CONNECTED_DIAGONAL, DOUBLE_A, DOUBLE_B, BONUS_A, BONUS_B)),
-            trialBoolOption(CONNECTED_DIAGONAL, "gameOption.connectedDiagonal", "gameOption.connectedDiagonalDescription")
+            boolOption(CONNECTED_DIAGONAL)
                     .withIncompatibleWith(List.of(CONNECTED_CELLS, DOUBLE_A, DOUBLE_B, BONUS_A, BONUS_B)),
-            GameOption.boolOption(SEE_OTHER_CARDS, "gameOption.seeOtherCards", "gameOption.seeOtherCardsDescription", true)
+            boolOption(SEE_OTHER_CARDS, true)
                     .withCategory(OptionCategory.GENERAL),
-            trialBoolOption(X_CHANGE, "gameOption.xchange", "gameOption.xchangeDescription"),
-            trialBoolOption(LUCKY_NUMBER, "gameOption.luckyNumber", "gameOption.luckyNumberDescription"),
-            trialBoolOption(LUCKY_CROSS,  "gameOption.luckyCross",  "gameOption.luckyCrossDescription")
+            boolOption(X_CHANGE),
+            boolOption(LUCKY_NUMBER),
+            boolOption(LUCKY_CROSS)
                     .withIncompatibleWith(List.of(BIG_POINTS, DOUBLE_A, DOUBLE_B, BONUS_A, BONUS_B, MIXED_COLORS)),
-            trialBoolOption(DOUBLE_A, "gameOption.doubleA", "gameOption.doubleADescription")
+            boolOption(DOUBLE_A)
                     .withIncompatibleWith(List.of(DOUBLE_B, BIG_POINTS, LUCKY_CROSS, CONNECTED_CELLS, CONNECTED_DIAGONAL, BONUS_A, BONUS_B)),
-            trialBoolOption(DOUBLE_B, "gameOption.doubleB", "gameOption.doubleBDescription")
+            boolOption(DOUBLE_B)
                     .withIncompatibleWith(List.of(DOUBLE_A, BIG_POINTS, LUCKY_CROSS, CONNECTED_CELLS, CONNECTED_DIAGONAL, BONUS_A, BONUS_B)),
-            trialBoolOption(BONUS_A, "gameOption.bonusA", "gameOption.bonusADescription")
+            boolOption(BONUS_A)
                     .withIncompatibleWith(List.of(BIG_POINTS, DOUBLE_A, DOUBLE_B, CONNECTED_CELLS, CONNECTED_DIAGONAL, LUCKY_CROSS, EXTRA_ROW, RANDOM_ORDER, BONUS_B)),
-            trialBoolOption(BONUS_B, "gameOption.bonusB", "gameOption.bonusBDescription")
+            boolOption(BONUS_B)
                     .withIncompatibleWith(List.of(BIG_POINTS, DOUBLE_A, DOUBLE_B, CONNECTED_CELLS, CONNECTED_DIAGONAL, LUCKY_CROSS, EXTRA_ROW, RANDOM_ORDER, BONUS_A)),
-            GameOption.intOption(BOT_COUNT, "gameOption.botCount", "gameOption.botCountDescription",
-                "0", 0, 3).withCategory(OptionCategory.GENERAL),
-            GameOption.enumOption(BOT_STRATEGY, "gameOption.botStrategy", "gameOption.botStrategyDescription",
-                "BALANCED", List.of("UNTRAINED", "MOST_POINTS", "MOST_WINS", "BALANCED"))
-                    .withCategory(OptionCategory.GENERAL)
+            intOption(BOT_COUNT, "0", 0, 3).withCategory(OptionCategory.GENERAL),
+            enumOption(BOT_STRATEGY, BotStrategy.BALANCED).withCategory(OptionCategory.GENERAL)
         );
     }
 

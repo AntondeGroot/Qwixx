@@ -24,8 +24,8 @@ import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.game.factory.ConfigurableGameStyleFactory;
 import nl.adg.qwixx.game.factory.GameStyleFactory;
 import nl.adg.qwixx.game.options.GameMode;
+import nl.adg.qwixx.game.options.GameOptionCatalog;
 import nl.adg.qwixx.game.options.GameSettings;
-import nl.adg.qwixx.game.options.QwixxGameOptions;
 import nl.adg.qwixx.rules.ScoreCard;
 import nl.adg.qwixx.rules.TurnRules;
 import nl.adg.qwixx.state.BoardState;
@@ -133,7 +133,7 @@ public class GameSession {
                     .cardMode(settings.cardMode())
                     .gameMode(settings.gameMode()).botCount(settings.botCount())
                     .botStrategy(settings.botStrategy());
-            QwixxGameOptions.apply(builder, proposedOptions);
+            GameOptionCatalog.apply(builder, proposedOptions);
             settings = builder.build();
         }
 

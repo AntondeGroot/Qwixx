@@ -6,8 +6,8 @@ import java.util.Objects;
 import java.util.UUID;
 import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.game.factory.ConfigurableGameStyleFactory;
+import nl.adg.qwixx.game.options.GameOptionCatalog;
 import nl.adg.qwixx.game.options.GameSettings;
-import nl.adg.qwixx.game.options.QwixxGameOptions;
 import nl.adg.qwixx.generated.api.GameOptionsApiDelegate;
 import nl.adg.qwixx.generated.model.GameOption;
 import nl.adg.qwixx.generated.model.SheetLayout;
@@ -20,7 +20,7 @@ public class GameOptionsApiDelegateImpl implements GameOptionsApiDelegate {
 
     @Override
     public ResponseEntity<List<GameOption>> getGameOptions() {
-        List<GameOption> options = QwixxGameOptions.all().stream()
+        List<GameOption> options = GameOptionCatalog.all().stream()
                 .map(this::toDto)
                 .toList();
         return ResponseEntity.ok(options);
@@ -29,7 +29,7 @@ public class GameOptionsApiDelegateImpl implements GameOptionsApiDelegate {
     @Override
     public ResponseEntity<SheetLayout> previewLayout(Map<String, Object> requestBody) {
         GameSettings.Builder builder = GameSettings.builder();
-        QwixxGameOptions.apply(builder, requestBody);
+        GameOptionCatalog.apply(builder, requestBody);
         GameSettings settings = builder.build();
         // Deterministic factory + a fixed player id so a given option set always previews the same
         // sheet — no reshuffling on each change, and reproducible option-preview images.

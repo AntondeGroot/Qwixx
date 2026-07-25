@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Turn-rules integration tests specific to the Big Points variant.
- *
+ * <p>
  * Fixed dice: white1=3, white2=4 (WW=7), red=2, yellow=3, green=4, blue=5.
  * Derived combinations:
  *   WW           = 7
@@ -19,13 +19,13 @@ import org.junit.jupiter.api.Test;
  *   white+yellow = 6 or 7    (secondary die for BONUS-RY)
  *   white+green  = 7 or 8    (primary die for BONUS-GB)
  *   white+blue   = 8 or 9    (secondary die for BONUS-GB)
- *
+ * <p>
  * Bonus cells in the test layout:
  *   BONUS-RY "5" → white1+red=5     — PRIMARY color die only  (WW≠5, white+yellow≠5)
  *   BONUS-RY "7" → WW=7 AND white2+yellow=7 — both WW and SECONDARY color die
  *   BONUS-GB "7" → WW=7 AND white1+green=7  — both WW and PRIMARY color die
  *   BONUS-GB "9" → white2+blue=9    — SECONDARY color die only (WW≠9, white+green≠9)
- *
+ * <p>
  * Layout row indices:
  *   0 = RED ascending   (regular, with lock)
  *   1 = BONUS-RY        (bonus, no lock; upper=0/RED, lower=2/YELLOW)

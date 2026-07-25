@@ -32,14 +32,14 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Dev-only endpoints that create pre-seeded game scenarios so you can
  * navigate directly to a specific state without playing through the game.
- *
+ * <p>
  * Available only when the "e2e" Spring profile is NOT active (i.e. normal
  * dev mode).  Accessible at GET /preview/{1..10}.
- *
+ * <p>
  * Usage:
  *   1. Start the server with the default profile.
- *   2. Navigate to http://localhost:4200/preview to see all scenarios.
- *   3. Navigate to http://localhost:4200/preview/3 to launch scenario 3.
+ *   2. Navi<a href="gate">to http://localhost:4200</a>/preview to see all scenarios.
+ *   3. Navi<a href="gate">to http://localhost:4200/p</a>review/3 to launch scenario 3.
  */
 @RestController
 @Profile("!e2e")

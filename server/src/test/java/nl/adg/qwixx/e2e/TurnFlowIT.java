@@ -19,14 +19,14 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 /**
  * End-to-end tests for two reported broken scenarios in the turn flow:
- *
+ * <p>
  *   (a) A passive player can make a white+white cross while the active player
  *       is in ACTIVE_MOVE (before ending their turn).
- *
+ * <p>
  *   (b) After the active player ends their turn and the passive player passes,
  *       the former passive player becomes the new active player in ROLL phase
  *       and can roll dice and then cross a cell.
- *
+ * <p>
  * RED row (index 0) is ascending: 2, 3, 4 … 12.
  * Dice white1=1, white2=1 → white+white = 2 → RED "2" is always reachable.
  */

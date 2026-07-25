@@ -17,17 +17,17 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 /**
  * End-to-end tests for the "double row close" feature in standard Qwixx.
- *
+ * <p>
  * Setup:
  *   - 2 players, standard variant
  *   - player0 has 5 crosses in RED  (positions 0–4, values 2–6)
  *   - player0 has 5 crosses in YELLOW (positions 0–4, values 2–6)
  *   - white1 = 6, white2 = 6  →  white+white = 12  →  hits RED "12"   (lock-eligible)
  *   - yellow die = 6           →  white+yellow = 12  →  hits YELLOW "12" (lock-eligible)
- *
+ * <p>
  * In standard Qwixx, RED and YELLOW are ascending rows (2→12); the last cell ("12")
  * is the only closing-eligible cell.  Lock minimum = 6 crosses (5 pre-set + "12" = 6).
- *
+ * <p>
  * Expected flow:
  *   1. player0 clicks RED "12"  → RED lock auto-declared (no modal for player0).
  *   2. YELLOW "12" is still shown as clickable (colored die option: white+yellow=12).

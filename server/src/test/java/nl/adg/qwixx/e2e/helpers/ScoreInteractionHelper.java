@@ -22,7 +22,7 @@ public class ScoreInteractionHelper {
 
     /**
      * Waits up to {@code seconds} seconds for the winner modal to appear.
-     *
+     * <p> <p>
      * Fails immediately (AssertionError) if the driver navigates away from the score
      * page — this happens when runAnimation() catches an exception and calls
      * router.navigate(['/']). Without this check the test would wait the full timeout
@@ -54,7 +54,7 @@ public class ScoreInteractionHelper {
 
     /**
      * Returns the displayed total for a player (text inside .total-value of that player's row).
-     *
+     * <p> <p>
      * Done in a single JS call so there is no stale-element window between finding the
      * player row and reading the total — Chrome 148 can replace the node between the two
      * Java calls, causing the findElement on the returned WebElement to silently return 0.
@@ -217,7 +217,7 @@ public class ScoreInteractionHelper {
 
     /**
      * Returns true if the winner modal overlay is fully inside the browser viewport.
-     *
+     * <p> <p>
      * Regression guard: when position:fixed was inside the score :host's CSS
      * transform, the overlay anchored to the rotated element rather than the
      * real viewport and its bounding rect sat outside the 390×844 mobile bounds.
@@ -244,7 +244,7 @@ public class ScoreInteractionHelper {
     /**
      * Returns true when every {@code .player-row} element is fully inside the
      * browser viewport (1 px rounding tolerance on each edge).
-     *
+     * <p> <p>
      * Uses {@code getBoundingClientRect()} which accounts for all CSS transforms
      * (including the portrait-mode 90° rotation on the score host) so the check
      * is correct on both desktop and mobile viewports.

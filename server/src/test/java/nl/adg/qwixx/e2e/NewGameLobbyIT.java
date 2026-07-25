@@ -20,7 +20,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 /**
  * End-to-end tests for the post-game lobby flow:
- *
+ * <p>
  *   - A 4-player game ends.
  *   - One player clicks "Leave Game" on the score screen and is removed from the session.
  *   - The other three navigate to the settings page (restart mode).
@@ -30,7 +30,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
  *     options and only the three remaining players.
  *   - Players whose settings page is still open are redirected to the game board
  *     automatically (the settings page polls for a game-state transition).
- *
+ * <p>
  * Identity trick
  * ──────────────
  * The score screen reads the player's identity from sessionStorage

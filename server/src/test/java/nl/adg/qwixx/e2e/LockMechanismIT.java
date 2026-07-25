@@ -19,11 +19,11 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 /**
  * End-to-end tests for the row-lock mechanism.
- *
+ * <p>
  * New architecture: DECLARE_LOCK_INTENT does NOT change phase to LOCK_PENDING.
  * Row closes at EVALUATE — after active EndTurns (→ PASSIVE_MOVE) and all passives EndTurn.
  * Passives need 1 EndTurn (not 2) to complete their slot.
- *
+ * <p>
  * BLUE row (index 3) is DESCENDING: 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2
  * The closing-eligible cell is "2" (last position = 10).
  * Lock conditions: at least 5 crosses AND the "2" cell crossed (or pending).
@@ -1363,7 +1363,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
      * the active player declared lock intent, leaving the passive queue empty.
      * The active player's subsequent EndTurn triggered EVALUATE immediately,
      * cutting off passive players who had the notification modal open.
-     *
+     * <p>
      * Expected (fixed) behaviour: the declaration atomically re-queues every passive
      * who had already left. The active player's EndTurn then enters PASSIVE_MOVE;
      * passive must EndTurn again before EVALUATE fires.

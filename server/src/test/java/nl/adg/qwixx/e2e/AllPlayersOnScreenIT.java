@@ -16,28 +16,28 @@ import org.openqa.selenium.WebDriver;
  * Verifies that all player rows remain fully within the viewport on the score
  * screen in portrait (mobile) orientation, both during the score animation and
  * after dismissing the winner modal via "View Scores".
- *
+ * <p>
  * In portrait mode the score :host is rotated 90° so the score table appears
  * in landscape.  The host's DOM width = 100dvh = 844 px and its DOM height =
  * 100dvw = 390 px.  After rotation the visual viewport is 390 × 844.
  * getBoundingClientRect() returns viewport-coordinate rects (after transforms),
  * so the check works the same way on mobile as on desktop.
- *
+ * <p>
  * For a maximum-size (5-player) game the rows-container DOM height is
  * 5 × 80 px = 400 px.  Combined with the title and score-table header, the
  * total DOM height of the content exceeds the host's 390 px DOM height, which
  * would push the bottom rows off-screen (to the left side of the rotated view)
  * unless the CSS is sized to fit or the host can accommodate all rows.
- *
+ * <p>
  * Score setup — varied crosses force multiple reorderings during the animation
  * so the test exercises the rank transitions, not just the initial layout:
- *
+ * <p>
  *   player0 : RED 4 × = 10 pts + BLUE 5 × = 15 pts → 25 pts  (winner)
  *   player1 : RED 5 × = 15 pts                      → 15 pts
  *   player2 : RED 3 × =  6 pts + BLUE 4 × = 10 pts  → 16 pts
  *   player3 : RED 2 × =  3 pts + BLUE 6 × = 21 pts  → 24 pts
  *   player4 : RED 1 × =  1 pt                        →  1 pt
- *
+ * <p>
  * Reorder after RED  : player1 (15) > player0 (10) > player2 (6) > …
  * Reorder after BLUE : player0 (25) leads, player3 (24) jumps to 2nd
  */

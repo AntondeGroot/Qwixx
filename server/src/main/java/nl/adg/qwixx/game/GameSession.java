@@ -19,6 +19,7 @@ import java.util.logging.Logger;
 import nl.adg.qwixx.action.GameAction;
 import nl.adg.qwixx.action.RollAction;
 import nl.adg.qwixx.bot.BotDecider;
+import nl.adg.qwixx.bot.BotProfile;
 import nl.adg.qwixx.data.Die;
 import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.game.factory.ConfigurableGameStyleFactory;
@@ -63,7 +64,7 @@ public class GameSession {
     private final List<Player> players = new ArrayList<>();
     private final Set<UUID>    botPlayerIds  = new LinkedHashSet<>();
     private final Set<UUID>    leftPlayerIds = new LinkedHashSet<>();
-    private final Map<UUID, nl.adg.qwixx.bot.BotProfile> botProfiles = new HashMap<>();
+    private final Map<UUID, BotProfile> botProfiles = new HashMap<>();
     private       GameState   state;
     private       SessionStatus status = SessionStatus.WAITING;
     /** When false, bot pacing sleeps are skipped (tests only) so the paced path runs instantly. */
@@ -325,7 +326,7 @@ public class GameSession {
             List<GameAction> valid = rules.getValidActions(current, bot);
             if (valid.isEmpty()) break;
             GameAction action = BotDecider.decide(current, bot, valid,
-                    botProfiles.getOrDefault(bot, nl.adg.qwixx.bot.BotProfile.DEFAULT));
+                    botProfiles.getOrDefault(bot, BotProfile.DEFAULT));
             current = rules.apply(current, action);
         }
         return current;
@@ -368,7 +369,7 @@ public class GameSession {
         List<GameAction> valid = rules.getValidActions(state, bot);
         if (valid.isEmpty()) return null;
         GameAction action = BotDecider.decide(state, bot, valid,
-                botProfiles.getOrDefault(bot, nl.adg.qwixx.bot.BotProfile.DEFAULT));
+                botProfiles.getOrDefault(bot, BotProfile.DEFAULT));
         boolean isRoll = action instanceof RollAction;
 
         if (isRoll) {

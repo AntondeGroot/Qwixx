@@ -4,11 +4,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import nl.adg.qwixx.action.TakePunishmentAction;
+import nl.adg.qwixx.data.BonusBKind;
+import nl.adg.qwixx.data.Cell;
+import nl.adg.qwixx.data.CellTag;
+import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.game.GameRegistry;
+import nl.adg.qwixx.game.GameSession;
 import nl.adg.qwixx.game.Player;
 import nl.adg.qwixx.game.SessionStatus;
+import nl.adg.qwixx.game.options.GameMode;
 import nl.adg.qwixx.game.options.GameSettings;
 import nl.adg.qwixx.generated.api.GamesApiController;
+import nl.adg.qwixx.state.RowState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -277,17 +285,17 @@ class GamesApiDelegateImplTest {
 
     @Test
     void getScoresReturns200WithScoreDataAfterGameOver() throws Exception {
-        nl.adg.qwixx.game.options.GameSettings settings = nl.adg.qwixx.game.options.GameSettings.builder()
-                .gameMode(nl.adg.qwixx.game.options.GameMode.OFFLINE).build();
+        GameSettings settings = GameSettings.builder()
+                .gameMode(GameMode.OFFLINE).build();
         String id = GameRegistry.createGame("room", 2, settings);
         Player alice = Player.of("Alice");
         GameRegistry.getGame(id).addPlayer(alice);
         GameRegistry.getGame(id).start();
 
         // 4 punishments trigger game over in offline mode
-        nl.adg.qwixx.game.GameSession session = GameRegistry.getGame(id);
+        GameSession session = GameRegistry.getGame(id);
         for (int i = 0; i < 4; i++) {
-            session.applyAction(new nl.adg.qwixx.action.TakePunishmentAction(alice.id()));
+            session.applyAction(new TakePunishmentAction(alice.id()));
         }
 
         mvc.perform(get("/games/{id}/scores", id))
@@ -299,20 +307,20 @@ class GamesApiDelegateImplTest {
 
     @Test
     void getScoresReportsTheBonusBScoreTimeModifiers() throws Exception {
-        nl.adg.qwixx.game.options.GameSettings settings = nl.adg.qwixx.game.options.GameSettings.builder()
-                .gameMode(nl.adg.qwixx.game.options.GameMode.OFFLINE).bonusB(true).build();
+        GameSettings settings = GameSettings.builder()
+                .gameMode(GameMode.OFFLINE).bonusB(true).build();
         String id = GameRegistry.createGame("room", 2, settings);
         Player alice = Player.of("Alice");
         GameRegistry.getGame(id).addPlayer(alice);
         GameRegistry.getGame(id).start();
 
         // Mark the NO_PENALTY and DOUBLE_FEWEST strip indicators as achieved.
-        nl.adg.qwixx.game.GameSession session = GameRegistry.getGame(id);
+        GameSession session = GameRegistry.getGame(id);
         markStripAchieved(session, alice.id(),
-                nl.adg.qwixx.data.BonusBKind.NO_PENALTY, nl.adg.qwixx.data.BonusBKind.DOUBLE_FEWEST);
+                BonusBKind.NO_PENALTY, BonusBKind.DOUBLE_FEWEST);
 
         for (int i = 0; i < 4; i++) {
-            session.applyAction(new nl.adg.qwixx.action.TakePunishmentAction(alice.id()));
+            session.applyAction(new TakePunishmentAction(alice.id()));
         }
 
         mvc.perform(get("/games/{id}/scores", id))
@@ -324,21 +332,21 @@ class GamesApiDelegateImplTest {
     }
 
     /** Crosses the given kinds' indicators on the player's Bonus B strip, as completing a pair would. */
-    private static void markStripAchieved(nl.adg.qwixx.game.GameSession session, java.util.UUID playerId,
-                                          nl.adg.qwixx.data.BonusBKind... kinds) {
+    private static void markStripAchieved(GameSession session, java.util.UUID playerId,
+                                          BonusBKind... kinds) {
         var layout = session.currentState().sheetLayouts().get(playerId);
         var wanted = java.util.Set.of(kinds);
         for (int i = 0; i < layout.rows().size(); i++) {
-            nl.adg.qwixx.data.Row row = layout.rows().get(i);
+            Row row = layout.rows().get(i);
             if (!row.isBonusBStrip()) continue;
             java.util.Set<String> crossed = row.cells().stream()
                     .filter(c -> c.tags().stream().anyMatch(t ->
-                            t instanceof nl.adg.qwixx.data.CellTag.BonusB(var kind) && wanted.contains(kind)))
-                    .map(nl.adg.qwixx.data.Cell::id)
+                            t instanceof CellTag.BonusB(var kind) && wanted.contains(kind)))
+                    .map(Cell::id)
                     .collect(java.util.stream.Collectors.toSet());
             assertEquals(kinds.length, crossed.size(), "each requested kind has an indicator on the strip");
             session.currentState().boardState().sheetProgress().get(playerId)
-                    .updateRowState(i, new nl.adg.qwixx.state.RowState(crossed, false));
+                    .updateRowState(i, new RowState(crossed, false));
             return;
         }
         throw new IllegalStateException("no Bonus B strip in the layout");

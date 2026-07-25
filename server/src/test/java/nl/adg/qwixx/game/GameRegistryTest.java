@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import nl.adg.qwixx.game.options.BaseVariant;
 import nl.adg.qwixx.game.options.GameSettings;
+import nl.adg.qwixx.state.CardMode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -67,7 +68,7 @@ class GameRegistryTest {
 
     @Test
     void randomPresetHasDifferentCardsMode() {
-        assertEquals(nl.adg.qwixx.state.CardMode.DIFFERENT_CARDS,
+        assertEquals(CardMode.DIFFERENT_CARDS,
                 GameRegistry.presets().get("random").cardMode());
     }
 

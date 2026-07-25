@@ -21,6 +21,7 @@ import nl.adg.qwixx.data.Die;
 import nl.adg.qwixx.data.LockCell;
 import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.game.factory.ConfigurableGameStyleFactory;
+import nl.adg.qwixx.game.options.BaseVariant;
 import nl.adg.qwixx.game.options.GameSettings;
 import nl.adg.qwixx.state.BoardState;
 import nl.adg.qwixx.state.CardMode;
@@ -339,7 +340,7 @@ class BonusVariantTest {
     void factoryGeneratesBonusBoxesAndBarForLongo() {
         UUID player = UUID.randomUUID();
         List<Row> rows = new ConfigurableGameStyleFactory(
-                GameSettings.builder().base(nl.adg.qwixx.game.options.BaseVariant.LONGO).bonusA(true).build())
+                GameSettings.builder().base(BaseVariant.LONGO).bonusA(true).build())
                 .buildRows(List.of(player)).get(player);
 
         List<Row> coloured = rows.stream().filter(r -> r.lock() != null && !r.isBonusBar()).toList();

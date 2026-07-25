@@ -202,7 +202,7 @@ public class ScoreInteractionHelper {
             // rotate(90deg) → matrix(0, 1, -1, 0, tx, ty)
             // getCssValue returns the computed matrix; check that the a component ≈ 0
             String transform = host.getCssValue("transform");
-            if (transform == null || transform.equals("none")) return false;
+            if ("none".equals(transform)) return false;
             // matrix(a, b, c, d, tx, ty) — for 90deg: a≈0, b≈1, c≈-1, d≈0
             String[] parts = transform.replace("matrix(", "").replace(")", "").split(",", -1);
             double a = Double.parseDouble(parts[0].trim());

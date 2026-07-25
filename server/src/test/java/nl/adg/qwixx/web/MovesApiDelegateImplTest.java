@@ -640,7 +640,7 @@ class MovesApiDelegateImplTest {
     // ── Row Closure Request Tests ─────────────────────────────────────────────
 
     @Test
-    void closureNotificationsInitiallyEmpty() throws Exception {
+    void closureNotificationsInitiallyEmpty() {
         var gameState = GameRegistry.getGame(sessionId).currentState();
         assertNotNull(gameState.closureNotifications());
         assertEquals(0, gameState.closureNotifications().size());

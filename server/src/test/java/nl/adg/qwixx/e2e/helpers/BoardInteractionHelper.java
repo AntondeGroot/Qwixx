@@ -172,7 +172,7 @@ public class BoardInteractionHelper {
 
     /**
      * Clicks the OK/Confirm button on the row-closure notification modal.
-     *
+     * <p>
      * Waits up to 5 s for the button to appear in the DOM (the modal-overlay may render
      * before Angular has rendered the buttons inside it), then clicks via JS to avoid
      * the Chrome 148 "Node with given id does not belong to the document" stale-node error.
@@ -234,7 +234,7 @@ public class BoardInteractionHelper {
     /**
      * Returns true if the given element's bounding rect is fully inside the browser
      * viewport (allowing 1 px rounding tolerance on each edge).
-     *
+     * <p>
      * This is the key assertion for the position:fixed / CSS-transform regression:
      * when a fixed element is inside a transformed ancestor its containing block
      * becomes the ancestor rather than the viewport, and the element can end up

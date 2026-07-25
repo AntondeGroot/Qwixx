@@ -71,7 +71,7 @@ public class StandardScoringEngine implements ScoringEngine {
                 }
             }
 
-            if (rowState.lockCrossed() && row.lock() != null) {
+            if (rowState.lockCrossed() && row.hasLock()) {
                 crosses.merge(row.lock().color(), 1, Integer::sum);
             }
         }

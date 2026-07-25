@@ -77,7 +77,7 @@ class CellCrosser {
                 if (!reachable) continue;
 
                 // Lock-eligibility guard (only for normal rows with a lock).
-                if (cell.isClosingEligible() && row.lock() != null) {
+                if (cell.isClosingEligible() && row.hasLock()) {
                     long alreadyCrossedRequired = row.lock().closingCells().stream()
                             .filter(id -> rowState.crossedCells().contains(id))
                             .count();
@@ -333,7 +333,7 @@ class CellCrosser {
         Color color = barCell.color();
         for (int i = 0; i < layout.rows().size(); i++) {
             Row row = layout.rows().get(i);
-            if (row.isBonusBar() || row.lock() == null || row.cells().isEmpty()) continue;
+            if (row.isBonusBar() || !row.hasLock() || row.cells().isEmpty()) continue;
             if (row.cells().getFirst().color() != color) continue;
             if (state.isRowClosed(i)) return; // row locked → forfeited already, nothing to cross
             Cell forced = nextForcedBox(row, getRowState(prog, i));
@@ -406,7 +406,7 @@ class CellCrosser {
         SheetProgress prog = state.sheetProgress(playerId);
         for (int i = 0; i < layout.rows().size(); i++) {
             Row row = layout.rows().get(i);
-            if (row.lock() == null || state.isRowClosed(i)) continue;
+            if (!row.hasLock() || state.isRowClosed(i)) continue;
             Cell forced = nextForcedBox(row, getRowState(prog, i));
             if (forced != null) crossRecursive(state, playerId, i, forced.id(), crossed, true);
         }
@@ -420,7 +420,7 @@ class CellCrosser {
         int bestCount = Integer.MAX_VALUE;
         for (int i = 0; i < layout.rows().size(); i++) {
             Row row = layout.rows().get(i);
-            if (row.lock() == null || state.isRowClosed(i)) continue;
+            if (!row.hasLock() || state.isRowClosed(i)) continue;
             int count = getRowState(prog, i).crossedCells().size();
             if (count < bestCount) { bestCount = count; best = i; }
         }

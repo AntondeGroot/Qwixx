@@ -107,7 +107,7 @@ public class OfflineTurnRules extends StandardTurnRules {
         SheetProgress prog = state.sheetProgress(playerId);
         Row row            = layout.rows().get(rowIndex);
 
-        if (row.lock() == null) return false;
+        if (!row.hasLock()) return false;
         RowState rowState = getRowState(prog, rowIndex);
         if (rowState.lockCrossed()) return false;
         if (!hasEnoughNonClosingCrosses(state, playerId, rowIndex, rowState.crossedCells(), getMinCrossesRequired())) return false;

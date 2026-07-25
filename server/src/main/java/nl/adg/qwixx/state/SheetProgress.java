@@ -3,7 +3,7 @@ package nl.adg.qwixx.state;
 import java.util.Map;
 
 public class SheetProgress {
-  Map<Integer, RowState> rowStates;
+  final Map<Integer, RowState> rowStates;
   int punishments;
 
   public SheetProgress(Map<Integer, RowState> rowStates, int punishments) {

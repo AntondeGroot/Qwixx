@@ -22,20 +22,20 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 /**
  * Mobile-layout integration tests.
- *
+ * <p>
  * Both the lock-intent modal and the score winner modal use {@code position: fixed}
  * for their overlay.  In portrait orientation the board/score host element has
  * {@code transform: rotate(90deg)}, which makes any descendant {@code position: fixed}
  * anchor to the rotated element rather than the real viewport — the overlay ends up
  * clipped or positioned off-screen and the user cannot interact with it.
- *
+ * <p>
  * These tests run Chrome at 390×844 (iPhone 14 Pro portrait) to exercise the same
  * CSS path that fires on real mobile devices, and verify that:
  *   1. The modal overlay is visible.
  *   2. The overlay sits fully inside the viewport (bounding-rect check).
  *   3. The buttons inside the modal are actually clickable.
  *   4. Clicking a button produces the expected game-state change.
- *
+ * <p>
  * Window size: 390 × 844  (portrait — triggers @media (orientation: portrait))
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -93,7 +93,7 @@ public class MobileLayoutIT extends BaseIntegrationTest {
      * When the user rotates their device from portrait to landscape (with auto-rotate
      * enabled), the CSS orientation lock must disengage and the board must display
      * naturally in landscape — scaled to fit the 844×390 viewport without the 90° trick.
-     *
+     * <p>
      * Regression guard: applyMobileScale() must also compute and apply zoom in
      * landscape mode so the board content fits within the viewport height (390 px).
      * Without this, only the top rows would be visible after device rotation.
@@ -156,7 +156,7 @@ public class MobileLayoutIT extends BaseIntegrationTest {
 
     /**
      * The modal overlay must be fully within the real viewport in portrait mode.
-     *
+     * <p>
      * Regression guard: when position:fixed was inside the board's rotated :host,
      * getBoundingClientRect() showed the overlay outside the 390×844 viewport bounds.
      */
@@ -238,7 +238,7 @@ public class MobileLayoutIT extends BaseIntegrationTest {
 
     /**
      * The winner modal overlay must be fully within the viewport on mobile.
-     *
+     * <p>
      * Regression guard: the score screen's .modal-overlay used position:fixed
      * inside the rotated :host — the same bug that affected the lock-intent modal.
      */
@@ -510,9 +510,9 @@ public class MobileLayoutIT extends BaseIntegrationTest {
     private boolean isBoardHostRotated(WebDriver driver) {
         try {
             org.openqa.selenium.WebElement host =
-                    driver.findElement(org.openqa.selenium.By.tagName("app-board"));
+                    driver.findElement(By.tagName("app-board"));
             String transform = host.getCssValue("transform");
-            if (transform == null || transform.equals("none")) return false;
+            if ("none".equals(transform)) return false;
             String[] parts = transform.replace("matrix(", "").replace(")", "").split(",");
             double a = Double.parseDouble(parts[0].trim());
             double b = Double.parseDouble(parts[1].trim());

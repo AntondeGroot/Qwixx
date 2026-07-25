@@ -18,7 +18,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 /**
  * Longo variant — "double row close" scenario.
- *
+ * <p>
  * New architecture: clicking "16" (last closing cell) does NOT show a YES/NO modal.
  * The client auto-sends DECLARE_LOCK_INTENT after the cross, and the active player
  * must click the green Confirm button (EndTurn) to trigger EVALUATE and close the row.

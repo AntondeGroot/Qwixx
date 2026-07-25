@@ -60,7 +60,7 @@ class BigPointsTurnRulesTest {
     @Test
     void activePlayers_wwDice_offersBonusCell_whenPrerequisiteMet() {
         // BONUS-RY cell "7" matches white+white=7.
-        // Prereq: "7" must be permanently crossed in a neighbour row before the turn starts.
+        // Prereq: "7" must be permanently crossed in a neighbor row before the turn starts.
         GameState state = bigPointsStateInRoll(p1, p1, p2);
         crossCellWithValue(state, p1, RED_ROW, "7");        // satisfy prereq
         rules.apply(state, new RollAction(p1));             // snapshot captures crossed "7"
@@ -139,7 +139,7 @@ class BigPointsTurnRulesTest {
 
     @Test
     void bonusCell_notOffered_whenPrerequisiteNotMet() {
-        // No permanent crosses in neighbour rows → prereq fails → bonus cells suppressed,
+        // No permanent crosses in neighbor rows → prereq fails → bonus cells suppressed,
         // even when the dice value matches a bonus cell.
         GameState state = bigPointsStateAfterRoll(p1, p1, p2);
 
@@ -153,10 +153,10 @@ class BigPointsTurnRulesTest {
 
     @Test
     void bonusCell_offeredAfterPrerequisiteMetInLowerNeighbour() {
-        // The prereq may be met in either the upper OR the lower neighbour.
-        // Test: prereq met in YELLOW (lower neighbour of BONUS-RY), not RED.
+        // The prereq may be met in either the upper OR the lower neighbor.
+        // Test: prereq met in YELLOW (lower neighbor of BONUS-RY), not RED.
         GameState state = bigPointsStateInRoll(p1, p1, p2);
-        crossCellWithValue(state, p1, YELLOW_ROW, "7");     // lower neighbour
+        crossCellWithValue(state, p1, YELLOW_ROW, "7");     // lower neighbor
         rules.apply(state, new RollAction(p1));
 
         List<GameAction> actions = rules.getValidActions(state, p1);
@@ -184,7 +184,7 @@ class BigPointsTurnRulesTest {
 
     @Test
     void bonusCell_offered_whenBothNeighboursCrossed() {
-        // Both red (upper) and yellow (lower) have "7" crossed — two satisfied neighbours is valid.
+        // Both red (upper) and yellow (lower) have "7" crossed — two satisfied neighbors is valid.
         GameState state = bigPointsStateInRoll(p1, p1, p2);
         crossCellWithValue(state, p1, RED_ROW, "7");
         crossCellWithValue(state, p1, YELLOW_ROW, "7");
@@ -358,10 +358,10 @@ class BigPointsTurnRulesTest {
     private SheetLayout bigPointsLayout() {
         List<Row> rows = new ArrayList<>();
         rows.add(ascendingRow(Color.RED));            // 0
-        rows.add(bonusRow(Color.RED, Color.YELLOW));  // 1 — neighbours set below
+        rows.add(bonusRow(Color.RED, Color.YELLOW));  // 1 — neighbors set below
         rows.add(ascendingRow(Color.YELLOW));         // 2
         rows.add(descendingRow(Color.GREEN));         // 3
-        rows.add(bonusRow(Color.GREEN, Color.BLUE));  // 4 — neighbours set below
+        rows.add(bonusRow(Color.GREEN, Color.BLUE));  // 4 — neighbors set below
         rows.add(descendingRow(Color.BLUE));          // 5
 
         rows.get(BONUS_RY).setBonusRow(RED_ROW, YELLOW_ROW);

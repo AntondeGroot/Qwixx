@@ -52,7 +52,7 @@ interface RowConnectors {
 }
 
 // Connected B: one directional diagonal arrow, in sheet-local coordinates — a line from the source
-// cell's bottom-edge centre (x1,y1) to the target cell's top-edge centre (x2,y2). Coordinates come
+// cell's bottom-edge center (x1,y1) to the target cell's top-edge center (x2,y2). Coordinates come
 // from layout offsets (offsetLeft/offsetTop) relative to the .sheet, so they are invariant to the
 // board's CSS zoom and portrait rotation. The target's dotted ring is a CSS pseudo-element on the
 // cell itself (.auto-cross-target), not drawn here.

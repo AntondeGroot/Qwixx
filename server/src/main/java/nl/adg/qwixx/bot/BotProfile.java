@@ -1,5 +1,8 @@
 package nl.adg.qwixx.bot;
 
+import static java.lang.Math.clamp;
+import static java.lang.Math.round;
+
 import java.util.Random;
 
 /**
@@ -27,13 +30,13 @@ public record BotProfile(
      */
     public BotProfile mutate(double magnitude, Random rng) {
         return new BotProfile(
-                clampD(skipPenalty       + rng.nextGaussian() * magnitude,       0.5, 10.0),
-                clampD(rarityBonus       + rng.nextGaussian() * magnitude,       0.0, 20.0),
-                clampD(lockBonus         + rng.nextGaussian() * magnitude,       0.0, 20.0),
-                clampD(punishmentLoss    + rng.nextGaussian() * magnitude * 3.0, 0.0, 60.0),
-                clampD(passiveThreshold  + rng.nextGaussian() * magnitude,     -10.0, 10.0),
-                clampI(maxPunishments    + rng.nextInt(3) - 1, 1, 5),
-                clampI(nearLockRemaining + rng.nextInt(3) - 1, 1, 7)
+                clamp(skipPenalty       + rng.nextGaussian() * magnitude,       0.5, 10.0),
+                clamp(rarityBonus       + rng.nextGaussian() * magnitude,       0.0, 20.0),
+                clamp(lockBonus         + rng.nextGaussian() * magnitude,       0.0, 20.0),
+                clamp(punishmentLoss    + rng.nextGaussian() * magnitude * 3.0, 0.0, 60.0),
+                clamp(passiveThreshold  + rng.nextGaussian() * magnitude,     -10.0, 10.0),
+                clamp(maxPunishments    + rng.nextInt(3) - 1, 1, 5),
+                clamp(nearLockRemaining + rng.nextInt(3) - 1, 1, 7)
         );
     }
 
@@ -48,9 +51,6 @@ public record BotProfile(
         }
         int n = profiles.length;
         return new BotProfile(sp / n, rb / n, lb / n, pl / n, pt / n,
-                (int) Math.round(mp / n), (int) Math.round(nlr / n));
+                (int) round(mp / n), (int) round(nlr / n));
     }
-
-    private static double clampD(double v, double lo, double hi) { return Math.max(lo, Math.min(hi, v)); }
-    private static int    clampI(int v,    int lo,    int hi)    { return Math.max(lo, Math.min(hi, v)); }
 }

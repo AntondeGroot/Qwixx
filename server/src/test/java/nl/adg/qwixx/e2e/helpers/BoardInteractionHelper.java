@@ -135,7 +135,8 @@ public class BoardInteractionHelper {
 
     /** Waits up to {@code seconds} seconds for the lock-intent modal to appear. */
     public static void waitUntilModalVisible(WebDriver driver, int seconds) {
-        new WebDriverWait(driver, Duration.ofSeconds(seconds)).until(d -> isModalVisible(d));
+        new WebDriverWait(driver, Duration.ofSeconds(seconds)).until(
+            BoardInteractionHelper::isModalVisible);
     }
 
     /** Returns the visible text inside the modal body. */

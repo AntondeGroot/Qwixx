@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import nl.adg.qwixx.e2e.helpers.BoardInteractionHelper;
 import nl.adg.qwixx.e2e.utils.BaseIntegrationTest;
 import nl.adg.qwixx.e2e.utils.TestUtils;
 import org.junit.jupiter.api.AfterAll;
@@ -129,7 +130,7 @@ public class MobileLayoutIT extends BaseIntegrationTest {
             // Restore portrait dimensions so subsequent tests are not affected.
             portraitDriver.manage().window().setSize(new Dimension(390, 844));
             new WebDriverWait(portraitDriver, Duration.ofSeconds(3))
-                    .until(d -> isBoardHostRotated(d));
+                    .until(this::isBoardHostRotated);
         }
     }
 
@@ -397,7 +398,7 @@ public class MobileLayoutIT extends BaseIntegrationTest {
         clickCellByValue(desktopDriver, "BLUE", "3");
 
         new WebDriverWait(desktopDriver, Duration.ofSeconds(5))
-                .until(d -> isModalVisible(d));
+                .until(BoardInteractionHelper::isModalVisible);
 
         assertTrue(isModalVisible(desktopDriver),
                 "Yes/No modal must appear after clicking the second-to-last closing cell in Longo");

@@ -5,7 +5,7 @@ import nl.adg.qwixx.game.GameSession;
 import nl.adg.qwixx.game.exception.GameNotStartedException;
 import nl.adg.qwixx.game.exception.SessionNotFoundException;
 import nl.adg.qwixx.generated.api.GamestatesApiDelegate;
-import nl.adg.qwixx.generated.model.GameState;
+import nl.adg.qwixx.generated.model.GameStateDto;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +19,7 @@ public class GameStatesApiDelegateImpl implements GamestatesApiDelegate {
     private static final CacheControl NO_STORE = CacheControl.noStore();
 
     @Override
-    public ResponseEntity<GameState> getGameState(
+    public ResponseEntity<GameStateDto> getGameState(
             String sessionId, Long stateVersion) {
         GameSession session = require(sessionId);
         var state = session.currentState();

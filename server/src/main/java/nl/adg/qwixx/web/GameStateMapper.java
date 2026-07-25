@@ -15,12 +15,15 @@ import nl.adg.qwixx.action.DiceCombination;
 import nl.adg.qwixx.action.GameAction;
 import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.CellTag;
+import nl.adg.qwixx.data.Color;
 import nl.adg.qwixx.data.LockCell;
 import nl.adg.qwixx.data.RollResult;
 import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.game.GameSession;
 import nl.adg.qwixx.game.Player;
 import nl.adg.qwixx.generated.model.*;
+import nl.adg.qwixx.generated.model.AvailableMoveDto;
+import nl.adg.qwixx.generated.model.MoveTypeDto;
 import nl.adg.qwixx.state.ActiveTurnState;
 import nl.adg.qwixx.state.BoardState;
 import nl.adg.qwixx.state.GameState;
@@ -35,18 +38,18 @@ class GameStateMapper {
 
     private GameStateMapper() {}
 
-    static nl.adg.qwixx.generated.model.GameState toDto(GameState state, GameSession session) {
+    static GameStateDto toDto(GameState state, GameSession session) {
         Map<UUID, Player> playerIndex = session.players().stream()
                 .collect(Collectors.toMap(Player::id, Function.identity()));
 
         BoardState board = state.boardState();
         TurnState  turn  = state.turnState();
 
-        return new nl.adg.qwixx.generated.model.GameState(
+        return new GameStateDto(
                 state.players().stream()
                         .map(id -> {
                             Player p = playerIndex.get(id);
-                            return new nl.adg.qwixx.generated.model.Player(
+                            return new PlayerDto(
                                     id.toString(),
                                     p != null ? p.name() : id.toString())
                                     .profilePic(p != null ? p.profilePic() : null);
@@ -70,15 +73,15 @@ class GameStateMapper {
 
     @Nullable
     @SuppressWarnings("PMD.ReturnEmptyCollectionRatherThanNull")
-    private static Map<String, List<nl.adg.qwixx.generated.model.AvailableMove>> mapAvailableMoves(
+    private static Map<String, List<AvailableMoveDto>> mapAvailableMoves(
             GameState state, GameSession session) {
         if (state.turnState() == null || state.gameOver()) return null;
 
-        Map<String, List<nl.adg.qwixx.generated.model.AvailableMove>> result = new HashMap<>();
+        Map<String, List<AvailableMoveDto>> result = new HashMap<>();
         for (UUID playerId : state.players()) {
             List<GameAction> actions = session.rules().getValidActions(state, playerId);
-            nl.adg.qwixx.state.SheetLayout layout = state.sheetLayout(playerId);
-            List<nl.adg.qwixx.generated.model.AvailableMove> moves = new ArrayList<>();
+            SheetLayout layout = state.sheetLayout(playerId);
+            List<AvailableMoveDto> moves = new ArrayList<>();
             Set<String> seen = new HashSet<>();
 
             // White+white moves first (preferred when a cell matches both WW and color die).
@@ -86,23 +89,23 @@ class GameStateMapper {
                 if (!(action instanceof CrossCellAction cross)) continue;
                 if (cross.combination() != DiceCombination.WHITE_WHITE) continue;
                 Cell cell = findCellInLayout(layout, cross.rowIndex(), cross.cellId());
-                nl.adg.qwixx.generated.model.MoveType moveType = isLuckyCrossCell(cell)
-                        ? nl.adg.qwixx.generated.model.MoveType.CROSS_LUCKY_CROSS
-                        : nl.adg.qwixx.generated.model.MoveType.CROSS_WHITE_WHITE;
+                MoveTypeDto moveType = isLuckyCrossCell(cell)
+                        ? MoveTypeDto.CROSS_LUCKY_CROSS
+                        : MoveTypeDto.CROSS_WHITE_WHITE;
                 String key = cross.cellId() + ':' + moveType;
                 if (seen.add(key)) {
-                    moves.add(new nl.adg.qwixx.generated.model.AvailableMove(cross.cellId(), moveType));
+                    moves.add(new AvailableMoveDto(cross.cellId(), moveType));
                 }
             }
 
-            // Color die moves second.
+            // ColorDto die moves second.
             for (GameAction action : actions) {
                 if (!(action instanceof CrossCellAction cross)) continue;
                 if (cross.combination() != DiceCombination.WHITE_COLOR) continue;
-                String key = cross.cellId() + ':' + nl.adg.qwixx.generated.model.MoveType.CROSS_COLOR_DIE;
+                String key = cross.cellId() + ':' + MoveTypeDto.CROSS_COLOR_DIE;
                 if (seen.add(key)) {
-                    moves.add(new nl.adg.qwixx.generated.model.AvailableMove(
-                            cross.cellId(), nl.adg.qwixx.generated.model.MoveType.CROSS_COLOR_DIE));
+                    moves.add(new AvailableMoveDto(
+                            cross.cellId(), MoveTypeDto.CROSS_COLOR_DIE));
                 }
             }
 
@@ -112,7 +115,7 @@ class GameStateMapper {
     }
 
     @Nullable
-    private static Cell findCellInLayout(nl.adg.qwixx.state.SheetLayout layout, int rowIndex, String cellId) {
+    private static Cell findCellInLayout(SheetLayout layout, int rowIndex, String cellId) {
         List<Row> rows = layout.rows();
         if (rowIndex < 0 || rowIndex >= rows.size()) return null;
         return rows.get(rowIndex).cells().stream()
@@ -126,8 +129,8 @@ class GameStateMapper {
                 && cell.tags().stream().anyMatch(t -> t instanceof CellTag.LuckyCross);
     }
 
-    private static Map<String, nl.adg.qwixx.generated.model.SheetProgress> mapSheetProgress(GameState state) {
-        Map<String, nl.adg.qwixx.generated.model.SheetProgress> result = new HashMap<>();
+    private static Map<String, SheetProgressDto> mapSheetProgress(GameState state) {
+        Map<String, SheetProgressDto> result = new HashMap<>();
         state.boardState().sheetProgress().forEach((playerId, sp) -> {
             SheetLayout layout = state.sheetLayout(playerId);
             result.put(playerId.toString(), mapSheetProgress(sp, layout));
@@ -135,17 +138,17 @@ class GameStateMapper {
         return result;
     }
 
-    private static nl.adg.qwixx.generated.model.SheetProgress mapSheetProgress(SheetProgress sp, SheetLayout layout) {
-        Map<String, nl.adg.qwixx.generated.model.RowState> rowStates = new HashMap<>();
+    private static SheetProgressDto mapSheetProgress(SheetProgress sp, SheetLayout layout) {
+        Map<String, RowStateDto> rowStates = new HashMap<>();
         sp.rowStates().forEach((rowIndex, rs) -> {
             String rowId = layout.rows().get(rowIndex).id();
             rowStates.put(rowId, mapRowState(rs));
         });
-        return new nl.adg.qwixx.generated.model.SheetProgress(rowStates, sp.punishments());
+        return new SheetProgressDto(rowStates, sp.punishments());
     }
 
-    private static nl.adg.qwixx.generated.model.RowState mapRowState(RowState rs) {
-        return new nl.adg.qwixx.generated.model.RowState(
+    private static RowStateDto mapRowState(RowState rs) {
+        return new RowStateDto(
                 new ArrayList<>(rs.crossedCells()),
                 rs.lockCrossed());
     }
@@ -163,10 +166,10 @@ class GameStateMapper {
         return result;
     }
 
-    private static List<nl.adg.qwixx.generated.model.Color> mapActiveDiceColors(BoardState board) {
+    private static List<ColorDto> mapActiveDiceColors(BoardState board) {
         return board.activeDice().stream()
-                .filter(die -> die.color() != nl.adg.qwixx.data.Color.WHITE)
-                .map(die -> nl.adg.qwixx.generated.model.Color.fromValue(die.color().name()))
+                .filter(die -> die.color() != Color.WHITE)
+                .map(die -> ColorDto.fromValue(die.color().name()))
                 .toList();
     }
 
@@ -180,9 +183,9 @@ class GameStateMapper {
     }
 
     @Nullable
-    private static nl.adg.qwixx.generated.model.TurnState mapTurnState(@Nullable TurnState turn) {
+    private static TurnStateDto mapTurnState(@Nullable TurnState turn) {
         if (turn == null) return null;
-        nl.adg.qwixx.generated.model.TurnState dto = new nl.adg.qwixx.generated.model.TurnState(
+        TurnStateDto dto = new TurnStateDto(
                 turn.activePlayerId().toString(),
                 mapPhase(turn.phase()))
                 .passivePlayerQueue(turn.passivePlayerQueue().stream()
@@ -222,46 +225,46 @@ class GameStateMapper {
         return dto;
     }
 
-    private static nl.adg.qwixx.generated.model.TurnPhase mapPhase(TurnPhase phase) {
+    private static TurnPhaseDto mapPhase(TurnPhase phase) {
         return switch (phase) {
-            case ROLL         -> nl.adg.qwixx.generated.model.TurnPhase.ROLL;
-            case ACTIVE_MOVE  -> nl.adg.qwixx.generated.model.TurnPhase.ACTIVE_MOVE;
-            case PASSIVE_MOVE -> nl.adg.qwixx.generated.model.TurnPhase.PASSIVE_MOVE;
-            case EVALUATE     -> nl.adg.qwixx.generated.model.TurnPhase.EVALUATE;
+            case ROLL         -> TurnPhaseDto.ROLL;
+            case ACTIVE_MOVE  -> TurnPhaseDto.ACTIVE_MOVE;
+            case PASSIVE_MOVE -> TurnPhaseDto.PASSIVE_MOVE;
+            case EVALUATE     -> TurnPhaseDto.EVALUATE;
         };
     }
 
-    private static nl.adg.qwixx.generated.model.RollResult mapRollResult(RollResult rr) {
+    private static RollResultDto mapRollResult(RollResult rr) {
         Map<String, Integer> coloredDice = new HashMap<>();
         rr.coloredDice().forEach((color, value) -> coloredDice.put(color.name(), value));
-        return new nl.adg.qwixx.generated.model.RollResult(rr.white1(), rr.white2(), coloredDice);
+        return new RollResultDto(rr.white1(), rr.white2(), coloredDice);
     }
 
-    private static Map<String, nl.adg.qwixx.generated.model.SheetLayout> mapSheetLayouts(GameState state) {
-        Map<String, nl.adg.qwixx.generated.model.SheetLayout> result = new HashMap<>();
+    private static Map<String, SheetLayoutDto> mapSheetLayouts(GameState state) {
+        Map<String, SheetLayoutDto> result = new HashMap<>();
         state.sheetLayouts().forEach((playerId, layout) ->
                 result.put(playerId.toString(), mapSheetLayout(layout)));
         return result;
     }
 
-    static nl.adg.qwixx.generated.model.SheetLayout toSheetLayoutDto(SheetLayout layout) {
+    static SheetLayoutDto toSheetLayoutDto(SheetLayout layout) {
         return mapSheetLayout(layout);
     }
 
-    private static nl.adg.qwixx.generated.model.SheetLayout mapSheetLayout(SheetLayout layout) {
+    private static SheetLayoutDto mapSheetLayout(SheetLayout layout) {
         List<Row> domainRows = layout.rows();
-        List<SheetRow> rows = new ArrayList<>();
+        List<SheetRowDto> rows = new ArrayList<>();
         for (Row row : domainRows) {
             rows.add(mapRow(row, domainRows));
         }
-        return new nl.adg.qwixx.generated.model.SheetLayout(rows);
+        return new SheetLayoutDto(rows);
     }
 
-    private static SheetRow mapRow(Row row, List<Row> allRows) {
-        List<SheetCell> cells = row.cells().stream()
+    private static SheetRowDto mapRow(Row row, List<Row> allRows) {
+        List<SheetCellDto> cells = row.cells().stream()
                 .map(GameStateMapper::mapCell)
                 .toList();
-        SheetRow dto = new SheetRow(row.id(), cells)
+        SheetRowDto dto = new SheetRowDto(row.id(), cells)
                 .lock(mapLock(row.lock()))
                 .bonusRow(row.isBonusRow())
                 .luckyRow(row.isLuckyRow())
@@ -277,68 +280,68 @@ class GameStateMapper {
         return dto;
     }
 
-    private static SheetCell mapCell(Cell cell) {
-        nl.adg.qwixx.generated.model.Color color =
-                nl.adg.qwixx.generated.model.Color.fromValue(cell.color().name());
-        List<nl.adg.qwixx.generated.model.CellTag> tags = cell.tags().stream()
+    private static SheetCellDto mapCell(Cell cell) {
+        ColorDto color =
+                ColorDto.fromValue(cell.color().name());
+        List<CellTagDto> tags = cell.tags().stream()
                 .map(GameStateMapper::mapTag)
                 .toList();
-        return new SheetCell(
+        return new SheetCellDto(
                 cell.id(), cell.position(), cell.displayValue(), color, cell.isClosingEligible(), tags);
     }
 
     @Nullable
-    private static LockConfig mapLock(@Nullable LockCell lock) {
+    private static LockConfigDto mapLock(@Nullable LockCell lock) {
         if (lock == null) return null;
-        nl.adg.qwixx.generated.model.Color color =
-                nl.adg.qwixx.generated.model.Color.fromValue(lock.color().name());
-        return new LockConfig(
+        ColorDto color =
+                ColorDto.fromValue(lock.color().name());
+        return new LockConfigDto(
                 lock.id(), color, lock.minCrosses(), new ArrayList<>(lock.closingCells()));
     }
 
-    private static nl.adg.qwixx.generated.model.CellTag mapTag(CellTag tag) {
+    private static CellTagDto mapTag(CellTag tag) {
         return switch (tag) {
             case CellTag.ExtraBucket ignored ->
-                    new nl.adg.qwixx.generated.model.CellTag(
-                            nl.adg.qwixx.generated.model.CellTag.TypeEnum.EXTRA_BUCKET);
+                    new CellTagDto(
+                            CellTagDto.TypeEnum.EXTRA_BUCKET);
             case CellTag.DoubleCross ignored ->
-                    new nl.adg.qwixx.generated.model.CellTag(
-                            nl.adg.qwixx.generated.model.CellTag.TypeEnum.DOUBLE_CROSS);
+                    new CellTagDto(
+                            CellTagDto.TypeEnum.DOUBLE_CROSS);
             case CellTag.AutoCross a ->
-                    new nl.adg.qwixx.generated.model.CellTag(
-                            nl.adg.qwixx.generated.model.CellTag.TypeEnum.AUTO_CROSS)
+                    new CellTagDto(
+                            CellTagDto.TypeEnum.AUTO_CROSS)
                             .target(a.target());
             case CellTag.DoubleTwin dt ->
-                    new nl.adg.qwixx.generated.model.CellTag(
-                            nl.adg.qwixx.generated.model.CellTag.TypeEnum.DOUBLE_TWIN)
+                    new CellTagDto(
+                            CellTagDto.TypeEnum.DOUBLE_TWIN)
                             .target(dt.primary());
             case CellTag.BonusBox ignored ->
-                    new nl.adg.qwixx.generated.model.CellTag(
-                            nl.adg.qwixx.generated.model.CellTag.TypeEnum.BONUS_BOX);
+                    new CellTagDto(
+                            CellTagDto.TypeEnum.BONUS_BOX);
             case CellTag.BonusB b ->
-                    new nl.adg.qwixx.generated.model.CellTag(
-                            nl.adg.qwixx.generated.model.CellTag.TypeEnum.BONUS_B)
-                            .bonusKind(nl.adg.qwixx.generated.model.CellTag.BonusKindEnum.fromValue(b.kind().name()));
+                    new CellTagDto(
+                            CellTagDto.TypeEnum.BONUS_B)
+                            .bonusKind(CellTagDto.BonusKindEnum.fromValue(b.kind().name()));
             case CellTag.BonusPoints b ->
-                    new nl.adg.qwixx.generated.model.CellTag(
-                            nl.adg.qwixx.generated.model.CellTag.TypeEnum.BONUS_POINTS)
+                    new CellTagDto(
+                            CellTagDto.TypeEnum.BONUS_POINTS)
                             .amount(b.amount());
             case CellTag.SecondaryColor sc ->
-                    new nl.adg.qwixx.generated.model.CellTag(
-                            nl.adg.qwixx.generated.model.CellTag.TypeEnum.SECONDARY_COLOR)
+                    new CellTagDto(
+                            CellTagDto.TypeEnum.SECONDARY_COLOR)
                             .secondaryColor(sc.color().name());
             case CellTag.XChange xc ->
-                    new nl.adg.qwixx.generated.model.CellTag(
-                            nl.adg.qwixx.generated.model.CellTag.TypeEnum.X_CHANGE)
+                    new CellTagDto(
+                            CellTagDto.TypeEnum.X_CHANGE)
                             .valueA(xc.a())
                             .valueB(xc.b());
             case CellTag.LuckyNumber ln ->
-                    new nl.adg.qwixx.generated.model.CellTag(
-                            nl.adg.qwixx.generated.model.CellTag.TypeEnum.LUCKY_NUMBER)
+                    new CellTagDto(
+                            CellTagDto.TypeEnum.LUCKY_NUMBER)
                             .amount(ln.bonusPoints());
             case CellTag.LuckyCross ignored ->
-                    new nl.adg.qwixx.generated.model.CellTag(
-                            nl.adg.qwixx.generated.model.CellTag.TypeEnum.LUCKY_CROSS);
+                    new CellTagDto(
+                            CellTagDto.TypeEnum.LUCKY_CROSS);
         };
     }
 
@@ -355,7 +358,7 @@ class GameStateMapper {
         return result;
     }
 
-    private static List<ClosureNotification> mapClosureNotifications(
+    private static List<ClosureNotificationDto> mapClosureNotifications(
             GameState state, GameSession session) {
         Map<UUID, Player> playerIndex = session.players().stream()
                 .collect(Collectors.toMap(Player::id, Function.identity()));
@@ -363,9 +366,9 @@ class GameStateMapper {
                 .map(req -> {
                     Player p = playerIndex.get(req.playerId());
                     String name = p != null ? p.name() : req.playerId().toString();
-                    return new ClosureNotification(
+                    return new ClosureNotificationDto(
                             name,
-                            nl.adg.qwixx.generated.model.Color.fromValue(req.rowColor().name()));
+                            ColorDto.fromValue(req.rowColor().name()));
                 })
                 .toList();
     }

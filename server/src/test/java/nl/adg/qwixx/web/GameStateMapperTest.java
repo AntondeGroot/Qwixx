@@ -4,11 +4,21 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 import java.util.Map;
+import nl.adg.qwixx.action.CrossCellAction;
+import nl.adg.qwixx.action.DiceCombination;
+import nl.adg.qwixx.action.RollAction;
+import nl.adg.qwixx.data.Color;
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.Player;
+import nl.adg.qwixx.game.options.GameMode;
 import nl.adg.qwixx.game.options.GameSettings;
-import nl.adg.qwixx.generated.model.TurnPhase;
+import nl.adg.qwixx.generated.model.ClosureNotificationDto;
+import nl.adg.qwixx.generated.model.ColorDto;
+import nl.adg.qwixx.generated.model.GameStateDto;
+import nl.adg.qwixx.generated.model.PlayerDto;
+import nl.adg.qwixx.generated.model.TurnPhaseDto;
 import nl.adg.qwixx.state.CardMode;
+import nl.adg.qwixx.state.ClosureNotification;
 import nl.adg.qwixx.state.GameState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,7 +44,7 @@ class GameStateMapperTest {
     void toDtoIncludesAllPlayers() {
         var dto = toDto();
         List<String> names = dto.getPlayers().stream()
-                .map(nl.adg.qwixx.generated.model.Player::getName).toList();
+                .map(PlayerDto::getName).toList();
         assertTrue(names.contains("Alice"));
         assertTrue(names.contains("Bob"));
     }
@@ -73,7 +83,7 @@ class GameStateMapperTest {
     void toDtoTurnStatePhaseIsRollAtStart() {
         var dto = toDto();
         assertNotNull(dto.getTurnState());
-        assertEquals(TurnPhase.ROLL, dto.getTurnState().getPhase());
+        assertEquals(TurnPhaseDto.ROLL, dto.getTurnState().getPhase());
     }
 
     @Test
@@ -87,7 +97,7 @@ class GameStateMapperTest {
     void toDtoTurnStateIsNullInOfflineMode() {
         GameRegistry.clear();
         String sid = GameRegistry.createGame("offline", 4,
-                GameSettings.builder().gameMode(nl.adg.qwixx.game.options.GameMode.OFFLINE).build());
+                GameSettings.builder().gameMode(GameMode.OFFLINE).build());
         Player p = Player.of("P");
         GameRegistry.getGame(sid).addPlayer(p);
         GameRegistry.getGame(sid).start();
@@ -145,7 +155,7 @@ class GameStateMapperTest {
     void toDtoPendingCrossesPopulatedAfterCross() {
         var activeId = GameRegistry.getGame(sessionId).currentState().turnState().activePlayerId();
         GameRegistry.getGame(sessionId).applyAction(
-                new nl.adg.qwixx.action.RollAction(activeId));
+                new RollAction(activeId));
 
         var roll = GameRegistry.getGame(sessionId).currentState().turnState().currentRoll();
         int target = roll.white1() + roll.white2();
@@ -154,11 +164,11 @@ class GameStateMapperTest {
             for (var cell : row.cells()) {
                 if (cell.displayValue().equals(String.valueOf(target))) {
                     GameRegistry.getGame(sessionId).applyAction(
-                            new nl.adg.qwixx.action.CrossCellAction(
+                            new CrossCellAction(
                                     activeId,
                                     layout.rows().indexOf(row),
                                     cell.id(),
-                                    nl.adg.qwixx.action.DiceCombination.WHITE_WHITE));
+                                    DiceCombination.WHITE_WHITE));
                     var dto = toDto();
                     var pending = dto.getTurnState().getPendingCrosses();
                     assertNotNull(pending);
@@ -184,10 +194,10 @@ class GameStateMapperTest {
         // The mapper looks up the player name from the session.
         var state = GameRegistry.getGame(sessionId).currentState();
         state.closureNotifications().add(
-            new nl.adg.qwixx.state.ClosureNotification(alice.id(), nl.adg.qwixx.data.Color.RED)
+            new ClosureNotification(alice.id(), Color.RED)
         );
         state.closureNotifications().add(
-            new nl.adg.qwixx.state.ClosureNotification(bob.id(), nl.adg.qwixx.data.Color.YELLOW)
+            new ClosureNotification(bob.id(), Color.YELLOW)
         );
 
         var dto = GameStateMapper.toDto(state, GameRegistry.getGame(sessionId));
@@ -197,11 +207,11 @@ class GameStateMapperTest {
 
         // Check first request
         assertEquals("Alice", dto.getClosureNotifications().getFirst().getPlayerName());
-        assertEquals(nl.adg.qwixx.generated.model.Color.RED, dto.getClosureNotifications().getFirst().getRowColor());
+        assertEquals(ColorDto.RED, dto.getClosureNotifications().getFirst().getRowColor());
 
         // Check second request
         assertEquals("Bob", dto.getClosureNotifications().get(1).getPlayerName());
-        assertEquals(nl.adg.qwixx.generated.model.Color.YELLOW, dto.getClosureNotifications().get(1).getRowColor());
+        assertEquals(ColorDto.YELLOW, dto.getClosureNotifications().get(1).getRowColor());
     }
 
     @Test
@@ -209,28 +219,28 @@ class GameStateMapperTest {
         var state = GameRegistry.getGame(sessionId).currentState();
         // Use alice's UUID for all requests; the mapper resolves to the player's name.
         state.closureNotifications().add(
-            new nl.adg.qwixx.state.ClosureNotification(alice.id(), nl.adg.qwixx.data.Color.RED)
+            new ClosureNotification(alice.id(), Color.RED)
         );
         state.closureNotifications().add(
-            new nl.adg.qwixx.state.ClosureNotification(alice.id(), nl.adg.qwixx.data.Color.YELLOW)
+            new ClosureNotification(alice.id(), Color.YELLOW)
         );
         state.closureNotifications().add(
-            new nl.adg.qwixx.state.ClosureNotification(alice.id(), nl.adg.qwixx.data.Color.GREEN)
+            new ClosureNotification(alice.id(), Color.GREEN)
         );
         state.closureNotifications().add(
-            new nl.adg.qwixx.state.ClosureNotification(alice.id(), nl.adg.qwixx.data.Color.BLUE)
+            new ClosureNotification(alice.id(), Color.BLUE)
         );
 
         var dto = GameStateMapper.toDto(state, GameRegistry.getGame(sessionId));
 
         assertEquals(4, dto.getClosureNotifications().size());
         var colors = dto.getClosureNotifications().stream()
-            .map(nl.adg.qwixx.generated.model.ClosureNotification::getRowColor)
+            .map(ClosureNotificationDto::getRowColor)
             .toList();
-        assertTrue(colors.contains(nl.adg.qwixx.generated.model.Color.RED));
-        assertTrue(colors.contains(nl.adg.qwixx.generated.model.Color.YELLOW));
-        assertTrue(colors.contains(nl.adg.qwixx.generated.model.Color.GREEN));
-        assertTrue(colors.contains(nl.adg.qwixx.generated.model.Color.BLUE));
+        assertTrue(colors.contains(ColorDto.RED));
+        assertTrue(colors.contains(ColorDto.YELLOW));
+        assertTrue(colors.contains(ColorDto.GREEN));
+        assertTrue(colors.contains(ColorDto.BLUE));
     }
 
     // ── closedRows mapping ────────────────────────────────────────────────────
@@ -512,7 +522,7 @@ class GameStateMapperTest {
         }
     }
 
-    private nl.adg.qwixx.generated.model.GameState toDto() {
+    private GameStateDto toDto() {
         return GameStateMapper.toDto(
                 GameRegistry.getGame(sessionId).currentState(),
                 GameRegistry.getGame(sessionId));

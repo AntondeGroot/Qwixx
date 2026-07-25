@@ -14,6 +14,7 @@ import java.util.UUID;
 import nl.adg.qwixx.action.CrossCellAction;
 import nl.adg.qwixx.action.DeclareLockIntentAction;
 import nl.adg.qwixx.action.DiceCombination;
+import nl.adg.qwixx.action.EndTurnAction;
 import nl.adg.qwixx.action.RollAction;
 import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.CellTag;
@@ -572,24 +573,24 @@ class LongoTurnRulesTest {
         if (state.turnState().phase() == TurnPhase.ROLL) {
             rules.apply(state, new RollAction(active));
         }
-        nl.adg.qwixx.action.CrossCellAction cross = rules.getValidActions(state, active)
-                .stream().filter(a -> a instanceof nl.adg.qwixx.action.CrossCellAction)
-                .map(a -> (nl.adg.qwixx.action.CrossCellAction) a)
+        CrossCellAction cross = rules.getValidActions(state, active)
+                .stream().filter(a -> a instanceof CrossCellAction)
+                .map(a -> (CrossCellAction) a)
                 .findFirst().orElseThrow();
         rules.apply(state, cross);
-        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(active));
+        rules.apply(state, new EndTurnAction(active));
         for (UUID passive : passives) {
             if (state.turnState().passivePlayerQueue().contains(passive)) {
-                rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(passive));
+                rules.apply(state, new EndTurnAction(passive));
             }
         }
     }
 
     /** Returns the first CrossCellAction offered to playerId, or throws if none. */
-    private nl.adg.qwixx.action.CrossCellAction completeCrossAction(GameState state, UUID playerId) {
+    private CrossCellAction completeCrossAction(GameState state, UUID playerId) {
         return rules.getValidActions(state, playerId).stream()
-                .filter(a -> a instanceof nl.adg.qwixx.action.CrossCellAction)
-                .map(a -> (nl.adg.qwixx.action.CrossCellAction) a)
+                .filter(a -> a instanceof CrossCellAction)
+                .map(a -> (CrossCellAction) a)
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("no CrossCellAction available for " + playerId));
     }
@@ -803,9 +804,9 @@ class LongoTurnRulesTest {
 
         // p1 (active) makes a move and EndTurns → PASSIVE_MOVE
         rules.apply(state, completeCrossAction(state, p1));
-        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p1));  // → PASSIVE_MOVE
+        rules.apply(state, new EndTurnAction(p1));  // → PASSIVE_MOVE
         // p2 EndTurns → EVALUATE → row closes
-        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p2));
+        rules.apply(state, new EndTurnAction(p2));
 
         assertTrue(state.isRowClosed(0),
                 "LONGO row must close once all passives have EndTurned (EVALUATE)");
@@ -832,7 +833,7 @@ class LongoTurnRulesTest {
 
         // Active p1 crosses and ends → PASSIVE_MOVE with p2, p3 queued.
         rules.apply(state, completeCrossAction(state, p1));
-        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p1));
+        rules.apply(state, new EndTurnAction(p1));
         assertEquals(TurnPhase.PASSIVE_MOVE, state.turnState().phase());
 
         rules.apply(state, new DeclareLockIntentAction(p3, 0)); // p3 declares RED first
@@ -841,8 +842,8 @@ class LongoTurnRulesTest {
         rules.apply(state, new DeclareLockIntentAction(p2, 0));
 
         // p2 ends first (clears its pending "15"), then p3 ends → EVALUATE closes RED.
-        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p2));
-        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p3));
+        rules.apply(state, new EndTurnAction(p2));
+        rules.apply(state, new EndTurnAction(p3));
 
         assertTrue(state.isRowClosed(0), "RED must close at EVALUATE");
         assertTrue(state.boardState().sheetProgress().get(p2).rowStates().get(0).lockCrossed(),
@@ -857,19 +858,19 @@ class LongoTurnRulesTest {
 
         // In the new architecture, p1 (active) can cross a cell in ACTIVE_MOVE,
         // then EndTurns → PASSIVE_MOVE. p2 EndTurns → EVALUATE → row closes.
-        nl.adg.qwixx.action.CrossCellAction cross = rules.getValidActions(state, p1).stream()
-                .filter(a -> a instanceof nl.adg.qwixx.action.CrossCellAction)
-                .map(a -> (nl.adg.qwixx.action.CrossCellAction) a)
+        CrossCellAction cross = rules.getValidActions(state, p1).stream()
+                .filter(a -> a instanceof CrossCellAction)
+                .map(a -> (CrossCellAction) a)
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("no cross action for p1 in ACTIVE_MOVE"));
 
         rules.apply(state, cross);
-        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p1));  // active EndTurns → PASSIVE_MOVE
-        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p2));  // p2 EndTurns → EVALUATE → row closes
+        rules.apply(state, new EndTurnAction(p1));  // active EndTurns → PASSIVE_MOVE
+        rules.apply(state, new EndTurnAction(p2));  // p2 EndTurns → EVALUATE → row closes
 
-        nl.adg.qwixx.state.RowState rs = state.boardState().sheetProgress().get(p1)
+        RowState rs = state.boardState().sheetProgress().get(p1)
                 .rowStates().getOrDefault(cross.rowIndex(),
-                        new nl.adg.qwixx.state.RowState(Set.of(), false));
+                        new RowState(Set.of(), false));
         assertTrue(rs.crossedCells().contains(cross.cellId()),
                 "active player's cross must be preserved after the LONGO lock closes");
         assertTrue(state.isRowClosed(0),
@@ -1100,7 +1101,7 @@ class LongoTurnRulesTest {
 
         // p1 EndTurns → autoDetectClosingIntent fires ("2" in undo buffer, 7 ≥ minCrosses)
         // → pendingClosures[BLUE] = p1 → PASSIVE_MOVE.
-        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p1));
+        rules.apply(state, new EndTurnAction(p1));
         assertEquals(TurnPhase.PASSIVE_MOVE, state.turnState().phase());
 
         // p2 crosses "3" (second-to-last closing cell, white+white=3) as passive.
@@ -1116,11 +1117,11 @@ class LongoTurnRulesTest {
 
         // p2 EndTurns → EVALUATE.  The undo buffer is now cleared AFTER evaluate,
         // so canCrossLock sees "3" as a pending cross and returns true for p2.
-        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p2));
+        rules.apply(state, new EndTurnAction(p2));
 
-        nl.adg.qwixx.state.RowState p2RowState = state.boardState()
+        RowState p2RowState = state.boardState()
                 .sheetProgress().get(p2).rowStates()
-                .getOrDefault(rowIndex, new nl.adg.qwixx.state.RowState(Set.of(), false));
+                .getOrDefault(rowIndex, new RowState(Set.of(), false));
         assertTrue(p2RowState.lockCrossed(),
                 "p2 must have lockCrossed=true: crossed second-to-last cell this turn " +
                 "even though undo buffer is cleared in endTurnInPassiveMove");
@@ -1178,23 +1179,23 @@ class LongoTurnRulesTest {
         assertEquals(TurnPhase.ACTIVE_MOVE, state.turnState().phase(),
                 "phase must stay ACTIVE_MOVE after DECLARE_LOCK_INTENT");
         rules.apply(state, completeCrossAction(state, p1)); // active must cross to satisfy EndTurn requirement
-        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p1));
+        rules.apply(state, new EndTurnAction(p1));
         assertEquals(TurnPhase.PASSIVE_MOVE, state.turnState().phase());
 
         // p2 EndTurns → EVALUATE → row 0 closes → Turn 2: p2 is active
-        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p2));
+        rules.apply(state, new EndTurnAction(p2));
         assertTrue(state.isRowClosed(0), "row 0 must close after EVALUATE");
         assertEquals(TurnPhase.ROLL, state.turnState().phase(), "Turn 2 must start with ROLL");
         assertEquals(p2, state.turnState().activePlayerId(), "p2 must be active for Turn 2");
 
         // Turn 2: p2 rolls, crosses the last closing cell of row 1 → auto-detection fires at EndTurn
-        rules.apply(state, new nl.adg.qwixx.action.RollAction(p2));
+        rules.apply(state, new RollAction(p2));
         String p2LastClosing = state.sheetLayouts().get(p2).rows().get(1).lock().closingCells().getLast();
-        rules.apply(state, new nl.adg.qwixx.action.CrossCellAction(p2, 1, p2LastClosing, DiceCombination.WHITE_WHITE));
-        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p2)); // auto-detection declares row 1
+        rules.apply(state, new CrossCellAction(p2, 1, p2LastClosing, DiceCombination.WHITE_WHITE));
+        rules.apply(state, new EndTurnAction(p2)); // auto-detection declares row 1
 
         // p1 EndTurns → EVALUATE → row 1 closes → game over
-        rules.apply(state, new nl.adg.qwixx.action.EndTurnAction(p1));
+        rules.apply(state, new EndTurnAction(p1));
         assertTrue(state.isRowClosed(1), "row 1 must close after p1 EndTurns");
         assertTrue(state.gameOver(), "game must be over after 2 rows close");
     }

@@ -20,9 +20,9 @@ import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSession;
 import nl.adg.qwixx.game.exception.SessionNotFoundException;
 import nl.adg.qwixx.generated.api.MovesApiDelegate;
-import nl.adg.qwixx.generated.model.MoveRequest;
-import nl.adg.qwixx.generated.model.MoveResponse;
-import nl.adg.qwixx.generated.model.MoveResult;
+import nl.adg.qwixx.generated.model.MoveRequestDto;
+import nl.adg.qwixx.generated.model.MoveResponseDto;
+import nl.adg.qwixx.generated.model.MoveResultDto;
 import nl.adg.qwixx.rules.IllegalMoveException;
 import nl.adg.qwixx.state.GameState;
 import nl.adg.qwixx.state.SheetLayout;
@@ -43,8 +43,8 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
     private BotTurnDriver botDriver;
 
     @Override
-    public ResponseEntity<MoveResponse> makeMove(String sessionId, String playerId,
-            MoveRequest req) {
+    public ResponseEntity<MoveResponseDto> makeMove(String sessionId, String playerId,
+            MoveRequestDto req) {
         GameSession session = require(sessionId);
         UUID pid = parsePlayerId(playerId);
         GameAction action = toAction(pid, req, session);
@@ -61,9 +61,9 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
                 intermediate -> sseRegistry.emit(sessionId, intermediate, session),
                 () -> gameFinishedNotifier.checkAndNotify(sessionId, session), null);
 
-        MoveResult result = newState.gameOver() ? MoveResult.GAME_OVER : MoveResult.ACCEPTED;
+        MoveResultDto result = newState.gameOver() ? MoveResultDto.GAME_OVER : MoveResultDto.ACCEPTED;
 
-        MoveResponse response = new MoveResponse().result(result);
+        MoveResponseDto response = new MoveResponseDto().result(result);
 
         if (action instanceof CrossCellAction cross) {
             response.crossedCellId(cross.cellId());
@@ -79,7 +79,7 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
         return ResponseEntity.ok(response);
     }
 
-    private GameAction toAction(UUID pid, MoveRequest req, GameSession session) {
+    private GameAction toAction(UUID pid, MoveRequestDto req, GameSession session) {
         return switch (req.getMoveType()) {
             case ROLL              -> new RollAction(pid);
             case CROSS_WHITE_WHITE -> new CrossCellAction(

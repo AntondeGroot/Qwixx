@@ -35,7 +35,7 @@ public class BotTrainer {
     // ── Training ──────────────────────────────────────────────────────────────
 
     /**
-     * Run with ./mvnw exec:java -Dexec.mainClass="nl.adg.qwixx.bot.BotTrainer"
+     * Run with ./mvnw exec:java -Dexec.mainClass="BotTrainer"
      * <p>
      * Hill-climbing with linearly decaying mutation magnitude ("cooling").
      *

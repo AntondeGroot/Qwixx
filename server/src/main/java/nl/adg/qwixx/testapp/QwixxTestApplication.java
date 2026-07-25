@@ -7,6 +7,7 @@ import nl.adg.qwixx.action.RollAction;
 import nl.adg.qwixx.data.RollResult;
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.Player;
+import nl.adg.qwixx.game.SessionStatus;
 import nl.adg.qwixx.game.options.GameSettings;
 import nl.adg.qwixx.state.RowState;
 import org.springframework.boot.SpringApplication;
@@ -61,7 +62,7 @@ public class QwixxTestApplication {
 		game.start();
 
 		// Verify status is IN_PROGRESS
-		if (game.status() != nl.adg.qwixx.game.SessionStatus.IN_PROGRESS) {
+		if (game.status() != SessionStatus.IN_PROGRESS) {
 			throw new RuntimeException("Game status should be IN_PROGRESS but is " + game.status());
 		}
 

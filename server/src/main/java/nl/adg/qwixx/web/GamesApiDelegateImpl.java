@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import nl.adg.qwixx.data.Color;
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.GameSession;
 import nl.adg.qwixx.game.Player;
@@ -16,13 +17,17 @@ import nl.adg.qwixx.game.exception.SessionNotFoundException;
 import nl.adg.qwixx.game.options.GameOptionCatalog;
 import nl.adg.qwixx.game.options.GameSettings;
 import nl.adg.qwixx.generated.api.GamesApiDelegate;
-import nl.adg.qwixx.generated.model.AddPlayerToGame201Response;
-import nl.adg.qwixx.generated.model.CreateNewGame201Response;
-import nl.adg.qwixx.generated.model.GameInfo;
-import nl.adg.qwixx.generated.model.GameStatus;
-import nl.adg.qwixx.generated.model.NewGameRequest;
-import nl.adg.qwixx.generated.model.RestartGameRequest;
-import nl.adg.qwixx.generated.model.ScoreCard;
+import nl.adg.qwixx.generated.model.AddPlayerToGame201ResponseDto;
+import nl.adg.qwixx.generated.model.ColorDto;
+import nl.adg.qwixx.generated.model.CreateNewGame201ResponseDto;
+import nl.adg.qwixx.generated.model.GameInfoDto;
+import nl.adg.qwixx.generated.model.GameStatusDto;
+import nl.adg.qwixx.generated.model.NewGameRequestDto;
+import nl.adg.qwixx.generated.model.PlayerDto;
+import nl.adg.qwixx.generated.model.RestartGameRequestDto;
+import nl.adg.qwixx.generated.model.ScoreCardDto;
+import nl.adg.qwixx.generated.model.StartGameRequestDto;
+import nl.adg.qwixx.rules.ScoreCard;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,26 +52,26 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
     private BotTurnDriver botDriver;
 
     @Override
-    public ResponseEntity<CreateNewGame201Response> createNewGame(NewGameRequest req) {
+    public ResponseEntity<CreateNewGame201ResponseDto> createNewGame(NewGameRequestDto req) {
         String id = GameRegistry.createGame(req.getRoomName(), req.getMaxPlayers(),
                 buildSettings(req.getGameOptions()));
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new CreateNewGame201Response().sessionId(id));
+                .body(new CreateNewGame201ResponseDto().sessionId(id));
     }
 
     @Override
-    public ResponseEntity<List<GameInfo>> getAllGames() {
+    public ResponseEntity<List<GameInfoDto>> getAllGames() {
         return ResponseEntity.ok(GameRegistry.getAllGames().stream().map(this::toGameInfo).toList());
     }
 
     @Override
-    public ResponseEntity<GameInfo> getGame(String sessionId) {
+    public ResponseEntity<GameInfoDto> getGame(String sessionId) {
         return ResponseEntity.ok(toGameInfo(require(sessionId)));
     }
 
     @Override
     public ResponseEntity<Void> startGame(String sessionId,
-            nl.adg.qwixx.generated.model.StartGameRequest req) {
+            StartGameRequestDto req) {
         GameSession session = require(sessionId);
         List<Integer> botPics = (req != null && req.getBotProfilePics() != null)
                 ? req.getBotProfilePics() : List.of();
@@ -86,7 +91,7 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
     }
 
     @Override
-    public ResponseEntity<Void> restartGame(String sessionId, RestartGameRequest req) {
+    public ResponseEntity<Void> restartGame(String sessionId, RestartGameRequestDto req) {
         GameSession session = require(sessionId);
         try {
             session.restart(buildSettings(resolveOptions(req, session)), false);
@@ -136,8 +141,8 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
     }
 
     @Override
-    public ResponseEntity<AddPlayerToGame201Response> addPlayerToGame(String sessionId,
-            nl.adg.qwixx.generated.model.Player req) {
+    public ResponseEntity<AddPlayerToGame201ResponseDto> addPlayerToGame(String sessionId,
+            PlayerDto req) {
         GameSession session = require(sessionId);
         Player player = playerFromRequest(req);
         try {
@@ -147,11 +152,11 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
         }
         lobbyController.emitLobby(sessionId, session);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new AddPlayerToGame201Response().playerId(player.id().toString()));
+                .body(new AddPlayerToGame201ResponseDto().playerId(player.id().toString()));
     }
 
     @Override
-    public ResponseEntity<List<nl.adg.qwixx.generated.model.Player>> getAllPlayersInGame(
+    public ResponseEntity<List<PlayerDto>> getAllPlayersInGame(
             String sessionId) {
         return ResponseEntity.ok(require(sessionId).players().stream()
                 .map(this::toPlayerDto)
@@ -176,14 +181,14 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
     }
 
     @Override
-    public ResponseEntity<Map<String, ScoreCard>> getScores(String sessionId) {
+    public ResponseEntity<Map<String, ScoreCardDto>> getScores(String sessionId) {
         GameSession session = require(sessionId);
         if (session.status() != SessionStatus.FINISHED)
             throw new GameNotFinishedException(sessionId);
 
         // Iterate the game-state player list (all who participated) rather than
         // session.players() which may be smaller if players left after the game ended.
-        Map<String, ScoreCard> scores = session.currentState().players().stream()
+        Map<String, ScoreCardDto> scores = session.currentState().players().stream()
                 .collect(Collectors.toMap(UUID::toString, id -> toDto(session.getScore(id))));
         return ResponseEntity.ok(scores);
     }
@@ -196,33 +201,33 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
         return builder.build();
     }
 
-    private static Map<String, Object> resolveOptions(RestartGameRequest req, GameSession session) {
+    private static Map<String, Object> resolveOptions(RestartGameRequestDto req, GameSession session) {
         Map<String, Object> options = req != null ? req.getGameOptions() : null;
         return options != null ? new HashMap<>(options) : session.proposedOptions();
     }
 
-    private static Player playerFromRequest(nl.adg.qwixx.generated.model.Player req) {
+    private static Player playerFromRequest(PlayerDto req) {
         UUID id = req.getId() != null && !req.getId().isBlank()
                 ? UUID.fromString(req.getId())
                 : UUID.randomUUID();
         return new Player(id, req.getName(), req.getProfilePic());
     }
 
-    private nl.adg.qwixx.generated.model.Player toPlayerDto(Player p) {
-        return new nl.adg.qwixx.generated.model.Player(p.id().toString(), p.name())
+    private PlayerDto toPlayerDto(Player p) {
+        return new PlayerDto(p.id().toString(), p.name())
                 .profilePic(p.profilePic());
     }
 
-    private static ScoreCard toDto(nl.adg.qwixx.rules.ScoreCard sc) {
-        ScoreCard dto = new ScoreCard(
+    private static ScoreCardDto toDto(ScoreCard sc) {
+        ScoreCardDto dto = new ScoreCardDto(
                 toStringKeyedMap(sc.crossesPerColor()),
                 toStringKeyedMap(sc.pointsPerColor()),
                 sc.extraCrosses(), sc.extraPoints(),
                 sc.bonusPoints(), sc.punishmentPoints(), sc.total());
         dto.setNoPenalty(sc.noPenalty());
-        nl.adg.qwixx.data.Color doubledColor = sc.doubledColor();
+        Color doubledColor = sc.doubledColor();
         if (doubledColor != null) {
-            dto.setDoubledColor(nl.adg.qwixx.generated.model.Color.fromValue(doubledColor.name()));
+            dto.setDoubledColor(ColorDto.fromValue(doubledColor.name()));
         }
         return dto;
     }
@@ -238,8 +243,8 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
         return session;
     }
 
-    private GameInfo toGameInfo(GameSession session) {
-        return new GameInfo(
+    private GameInfoDto toGameInfo(GameSession session) {
+        return new GameInfoDto(
                 session.sessionId(),
                 session.roomName(),
                 session.players().size(),
@@ -247,11 +252,11 @@ public class GamesApiDelegateImpl implements GamesApiDelegate {
                 toGameStatus(session));
     }
 
-    private GameStatus toGameStatus(GameSession session) {
+    private GameStatusDto toGameStatus(GameSession session) {
         return switch (session.status()) {
-            case WAITING     -> GameStatus.WAITING;
-            case IN_PROGRESS -> GameStatus.IN_PROGRESS;
-            case FINISHED    -> GameStatus.FINISHED;
+            case WAITING     -> GameStatusDto.WAITING;
+            case IN_PROGRESS -> GameStatusDto.IN_PROGRESS;
+            case FINISHED    -> GameStatusDto.FINISHED;
         };
     }
 }

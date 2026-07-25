@@ -379,6 +379,10 @@
               <generatorName>spring</generatorName>
               <apiPackage>nl.adg.qwixx.generated.api</apiPackage>
               <modelPackage>nl.adg.qwixx.generated.model</modelPackage>
+              <!-- Suffix generated model classes with "Dto" so their names never collide with the
+                   domain types (Color, SheetLayout, GameState, …). Purely a Java-name change — the
+                   JSON wire format is unchanged, so the client is unaffected. -->
+              <modelNameSuffix>Dto</modelNameSuffix>
               <output>${project.build.directory}/generated-sources/openapi</output>
               <supportingFilesToGenerate>ApiUtil.java</supportingFilesToGenerate>
               <configOptions>

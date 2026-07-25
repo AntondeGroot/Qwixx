@@ -9,7 +9,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import nl.adg.qwixx.data.Cell;
+import nl.adg.qwixx.data.Color;
 import nl.adg.qwixx.data.LockCell;
+import nl.adg.qwixx.data.RollResult;
 import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.game.GameRegistry;
 import nl.adg.qwixx.game.Player;
@@ -17,6 +19,7 @@ import nl.adg.qwixx.game.options.GameMode;
 import nl.adg.qwixx.game.options.GameSettings;
 import nl.adg.qwixx.generated.api.MovesApiController;
 import nl.adg.qwixx.state.CardMode;
+import nl.adg.qwixx.state.ClosureNotification;
 import nl.adg.qwixx.state.GameState;
 import nl.adg.qwixx.state.RowState;
 import nl.adg.qwixx.state.SheetLayout;
@@ -198,10 +201,10 @@ class MovesApiDelegateImplTest {
     void offlineCrossWhiteWhiteIsAccepted() throws Exception {
         String sid = offlineSession();
         Player bob = offlinePlayer(sid);
-        nl.adg.qwixx.state.SheetLayout layout =
+        SheetLayout layout =
                 GameRegistry.getGame(sid).currentState().sheetLayouts().get(bob.id());
-        nl.adg.qwixx.data.Row row   = layout.rows().getFirst();
-        nl.adg.qwixx.data.Cell cell = row.cells().getFirst();
+        Row row   = layout.rows().getFirst();
+        Cell cell = row.cells().getFirst();
 
         mvc.perform(post("/moves/{sid}/{pid}", sid, bob.id())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -338,7 +341,7 @@ class MovesApiDelegateImplTest {
         // have a reachable "6" cell — giving us two distinct targets to attempt.
         GameState s = GameRegistry.getGame(sid).currentState();
         var current = s.turnState().currentRoll();
-        s.turnState().setCurrentRoll(new nl.adg.qwixx.data.RollResult(2, 4, current.coloredDice()));
+        s.turnState().setCurrentRoll(new RollResult(2, 4, current.coloredDice()));
 
         CellTarget red6    = findWhiteWhiteCell(sid, passive);
         CellTarget yellow6 = findSecondWhiteWhiteCell(sid, passive, red6.rowId());
@@ -648,7 +651,7 @@ class MovesApiDelegateImplTest {
         // Add row closure requests manually (simulating DECLARE_LOCK_INTENT)
         var state = GameRegistry.getGame(sessionId).currentState();
         state.closureNotifications().add(
-            new nl.adg.qwixx.state.ClosureNotification(alice.id(), nl.adg.qwixx.data.Color.RED)
+            new ClosureNotification(alice.id(), Color.RED)
         );
 
         // Verify requests populated
@@ -782,7 +785,7 @@ class MovesApiDelegateImplTest {
         // Force dice to white+white=7 so we can cross a known cell in the RED row.
         var stateForCross = GameRegistry.getGame(sessionId).currentState();
         var existingColored = stateForCross.turnState().currentRoll().coloredDice();
-        stateForCross.turnState().setCurrentRoll(new nl.adg.qwixx.data.RollResult(3, 4, existingColored));
+        stateForCross.turnState().setCurrentRoll(new RollResult(3, 4, existingColored));
 
         var redRow = layout.rows().getFirst(); // RED ascending row
         // Cell at pos 5 has displayValue "7" (matches white+white=3+4=7).

@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import nl.adg.qwixx.game.GameSession;
+import nl.adg.qwixx.generated.model.GameStateDto;
 import nl.adg.qwixx.state.GameState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +53,7 @@ public class SseEmitterRegistry {
         broadcast(key, SseEmitter.event().data(payload, MediaType.APPLICATION_JSON));
     }
 
-    void emit(String sessionId, nl.adg.qwixx.generated.model.GameState dto) {
+    void emit(String sessionId, GameStateDto dto) {
         broadcast(sessionId, SseEmitter.event().data(dto, MediaType.APPLICATION_JSON));
     }
 

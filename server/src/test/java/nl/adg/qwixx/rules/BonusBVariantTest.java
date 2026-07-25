@@ -215,7 +215,7 @@ class BonusBVariantTest {
 
     // ── Helpers ─────────────────────────────────────────────────────────────
 
-    private nl.adg.qwixx.rules.ScoreCard scoreWith(Map<Integer, Integer> crossesPerRow, BonusBKind achieved) {
+    private ScoreCard scoreWith(Map<Integer, Integer> crossesPerRow, BonusBKind achieved) {
         List<Row> rows = board();
         rows.add(strip());
         Map<Integer, RowState> rowStates = new HashMap<>();

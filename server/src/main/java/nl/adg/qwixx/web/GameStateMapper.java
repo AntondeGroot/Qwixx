@@ -22,8 +22,6 @@ import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.game.GameSession;
 import nl.adg.qwixx.game.Player;
 import nl.adg.qwixx.generated.model.*;
-import nl.adg.qwixx.generated.model.AvailableMoveDto;
-import nl.adg.qwixx.generated.model.MoveTypeDto;
 import nl.adg.qwixx.state.ActiveTurnState;
 import nl.adg.qwixx.state.BoardState;
 import nl.adg.qwixx.state.GameState;

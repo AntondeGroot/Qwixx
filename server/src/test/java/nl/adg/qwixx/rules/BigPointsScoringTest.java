@@ -16,7 +16,7 @@ import nl.adg.qwixx.state.SheetLayout;
 import nl.adg.qwixx.state.SheetProgress;
 import org.junit.jupiter.api.Test;
 
-class BigPointsScoringEngineTest {
+class BigPointsScoringTest {
 
     // --- helpers ---
 
@@ -62,7 +62,7 @@ class BigPointsScoringEngineTest {
         SheetLayout layout = layoutOf(row);
         SheetProgress progress = new SheetProgress(Map.of(0, allCrossed(row)), 0);
 
-        ScoreCard card = new BigPointsScoringEngine(15).calculate(layout, progress);
+        ScoreCard card = new StandardScoringEngine(15).calculate(layout, progress);
 
         assertEquals(120, card.pointsPerColor().get(Color.RED));
         assertEquals(120, card.total());
@@ -74,7 +74,7 @@ class BigPointsScoringEngineTest {
         SheetLayout layout = layoutOf(row);
         SheetProgress progress = new SheetProgress(Map.of(0, allCrossed(row)), 0);
 
-        ScoreCard card = new BigPointsScoringEngine(15).calculate(layout, progress);
+        ScoreCard card = new StandardScoringEngine(15).calculate(layout, progress);
 
         assertEquals(120, card.pointsPerColor().get(Color.RED));
     }
@@ -86,7 +86,7 @@ class BigPointsScoringEngineTest {
         SheetLayout layout = layoutOf(row);
         SheetProgress progress = new SheetProgress(Map.of(0, allCrossed(row)), 0);
 
-        ScoreCard card = new BigPointsScoringEngine(15).calculate(layout, progress);
+        ScoreCard card = new StandardScoringEngine(15).calculate(layout, progress);
 
         assertEquals(66, card.pointsPerColor().get(Color.RED));
     }
@@ -98,7 +98,7 @@ class BigPointsScoringEngineTest {
         SheetLayout layout = layoutOf(row);
         SheetProgress progress = new SheetProgress(Map.of(0, allCrossed(row)), 0);
 
-        ScoreCard card = new BigPointsScoringEngine(19).calculate(layout, progress);
+        ScoreCard card = new StandardScoringEngine(19).calculate(layout, progress);
 
         assertEquals(190, card.pointsPerColor().get(Color.RED));
         assertEquals(190, card.total());
@@ -110,7 +110,7 @@ class BigPointsScoringEngineTest {
         SheetLayout layout = layoutOf(row);
         SheetProgress progress = new SheetProgress(Map.of(0, allCrossed(row)), 0);
 
-        ScoreCard card = new BigPointsScoringEngine(19).calculate(layout, progress);
+        ScoreCard card = new StandardScoringEngine(19).calculate(layout, progress);
 
         assertEquals(190, card.pointsPerColor().get(Color.RED));
     }
@@ -125,7 +125,7 @@ class BigPointsScoringEngineTest {
                 0, allCrossed(redRow),
                 1, allCrossed(blueRow)), 0);
 
-        ScoreCard card = new BigPointsScoringEngine(15).calculate(layout, progress);
+        ScoreCard card = new StandardScoringEngine(15).calculate(layout, progress);
 
         assertEquals(120, card.pointsPerColor().get(Color.RED));
         assertEquals(36,  card.pointsPerColor().get(Color.BLUE));
@@ -144,7 +144,7 @@ class BigPointsScoringEngineTest {
         SheetProgress progress = new SheetProgress(
                 Map.of(0, new RowState(Set.of(bonus.id()), false)), 0);
 
-        ScoreCard card = new BigPointsScoringEngine(15).calculate(layout, progress);
+        ScoreCard card = new StandardScoringEngine(15).calculate(layout, progress);
 
         assertEquals(1, card.crossesPerColor().get(Color.RED),
                 "one BONUS-RY cross must count as 1 cross toward RED");
@@ -166,7 +166,7 @@ class BigPointsScoringEngineTest {
         SheetProgress progress = new SheetProgress(
                 Map.of(0, new RowState(Set.of(bonus.id()), false)), 0);
 
-        ScoreCard card = new BigPointsScoringEngine(15).calculate(layout, progress);
+        ScoreCard card = new StandardScoringEngine(15).calculate(layout, progress);
 
         assertEquals(1, card.crossesPerColor().get(Color.GREEN));
         assertEquals(1, card.crossesPerColor().get(Color.BLUE));
@@ -189,7 +189,7 @@ class BigPointsScoringEngineTest {
         SheetProgress progress = new SheetProgress(
                 Map.of(0, new RowState(crossed, false)), 0);
 
-        ScoreCard card = new BigPointsScoringEngine(15).calculate(layout, progress);
+        ScoreCard card = new StandardScoringEngine(15).calculate(layout, progress);
 
         assertEquals(3, card.crossesPerColor().get(Color.RED));
         assertEquals(3, card.crossesPerColor().get(Color.YELLOW));
@@ -206,7 +206,7 @@ class BigPointsScoringEngineTest {
         SheetProgress progress = new SheetProgress(
                 Map.of(0, new RowState(Set.of(plain.id()), false)), 0);
 
-        ScoreCard card = new BigPointsScoringEngine(15).calculate(layout, progress);
+        ScoreCard card = new StandardScoringEngine(15).calculate(layout, progress);
 
         assertEquals(1, card.crossesPerColor().get(Color.RED));
         assertEquals(0, card.crossesPerColor().get(Color.YELLOW));
@@ -223,7 +223,7 @@ class BigPointsScoringEngineTest {
         SheetLayout layout = layoutOf(row);
         SheetProgress progress = new SheetProgress(Map.of(0, allCrossed(row)), 0);
 
-        ScoreCard card = new BigPointsScoringEngine(15).calculate(layout, progress);
+        ScoreCard card = new StandardScoringEngine(15).calculate(layout, progress);
 
         assertEquals(120, card.pointsPerColor().get(Color.RED));
         assertEquals(120, card.pointsPerColor().get(Color.YELLOW));

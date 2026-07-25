@@ -7,6 +7,7 @@ import static nl.adg.qwixx.rules.RowClosureEvaluator.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 import nl.adg.qwixx.action.CrossCellAction;
 import nl.adg.qwixx.action.DeclareLockIntentAction;
@@ -21,6 +22,14 @@ import nl.adg.qwixx.state.SheetLayout;
 import nl.adg.qwixx.state.SheetProgress;
 
 public class OfflineTurnRules extends StandardTurnRules {
+
+    public OfflineTurnRules() {
+        super();
+    }
+
+    public OfflineTurnRules(int minCrossesToLock) {
+        super(new Random(), minCrossesToLock);
+    }
 
     @Override
     public List<GameAction> getValidActions(GameState state, UUID playerId) {

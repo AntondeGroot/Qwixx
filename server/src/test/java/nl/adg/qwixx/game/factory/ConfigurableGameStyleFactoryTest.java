@@ -18,8 +18,13 @@ import nl.adg.qwixx.data.LockCell;
 import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.game.options.BaseVariant;
 import nl.adg.qwixx.game.options.GameSettings;
+import nl.adg.qwixx.rules.ScoreCard;
+import nl.adg.qwixx.rules.ScoringEngine;
 import nl.adg.qwixx.state.CardMode;
 import nl.adg.qwixx.state.LongoVariantData;
+import nl.adg.qwixx.state.RowState;
+import nl.adg.qwixx.state.SheetLayout;
+import nl.adg.qwixx.state.SheetProgress;
 import nl.adg.qwixx.state.VariantData;
 import org.junit.jupiter.api.Test;
 
@@ -1134,5 +1139,52 @@ class ConfigurableGameStyleFactoryTest {
         }
         if (prev != null) runs.add(len);
         return runs;
+    }
+
+    // --- Double A rule parameters (via the central ruleConfig) ---
+
+    private int lockMinCrossesFor(GameSettings settings) {
+        return new ConfigurableGameStyleFactory(settings, new Random(0))
+                .buildRows(List.of(UUID.randomUUID())).values().iterator().next()
+                .getFirst().lock().minCrosses();
+    }
+
+    @Test
+    void doubleANeedsTwoExtraCrossesToLock() {
+        // The lock's minCrosses counts the lock cross itself, so it is (non-lock crosses + 1).
+        assertEquals(6, lockMinCrossesFor(GameSettings.builder().build()));                       // Standard: 5
+        assertEquals(8, lockMinCrossesFor(GameSettings.builder().doubleA(true).build()));         // Standard + A: 7
+        assertEquals(7, lockMinCrossesFor(GameSettings.builder().base(BaseVariant.LONGO).build())); // Longo: 6
+        assertEquals(9, lockMinCrossesFor(
+                GameSettings.builder().base(BaseVariant.LONGO).doubleA(true).build()));            // Longo + A: 8
+    }
+
+    @Test
+    void doubleACapsAColoursScoreAtSixteenCrossesStandard() {
+        assertColourScoreCap(GameSettings.builder().doubleA(true).build(), 16);                    // triangular(16)
+    }
+
+    @Test
+    void doubleACapsAColoursScoreAtTwentyCrossesLongo() {
+        assertColourScoreCap(GameSettings.builder().base(BaseVariant.LONGO).doubleA(true).build(), 20);
+    }
+
+    /** Crosses more than the cap of RED cells and asserts the colour scores only triangular(cap). */
+    private void assertColourScoreCap(GameSettings settings, int cap) {
+        ScoringEngine engine = new ConfigurableGameStyleFactory(settings, new Random(0)).buildScoringEngine();
+        Row red = new Row();
+        Set<String> crossed = new HashSet<>();
+        for (int i = 0; i < cap + 4; i++) {                 // a few more crosses than the cap allows
+            Cell c = new Cell(i);
+            c.setColor(Color.RED);
+            c.setDisplayValue(String.valueOf(i + 2));
+            c.setTags(List.of());
+            red.addCell(c);
+            crossed.add(c.id());
+        }
+        SheetProgress progress = new SheetProgress(Map.of(0, new RowState(crossed, false)), 0);
+        ScoreCard card = engine.calculate(new SheetLayout(List.of(red)), progress);
+        assertEquals(cap * (cap + 1) / 2, card.pointsPerColor().get(Color.RED),
+                "a colour scores at most triangular(" + cap + ")");
     }
 }

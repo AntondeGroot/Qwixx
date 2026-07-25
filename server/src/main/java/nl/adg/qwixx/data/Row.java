@@ -8,8 +8,8 @@ import java.util.UUID;
 // constructor, so NullAway can't prove initialization — they are set before any read.
 @SuppressWarnings("NullAway.Init")
 public class Row {
-  private String id;
-  private List<Cell> cells = new ArrayList<>();
+  private final String id;
+  private final List<Cell> cells = new ArrayList<>();
   private LockCell lock;
   private boolean bonusRow;
   private boolean bonusBar;   // Bonus A: the row of coloured bonus-bar cells below the four colour rows

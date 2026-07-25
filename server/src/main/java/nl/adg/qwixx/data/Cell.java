@@ -7,8 +7,8 @@ import java.util.UUID;
 // constructor, so NullAway can't prove they're initialized — they are before any read.
 @SuppressWarnings("NullAway.Init")
 public class Cell {
-  String        id;
-  int           position;          // ordinal index in the row (engine uses this, not displayValue)
+  final String        id;
+  final int           position;          // ordinal index in the row (engine uses this, not displayValue)
   String        displayValue;      // shown to the player ("2".."12", "2".."16", etc.)
   Color         color;             // the die color that can target this cell; also its primary scoring bucket
   List<CellTag> tags;              // zero or more behavioral/scoring modifiers

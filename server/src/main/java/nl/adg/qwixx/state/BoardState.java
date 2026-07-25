@@ -6,9 +6,9 @@ import java.util.UUID;
 import nl.adg.qwixx.data.Die;
 
 public class BoardState {
-    Map<UUID, SheetProgress> sheetProgress;  // crossing progress per player
-    List<Die>                activeDice;     // shrinks as rows are locked (color die removed)
-    Map<Integer, UUID>       closedRows;     // rowIndex → player who closed it
+    final Map<UUID, SheetProgress> sheetProgress;  // crossing progress per player
+    final List<Die>                activeDice;     // shrinks as rows are locked (color die removed)
+    final Map<Integer, UUID>       closedRows;     // rowIndex → player who closed it
 
     public BoardState(Map<UUID, SheetProgress> sheetProgress, List<Die> activeDice, Map<Integer, UUID> closedRows) {
         this.sheetProgress = sheetProgress;

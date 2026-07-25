@@ -11,14 +11,14 @@ import java.util.UUID;
 
 // Top-level envelope. SheetLayout lives here as it is static; BoardState holds only what changes.
 public class GameState {
-    CardMode               cardMode;
-    List<UUID>             players;        // ordered; defines turn order
+    final CardMode               cardMode;
+    final List<UUID>             players;        // ordered; defines turn order
     @Nullable VariantData  variantData;    // opaque, variant-specific data
-    Map<UUID, SheetLayout> sheetLayouts;   // static layout per player
-    BoardState             boardState;
+    final Map<UUID, SheetLayout> sheetLayouts;   // static layout per player
+    final BoardState             boardState;
     @Nullable TurnState    turnState;
-    List<ClosureNotification> closureNotifications; // pending row closure notifications (UI)
-    Map<Integer, Set<UUID>> pendingClosures;   // rows queued to close at EVALUATE: rowIndex → declarerIds
+    final List<ClosureNotification> closureNotifications; // pending row closure notifications (UI)
+    final Map<Integer, Set<UUID>> pendingClosures;   // rows queued to close at EVALUATE: rowIndex → declarerIds
     boolean                gameOver;
     long                   version;        // increments on every applyAction
 

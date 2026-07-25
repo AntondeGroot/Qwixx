@@ -3,10 +3,10 @@ package nl.adg.qwixx.data;
 import java.util.List;
 
 public class LockCell {
-  private String id;
-  private Color color;
-  private int minCrosses;
-  private List<String> closingCells;
+  private final String id;
+  private final Color color;
+  private final int minCrosses;
+  private final List<String> closingCells;
 
   public LockCell(String id, Color color, int minCrosses, List<String> closingCells) {
     this.id = id;

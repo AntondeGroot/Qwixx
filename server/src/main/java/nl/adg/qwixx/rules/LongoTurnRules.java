@@ -27,17 +27,16 @@ import nl.adg.qwixx.state.TurnState;
 
 public class LongoTurnRules extends StandardTurnRules {
 
-    public LongoTurnRules() {
-        super();
-    }
+    /** Longo needs one more non-lock cross than Standard before the lock may be crossed. The single
+     *  source of the Longo base floor (the factory's {@code ruleConfig} reads it). */
+    public static final int LONGO_MIN_CROSSES = 6;
 
     public LongoTurnRules(Random random) {
-        super(random);
+        super(random, LONGO_MIN_CROSSES);
     }
 
-    @Override
-    protected int getMinCrossesRequired() {
-        return 6;
+    public LongoTurnRules(Random random, int minCrossesToLock) {
+        super(random, minCrossesToLock);
     }
 
     @Override

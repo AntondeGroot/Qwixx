@@ -22,7 +22,6 @@ import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.game.options.BaseVariant;
 import nl.adg.qwixx.game.options.GameMode;
 import nl.adg.qwixx.game.options.GameSettings;
-import nl.adg.qwixx.rules.BigPointsScoringEngine;
 import nl.adg.qwixx.rules.LongoTurnRules;
 import nl.adg.qwixx.rules.OfflineTurnRules;
 import nl.adg.qwixx.rules.ScoringEngine;
@@ -39,6 +38,7 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
 
     private final GameSettings settings;
     private final Random       random;
+    private final RuleConfig   ruleConfig;   // resolved once — settings are fixed at construction
 
     public ConfigurableGameStyleFactory(GameSettings settings) {
         this(settings, new Random());
@@ -47,8 +47,9 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
     // Public so callers in other packages (GameSession, tests) can inject a seeded Random for
     // reproducible layouts — the same purpose as the deterministic(...) factory.
     public ConfigurableGameStyleFactory(GameSettings settings, Random random) {
-        this.settings = settings;
-        this.random   = random;
+        this.settings   = settings;
+        this.random     = random;
+        this.ruleConfig = computeRuleConfig(settings);
     }
 
     /**
@@ -228,26 +229,44 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
 
     @Override
     public TurnRules buildTurnRules() {
-        if (settings.gameMode() == GameMode.OFFLINE) return new OfflineTurnRules();
+        int minCrosses = ruleConfig.minCrossesToLock();
+        if (settings.gameMode() == GameMode.OFFLINE) return new OfflineTurnRules(minCrosses);
         return switch (settings.base()) {
-            case STANDARD -> new StandardTurnRules(random);
-            case LONGO    -> new LongoTurnRules(random);
+            case STANDARD -> new StandardTurnRules(random, minCrosses);
+            case LONGO    -> new LongoTurnRules(random, minCrosses);
         };
     }
 
     @Override
     public ScoringEngine buildScoringEngine() {
-        if (settings.bigPoints()) return new BigPointsScoringEngine(bigPointsScoreCap());
-        return new StandardScoringEngine();
+        return new StandardScoringEngine(ruleConfig.maxCrossesPerColor());
     }
 
-    // Standard: 11 cells + 4 bonus = 15  → triangular(15) = 120 (matches the official rule)
-    // Longo:    15 cells + 4 bonus = 19  → triangular(19) = 190
-    private int bigPointsScoreCap() {
-        return switch (settings.base()) {
-            case STANDARD -> 15;
-            case LONGO    -> 19;
-        };
+    /** The two mode-dependent rule parameters, resolved from the settings in ONE place: how many
+     *  non-lock crosses are needed to close a row, and the per-colour cross count that still scores.
+     *  Any mode that deviates (a new variant, a new score cap) adds its rule here — nothing else. */
+    private record RuleConfig(int minCrossesToLock, int maxCrossesPerColor) {}
+
+    private static final int UNCAPPED = Integer.MAX_VALUE;
+
+    private static RuleConfig computeRuleConfig(GameSettings settings) {
+        boolean longo = settings.base() == BaseVariant.LONGO;
+        int minCrosses = longo ? LongoTurnRules.LONGO_MIN_CROSSES : StandardTurnRules.DEFAULT_MIN_CROSSES;
+        int cap = UNCAPPED;
+
+        // Double A gives every number a twin cell: more crosses to lock, and the per-colour score is
+        // capped so a colour can't earn points for an unbounded number of crosses.
+        if (settings.doubleA()) {
+            minCrosses += 2;                 // Standard 7, Longo 8
+            cap = longo ? 20 : 16;
+        }
+
+        // Big Points has its own score ceiling (Standard 15 / Longo 19 = triangular caps of 120 / 190).
+        if (settings.bigPoints()) {
+            cap = longo ? 19 : 15;
+        }
+
+        return new RuleConfig(minCrosses, cap);
     }
 
     @Override
@@ -473,11 +492,10 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
         return row;
     }
 
+    // The LockCell's minCrosses counts the lock cross itself, so it is one more than the non-lock
+    // crosses the turn rules require (keeps client display and BotDecider in step with the rules).
     private int lockMinCrosses() {
-        return switch (settings.base()) {
-            case STANDARD -> 6;
-            case LONGO    -> 7;
-        };
+        return ruleConfig.minCrossesToLock() + 1;
     }
 
     // Builds a row with displayValues 2..maxDisplayValue (left to right)

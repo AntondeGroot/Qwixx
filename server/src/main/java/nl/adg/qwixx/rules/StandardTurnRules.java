@@ -44,17 +44,26 @@ public class StandardTurnRules implements TurnRules {
 
     static final int MAX_PUNISHMENTS = 4;
 
+    /** Standard: cross at least this many non-lock cells before the lock may be crossed. The single
+     *  source of the Standard base floor (the factory's {@code ruleConfig} reads it). */
+    public static final int DEFAULT_MIN_CROSSES = 5;
+
     private final DiceRoller diceRoller;
     private final CellCrosser cellCrosser;
+    private final int minCrossesToLock;
 
     public StandardTurnRules() {
-        this.diceRoller  = new DiceRoller(new Random());
-        this.cellCrosser = new CellCrosser();
+        this(new Random(), DEFAULT_MIN_CROSSES);
     }
 
     public StandardTurnRules(Random random) {
-        this.diceRoller  = new DiceRoller(random);
-        this.cellCrosser = new CellCrosser();
+        this(random, DEFAULT_MIN_CROSSES);
+    }
+
+    public StandardTurnRules(Random random, int minCrossesToLock) {
+        this.diceRoller       = new DiceRoller(random);
+        this.cellCrosser      = new CellCrosser();
+        this.minCrossesToLock = minCrossesToLock;
     }
 
     @Override
@@ -685,7 +694,7 @@ public class StandardTurnRules implements TurnRules {
 
 
     protected int getMinCrossesRequired() {
-        return 5;
+        return minCrossesToLock;
     }
 
     protected int rightmostCrossedPosition(Row row, RowState rowState) {

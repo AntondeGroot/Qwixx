@@ -18,6 +18,18 @@ public class StandardScoringEngine implements ScoringEngine {
 
     private static final int PUNISHMENT_PENALTY = -5;
 
+    /** Per-colour cross count that counts toward the score; crosses beyond it score nothing.
+     *  {@link Integer#MAX_VALUE} means uncapped (the normal game). */
+    private final int maxCrossesPerColor;
+
+    public StandardScoringEngine() {
+        this(Integer.MAX_VALUE);
+    }
+
+    public StandardScoringEngine(int maxCrossesPerColor) {
+        this.maxCrossesPerColor = maxCrossesPerColor;
+    }
+
     @Override
     public ScoreCard calculate(SheetLayout layout, SheetProgress progress) {
         Map<Color, Integer> crosses = zeroCrossesPerColor();
@@ -115,14 +127,11 @@ public class StandardScoringEngine implements ScoringEngine {
         return map;
     }
 
-    protected int maxCrossesPerRow() {
-        return Integer.MAX_VALUE;
-    }
-
     private Map<Color, Integer> pointsPerColor(Map<Color, Integer> crosses) {
-        int cap = maxCrossesPerRow();
         Map<Color, Integer> points = new EnumMap<>(Color.class);
-        for (Color c : Color.values()) points.put(c, triangular(Math.min(cap, Objects.requireNonNull(crosses.get(c)))));
+        for (Color c : Color.values()) {
+            points.put(c, triangular(Math.min(maxCrossesPerColor, Objects.requireNonNull(crosses.get(c)))));
+        }
         return points;
     }
 

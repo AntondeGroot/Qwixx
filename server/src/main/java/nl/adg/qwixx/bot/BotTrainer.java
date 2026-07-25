@@ -36,7 +36,7 @@ public class BotTrainer {
 
     /**
      * Run with ./mvnw exec:java -Dexec.mainClass="nl.adg.qwixx.bot.BotTrainer"
-     *
+     * <p>
      * Hill-climbing with linearly decaying mutation magnitude ("cooling").
      *
      * <p>Each generation tries {@code mutationsPerGen} candidates; the best one that

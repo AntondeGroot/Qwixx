@@ -18,20 +18,20 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 /**
  * End-to-end tests for the score screen animation.
- *
+ * <p>
  * Row layout (standard game):
  *   Index 0 → RED    (ascending  2–12, triangular score)
  *   Index 3 → BLUE   (descending 12–2, triangular score)
- *
+ * <p>
  * Test scores (no punishments):
  *   player0: RED 4 crosses = 10 pts,  BLUE 6 crosses = 21 pts  → total 31
  *   player1: RED 5 crosses = 15 pts,  BLUE 3 crosses =  6 pts  → total 21
- *
+ * <p>
  * Expected animation:
  *   After RED column  → player1 leads (15 > 10)
  *   After BLUE column → player0 takes the lead (31 > 21), reorder fires
  *   Final winner      → player0
- *
+ * <p>
  * TOTAL ANIMATION TIME ≈ 17–19 s (four colour columns + punishment + modal delay).
  * All waits use explicit timeouts sized to cover the full animation safely.
  */
@@ -265,7 +265,7 @@ public class ScoreScreenIT extends BaseIntegrationTest {
      * portrait mode, shrinking the content to ~76 % of the viewport and leaving
      * the dark-blue :host background visible around it.  All other tests passed
      * because the content was technically present — just too small to fill the screen.
-     *
+     * <p>
      * This test checks that the computed zoom on .score-screen is exactly 1
      * (no scaling), which ensures the content fills the full rotated viewport.
      */

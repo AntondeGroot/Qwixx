@@ -17,15 +17,15 @@ import org.springframework.stereotype.Component;
 
 /**
  * Test application that creates a persistent test game session on startup.
- *
+ * <p>
  * Game Setup:
  * - 2 players (player0 and player1)
  * - Both players have 5 crosses in BLUE row
  * - Dice rolled: white dice predetermined to 1+1
  * - player0 is active
- *
+ * <p>
  * Run with: mvn spring-boot:run -Dspring-boot.run.main-class=nl.adg.qwixx.testapp.QwixxTestApplication
- *
+ * <p>
  * The sessionId and player IDs will be printed on startup.
  */
 @Component

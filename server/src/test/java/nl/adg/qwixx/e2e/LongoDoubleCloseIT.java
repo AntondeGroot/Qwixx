@@ -23,7 +23,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
  * The client auto-sends DECLARE_LOCK_INTENT after the cross, and the active player
  * must click the green Confirm button (EndTurn) to trigger EVALUATE and close the row.
  * Only "15" / "3" (second-to-last closing cell) shows the YES/NO modal.
- *
+ * <p>
  * Setup:
  *   - 3 players, Longo variant
  *   - player0 has 14 crosses in RED  (positions 0–13, values 2–15) — "16" is the last cell

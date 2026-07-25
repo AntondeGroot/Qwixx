@@ -358,7 +358,7 @@ public class BotDecider {
 
     private static boolean nearLock(GameState state, UUID botId, int rowIndex, BotProfile profile) {
         Row row = state.sheetLayout(botId).rows().get(rowIndex);
-        if (row.lock() == null) return false;
+        if (!row.hasLock()) return false;
         LockCell lock = row.lock();
 
         SheetProgress prog  = state.sheetProgress(botId);

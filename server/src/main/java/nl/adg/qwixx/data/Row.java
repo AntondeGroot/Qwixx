@@ -45,6 +45,9 @@ public class Row {
   public String id()              { return id; }
   public List<Cell> cells()       { return cells; }
   public LockCell lock()          { return lock; }
+  /** True for the normal coloured number rows (the ones that can be locked/closed); false for the
+   *  special rows without a lock — bonus rows, the bonus bar, x-change and lucky-number rows. */
+  public boolean hasLock()        { return lock != null; }
   public boolean isBonusRow()     { return bonusRow; }
   public boolean isBonusBar()     { return bonusBar; }
   public boolean isBonusBStrip()  { return bonusBStrip; }

@@ -66,8 +66,7 @@ public class LongoTurnRules extends StandardTurnRules {
         SheetProgress progress = state.sheetProgress(playerId);
 
         OptionalInt fewest = IntStream.range(0, layout.rows().size())
-                .filter(i -> !state.isRowClosed(i))
-                .filter(i -> isNormalRow(layout.rows().get(i)))
+                .filter(i -> isOpenColourRow(state, layout, i))
                 .map(i -> getRowState(progress, i).crossedCells().size())
                 .min();
         if (fewest.isEmpty()) return List.of();
@@ -75,9 +74,7 @@ public class LongoTurnRules extends StandardTurnRules {
 
         List<GameAction> actions = new ArrayList<>();
         for (int i = 0; i < layout.rows().size(); i++) {
-            if (state.isRowClosed(i)) continue;
-            if (!isNormalRow(layout.rows().get(i))) continue;
-            if (getRowState(progress, i).crossedCells().size() != minCrosses) continue;
+            if (!isFewestCrossedRow(state, layout, progress, i, minCrosses)) continue;
             leftmostBonusCellAction(playerId, i, layout.rows().get(i), getRowState(progress, i))
                     .filter(bonus -> !existing.contains(bonus))
                     .ifPresent(actions::add);
@@ -85,10 +82,16 @@ public class LongoTurnRules extends StandardTurnRules {
         return actions;
     }
 
-    // The bonus race only concerns the normal coloured number rows — the rows that can be closed.
-    // Special rows (x-change, lucky number) have no lock and never take part in the fewest-crosses race.
-    private static boolean isNormalRow(Row row) {
-        return row.lock() != null;
+    // An open coloured number row (still lockable) — a candidate for receiving the bonus cell.
+    private static boolean isOpenColourRow(GameState state, SheetLayout layout, int i) {
+        return !state.isRowClosed(i) && layout.rows().get(i).hasLock();
+    }
+
+    // An open colour row tied for the fewest crosses — the rows the bonus cell may be added to.
+    private static boolean isFewestCrossedRow(GameState state, SheetLayout layout, SheetProgress progress,
+                                              int i, int minCrosses) {
+        return isOpenColourRow(state, layout, i)
+                && getRowState(progress, i).crossedCells().size() == minCrosses;
     }
 
     private boolean whiteSumMatchesBonusNumber(GameState state, UUID playerId) {

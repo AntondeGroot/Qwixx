@@ -83,7 +83,7 @@ class RowClosureEvaluator {
 
     static boolean rowIsNotLockable(GameState state, UUID playerId, int rowIndex) {
         Row row = getRow(state, playerId, rowIndex);
-        if (row.lock() == null) return true;
+        if (!row.hasLock()) return true;
         RowState rowState = getRowState(state.sheetProgress(playerId), rowIndex);
         if (rowState.lockCrossed()) return true;
         return state.isRowClosed(rowIndex);
@@ -137,7 +137,7 @@ class RowClosureEvaluator {
         // Row-level guard: don't re-declare (or re-notify) a row another player already declared this
         // round — the player is still credited the lock cross via canCrossLock at EVALUATE.
         if (rowHasPendingClosure(state, rowIndex)) return false;
-        if (getRow(state, playerId, rowIndex).lock() == null) return false;
+        if (!getRow(state, playerId, rowIndex).hasLock()) return false;
         if (!crossedThisTurn(state, playerId, rowIndex, getLastClosingCell(state, playerId, rowIndex))) return false;
         return canCrossLock(state, playerId, rowIndex, minCrossesRequired);
     }

@@ -60,12 +60,12 @@ class ConnectedCellsFactoryTest {
         for (Row row : rows) {
             for (Cell cellA : row.cells()) {
                 for (CellTag tag : cellA.tags()) {
-                    if (tag instanceof CellTag.AutoCross autoCross) {
-                        Cell cellB = cellById.get(autoCross.target());
+                    if (tag instanceof CellTag.AutoCross(String target)) {
+                        Cell cellB = cellById.get(target);
                         assertNotNull(cellB, "target cell must exist");
                         boolean hasReverse = cellB.tags().stream()
-                                .anyMatch(t -> t instanceof CellTag.AutoCross ac
-                                        && ac.target().equals(cellA.id()));
+                                .anyMatch(t -> t instanceof CellTag.AutoCross(String reverse)
+                                        && reverse.equals(cellA.id()));
                         assertTrue(hasReverse, "AutoCross must be bidirectional: " + cellA.id() + " <-> " + cellB.id());
                     }
                 }

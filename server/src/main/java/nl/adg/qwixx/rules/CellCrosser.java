@@ -176,8 +176,8 @@ class CellCrosser {
         Integer pv = roll.coloredDice().get(cell.color());
         if (pv != null && DiceRoller.matchesWhiteColor(roll, cell, pv)) return true;
         for (CellTag tag : cell.tags()) {
-            if (tag instanceof CellTag.SecondaryColor sc) {
-                Integer sv = roll.coloredDice().get(sc.color());
+            if (tag instanceof CellTag.SecondaryColor(Color color)) {
+                Integer sv = roll.coloredDice().get(color);
                 if (sv != null && DiceRoller.matchesWhiteColor(roll, cell, sv)) return true;
             }
         }
@@ -279,8 +279,8 @@ class CellCrosser {
         boolean isBonusBox = false;
         BonusBKind bonusBKind = null;
         for (CellTag tag : cell.tags()) {
-            if (tag instanceof CellTag.AutoCross autoCross) {
-                findAndCrossAutoTarget(state, playerId, autoCross.target(), crossed);
+            if (tag instanceof CellTag.AutoCross(String target)) {
+                findAndCrossAutoTarget(state, playerId, target, crossed);
             } else if (tag instanceof CellTag.BonusBox) {
                 isBonusBox = true;
             } else if (tag instanceof CellTag.BonusB(BonusBKind kind)) {

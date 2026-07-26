@@ -4,10 +4,6 @@ import { test, expect, Page } from '@playwright/test';
 const PHONE_W = 412;
 const PHONE_H = 915;
 
-// After our CSS rotation the board occupies landscape space: 915 × 412
-const LANDSCAPE_W = PHONE_H; // 915
-const LANDSCAPE_H = PHONE_W; // 412
-
 const SESSION_ID = 'session-mobile-test';
 const PLAYER_ID = 'player-1';
 const OTHER_ID = 'player-2';
@@ -135,10 +131,8 @@ test.describe('Board layout on portrait phone (OnePlus Nord / Pixel 6 class)', (
           .then((b) => b!.width),
       ),
     );
-    const [first, ...rest] = widths;
-    for (const w of rest) {
-      expect(Math.abs(w - first)).toBeLessThan(2);
-    }
+    // All four rows should be the same width (aligned layout): total spread under 2px.
+    expect(Math.max(...widths) - Math.min(...widths)).toBeLessThan(2);
   });
 
   test('turn bar is visible and fully within viewport', async ({ page }) => {

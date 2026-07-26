@@ -26,13 +26,14 @@ import {
   MoveRequest,
   MoveType,
   RowState,
-  SheetCell,
   SheetLayout,
   TurnPhase,
 } from '../../generated/model/models';
+import { ConnectorOverlayComponent } from '../connector-overlay/connector-overlay.component';
 import { DiceComponent } from '../dice/dice.component';
 import { PlayerListComponent } from '../player-list/player-list.component';
 import { SilverMarkComponent } from '../silver-mark/silver-mark.component';
+import { connectorTargetIds } from '../connector-overlay/connector-links.util';
 import { bonusKindOf, computeBonusBProgress } from '../row/bonus-b.util';
 import { RowComponent } from '../row/row.component';
 import { RowClosureModalService } from '../services/row-closure-modal.service';
@@ -42,30 +43,9 @@ import { CellHighlightService } from '../services/cell-highlight.service';
 import { AutoLockService } from '../services/auto-lock.service';
 import { TranslateService } from '@ngx-translate/core';
 
-// Auto-cross connectors for one row: straight vertical lines up/below (Connected A, mutual links) and
-// one-way diagonal arrows to the row below (Connected B), plus whether a bonus row sits adjacent.
-interface RowConnectors {
-  above: number[];
-  below: number[];
-  hasBonusRowAbove: boolean;
-  hasBonusRowBelow: boolean;
-}
-
-// Connected B: one directional diagonal arrow, in sheet-local coordinates — a line from the source
-// cell's bottom-edge center (x1,y1) to the target cell's top-edge center (x2,y2). Coordinates come
-// from layout offsets (offsetLeft/offsetTop) relative to the .sheet, so they are invariant to the
-// board's CSS zoom and portrait rotation. The target's dotted ring is a CSS pseudo-element on the
-// cell itself (.auto-cross-target), not drawn here.
-interface DiagonalLink {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-}
-
 @Component({
   selector: 'app-board',
-  imports: [RowComponent, DiceComponent, PlayerListComponent, SilverMarkComponent],
+  imports: [RowComponent, DiceComponent, PlayerListComponent, SilverMarkComponent, ConnectorOverlayComponent],
   templateUrl: './board.component.html',
   styleUrl: './board.component.css',
 })
@@ -213,7 +193,6 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
         '--mobile-scale',
         isPortrait ? Math.min((window.innerWidth - 16) / this.MOBILE_DESIGN_H, 1).toFixed(4) : '1',
       );
-      this.measureDiagonalLinks();
       return;
     }
     // Set zoom=1 so offsetHeight gives the natural, unscaled board height.
@@ -241,7 +220,6 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       scale = Math.min(scaleH, scaleW, 1);
     }
     el.style.setProperty('--mobile-scale', scale.toFixed(4));
-    this.measureDiagonalLinks();
   }
 
   ngOnDestroy() {
@@ -755,147 +733,13 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.gameState()?.sheetLayouts?.[pid] ?? null;
   }
 
-  // For each row in the current player's layout: pixel x-offsets of auto-cross
-  // connections going up (to the row above) and down (to the row below).
-  // Formula: 8px left-padding + position * (44px cell + 4px gap) + 22px half-width.
-  // When the immediately adjacent row is a bonus row, we also look one step further
-  // so that connections spanning across a bonus row are found correctly.
-  myRowConnectors = computed((): Map<string, RowConnectors> => {
+  // Ids of the cells a Connected B (one-way) arrow points at — they get the dotted target ring via a
+  // CSS pseudo-element on the cell itself, so it always sits exactly on the cell in every view. The
+  // arrow lines themselves are drawn by ConnectorOverlayComponent, which measures them from the DOM.
+  autoCrossTargetCellIds = computed((): Set<string> => {
     const layout = this.layoutFor(this.playerId());
-    const result = new Map<string, RowConnectors>();
-    if (!layout) return result;
-    // Index every cell so a connection's target can be looked up to decide one-way vs two-way.
-    const cellIndex = new Map<string, SheetCell>();
-    for (const r of layout.rows) for (const c of r.cells) cellIndex.set(c.id, c);
-    for (let i = 0; i < layout.rows.length; i++) {
-      const row = layout.rows[i]!; // i is a valid index of layout.rows
-      const below = this.adjacentCellIds(layout, i, 1);
-      const above = this.adjacentCellIds(layout, i, -1);
-      result.set(row.id, {
-        ...this.classifyConnectors(row, above.ids, below.ids, cellIndex),
-        hasBonusRowAbove: above.hasBonus,
-        hasBonusRowBelow: below.hasBonus,
-      });
-    }
-    return result;
+    return layout ? connectorTargetIds(layout) : new Set<string>();
   });
-
-  // Cell ids of the row `dir` steps away (±1), plus the row beyond a bonus row so connections that
-  // span a bonus row are still matched. `hasBonus` = the immediately adjacent row is a bonus row.
-  private adjacentCellIds(layout: SheetLayout, i: number, dir: 1 | -1): { ids: Set<string>; hasBonus: boolean } {
-    const adjacent = layout.rows[i + dir];
-    const hasBonus = adjacent?.bonusRow === true;
-    const ids = new Set<string>(adjacent?.cells.map((c) => c.id) ?? []);
-    const beyond = hasBonus ? layout.rows[i + 2 * dir] : undefined;
-    if (beyond) for (const c of beyond.cells) ids.add(c.id);
-    return { ids, hasBonus };
-  }
-
-  // Straight vertical Connected A lines above/below this row (mutual, two-way links). One-way
-  // Connected B diagonals are handled separately at sheet level (see diagonalLinks).
-  private classifyConnectors(
-    row: SheetLayout['rows'][number],
-    aboveIds: Set<string>,
-    belowIds: Set<string>,
-    cellIndex: Map<string, SheetCell>,
-  ): { above: number[]; below: number[] } {
-    const above: number[] = [];
-    const below: number[] = [];
-    for (const cell of row.cells) {
-      for (const tag of cell.tags ?? []) {
-        if (tag.type !== CellTag.TypeEnum.AUTO_CROSS || !tag.target) continue;
-        const target = cellIndex.get(tag.target);
-        const twoWay = (target?.tags ?? []).some((t) => t.type === CellTag.TypeEnum.AUTO_CROSS && t.target === cell.id);
-        // Only mutual (two-way) links draw a vertical line; one-way links are Connected B diagonals.
-        if (twoWay || !target) {
-          if (aboveIds.has(tag.target)) above.push(this.CENTER_X(cell.position));
-          if (belowIds.has(tag.target)) below.push(this.CENTER_X(cell.position));
-        }
-      }
-    }
-    return { above, below };
-  }
-
-  private CENTER_X(position: number): number {
-    return 8 + position * 48 + 22; // 8px row padding + position * (44px cell + 4px gap) + half-cell
-  }
-
-  // ── Connected B: sheet-level directional diagonal arrows ────────────────────
-  // The logical links (source cell → the one-way AutoCross target one row below). This is the
-  // reactive part; the overlay renders whenever there are pairs, and measureDiagonalLinks() fills in
-  // the pixel coordinates from the real DOM rectangles.
-  diagonalPairs = computed((): { sourceId: string; targetId: string }[] => {
-    const layout = this.layoutFor(this.playerId());
-    if (!layout) return [];
-    const index = new Map<string, { row: number; cell: SheetCell }>();
-    layout.rows.forEach((r, ri) => r.cells.forEach((c) => index.set(c.id, { row: ri, cell: c })));
-    const pairs: { sourceId: string; targetId: string }[] = [];
-    layout.rows.forEach((row, ri) => {
-      for (const cell of row.cells) {
-        for (const tag of cell.tags ?? []) {
-          if (tag.type !== CellTag.TypeEnum.AUTO_CROSS || !tag.target) continue;
-          const target = index.get(tag.target);
-          if (!target || target.row !== ri + 1) continue; // Connected B target is one row down
-          const backRef = (target.cell.tags ?? []).some(
-            (t) => t.type === CellTag.TypeEnum.AUTO_CROSS && t.target === cell.id,
-          );
-          if (backRef) continue; // two-way (Connected A) → not a diagonal arrow
-          pairs.push({ sourceId: cell.id, targetId: target.cell.id });
-        }
-      }
-    });
-    return pairs;
-  });
-
-  // Connected B target cell ids — these get the dotted ring (.auto-cross-target) via CSS, so it is
-  // laid out with the cell and always sits exactly on it, in every view.
-  autoCrossTargetCellIds = computed((): Set<string> => new Set(this.diagonalPairs().map((p) => p.targetId)));
-
-  // Arrow-line coordinates, refreshed by measureDiagonalLinks() after each render/resize.
-  diagonalLinks = signal<DiagonalLink[]>([]);
-
-  // Compute each arrow line from layout offsets (offsetLeft/offsetTop relative to the .sheet), NOT
-  // getBoundingClientRect — layout coordinates are the SVG overlay's own user units and are invariant
-  // to the board's CSS zoom and portrait rotation. Line: source bottom-edge centre → target top-edge
-  // centre, nudged 5px outward at each end so it reads a touch longer than edge-to-edge.
-  private measureDiagonalLinks(): void {
-    const pairs = this.diagonalPairs();
-    const el = this.host.nativeElement as HTMLElement;
-    const sheet = el.querySelector('.diag-overlay')?.parentElement ?? null;
-    if (pairs.length === 0 || !sheet) {
-      this.diagonalLinks.set([]);
-      return;
-    }
-    const links: DiagonalLink[] = [];
-    for (const { sourceId, targetId } of pairs) {
-      const s = el.querySelector(`[data-cell-id="${sourceId}"]`) as HTMLElement | null;
-      const t = el.querySelector(`[data-cell-id="${targetId}"]`) as HTMLElement | null;
-      if (!s || !t) continue;
-      const sp = this.offsetInSheet(s, sheet);
-      const tp = this.offsetInSheet(t, sheet);
-      links.push({
-        x1: sp.x + s.offsetWidth / 2,
-        y1: sp.y + s.offsetHeight + 4, // just below the source cell (outside, in the gap)
-        x2: tp.x + t.offsetWidth / 2,
-        y2: tp.y - 4, // just above the target cell (outside, in the gap)
-      });
-    }
-    this.diagonalLinks.set(links);
-  }
-
-  // Position of a cell relative to the sheet, summing offsetLeft/offsetTop up the offsetParent chain
-  // (.cell → .row → .sheet, all position:relative). Layout coords — unaffected by CSS zoom/rotation.
-  private offsetInSheet(cell: HTMLElement, sheet: HTMLElement): { x: number; y: number } {
-    let x = 0;
-    let y = 0;
-    let node: HTMLElement | null = cell;
-    while (node && node !== sheet) {
-      x += node.offsetLeft;
-      y += node.offsetTop;
-      node = node.offsetParent as HTMLElement | null;
-    }
-    return { x, y };
-  }
 
   rowStateFor(pid: string, rowId: string): RowState | null {
     return this.gameState()?.sheetProgress?.[pid]?.rowStates?.[rowId] ?? null;

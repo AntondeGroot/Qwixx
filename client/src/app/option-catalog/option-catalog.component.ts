@@ -5,6 +5,8 @@ import { forkJoin, map } from 'rxjs';
 // eslint-disable-next-line boundaries/dependencies
 import { GamesService } from '../../generated/api/api';
 import { GameOption, SheetLayout } from '../../generated/model/models';
+import { connectorTargetIds } from '../connector-overlay/connector-links.util';
+import { ConnectorOverlayComponent } from '../connector-overlay/connector-overlay.component';
 import { RowComponent } from '../row/row.component';
 
 interface CatalogItem {
@@ -12,6 +14,8 @@ interface CatalogItem {
   layout: SheetLayout;
   doubleVariant: 'A' | 'B' | null;
   bonusNumbers: number[];
+  // Connected B target cells that get the dotted ring (a CSS pseudo on the cell), same as the board.
+  targetIds: Set<string>;
 }
 
 /**
@@ -22,7 +26,7 @@ interface CatalogItem {
  */
 @Component({
   selector: 'app-option-catalog',
-  imports: [RowComponent],
+  imports: [RowComponent, ConnectorOverlayComponent],
   templateUrl: './option-catalog.component.html',
   styleUrl: './option-catalog.component.css',
 })
@@ -45,6 +49,7 @@ export class OptionCatalogComponent implements OnInit {
               layout,
               doubleVariant: this.doubleVariantFor(e.key),
               bonusNumbers: layout.bonusNumbers ?? [],
+              targetIds: connectorTargetIds(layout),
             })),
           ),
         ),

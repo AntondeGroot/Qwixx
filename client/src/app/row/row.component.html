@@ -11,12 +11,6 @@
   [attr.translate]="'no'"
   [style.width]="xChangeRowWidth()"
 >
-  @for (offset of connectorOffsetsAbove(); track offset) {
-    <div class="auto-cross-line up" [class.through-bonus]="hasBonusRowAbove()" [style.left.px]="offset"></div>
-  }
-  @for (offset of connectorOffsetsBelow(); track offset) {
-    <div class="auto-cross-line down" [class.through-bonus]="hasBonusRowBelow()" [style.left.px]="offset"></div>
-  }
   @if (isBonusBar()) {
     <!-- Bonus A bonus bar: 12 small coloured cells, crossed automatically by the chain. -->
     @for (cell of row().cells; track cell.id) {

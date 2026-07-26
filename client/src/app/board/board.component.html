@@ -66,47 +66,15 @@
                 [isPendingAutoLock]="pendingAutoLockRowId() === row.id"
                 [lockClickable]="isLockEligible(playerId(), row.id)"
                 [maxedColors]="maxedColors()"
-                [connectorOffsetsAbove]="myRowConnectors().get(row.id)?.above ?? []"
-                [connectorOffsetsBelow]="myRowConnectors().get(row.id)?.below ?? []"
-                [hasBonusRowAbove]="myRowConnectors().get(row.id)?.hasBonusRowAbove ?? false"
-                [hasBonusRowBelow]="myRowConnectors().get(row.id)?.hasBonusRowBelow ?? false"
                 (cellClicked)="onCellClicked(row.id, $event, playerId())"
                 [showLuckyCrossHint]="row.luckyRow === true && hasLuckyCross()"
                 [doubleVariant]="state.doubleA ? 'A' : state.doubleB ? 'B' : null"
                 (lockClicked)="onLockClicked(row.id, playerId())"
               />
             }
-            @if (diagonalPairs().length > 0) {
-              <!-- Connected B: one overlay above all rows so arrows + target circles paint on top.
-                   Coordinates are measured from the real cell rects (see measureDiagonalLinks). -->
-              <svg class="diag-overlay" aria-hidden="true">
-                <defs>
-                  <marker
-                    id="connb-arrow"
-                    markerWidth="14"
-                    markerHeight="12"
-                    refX="7"
-                    refY="6"
-                    orient="auto"
-                    markerUnits="userSpaceOnUse"
-                  >
-                    <path d="M0,0 L12,6 L0,12 L4,6 Z" fill="rgb(20, 20, 20)" />
-                  </marker>
-                </defs>
-                @for (d of diagonalLinks(); track $index) {
-                  <line
-                    [attr.x1]="d.x1"
-                    [attr.y1]="d.y1"
-                    [attr.x2]="d.x2"
-                    [attr.y2]="d.y2"
-                    stroke="rgb(20, 20, 20)"
-                    stroke-width="2.75"
-                    stroke-linecap="round"
-                    marker-end="url(#connb-arrow)"
-                  />
-                }
-              </svg>
-            }
+            <!-- Connected A column lines + Connected B arrows: one overlay above all rows, measured
+                 from the real cell rects (see ConnectorOverlayComponent). -->
+            <app-connector-overlay [layout]="layout" />
             @if (hasLuckyCross() && !hasLuckyNumberRow()) {
               <div class="lucky-cross-indicator">
                 <span class="lucky-number-label">LUCKY</span>

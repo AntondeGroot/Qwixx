@@ -42,14 +42,6 @@ export class RowComponent {
   cellClicked = output<string>();
   lockClicked = output<void>();
 
-  // Pixel x-centers of auto-cross connections to the row above / below.
-  // Computed by the board and passed in so the row knows which direction to draw.
-  connectorOffsetsAbove = input<number[]>([]);
-  connectorOffsetsBelow = input<number[]>([]);
-  // True when the row immediately above/below is a bonus row (e.g. Big Points).
-  // Used to extend the connector line through the full height of the bonus row.
-  hasBonusRowAbove = input(false);
-  hasBonusRowBelow = input(false);
   showLuckyCrossHint = input(false);
   // 'A' → twin cell stacked below its primary; 'B' → twin placed diagonally; null → no double variant.
   doubleVariant = input<'A' | 'B' | null>(null);

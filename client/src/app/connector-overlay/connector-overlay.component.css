@@ -1,0 +1,33 @@
+/* Full-sheet overlay drawn above every row (Connected A column lines + Connected B arrows).
+   Non-interactive; authored px coordinates scale with the sheet's own zoom. */
+:host {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 6;
+}
+
+.connector-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* Connected A (two-way) is the default: a dashed grey column line, matching the previous rendering. */
+.connector-overlay line {
+  stroke: rgba(0, 0, 0, 0.5);
+  stroke-width: 3;
+  stroke-dasharray: 5 5;
+}
+
+/* Connected B (one-way): a solid dark arrow from source to target. */
+.connector-overlay line.one-way {
+  stroke: rgb(20, 20, 20);
+  stroke-width: 2.75;
+  stroke-dasharray: none;
+  stroke-linecap: round;
+}

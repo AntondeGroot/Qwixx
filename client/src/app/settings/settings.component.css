@@ -92,6 +92,7 @@ div.option-disabled input {
 }
 
 .board-preview {
+  position: relative; /* the connector overlay anchors + measures against this sheet */
   display: flex;
   flex-direction: column;
   gap: 4px;

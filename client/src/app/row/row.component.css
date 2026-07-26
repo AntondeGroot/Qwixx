@@ -25,7 +25,6 @@
   background: transparent;
   padding-top: 2px;
   padding-bottom: 2px;
-  /* Ensure bonus-row circles paint above the z-index:0 auto-cross-line that extends through them. */
   z-index: 1;
 }
 
@@ -102,39 +101,6 @@
 
 .lock-cell-placeholder {
   visibility: hidden;
-}
-
-.auto-cross-line {
-  position: absolute;
-  width: 0;
-  border-left: 3px dashed rgba(0, 0, 0, 0.5);
-  transform: translateX(-50%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* From gap midpoint above (−3 px) down to this row's cell center (28 px from top). */
-.auto-cross-line.up {
-  top: -3px;
-  bottom: 28px;
-}
-
-/* From this row's cell center (28 px from top) down to gap midpoint below (−3 px). */
-.auto-cross-line.down {
-  top: 28px;
-  bottom: -3px;
-}
-
-/*
- * When a bonus row (36 px tall) sits between this row and the connected row,
- * extend the line through it: 3 px (half-gap) + 6 px (gap) + 36 px (bonus row) + 3 px (half-gap) = 48 px.
- * The bonus row circles paint on top via DOM order, so they naturally obscure the line where they overlap.
- */
-.auto-cross-line.down.through-bonus {
-  bottom: -45px;
-}
-.auto-cross-line.up.through-bonus {
-  top: -45px;
 }
 
 /* X-Change row: purple track behind the diamond cells */

@@ -120,11 +120,13 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       // Active player re-queued for final look: treat as hard-suppress (their pending crosses
       // are from the active turn, not a passive cross, so auto-unsuppress must not fire).
       const isActiveFinalReview = this.isMyTurn() && isPassive;
-      // Passive: auto-unsuppress when they make a new cross (so the modal re-appears).
+      // Passive: auto-unsuppress when they make a new cross (so the modal re-appears) — but NOT for an
+      // X-Change exchange, which isn't a committed cross; the player still owes the real follow-up.
       // Active (normal or final-review): stay suppressed — they've acknowledged the notification.
       const suppress =
         lockConfirmInProgress ||
-        (this.suppressModal() && (!isPassive || isActiveFinalReview || this.pendingCellIds().size === 0));
+        (this.suppressModal() &&
+          (!isPassive || isActiveFinalReview || this.pendingCellIds().size === 0 || this.hasXChangePending()));
       if (suppress) {
         this.rowClosureModal.clear();
       } else {
@@ -288,14 +290,24 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     );
   });
 
+  // True while an X-Change cross is pending: the player has swapped their white+white value but has
+  // NOT yet made the real follow-up cross. The server keeps the turn open in this state (the exchange
+  // doesn't consume the move), so the exchange must not be treated as a committed selection — otherwise
+  // the closure modal would offer "Confirm last selection" and PASS the turn on the mere exchange.
+  hasXChangePending = computed(() => this.turnState()?.effectiveWhiteWhite?.[this.playerId()] !== undefined);
+
   hasPendingPassiveCross = computed(
-    () => this.isInPassiveQueue() && !this.isMyTurn() && this.pendingCellIds().size > 0,
+    () => this.isInPassiveQueue() && !this.isMyTurn() && this.pendingCellIds().size > 0 && !this.hasXChangePending(),
   );
 
   // Active player has a pending cross (in undo buffer) while a passive has declared.
   // Surfaces the Change/OK buttons in the notification modal for the active player too.
   hasPendingActiveCross = computed(
-    () => this.isMyTurn() && this.turnState()?.phase === TurnPhase.ACTIVE_MOVE && this.pendingCellIds().size > 0,
+    () =>
+      this.isMyTurn() &&
+      this.turnState()?.phase === TurnPhase.ACTIVE_MOVE &&
+      this.pendingCellIds().size > 0 &&
+      !this.hasXChangePending(),
   );
 
   // Active player has already EndTurned (phase=PASSIVE_MOVE) but passives are still acting.

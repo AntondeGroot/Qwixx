@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import nl.adg.qwixx.action.CrossCellAction;
 import nl.adg.qwixx.action.DiceCombination;
 import nl.adg.qwixx.action.GameAction;
@@ -159,14 +160,18 @@ class DoubleVariantTest {
     }
 
     @Test
-    void doubleBAddsTwinsOnlyAtFixedPositions() {
+    void doubleBAddsTwinsByValuePattern() {
         List<Row> rows = buildForSettings(GameSettings.builder().doubleB(true).build());
+        // Canonical SAME_CARDS assignment: RED, YELLOW → TYPE_1; GREEN, BLUE → TYPE_2.
+        List<Set<Integer>> expected = List.of(
+                Set.of(3, 5, 9, 11), Set.of(3, 5, 9, 11), Set.of(4, 6, 8, 10), Set.of(4, 6, 8, 10));
         for (int r = 0; r < 4; r++) {
-            List<Integer> twinPositions = rows.get(r).cells().stream()
+            Set<Integer> twinValues = rows.get(r).cells().stream()
                     .filter(c -> CellCrosser.findTwinTag(c) != null)
-                    .map(Cell::position).sorted().toList();
-            assertEquals(List.of(2, 5, 8), twinPositions,
-                    "Double B (standard) twins the fixed columns 2,5,8 in row " + r);
+                    .map(c -> Integer.parseInt(c.displayValue()))
+                    .collect(Collectors.toSet());
+            assertEquals(expected.get(r), twinValues,
+                    "Double B (standard) twins its type's face values in row " + r);
         }
     }
 

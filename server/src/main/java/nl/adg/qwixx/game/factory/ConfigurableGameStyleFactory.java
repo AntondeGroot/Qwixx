@@ -835,23 +835,36 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
         cell.setTags(tags);
     }
 
+    /** The two Double B doubling patterns: each doubles a fixed set of face values in a row. The
+     *  four coloured rows split two-and-two between them (see {@link #doubleBRowTypes}). */
+    private enum DoubleBType { TYPE_1, TYPE_2 }
+
     /**
      * Double A / Double B: attach a "twin" mark to selected coloured cells. Double A twins every
-     * non-closing cell; Double B twins a fixed subset (see {@link #doubleBPositions}). Each twin
-     * shares its primary's colour and value, lives in the same {@link Row}, and is crossable only
-     * after its primary is crossed and nothing to the primary's right is crossed yet (enforced in
+     * non-closing cell; Double B twins the cells whose face value belongs to the row's assigned
+     * pattern (see {@link #doubledValues} and {@link #doubleBRowTypes}). Each twin shares its
+     * primary's colour and value, lives in the same {@link Row}, and is crossable only after its
+     * primary is crossed and nothing to the primary's right is crossed yet (enforced in
      * {@code CellCrosser} via the {@link CellTag.DoubleTwin} tag). Twins share the primary's
      * position so a crossed twin never advances the row's left-to-right progression.
+     *
+     * @param rows the coloured rows, in order, to twin
      */
     private void applyDoubleVariants(List<Row> rows) {
         if (!settings.doubleA() && !settings.doubleB()) return;
-        Set<Integer> bPositions = doubleBPositions();
-        for (Row row : rows) {
+        // Double B assigns each row a value pattern (two rows per type); SAME_CARDS keeps the canonical
+        // order, each DIFFERENT_CARDS card shuffles it. Double A (null) twins every non-closing cell.
+        List<DoubleBType> bTypes = settings.doubleB()
+                ? doubleBRowTypes(settings.cardMode() == CardMode.DIFFERENT_CARDS)
+                : null;
+        for (int r = 0; r < rows.size(); r++) {
+            Row row = rows.get(r);
+            Set<Integer> doubled = bTypes == null ? null : doubledValues(bTypes.get(r));
             // Snapshot the primaries first — we append twins to the same cell list below.
             List<Cell> primaries = new ArrayList<>(row.cells());
             for (Cell primary : primaries) {
                 if (primary.isClosingEligible()) continue; // the closing cell's twin is unreachable
-                if (settings.doubleB() && !bPositions.contains(primary.position())) continue;
+                if (doubled != null && !doubled.contains(Integer.parseInt(primary.displayValue()))) continue;
                 row.addCell(buildTwin(primary));
             }
         }
@@ -866,13 +879,30 @@ public class ConfigurableGameStyleFactory implements GameStyleFactory {
         return twin;
     }
 
-    // Fixed columns that gain a twin under Double B (avoid position 0 and the closing cells).
-    private Set<Integer> doubleBPositions() {
-        if (!settings.doubleB()) return Set.of();
+    // Face values doubled by each Double B pattern. Standard doubles the inner odd (TYPE_1) and even
+    // (TYPE_2) values, leaving the ends and centre single. Longo keeps its doubles inside 4..14, away
+    // from the rare extremes of the 2..16 range; both patterns stay symmetric around the centre (9).
+    private Set<Integer> doubledValues(DoubleBType type) {
         return switch (settings.base()) {
-            case STANDARD -> Set.of(2, 5, 8);
-            case LONGO    -> Set.of(3, 7, 11);
+            case STANDARD -> switch (type) {
+                case TYPE_1 -> Set.of(3, 5, 9, 11);
+                case TYPE_2 -> Set.of(4, 6, 8, 10);
+            };
+            case LONGO -> switch (type) {
+                case TYPE_1 -> Set.of(5, 7, 11, 13);
+                case TYPE_2 -> Set.of(4, 6, 9, 12, 14);
+            };
         };
+    }
+
+    // The per-row Double B pattern assignment: two rows TYPE_1, two rows TYPE_2. SAME_CARDS keeps the
+    // canonical order (RED, YELLOW → TYPE_1; GREEN, BLUE → TYPE_2); DIFFERENT_CARDS shuffles it per
+    // player, so the order differs between cards while each still holds two of each type.
+    private List<DoubleBType> doubleBRowTypes(boolean shuffle) {
+        List<DoubleBType> types = new ArrayList<>(List.of(
+                DoubleBType.TYPE_1, DoubleBType.TYPE_1, DoubleBType.TYPE_2, DoubleBType.TYPE_2));
+        if (shuffle) Collections.shuffle(types, random);
+        return types;
     }
 
     // ── Bonus A ────────────────────────────────────────────────────────────────

@@ -21,6 +21,8 @@ import { TranslateService } from '@ngx-translate/core';
 // eslint-disable-next-line boundaries/dependencies
 import { GamesService, PlayersService } from '../../generated/api/api';
 import { GameOption, SheetLayout } from '../../generated/model/models';
+import { connectorTargetIds } from '../connector-overlay/connector-links.util';
+import { ConnectorOverlayComponent } from '../connector-overlay/connector-overlay.component';
 import { RowComponent } from '../row/row.component';
 import { SilverMarkComponent } from '../silver-mark/silver-mark.component';
 import { LobbyService } from '../services/lobby.service';
@@ -32,7 +34,7 @@ const MAX_TOTAL_PLAYERS = 5;
 
 @Component({
   selector: 'app-settings',
-  imports: [ReactiveFormsModule, RowComponent, SilverMarkComponent],
+  imports: [ReactiveFormsModule, RowComponent, SilverMarkComponent, ConnectorOverlayComponent],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.css',
 })
@@ -78,6 +80,11 @@ export class SettingsComponent implements OnInit, OnDestroy {
   });
   lobbyPlayers = signal<{ id: string; name: string }[]>([]);
   previewLayout = signal<SheetLayout | null>(null);
+  // Connected B target cells that get the dotted ring (a CSS pseudo on the cell), same as the board.
+  readonly previewTargetIds = computed(() => {
+    const layout = this.previewLayout();
+    return layout ? connectorTargetIds(layout) : new Set<string>();
+  });
   // Which double variant the preview should render (derived from the doubleA/doubleB options),
   // since the previewLayout payload itself doesn't carry the flags.
   previewDoubleVariant = signal<'A' | 'B' | null>(null);

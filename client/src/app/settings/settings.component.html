@@ -221,8 +221,9 @@
     <div class="board-preview-outer" #boardPreviewOuter>
       <div class="board-preview" [style.zoom]="previewScale() < 1 ? previewScale() : null">
         @for (row of layout.rows; track row.id) {
-          <app-row [row]="row" [doubleVariant]="previewDoubleVariant()" />
+          <app-row [row]="row" [doubleVariant]="previewDoubleVariant()" [autoCrossTargetCellIds]="previewTargetIds()" />
         }
+        <app-connector-overlay [layout]="layout" />
       </div>
     </div>
   }

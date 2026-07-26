@@ -96,6 +96,12 @@ class OptionPreviewGeneratorIT extends BaseIntegrationTest {
         new WebDriverWait(driver, Duration.ofSeconds(10)).until(d -> Boolean.TRUE.equals(
                 ((JavascriptExecutor) d).executeScript(
                         "return Array.from(document.images).every(i => i.complete && i.naturalWidth > 0)")));
+        // Each connector overlay marks itself [data-measured] once it has measured its lines from the
+        // rendered cells; wait for all of them so the arrows/connectors are painted before we shoot.
+        new WebDriverWait(driver, Duration.ofSeconds(10)).until(d -> Boolean.TRUE.equals(
+                ((JavascriptExecutor) d).executeScript(
+                        "return Array.from(document.querySelectorAll('app-connector-overlay'))"
+                                + ".every(o => o.getAttribute('data-measured') === 'true')")));
 
         for (CatalogEntry entry : entries) {
             WebElement shot = driver.findElement(By.cssSelector("[data-opt-key='" + entry.key() + "']"));

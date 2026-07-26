@@ -3,8 +3,9 @@
     <div class="preview-shot" [attr.data-opt-key]="item.key">
       <div class="sheet">
         @for (row of item.layout.rows; track row.id) {
-          <app-row [row]="row" [doubleVariant]="item.doubleVariant" />
+          <app-row [row]="row" [doubleVariant]="item.doubleVariant" [autoCrossTargetCellIds]="item.targetIds" />
         }
+        <app-connector-overlay [layout]="item.layout" />
         @if (item.bonusNumbers.length > 0) {
           <div class="bonus-track">
             @for (n of item.bonusNumbers; track n) {

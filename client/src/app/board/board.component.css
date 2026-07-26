@@ -275,19 +275,6 @@ h2 {
   width: fit-content;
 }
 
-/* Connected B: full-sheet overlay drawn above every row (arrows + dotted target circles). Authored
-   px coordinates — scales with the .board-layout zoom. Non-interactive. */
-.diag-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
-  z-index: 6;
-}
-
 .game-hud {
   display: grid;
   grid-template-columns: 1fr;

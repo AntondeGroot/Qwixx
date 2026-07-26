@@ -137,18 +137,9 @@ async function skipRulesRedirect(page: Parameters<typeof test>[1]['page']) {
   });
 }
 
-/** Find the botCount select by looking for the <select> whose options are exactly "0","1","2","3". */
-async function findBotCountSelect(page: Parameters<typeof test>[1]['page']) {
-  const selects = page.locator('select');
-  const count = await selects.count();
-  for (let i = 0; i < count; i++) {
-    const sel = selects.nth(i);
-    const texts = await sel.locator('option').allTextContents();
-    if (texts.length === 4 && texts.every((t, idx) => t.trim() === String(idx))) {
-      return sel;
-    }
-  }
-  return null;
+/** The botCount pill group's buttons (the #botCount radiogroup renders one .int-pill per value). */
+function botCountPills(page: Parameters<typeof test>[1]['page']) {
+  return page.locator('#botCount .int-pill');
 }
 
 // ── Full form with chips and descriptions (the real GWT embed scenario) ─────────
@@ -175,48 +166,41 @@ test.describe('Settings page — full form with chips and descriptions', () => {
     expect(descCount).toBeGreaterThan(0);
   });
 
-  test('botCount select has options 0, 1, 2, 3 even with chips and descriptions rendered', async ({ page }) => {
-    const sel = await findBotCountSelect(page);
-    expect(sel).not.toBeNull();
-    const texts = await sel!.locator('option').allTextContents();
+  test('botCount has pills 0, 1, 2, 3 even with chips and descriptions rendered', async ({ page }) => {
+    const pills = botCountPills(page);
+    await expect(pills).toHaveCount(4);
+    const texts = await pills.allTextContents();
     expect(texts.map((t) => t.trim())).toEqual(['0', '1', '2', '3']);
   });
 
-  test('botCount select is visible on screen', async ({ page }) => {
-    const sel = await findBotCountSelect(page);
-    expect(sel).not.toBeNull();
-    await expect(sel!).toBeVisible();
+  test('botCount pills are visible on screen', async ({ page }) => {
+    await expect(botCountPills(page).first()).toBeVisible();
   });
 
-  test('botCount select default is 0 (first option selected)', async ({ page }) => {
-    const sel = await findBotCountSelect(page);
-    expect(sel).not.toBeNull();
-    const idx = await sel!.evaluate((el: HTMLSelectElement) => el.selectedIndex);
-    const text = await sel!.evaluate((el: HTMLSelectElement) => el.options[el.selectedIndex]?.text.trim());
-    expect(idx).toBe(0);
-    expect(text).toBe('0');
+  test('botCount default is 0 (first pill selected)', async ({ page }) => {
+    const pills = botCountPills(page);
+    await expect(pills.nth(0)).toHaveClass(/selected/);
+    await expect(pills.nth(1)).not.toHaveClass(/selected/);
   });
 
-  test('botCount select responds to selection', async ({ page }) => {
-    const sel = await findBotCountSelect(page);
-    expect(sel).not.toBeNull();
-    await sel!.selectOption({ index: 3 });
-    const text = await sel!.evaluate((el: HTMLSelectElement) => el.options[el.selectedIndex]?.text.trim());
-    expect(text).toBe('3');
+  test('botCount responds to selection', async ({ page }) => {
+    const pills = botCountPills(page);
+    await pills.nth(3).click();
+    await expect(pills.nth(3)).toHaveClass(/selected/);
   });
 
   test('submit button is hidden in embed mode', async ({ page }) => {
     await expect(page.locator('button[type="submit"]')).toBeHidden();
   });
 
-  test('botCount options survive after a re-render triggered by form change', async ({ page }) => {
+  test('botCount pills survive after a re-render triggered by form change', async ({ page }) => {
     // Changing another option triggers Angular change detection — botCount must survive.
     await page.locator('select').first().selectOption({ index: 1 });
     await page.waitForTimeout(300); // let debounced fetch fire
 
-    const sel = await findBotCountSelect(page);
-    expect(sel).not.toBeNull();
-    const texts = await sel!.locator('option').allTextContents();
+    const pills = botCountPills(page);
+    await expect(pills).toHaveCount(4);
+    const texts = await pills.allTextContents();
     expect(texts.map((t) => t.trim())).toEqual(['0', '1', '2', '3']);
   });
 });

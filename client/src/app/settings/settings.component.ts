@@ -99,7 +99,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
   maxBotCount = computed(() => Math.max(0, MAX_TOTAL_PLAYERS - this.lobbyPlayers().length));
 
   /** Selects an enum option value (used by the Variant slider toggle). */
-  setOption(key: string, value: string): void {
+  setOption(key: string, value: string | number): void {
     this.form.get(key)?.setValue(value);
   }
 

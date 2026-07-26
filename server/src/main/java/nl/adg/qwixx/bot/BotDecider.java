@@ -271,31 +271,31 @@ public class BotDecider {
         double adjust = 0;
         for (CellTag tag : cell.tags()) {
             switch (tag) {
-                case CellTag.AutoCross autoCross -> {
-                    adjust += autoCrossLoss(autoCross.target(), layout, prog, center, state, botId, profile);
+                case CellTag.AutoCross(String target) -> {
+                    adjust += autoCrossLoss(target, layout, prog, center, state, botId, profile);
                 }
-                case CellTag.BonusPoints bonus -> {
-                    adjust -= bonus.amount();
+                case CellTag.BonusPoints(int amount) -> {
+                    adjust -= amount;
                 }
-                case CellTag.DoubleCross ignored -> {
+                case CellTag.DoubleCross _ -> {
                     int displayValue = parseDisplayValue(cell, center);
                     adjust -= Math.abs(displayValue - center) * profile.rarityBonus();
                 }
-                case CellTag.ExtraBucket ignored -> {
+                case CellTag.ExtraBucket _ -> {
                     adjust -= profile.rarityBonus();
                 }
-                case CellTag.SecondaryColor ignored -> {
+                case CellTag.SecondaryColor _ -> {
                     int displayValue = parseDisplayValue(cell, center);
                     adjust -= Math.abs(displayValue - center) * profile.rarityBonus();
                 }
-                case CellTag.XChange xc -> {
+                case CellTag.XChange(int a, int b) -> {
                     // Prefer cells where the closer value to the center dice mean is matched.
-                    int bestMatch = Math.min(Math.abs(xc.a() - center), Math.abs(xc.b() - center));
+                    int bestMatch = Math.min(Math.abs(a - center), Math.abs(b - center));
                     adjust += (profile.rarityBonus() - bestMatch) * 0.5;
                 }
-                case CellTag.LuckyNumber luckyNumber -> {
+                case CellTag.LuckyNumber(int bonusPoints) -> {
                     // Treat luckyNumber bonus points like any other bonus: subtract to make cell more attractive.
-                    adjust -= luckyNumber.bonusPoints();
+                    adjust -= bonusPoints;
                 }
                 case CellTag.LuckyCross _ -> {} // no tag-level adjustment; base position score still applies
                 case CellTag.DoubleTwin _ -> {} // twin is just an extra normal cross; valued via its base position score

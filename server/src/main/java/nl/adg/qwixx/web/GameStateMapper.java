@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import nl.adg.qwixx.action.CrossCellAction;
 import nl.adg.qwixx.action.DiceCombination;
 import nl.adg.qwixx.action.GameAction;
+import nl.adg.qwixx.data.BonusBKind;
 import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.CellTag;
 import nl.adg.qwixx.data.Color;
@@ -299,45 +300,45 @@ class GameStateMapper {
 
     private static CellTagDto mapTag(CellTag tag) {
         return switch (tag) {
-            case CellTag.ExtraBucket ignored ->
+            case CellTag.ExtraBucket _ ->
                     new CellTagDto(
                             CellTagDto.TypeEnum.EXTRA_BUCKET);
-            case CellTag.DoubleCross ignored ->
+            case CellTag.DoubleCross _ ->
                     new CellTagDto(
                             CellTagDto.TypeEnum.DOUBLE_CROSS);
-            case CellTag.AutoCross a ->
+            case CellTag.AutoCross(String target) ->
                     new CellTagDto(
                             CellTagDto.TypeEnum.AUTO_CROSS)
-                            .target(a.target());
-            case CellTag.DoubleTwin dt ->
+                            .target(target);
+            case CellTag.DoubleTwin(String primary) ->
                     new CellTagDto(
                             CellTagDto.TypeEnum.DOUBLE_TWIN)
-                            .target(dt.primary());
-            case CellTag.BonusBox ignored ->
+                            .target(primary);
+            case CellTag.BonusBox _ ->
                     new CellTagDto(
                             CellTagDto.TypeEnum.BONUS_BOX);
-            case CellTag.BonusB b ->
+            case CellTag.BonusB(BonusBKind kind) ->
                     new CellTagDto(
                             CellTagDto.TypeEnum.BONUS_B)
-                            .bonusKind(CellTagDto.BonusKindEnum.fromValue(b.kind().name()));
-            case CellTag.BonusPoints b ->
+                            .bonusKind(CellTagDto.BonusKindEnum.fromValue(kind.name()));
+            case CellTag.BonusPoints(int amount) ->
                     new CellTagDto(
                             CellTagDto.TypeEnum.BONUS_POINTS)
-                            .amount(b.amount());
-            case CellTag.SecondaryColor sc ->
+                            .amount(amount);
+            case CellTag.SecondaryColor(Color color) ->
                     new CellTagDto(
                             CellTagDto.TypeEnum.SECONDARY_COLOR)
-                            .secondaryColor(sc.color().name());
-            case CellTag.XChange xc ->
+                            .secondaryColor(color.name());
+            case CellTag.XChange(int a, int b) ->
                     new CellTagDto(
                             CellTagDto.TypeEnum.X_CHANGE)
-                            .valueA(xc.a())
-                            .valueB(xc.b());
-            case CellTag.LuckyNumber ln ->
+                            .valueA(a)
+                            .valueB(b);
+            case CellTag.LuckyNumber(int bonusPoints) ->
                     new CellTagDto(
                             CellTagDto.TypeEnum.LUCKY_NUMBER)
-                            .amount(ln.bonusPoints());
-            case CellTag.LuckyCross ignored ->
+                            .amount(bonusPoints);
+            case CellTag.LuckyCross _ ->
                     new CellTagDto(
                             CellTagDto.TypeEnum.LUCKY_CROSS);
         };

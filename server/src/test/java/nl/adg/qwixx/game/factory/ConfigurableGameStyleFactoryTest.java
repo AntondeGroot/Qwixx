@@ -815,30 +815,60 @@ class ConfigurableGameStyleFactoryTest {
         }
     }
 
-    @Test
-    void doubleB_twinsOnlyFixedPositions() {
-        ConfigurableGameStyleFactory f = new ConfigurableGameStyleFactory(
-                GameSettings.builder().doubleB(true).cardMode(CardMode.SAME_CARDS).build());
-        for (Row row : rows(f)) {
-            Set<Integer> twinPositions = new HashSet<>();
-            for (Cell cell : row.cells()) {
-                if (cell.tags().stream().anyMatch(t -> t instanceof CellTag.DoubleTwin)) {
-                    twinPositions.add(cell.position());
-                }
-            }
-            assertEquals(Set.of(2, 5, 8), twinPositions, "Double B twins only positions 2, 5, 8");
+    // Face values doubled by each Double B pattern (mirrors the factory's private table).
+    private static final Set<Integer> TYPE_1_VALUES = Set.of(3, 5, 9, 11);
+    private static final Set<Integer> TYPE_2_VALUES = Set.of(4, 6, 8, 10);
+
+    private static boolean isTwin(Cell cell) {
+        return cell.tags().stream().anyMatch(t -> t instanceof CellTag.DoubleTwin);
+    }
+
+    // The face values that carry a twin in the given row.
+    private static Set<Integer> twinnedValues(Row row) {
+        Set<Integer> values = new HashSet<>();
+        for (Cell cell : row.cells()) {
+            if (isTwin(cell)) values.add(Integer.parseInt(cell.displayValue()));
         }
+        return values;
     }
 
     @Test
-    void doubleB_appliedInDifferentCardsMode() {
+    void doubleB_twinsByValuePatternInSameCardsMode() {
+        ConfigurableGameStyleFactory f = new ConfigurableGameStyleFactory(
+                GameSettings.builder().doubleB(true).cardMode(CardMode.SAME_CARDS).build());
+        List<Row> rows = rows(f);
+        // Canonical assignment: RED, YELLOW → TYPE_1; GREEN, BLUE → TYPE_2.
+        assertEquals(TYPE_1_VALUES, twinnedValues(rows.get(0)), "RED doubles TYPE_1 values");
+        assertEquals(TYPE_1_VALUES, twinnedValues(rows.get(1)), "YELLOW doubles TYPE_1 values");
+        assertEquals(TYPE_2_VALUES, twinnedValues(rows.get(2)), "GREEN doubles TYPE_2 values");
+        assertEquals(TYPE_2_VALUES, twinnedValues(rows.get(3)), "BLUE doubles TYPE_2 values");
+    }
+
+    @Test
+    void doubleB_differentCardsModeKeepsTwoOfEachType() {
         ConfigurableGameStyleFactory f = new ConfigurableGameStyleFactory(
                 GameSettings.builder().doubleB(true).cardMode(CardMode.DIFFERENT_CARDS).build(), new Random(1));
         List<Row> rows = f.buildRows(List.of(UUID.randomUUID())).values().iterator().next();
+
+        long type1Rows = rows.stream().filter(r -> twinnedValues(r).equals(TYPE_1_VALUES)).count();
+        long type2Rows = rows.stream().filter(r -> twinnedValues(r).equals(TYPE_2_VALUES)).count();
+        assertEquals(2, type1Rows, "exactly two rows use the TYPE_1 pattern");
+        assertEquals(2, type2Rows, "exactly two rows use the TYPE_2 pattern");
+
         long twins = rows.stream().flatMap(r -> r.cells().stream())
-                .filter(c -> c.tags().stream().anyMatch(t -> t instanceof CellTag.DoubleTwin))
+                .filter(ConfigurableGameStyleFactoryTest::isTwin)
                 .count();
-        assertEquals(12, twins, "3 twins per coloured row across 4 rows");
+        assertEquals(16, twins, "4 twins per coloured row across 4 rows");
+    }
+
+    @Test
+    void doubleB_longoDoublesInnerValuesAwayFromExtremes() {
+        ConfigurableGameStyleFactory f = new ConfigurableGameStyleFactory(
+                GameSettings.builder().base(BaseVariant.LONGO).doubleB(true).cardMode(CardMode.SAME_CARDS).build());
+        List<Row> rows = rows(f);
+        // Longo keeps doubles inside 4..14, symmetric around 9; RED, YELLOW → TYPE_1; GREEN, BLUE → TYPE_2.
+        assertEquals(Set.of(5, 7, 11, 13), twinnedValues(rows.get(0)), "Longo RED doubles TYPE_1 values");
+        assertEquals(Set.of(4, 6, 9, 12, 14), twinnedValues(rows.get(3)), "Longo BLUE doubles TYPE_2 values");
     }
 
     // ── Longo lock (buildLock) ──────────────────────────────────────────────────

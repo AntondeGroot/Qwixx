@@ -69,25 +69,23 @@ function createFixture(queryParams: Record<string, string> = {}, options: GameOp
     });
 }
 
-describe('SettingsComponent — botCount select', () => {
+describe('SettingsComponent — botCount pills', () => {
   let fixture: ReturnType<typeof TestBed.createComponent<SettingsComponent>>;
 
-  function botCountSelect(): HTMLSelectElement | undefined {
-    return fixture.nativeElement.querySelector('select#botCount') ?? undefined;
+  function botCountPills(): HTMLButtonElement[] {
+    return Array.from(fixture.nativeElement.querySelectorAll('#botCount .int-pill'));
   }
 
   beforeEach(async () => {
     fixture = await createFixture();
   });
 
-  it('renders a <select> with exactly four options for botCount', () => {
-    const sel = botCountSelect();
-    expect(sel).toBeTruthy();
-    expect(sel!.options).toHaveLength(4);
+  it('renders a horizontal pill group with exactly four pills for botCount', () => {
+    expect(botCountPills()).toHaveLength(4);
   });
 
-  it('botCount option labels are 0, 1, 2, 3', () => {
-    const texts = Array.from(botCountSelect()!.options).map((o) => o.textContent?.trim());
+  it('botCount pill labels are 0, 1, 2, 3', () => {
+    const texts = botCountPills().map((p) => p.textContent?.trim());
     expect(texts).toEqual(['0', '1', '2', '3']);
   });
 
@@ -98,24 +96,26 @@ describe('SettingsComponent — botCount select', () => {
     expect(typeof ctrl!.value).toBe('number');
   });
 
-  it('option 0 is selected by default', () => {
-    expect(botCountSelect()!.selectedIndex).toBe(0);
+  it('the 0 pill is selected by default', () => {
+    const pills = botCountPills();
+    expect(pills[0]!.classList).toContain('selected');
+    expect(pills.slice(1).some((p) => p.classList.contains('selected'))).toBe(false);
   });
 
-  it('changing selection to index 2 updates the form control to the number 2', () => {
-    const sel = botCountSelect()!;
-    sel.selectedIndex = 2;
-    sel.dispatchEvent(new Event('change'));
+  it('clicking the "2" pill updates the form control to the number 2', () => {
+    botCountPills()[2]!.click();
     fixture.detectChanges();
 
-    expect(Number(fixture.componentInstance.form.get('botCount')!.value)).toBe(2);
+    expect(fixture.componentInstance.form.get('botCount')!.value).toBe(2);
+    expect(typeof fixture.componentInstance.form.get('botCount')!.value).toBe('number');
+    expect(botCountPills()[2]!.classList).toContain('selected');
   });
 
-  it('options survive an additional detectChanges (simulates translate-pipe re-render)', () => {
+  it('pills survive an additional detectChanges (simulates translate-pipe re-render)', () => {
     // In the real app a TranslateService lang change triggers an extra change-detection
-    // cycle. The options must still be present afterwards.
+    // cycle. The pills must still be present afterwards.
     fixture.detectChanges();
-    expect(botCountSelect()!.options).toHaveLength(4);
+    expect(botCountPills()).toHaveLength(4);
   });
 });
 
@@ -170,24 +170,23 @@ describe('SettingsComponent — admin-only options', () => {
 });
 
 // ── Embed mode (real GWT iframe path: ?embed=1) ───────────────────────────────
-describe('SettingsComponent — botCount select in embed mode', () => {
+describe('SettingsComponent — botCount pills in embed mode', () => {
   let fixture: ReturnType<typeof TestBed.createComponent<SettingsComponent>>;
 
-  function botCountSelect(): HTMLSelectElement | undefined {
-    return fixture.nativeElement.querySelector('select#botCount') ?? undefined;
+  function botCountPills(): HTMLButtonElement[] {
+    return Array.from(fixture.nativeElement.querySelectorAll('#botCount .int-pill'));
   }
 
   beforeEach(async () => {
     fixture = await createFixture({ embed: '1', lang: 'nl' });
   });
 
-  it('embed mode: botCount select still has 4 options', () => {
-    expect(botCountSelect()).toBeTruthy();
-    expect(botCountSelect()!.options).toHaveLength(4);
+  it('embed mode: botCount still has 4 pills', () => {
+    expect(botCountPills()).toHaveLength(4);
   });
 
-  it('embed mode: option labels are still 0, 1, 2, 3', () => {
-    const texts = Array.from(botCountSelect()!.options).map((o) => o.textContent?.trim());
+  it('embed mode: pill labels are still 0, 1, 2, 3', () => {
+    const texts = botCountPills().map((p) => p.textContent?.trim());
     expect(texts).toEqual(['0', '1', '2', '3']);
   });
 

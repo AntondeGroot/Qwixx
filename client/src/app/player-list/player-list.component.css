@@ -286,6 +286,12 @@
   border-radius: inherit;
 }
 
+/* X-Change diamonds are white, so the white "crossed" wash above is invisible on them.
+   Fill a crossed X-Change with its own purple instead so it reads as crossed. */
+.mini-cell.mini-cell-xchange.crossed::after {
+  background: #7b1fa2;
+}
+
 /* ── Mini lock ───────────────────────────────────────────────── */
 
 .mini-lock {

@@ -195,11 +195,21 @@
           }
         } @else if (opt.type === TypeEnum.INTEGER) {
           @if (isSmallIntegerRange(opt)) {
-            <select [id]="opt.key" [formControlName]="opt.key">
+            <div class="int-pills" [id]="opt.key" role="radiogroup" [attr.aria-label]="t(opt.labelKey)">
               @for (n of integerRange(opt); track n) {
-                <option [ngValue]="n">{{ n }}</option>
+                <button
+                  type="button"
+                  class="int-pill"
+                  role="radio"
+                  [class.selected]="form.get(opt.key)?.value === n"
+                  [attr.aria-checked]="form.get(opt.key)?.value === n"
+                  [disabled]="form.get(opt.key)?.disabled"
+                  (click)="setOption(opt.key, n)"
+                >
+                  {{ n }}
+                </button>
               }
-            </select>
+            </div>
           } @else {
             <input
               [id]="opt.key"

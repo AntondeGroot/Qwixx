@@ -25,11 +25,15 @@
     <div class="modal-content">
       <div class="modal-body">
         <div class="closure-requests">
-          @for (request of requests; track request.rowColor + request.playerName) {
+          @for (request of requests; track request.kind + (request.rowColor ?? '') + request.playerName) {
             <div class="request-item">
-              <span class="request-text">{{ request.playerName }} {{ t('rowClosure.wantsToCloseThe') }}</span>
-              <div [class]="getRowColorClass(request.rowColor)" class="color-cell"></div>
-              <span class="request-text">{{ t('rowClosure.row') }}</span>
+              @if (request.kind === 'punishment') {
+                <span class="request-text">{{ t('rowClosure.punishmentGameEnd', { name: request.playerName }) }}</span>
+              } @else {
+                <span class="request-text">{{ request.playerName }} {{ t('rowClosure.wantsToCloseThe') }}</span>
+                <div [class]="getRowColorClass(request.rowColor!)" class="color-cell"></div>
+                <span class="request-text">{{ t('rowClosure.row') }}</span>
+              }
             </div>
           }
         </div>

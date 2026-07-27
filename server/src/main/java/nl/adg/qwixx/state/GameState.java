@@ -18,6 +18,7 @@ public class GameState {
     final BoardState             boardState;
     @Nullable TurnState    turnState;
     final List<ClosureNotification> closureNotifications; // pending row closure notifications (UI)
+    final List<PunishmentNotification> punishmentNotifications; // "player hit max punishments → game ends" (UI)
     final Map<Integer, Set<UUID>> pendingClosures;   // rows queued to close at EVALUATE: rowIndex → declarerIds
     boolean                gameOver;
     long                   version;        // increments on every applyAction
@@ -32,6 +33,7 @@ public class GameState {
         this.boardState       = boardState;
         this.turnState        = turnState;
         this.closureNotifications = new ArrayList<>();
+        this.punishmentNotifications = new ArrayList<>();
         this.pendingClosures  = new HashMap<>();
         this.gameOver         = false;
         this.version          = 0;
@@ -44,6 +46,7 @@ public class GameState {
     public BoardState boardState()                    { return boardState; }
     @Nullable public TurnState turnState()            { return turnState; }
     public List<ClosureNotification> closureNotifications() { return closureNotifications; }
+    public List<PunishmentNotification> punishmentNotifications() { return punishmentNotifications; }
     public Map<Integer, Set<UUID>> pendingClosures()  { return pendingClosures; }
     public boolean gameOver()                         { return gameOver; }
     public long version()                             { return version; }

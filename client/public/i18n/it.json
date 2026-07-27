@@ -120,7 +120,8 @@
     "yes": "Sì",
     "no": "No",
     "makeAMove": "Fai una mossa",
-    "undoButton": "Annulla"
+    "undoButton": "Annulla",
+    "punishmentGameEnd": "{{name}} ha segnato la 4ª penalità — la partita finirà."
   },
   "bonusB": {
     "fewestTwo": "✕✕ nella tua riga più bassa",

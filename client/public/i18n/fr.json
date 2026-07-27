@@ -120,7 +120,8 @@
     "yes": "Oui",
     "no": "Non",
     "makeAMove": "Jouer un coup",
-    "undoButton": "Annuler"
+    "undoButton": "Annuler",
+    "punishmentGameEnd": "{{name}} a coché sa 4e pénalité — la partie va se terminer."
   },
   "bonusB": {
     "fewestTwo": "✕✕ dans votre rangée la plus basse",

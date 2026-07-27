@@ -1229,6 +1229,44 @@ class StandardTurnRulesTest {
     }
 
     @Test
+    void fourthPunishmentRecordsGameEndNoticeAndDefersGameOver() {
+        // 3 punishments must be in the turn-start snapshot (give-up restores to it before adding the
+        // 4th), so set them before rolling.
+        GameState state = stateInRoll(p1, p1, p2);
+        SheetProgress prog = state.boardState().sheetProgress().get(p1);
+        prog.addPunishment();
+        prog.addPunishment();
+        prog.addPunishment();
+        rules.apply(state, new RollAction(p1));
+
+        rules.apply(state, new GiveUpAction(p1)); // the 4th punishment
+
+        assertEquals(4, state.boardState().sheetProgress().get(p1).punishments());
+        assertFalse(state.gameOver(), "The game must defer to the passive window, not end immediately");
+        assertEquals(TurnPhase.PASSIVE_MOVE, state.turnState().phase());
+        assertEquals(1, state.punishmentNotifications().size(),
+                "the other players must be notified the game will end");
+        assertEquals(p1, state.punishmentNotifications().getFirst().playerId());
+    }
+
+    @Test
+    void gameEndNoticeClearsWhenThePassiveQueueDrainsAndTheGameEnds() {
+        GameState state = stateInRoll(p1, p1, p2);
+        SheetProgress prog = state.boardState().sheetProgress().get(p1);
+        prog.addPunishment();
+        prog.addPunishment();
+        prog.addPunishment();
+        rules.apply(state, new RollAction(p1));
+        rules.apply(state, new GiveUpAction(p1)); // 4th punishment → PASSIVE_MOVE, notice recorded
+        assertEquals(1, state.punishmentNotifications().size());
+
+        rules.apply(state, new EndTurnAction(p2)); // last passive ends → EVALUATE → game over
+
+        assertTrue(state.gameOver(), "the game ends once the passive queue drains");
+        assertTrue(state.punishmentNotifications().isEmpty(), "the notice is cleared at EVALUATE");
+    }
+
+    @Test
     void giveUpDuringActiveMoveKeepsPassiveInQueue() {
         GameState state = stateAfterRoll(p1, p1, p2);
         rules.apply(state, new GiveUpAction(p1));

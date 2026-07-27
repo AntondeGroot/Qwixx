@@ -20,7 +20,7 @@ describe('RowClosureModalService', () => {
   const noop = () => {};
 
   it('show() sets requests signal', () => {
-    service.show([{ playerName: 'Alice', rowColor: Color.RED }], noop, noop, noop);
+    service.show([{ playerName: 'Alice', rowColor: Color.RED, kind: 'closure' }], noop, noop, noop);
     expect(service.requests()).toHaveLength(1);
     expect(service.requests()[0]!.playerName).toBe('Alice');
   });
@@ -29,7 +29,7 @@ describe('RowClosureModalService', () => {
     const onConfirm = vi.fn();
     const onDismiss = vi.fn();
     const onRevert = vi.fn();
-    service.show([{ playerName: 'A', rowColor: Color.BLUE }], onConfirm, onDismiss, onRevert);
+    service.show([{ playerName: 'A', rowColor: Color.BLUE, kind: 'closure' }], onConfirm, onDismiss, onRevert);
 
     service.confirmFn!();
     expect(onConfirm).toHaveBeenCalledOnce();
@@ -42,7 +42,7 @@ describe('RowClosureModalService', () => {
   });
 
   it('clear() empties requests and nulls callbacks', () => {
-    service.show([{ playerName: 'A', rowColor: Color.GREEN }], noop, noop, noop);
+    service.show([{ playerName: 'A', rowColor: Color.GREEN, kind: 'closure' }], noop, noop, noop);
     service.clear();
 
     expect(service.requests()).toEqual([]);
@@ -52,11 +52,11 @@ describe('RowClosureModalService', () => {
   });
 
   it('replaces previous requests on a second show()', () => {
-    service.show([{ playerName: 'A', rowColor: Color.RED }], noop, noop, noop);
+    service.show([{ playerName: 'A', rowColor: Color.RED, kind: 'closure' }], noop, noop, noop);
     service.show(
       [
-        { playerName: 'B', rowColor: Color.BLUE },
-        { playerName: 'C', rowColor: Color.GREEN },
+        { playerName: 'B', rowColor: Color.BLUE, kind: 'closure' },
+        { playerName: 'C', rowColor: Color.GREEN, kind: 'closure' },
       ],
       noop,
       noop,

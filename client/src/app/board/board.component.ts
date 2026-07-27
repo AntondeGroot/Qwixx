@@ -36,7 +36,7 @@ import { SilverMarkComponent } from '../silver-mark/silver-mark.component';
 import { connectorTargetIds } from '../connector-overlay/connector-links.util';
 import { bonusKindOf, computeBonusBProgress } from '../row/bonus-b.util';
 import { RowComponent } from '../row/row.component';
-import { RowClosureModalService } from '../services/row-closure-modal.service';
+import { NoticeRequest, RowClosureModalService } from '../services/row-closure-modal.service';
 import { AudioService } from '../services/audio.service';
 import { RoomService } from '../services/room.service';
 import { CellHighlightService } from '../services/cell-highlight.service';
@@ -98,10 +98,20 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     // outside the board's CSS transform (which would break position:fixed on mobile).
     effect(() => {
       const myName = this.playerName(this.playerId());
-      const allRequests = this.gameState()?.closureNotifications ?? [];
-      // Show requests from OTHER players only — the declarant never sees their own notification.
-      // All players (active and passive) can receive notifications, not just passives.
-      const requests = allRequests.filter((r) => r.playerName !== myName);
+      const state = this.gameState();
+      // Merge the two notice kinds (row closure + max-punishment game-end) into one list. Show
+      // requests from OTHER players only — the declarant never sees their own notice.
+      const requests: NoticeRequest[] = [
+        ...(state?.closureNotifications ?? []).map((r): NoticeRequest => ({
+          playerName: r.playerName,
+          kind: 'closure',
+          rowColor: r.rowColor,
+        })),
+        ...(state?.punishmentNotifications ?? []).map((r): NoticeRequest => ({
+          playerName: r.playerName,
+          kind: 'punishment',
+        })),
+      ].filter((r) => r.playerName !== myName);
 
       if (requests.length === 0) {
         // No pending closure from others — reset suppression so the next intent shows fresh.

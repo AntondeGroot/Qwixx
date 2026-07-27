@@ -70,7 +70,7 @@ describe('App', () => {
 
     const service = TestBed.inject(RowClosureModalService);
     service.show(
-      [{ playerName: 'Alice', rowColor: Color.RED }],
+      [{ playerName: 'Alice', rowColor: Color.RED, kind: 'closure' }],
       () => {},
       () => {},
       () => {},
@@ -88,7 +88,7 @@ describe('App', () => {
 
     const service = TestBed.inject(RowClosureModalService);
     service.show(
-      [{ playerName: 'Bob', rowColor: Color.BLUE }],
+      [{ playerName: 'Bob', rowColor: Color.BLUE, kind: 'closure' }],
       () => {},
       () => {},
       () => {},

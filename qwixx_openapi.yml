@@ -387,6 +387,15 @@ components:
         rowColor:
           $ref: '#/components/schemas/Color'
 
+    PunishmentNotification:
+      type: object
+      required:
+        - playerName
+      properties:
+        playerName:
+          type: string
+          description: Name of the player who reached the maximum punishments, ending the game.
+
     TurnPhase:
       type: string
       enum:
@@ -664,6 +673,11 @@ components:
           items:
             $ref: '#/components/schemas/ClosureNotification'
           description: Pending row closure notifications for the UI.
+        punishmentNotifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/PunishmentNotification'
+          description: Notifications that a player reached max punishments, ending the game (for the UI).
         pendingClosures:
           type: object
           description: Map of rowId to the list of playerIds who declared closing intent; rows in this map close at EVALUATE.

@@ -1,7 +1,7 @@
 import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { Color } from '../../generated/model/models';
-import { ClosureNotification } from '../services/row-closure-modal.service';
+import { NoticeRequest } from '../services/row-closure-modal.service';
 
 @Component({
   selector: 'app-row-closure-modal',
@@ -13,7 +13,7 @@ import { ClosureNotification } from '../services/row-closure-modal.service';
 export class RowClosureModalComponent {
   private readonly translate = inject(TranslateService);
 
-  @Input() requests: ClosureNotification[] = [];
+  @Input() requests: NoticeRequest[] = [];
   // Button set: canAct → [Make a move] + [Pass]; else canRevert → [Undo] + [OK]; else single [OK].
   @Input() canAct = false;
   @Input() canRevert = false;
@@ -25,8 +25,8 @@ export class RowClosureModalComponent {
   @Output() lockYes = new EventEmitter<void>();
   @Output() lockNo = new EventEmitter<void>();
 
-  t(key: string): string {
-    return this.translate.instant(key);
+  t(key: string, params?: object): string {
+    return this.translate.instant(key, params);
   }
 
   getRowColorClass(color: Color): string {

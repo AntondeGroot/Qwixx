@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { RowClosureModalComponent } from './row-closure-modal.component';
-import { ClosureNotification } from '../services/row-closure-modal.service';
+import { NoticeRequest } from '../services/row-closure-modal.service';
 import { Color } from '../../generated/model/models';
 
 describe('RowClosureModalComponent', () => {
@@ -30,18 +30,27 @@ describe('RowClosureModalComponent', () => {
   });
 
   it('should display modal when requests are present', () => {
-    const requests: ClosureNotification[] = [{ playerName: 'Player A', rowColor: Color.RED }];
+    const requests: NoticeRequest[] = [{ playerName: 'Player A', rowColor: Color.RED, kind: 'closure' }];
     component.requests = requests;
     fixture.detectChanges();
     const overlay = fixture.nativeElement.querySelector('.modal-overlay');
     expect(overlay).toBeTruthy();
   });
 
+  it('renders a punishment notice as text with no color cell', () => {
+    component.requests = [{ playerName: 'Alice', kind: 'punishment' }];
+    fixture.detectChanges();
+    // The i18n key is echoed by the mock TranslateService; interpolation params are not applied
+    // there, so just assert the punishment key rendered and no colour swatch is shown.
+    expect(fixture.nativeElement.textContent).toContain('rowClosure.punishmentGameEnd');
+    expect(fixture.nativeElement.querySelector('.color-cell')).toBeFalsy();
+  });
+
   it('should display multiple closure requests', () => {
-    const requests: ClosureNotification[] = [
-      { playerName: 'Player A', rowColor: Color.RED },
-      { playerName: 'Player B', rowColor: Color.YELLOW },
-      { playerName: 'Player C', rowColor: Color.GREEN },
+    const requests: NoticeRequest[] = [
+      { playerName: 'Player A', rowColor: Color.RED, kind: 'closure' },
+      { playerName: 'Player B', rowColor: Color.YELLOW, kind: 'closure' },
+      { playerName: 'Player C', rowColor: Color.GREEN, kind: 'closure' },
     ];
     component.requests = requests;
     fixture.detectChanges();
@@ -54,7 +63,7 @@ describe('RowClosureModalComponent', () => {
     component.confirmSelection.subscribe(() => {
       emitted = true;
     });
-    component.requests = [{ playerName: 'Player A', rowColor: Color.RED }];
+    component.requests = [{ playerName: 'Player A', rowColor: Color.RED, kind: 'closure' }];
     component.canAct = true; // Pass button only shown to a recipient who can still act
     fixture.detectChanges();
     fixture.nativeElement.querySelector('.btn-primary').click();
@@ -66,7 +75,7 @@ describe('RowClosureModalComponent', () => {
     component.dismissSelection.subscribe(() => {
       emitted = true;
     });
-    component.requests = [{ playerName: 'Player A', rowColor: Color.RED }];
+    component.requests = [{ playerName: 'Player A', rowColor: Color.RED, kind: 'closure' }];
     component.canAct = true;
     fixture.detectChanges();
     fixture.nativeElement.querySelector('.btn-secondary').click();
@@ -78,7 +87,7 @@ describe('RowClosureModalComponent', () => {
     component.dismissSelection.subscribe(() => {
       emitted = true;
     });
-    component.requests = [{ playerName: 'Player A', rowColor: Color.RED }];
+    component.requests = [{ playerName: 'Player A', rowColor: Color.RED, kind: 'closure' }];
     component.canAct = false;
     fixture.detectChanges();
     fixture.nativeElement.querySelector('.btn-primary').click();
@@ -86,7 +95,7 @@ describe('RowClosureModalComponent', () => {
   });
 
   it('should show Undo + OK and emit revertSelection when canRevert', () => {
-    component.requests = [{ playerName: 'Player A', rowColor: Color.RED }];
+    component.requests = [{ playerName: 'Player A', rowColor: Color.RED, kind: 'closure' }];
     component.canAct = false;
     component.canRevert = true;
     fixture.detectChanges();
@@ -111,9 +120,9 @@ describe('RowClosureModalComponent', () => {
   });
 
   it('should display color cells with correct classes', () => {
-    const requests: ClosureNotification[] = [
-      { playerName: 'Player A', rowColor: Color.RED },
-      { playerName: 'Player B', rowColor: Color.BLUE },
+    const requests: NoticeRequest[] = [
+      { playerName: 'Player A', rowColor: Color.RED, kind: 'closure' },
+      { playerName: 'Player B', rowColor: Color.BLUE, kind: 'closure' },
     ];
     component.requests = requests;
     fixture.detectChanges();
@@ -123,9 +132,9 @@ describe('RowClosureModalComponent', () => {
   });
 
   it('should display player names correctly', () => {
-    const requests: ClosureNotification[] = [
-      { playerName: 'Alice', rowColor: Color.RED },
-      { playerName: 'Bob', rowColor: Color.YELLOW },
+    const requests: NoticeRequest[] = [
+      { playerName: 'Alice', rowColor: Color.RED, kind: 'closure' },
+      { playerName: 'Bob', rowColor: Color.YELLOW, kind: 'closure' },
     ];
     component.requests = requests;
     fixture.detectChanges();
@@ -135,11 +144,11 @@ describe('RowClosureModalComponent', () => {
   });
 
   it('should display all four row colors', () => {
-    const requests: ClosureNotification[] = [
-      { playerName: 'P1', rowColor: Color.RED },
-      { playerName: 'P2', rowColor: Color.YELLOW },
-      { playerName: 'P3', rowColor: Color.GREEN },
-      { playerName: 'P4', rowColor: Color.BLUE },
+    const requests: NoticeRequest[] = [
+      { playerName: 'P1', rowColor: Color.RED, kind: 'closure' },
+      { playerName: 'P2', rowColor: Color.YELLOW, kind: 'closure' },
+      { playerName: 'P3', rowColor: Color.GREEN, kind: 'closure' },
+      { playerName: 'P4', rowColor: Color.BLUE, kind: 'closure' },
     ];
     component.requests = requests;
     fixture.detectChanges();
@@ -152,11 +161,11 @@ describe('RowClosureModalComponent', () => {
   });
 
   it('should display correct number of request items', () => {
-    const requests: ClosureNotification[] = [
-      { playerName: 'A', rowColor: Color.RED },
-      { playerName: 'B', rowColor: Color.YELLOW },
-      { playerName: 'C', rowColor: Color.GREEN },
-      { playerName: 'D', rowColor: Color.BLUE },
+    const requests: NoticeRequest[] = [
+      { playerName: 'A', rowColor: Color.RED, kind: 'closure' },
+      { playerName: 'B', rowColor: Color.YELLOW, kind: 'closure' },
+      { playerName: 'C', rowColor: Color.GREEN, kind: 'closure' },
+      { playerName: 'D', rowColor: Color.BLUE, kind: 'closure' },
     ];
     component.requests = requests;
     fixture.detectChanges();
@@ -165,7 +174,7 @@ describe('RowClosureModalComponent', () => {
   });
 
   it('should show one button for an observer (cannot act)', () => {
-    component.requests = [{ playerName: 'Player A', rowColor: Color.RED }];
+    component.requests = [{ playerName: 'Player A', rowColor: Color.RED, kind: 'closure' }];
     component.canAct = false;
     fixture.detectChanges();
     const buttons = fixture.nativeElement.querySelectorAll('.btn');
@@ -173,7 +182,7 @@ describe('RowClosureModalComponent', () => {
   });
 
   it('should show two buttons (Make a move + Pass) when the recipient can act', () => {
-    component.requests = [{ playerName: 'Player A', rowColor: Color.RED }];
+    component.requests = [{ playerName: 'Player A', rowColor: Color.RED, kind: 'closure' }];
     component.canAct = true;
     fixture.detectChanges();
     const buttons = fixture.nativeElement.querySelectorAll('.btn');
@@ -181,7 +190,7 @@ describe('RowClosureModalComponent', () => {
   });
 
   it('should render modal with correct CSS classes', () => {
-    const requests: ClosureNotification[] = [{ playerName: 'Player A', rowColor: Color.RED }];
+    const requests: NoticeRequest[] = [{ playerName: 'Player A', rowColor: Color.RED, kind: 'closure' }];
     component.requests = requests;
     fixture.detectChanges();
     const overlay = fixture.nativeElement.querySelector('.modal-overlay');
@@ -256,7 +265,7 @@ describe('RowClosureModalComponent', () => {
     // Both modals: requests modal renders first in the template and occupies the overlay.
     // The yes/no modal still renders but is stacked — at minimum both overlays exist.
     component.lockConfirmRequest = { rowColor: Color.RED };
-    component.requests = [{ playerName: 'A', rowColor: Color.BLUE }];
+    component.requests = [{ playerName: 'A', rowColor: Color.BLUE, kind: 'closure' }];
     fixture.detectChanges();
     const overlays = fixture.nativeElement.querySelectorAll('.modal-overlay');
     expect(overlays).toHaveLength(2);

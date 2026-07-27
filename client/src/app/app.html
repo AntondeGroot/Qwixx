@@ -52,11 +52,12 @@
        not the board's CSS transform (which would break it on mobile). -->
   <app-row-closure-modal
     [requests]="modal.requests()"
-    [hasPendingCross]="modal.hasPendingCross()"
-    [confirmEndsRound]="modal.confirmEndsRound()"
+    [canAct]="modal.canAct()"
+    [canRevert]="modal.canRevert()"
     [lockConfirmRequest]="modal.lockConfirmRequest()"
     (confirmSelection)="modal.confirmFn?.()"
-    (changeSelection)="modal.changeFn?.()"
+    (dismissSelection)="modal.dismissFn?.()"
+    (revertSelection)="modal.revertFn?.()"
     (lockYes)="modal.lockConfirmYesFn?.()"
     (lockNo)="modal.lockConfirmNoFn?.()"
   >

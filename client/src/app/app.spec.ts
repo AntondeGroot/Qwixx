@@ -73,6 +73,7 @@ describe('App', () => {
       [{ playerName: 'Alice', rowColor: Color.RED }],
       () => {},
       () => {},
+      () => {},
     );
     fixture.detectChanges();
 
@@ -88,6 +89,7 @@ describe('App', () => {
     const service = TestBed.inject(RowClosureModalService);
     service.show(
       [{ playerName: 'Bob', rowColor: Color.BLUE }],
+      () => {},
       () => {},
       () => {},
     );

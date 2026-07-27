@@ -49,29 +49,58 @@ describe('RowClosureModalComponent', () => {
     expect(items).toHaveLength(3);
   });
 
-  it('should emit confirmSelection when confirm button is clicked', () => {
+  it('should emit confirmSelection when the Pass button is clicked (canAct)', () => {
     let emitted = false;
     component.confirmSelection.subscribe(() => {
       emitted = true;
     });
     component.requests = [{ playerName: 'Player A', rowColor: Color.RED }];
+    component.canAct = true; // Pass button only shown to a recipient who can still act
     fixture.detectChanges();
-    const confirmBtn = fixture.nativeElement.querySelector('.btn-primary');
-    confirmBtn.click();
+    fixture.nativeElement.querySelector('.btn-primary').click();
     expect(emitted).toBeTruthy();
   });
 
-  it('should emit changeSelection when change button is clicked', () => {
+  it('should emit dismissSelection when the "Make a move" button is clicked (canAct)', () => {
     let emitted = false;
-    component.changeSelection.subscribe(() => {
+    component.dismissSelection.subscribe(() => {
       emitted = true;
     });
     component.requests = [{ playerName: 'Player A', rowColor: Color.RED }];
-    component.hasPendingCross = true; // Change button only shown when there is a pending cross
+    component.canAct = true;
     fixture.detectChanges();
-    const changeBtn = fixture.nativeElement.querySelector('.btn-secondary');
-    changeBtn.click();
+    fixture.nativeElement.querySelector('.btn-secondary').click();
     expect(emitted).toBeTruthy();
+  });
+
+  it('should emit dismissSelection when the single OK is clicked (observer)', () => {
+    let emitted = false;
+    component.dismissSelection.subscribe(() => {
+      emitted = true;
+    });
+    component.requests = [{ playerName: 'Player A', rowColor: Color.RED }];
+    component.canAct = false;
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('.btn-primary').click();
+    expect(emitted).toBeTruthy();
+  });
+
+  it('should show Undo + OK and emit revertSelection when canRevert', () => {
+    component.requests = [{ playerName: 'Player A', rowColor: Color.RED }];
+    component.canAct = false;
+    component.canRevert = true;
+    fixture.detectChanges();
+
+    const buttons = fixture.nativeElement.querySelectorAll('.btn');
+    expect(buttons).toHaveLength(2);
+    expect(fixture.nativeElement.querySelector('.btn-notification-revert')).toBeTruthy();
+
+    let reverted = false;
+    component.revertSelection.subscribe(() => {
+      reverted = true;
+    });
+    fixture.nativeElement.querySelector('.btn-notification-revert').click();
+    expect(reverted).toBeTruthy();
   });
 
   it('should apply correct color classes', () => {
@@ -135,17 +164,17 @@ describe('RowClosureModalComponent', () => {
     expect(items).toHaveLength(4);
   });
 
-  it('should show one button when there is no pending cross', () => {
+  it('should show one button for an observer (cannot act)', () => {
     component.requests = [{ playerName: 'Player A', rowColor: Color.RED }];
-    component.hasPendingCross = false;
+    component.canAct = false;
     fixture.detectChanges();
     const buttons = fixture.nativeElement.querySelectorAll('.btn');
     expect(buttons).toHaveLength(1);
   });
 
-  it('should show two buttons when there is a pending cross', () => {
+  it('should show two buttons (Make a move + Pass) when the recipient can act', () => {
     component.requests = [{ playerName: 'Player A', rowColor: Color.RED }];
-    component.hasPendingCross = true;
+    component.canAct = true;
     fixture.detectChanges();
     const buttons = fixture.nativeElement.querySelectorAll('.btn');
     expect(buttons).toHaveLength(2);

@@ -487,9 +487,9 @@ public class LockMechanismIT extends BaseIntegrationTest {
         assertTrue(isLockButtonCrossed(driver1, "RED"),
                 "RED lock cross must appear after player1 crosses '12'");
 
-        // Modal reappears (hasPendingCross=true); player1 confirms (EndTurn)
-        waitUntilModalVisible(driver1, 8);
-        clickModalConfirmButton(driver1);
+        // The notice does NOT reappear after the cross; player1 EndTurns via the board pass button.
+        waitUntilPassButtonVisible(driver1, 5);
+        clickPassButton(driver1);
 
         // Player0 sees notification about player1's RED declaration; dismiss it first
         waitUntilModalVisible(driver0, 8);
@@ -542,9 +542,9 @@ public class LockMechanismIT extends BaseIntegrationTest {
         new WebDriverWait(driver1, Duration.ofSeconds(8))
                 .until(d -> isLockButtonCrossed(d, "RED"));
 
-        // Modal reappears for player1 (hasPendingCross=true); Confirm = EndTurn
-        waitUntilModalVisible(driver1, 8);
-        clickModalConfirmButton(driver1); // player1 EndTurns (hasPendingCross=true)
+        // The notice does NOT reappear after the cross; player1 EndTurns via the board pass button.
+        waitUntilPassButtonVisible(driver1, 5);
+        clickPassButton(driver1);
 
         // Player2 sees notification; OK = dismiss, then passes via board button.
         clickModalConfirmButton(driver2);
@@ -762,10 +762,9 @@ public class LockMechanismIT extends BaseIntegrationTest {
     }
 
     @Test
-    void passive_declaresIntent_activePlayerClicksChangeToRevertMove() {
-        // When the active player has a pending cross, the modal now shows both
-        // "Change" (→ RESET_TURN) and "Confirm" (→ EndTurn/PASS) — same as for passive.
-        // Active clicks Change → cross is undone via RESET_TURN.
+    void passive_declaresIntent_activePlayerRevertsMoveByReclickingCell() {
+        // The closure notice is dismiss-only. To revert a pending cross, the active player dismisses
+        // the notice and re-clicks the crossed cell, which sends RESET_TURN (the undo gesture).
         api.setCrosses(sessionId, playerIds.get(1), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
         api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 3, 4); // white+white = 7
@@ -781,23 +780,25 @@ public class LockMechanismIT extends BaseIntegrationTest {
         String blueRowId = api.getRowId(sessionId, playerIds.get(1), BLUE_ROW_INDEX);
         api.declareLockIntent(sessionId, playerIds.get(1), blueRowId);
 
-        // Active has a pending cross → modal shows "Change" button
+        // Active (not in the passive queue) sees the single OK notice — dismiss it.
         waitUntilModalVisible(driver0, 8);
-        clickModalChangeButton(driver0); // → RESET_TURN
+        clickModalConfirmButton(driver0);
         new WebDriverWait(driver0, Duration.ofSeconds(5))
                 .until(d -> !isModalVisible(d));
         assertFalse(isModalVisible(driver0),
-                "Modal must be dismissed after active player clicks Change");
+                "Notice must be dismissed after the active player clicks OK");
 
+        // Re-click the crossed RED "7" cell → RESET_TURN undoes the cross.
+        clickCellByValue(driver0, "RED", "7");
         new WebDriverWait(driver0, Duration.ofSeconds(5))
                 .until(d -> getCrossedCellCount(d, "RED") == 0);
         assertEquals(0, getCrossedCellCount(driver0, "RED"),
-                "RED cross must be undone after active player clicks Change (RESET_TURN)");
+                "RED cross must be undone after re-clicking the cell (RESET_TURN)");
     }
 
     @Test
     void passive_declaresIntent_activePlayerClicksOkAndContinuesTurn() {
-        // Active has a pending cross → modal shows Change + OK buttons.
+        // Active (not in the passive queue) sees the single OK notice.
         // OK dismisses the notification; active can still interact with the board and EndTurn normally.
         api.setCrosses(sessionId, playerIds.get(1), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
         api.roll(sessionId, playerIds.getFirst());
@@ -948,18 +949,18 @@ public class LockMechanismIT extends BaseIntegrationTest {
         assertTrue(modalHasColorCell(driver0, "YELLOW"),
                 "Player0 must see YELLOW notification after being re-queued");
 
-        // Player0 clicks Change → RESET_TURN → back to ACTIVE_MOVE
-        clickModalChangeButton(driver0);
+        // The notice is dismiss-only. To revert, player0 dismisses it and re-clicks the pending
+        // RED "16" cross → RESET_TURN → back to ACTIVE_MOVE, RED cross cleared.
+        clickModalConfirmButton(driver0);
         new WebDriverWait(driver0, Duration.ofSeconds(5))
                 .until(d -> !isModalVisible(d));
-        assertFalse(isModalVisible(driver0),
-                "Modal must dismiss after player0 clicks Change");
+        clickCellByValue(driver0, "RED", "16"); // re-click pending cross → RESET_TURN
 
         // Player0 is back in ACTIVE_MOVE; RED cross was cleared (snapshot restored)
         new WebDriverWait(driver0, Duration.ofSeconds(5))
                 .until(d -> !isLockButtonCrossed(d, "RED"));
         assertFalse(isLockButtonCrossed(driver0, "RED"),
-                "RED lock cross must be gone after Change clears the pending cross");
+                "RED lock cross must be gone after re-clicking the cell (RESET_TURN)");
 
         // Player0 re-crosses RED "16" (activeTurnState was reset, so white+white is usable again)
         clickCellByValue(driver0, "RED", "16");
@@ -1036,7 +1037,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
 
         // Player0 sees the modal; clicks OK → proceeds to EVALUATE (no revert)
         waitUntilModalVisible(driver0, 8);
-        clickModalConfirmButton(driver0); // OK → PASS → evaluate
+        clickModalPassButton(driver0); // Pass → evaluate
 
         // EVALUATE must run: both RED and YELLOW close (2 rows → game over).
         // Player0 already qualifies for YELLOW via "15" (permanent cross at position 13).
@@ -1093,18 +1094,18 @@ public class LockMechanismIT extends BaseIntegrationTest {
         assertTrue(modalHasColorCell(driver0, "YELLOW"),
                 "Notification must show YELLOW indicator");
 
-        // Player0 clicks Change → RESET_TURN reverts to ACTIVE_MOVE
-        clickModalChangeButton(driver0);
+        // The notice is dismiss-only. To revert, dismiss it and re-click the pending RED "16"
+        // cross → RESET_TURN reverts to ACTIVE_MOVE.
+        clickModalConfirmButton(driver0);
         new WebDriverWait(driver0, Duration.ofSeconds(5))
                 .until(d -> !isModalVisible(d));
-        assertFalse(isModalVisible(driver0),
-                "Modal must be dismissed after clicking Change");
+        clickCellByValue(driver0, "RED", "16"); // re-click pending cross → RESET_TURN
 
         // Player0 is back in ACTIVE_MOVE; RED cross was cleared (snapshot restored)
         new WebDriverWait(driver0, Duration.ofSeconds(5))
                 .until(d -> !isLockButtonCrossed(d, "RED"));
         assertFalse(isLockButtonCrossed(driver0, "RED"),
-                "RED lock cross must be gone after Change clears the pending cross");
+                "RED lock cross must be gone after re-clicking the cell (RESET_TURN)");
 
         // Player0 re-crosses RED "16" (activeTurnState was reset, so white+white is usable again)
         clickCellByValue(driver0, "RED", "16");
@@ -1417,7 +1418,7 @@ public class LockMechanismIT extends BaseIntegrationTest {
      * player has already acted or been re-queued mid-turn.
      */
     @Test
-    void freshPassive_seesOneButtonModal_noChangeButton() {
+    void freshPassive_seesMakeAMoveAndPass_noRevertButton() {
         api.setCrosses(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
         api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1);
@@ -1431,17 +1432,21 @@ public class LockMechanismIT extends BaseIntegrationTest {
         waitUntilModalVisible(driver1, 8);
         assertTrue(isModalVisible(driver1),
                 "Player1 must see the notification modal");
+        // In the queue → can-act layout: [Make a move] + [Pass], no revert button.
+        assertTrue(isModalPassButtonVisible(driver1),
+                "Fresh passive (in queue) must see the Pass button");
         assertFalse(isModalChangeButtonVisible(driver1),
-                "Fresh passive must NOT see the Change button — 1-button layout only");
+                "Fresh passive must NOT see the Undo/revert button (they can act directly)");
     }
 
     /**
-     * A passive player who already passed before the active declared (and was therefore
-     * re-queued) must see the two-button layout (Change + OK). Change lets them undo any
-     * prior move and reconsider; OK simply dismisses so they can click PASS on the board.
+     * A passive player who already passed before the ACTIVE declared is re-queued (the active's
+     * first declaration restores passives to the queue). Being back in the queue, they can act
+     * directly, so they see the can-act layout ([Make a move] + [Pass]) — not the revert/Undo
+     * button (which is only for players left OUT of the queue; see longo_passiveRevertsEndTurn…).
      */
     @Test
-    void reQueuedPassive_seesTwoButtonModal_changeButtonVisible() {
+    void reQueuedPassive_seesMakeAMoveAndPass_noRevertButton() {
         api.setCrosses(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX, BLUE_ROW_ALL_CELLS);
         api.roll(sessionId, playerIds.getFirst());
         api.setDice(sessionId, 1, 1);
@@ -1452,16 +1457,17 @@ public class LockMechanismIT extends BaseIntegrationTest {
         waitUntilPassButtonVisible(driver1, 5);
         clickPassButton(driver1);
 
-        // Active declares → player1 is re-queued mid-turn.
+        // Active declares → player1 is re-queued mid-turn (back in the queue).
         String blueRowId = api.getRowId(sessionId, playerIds.getFirst(), BLUE_ROW_INDEX);
         api.declareLockIntent(sessionId, playerIds.getFirst(), blueRowId);
 
-        // Player1 must see the two-button layout: Change (undo/reconsider) and OK (dismiss).
         waitUntilModalVisible(driver1, 8);
         assertTrue(isModalVisible(driver1),
                 "Player1 must see the notification after being re-queued");
-        assertTrue(isModalChangeButtonVisible(driver1),
-                "Re-queued passive must see the Change button — 2-button layout");
+        assertTrue(isModalPassButtonVisible(driver1),
+                "Re-queued passive is back in the queue → sees the Pass button");
+        assertFalse(isModalChangeButtonVisible(driver1),
+                "Re-queued passive can act directly → no Undo/revert button");
     }
 
     // ── Full 2-player lock flow ending in score screen ─────────────────────────

@@ -172,30 +172,47 @@ public class BoardInteractionHelper {
     }
 
     /**
-     * Clicks the OK/Confirm button on the row-closure notification modal.
+     * Dismisses the row-closure notification: clicks "Make a move" (btn-notification-dismiss) for a
+     * recipient who can still act, or the single "OK" (btn-notification-ok) for an observer. This only
+     * hides the notice — it never ends the turn, and the notice does not reopen on a later cross. To
+     * end the turn, use the board pass button ({@link #clickPassButton}) or {@link #clickModalPassButton}.
      * <p>
-     * Waits up to 5 s for the button to appear in the DOM (the modal-overlay may render
-     * before Angular has rendered the buttons inside it), then clicks via JS to avoid
-     * the Chrome 148 "Node with given id does not belong to the document" stale-node error.
+     * Waits up to 5 s for the button to appear in the DOM (the modal-overlay may render before Angular
+     * has rendered the buttons inside it), then clicks via JS to avoid the Chrome 148 "Node with given
+     * id does not belong to the document" stale-node error.
      */
     public static void clickModalConfirmButton(WebDriver driver) {
+        clickFirst(driver, ".btn-notification-dismiss, .btn-notification-ok");
+    }
+
+    /** Clicks the deliberate "Pass" button on the row-closure notice — ends the turn (PASS). */
+    public static void clickModalPassButton(WebDriver driver) {
+        clickFirst(driver, ".btn-notification-pass");
+    }
+
+    /** Clicks the "Undo" (revert) button on the row-closure notice — sends RESET_TURN. */
+    public static void clickModalChangeButton(WebDriver driver) {
+        clickFirst(driver, ".btn-notification-revert");
+    }
+
+    /** Returns true when the "Undo" (revert) button is currently in the DOM. */
+    public static boolean isModalChangeButtonVisible(WebDriver driver) {
+        return !driver.findElements(By.cssSelector(".btn-notification-revert")).isEmpty();
+    }
+
+    /** Returns true when the notice's "Pass" button (the can-act layout) is currently in the DOM. */
+    public static boolean isModalPassButtonVisible(WebDriver driver) {
+        return !driver.findElements(By.cssSelector(".btn-notification-pass")).isEmpty();
+    }
+
+    private static void clickFirst(WebDriver driver, String cssSelector) {
         new WebDriverWait(driver, Duration.ofSeconds(5)).until(d -> {
             Object clicked = ((JavascriptExecutor) d).executeScript(
-                    "const btn = document.querySelector('.btn-notification-ok');" +
+                    "const btn = document.querySelector(arguments[0]);" +
                     "if (!btn) return false;" +
-                    "btn.click(); return true;");
+                    "btn.click(); return true;", cssSelector);
             return Boolean.TRUE.equals(clicked);
         });
-    }
-
-    /** Clicks the Change button on the row-closure notification modal. */
-    public static void clickModalChangeButton(WebDriver driver) {
-        driver.findElement(By.xpath("//button[contains(@class,'btn-notification-change')]")).click();
-    }
-
-    /** Returns true when the Change button on the notification modal is currently in the DOM. */
-    public static boolean isModalChangeButtonVisible(WebDriver driver) {
-        return !driver.findElements(By.xpath("//button[contains(@class,'btn-notification-change')]")).isEmpty();
     }
 
     /** Clicks the "Yes" button in the self-close yes/no modal. */

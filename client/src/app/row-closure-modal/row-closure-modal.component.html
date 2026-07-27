@@ -33,21 +33,24 @@
             </div>
           }
         </div>
-        @if (hasPendingCross && confirmEndsRound) {
-          <div class="separator"></div>
-          <p class="confirm-question">{{ t('rowClosure.confirmQuestion') }}</p>
-        }
       </div>
       <div class="modal-actions">
-        @if (hasPendingCross) {
-          <button class="btn btn-secondary btn-notification-change" (click)="onChangeSelection()">
-            {{ t('rowClosure.changeButton') }}
+        @if (canAct) {
+          <button class="btn btn-secondary btn-notification-dismiss" (click)="onDismiss()">
+            {{ t('rowClosure.makeAMove') }}
           </button>
-          <button class="btn btn-primary btn-notification-ok" (click)="onConfirm()">
-            {{ t(confirmEndsRound ? 'rowClosure.confirmButton' : 'rowClosure.okButton') }}
+          <button class="btn btn-primary btn-notification-pass" (click)="onConfirm()">
+            {{ t('pass') }}
+          </button>
+        } @else if (canRevert) {
+          <button class="btn btn-secondary btn-notification-revert" (click)="onRevert()">
+            {{ t('rowClosure.undoButton') }}
+          </button>
+          <button class="btn btn-primary btn-notification-ok" (click)="onDismiss()">
+            {{ t('rowClosure.okButton') }}
           </button>
         } @else {
-          <button class="btn btn-primary btn-notification-ok" (click)="onConfirm()">
+          <button class="btn btn-primary btn-notification-ok" (click)="onDismiss()">
             {{ t('rowClosure.okButton') }}
           </button>
         }

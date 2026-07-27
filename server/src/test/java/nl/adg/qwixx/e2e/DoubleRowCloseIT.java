@@ -33,7 +33,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
  *   2. YELLOW "12" is still shown as clickable (colored die option: white+yellow=12).
  *   3. player0 clicks YELLOW "12" → YELLOW lock also auto-declared.
  *   4. player0 EndTurns → phase = PASSIVE_MOVE.
- *   5. player1 confirms the combined modal (EndTurn) → EVALUATE → both rows close → game ends.
+ *   5. player1 dismisses the notice and EndTurns via the board → EVALUATE → both rows close → game ends.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DoubleRowCloseIT extends BaseIntegrationTest {
@@ -168,7 +168,7 @@ public class DoubleRowCloseIT extends BaseIntegrationTest {
      *   player0 clicks RED "12" → RED lock auto-declared.
      *   player0 clicks YELLOW "12" → YELLOW lock also auto-declared.
      *   player0 EndTurns → phase = PASSIVE_MOVE.
-     *   player1 confirms the combined modal (EndTurn in PASSIVE_MOVE → EVALUATE) →
+     *   player1 dismisses the notice and EndTurns via the board (PASSIVE_MOVE → EVALUATE) →
      *   both rows close → 2 rows locked → game ends.
      */
     @Test

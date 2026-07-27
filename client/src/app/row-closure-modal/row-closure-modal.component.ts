@@ -14,11 +14,12 @@ export class RowClosureModalComponent {
   private readonly translate = inject(TranslateService);
 
   @Input() requests: ClosureNotification[] = [];
-  @Input() hasPendingCross = false;
-  // When false (active player), the confirm button just dismisses so the player can continue their turn.
-  @Input() confirmEndsRound = false;
-  @Output() confirmSelection = new EventEmitter<void>();
-  @Output() changeSelection = new EventEmitter<void>();
+  // Button set: canAct → [Make a move] + [Pass]; else canRevert → [Undo] + [OK]; else single [OK].
+  @Input() canAct = false;
+  @Input() canRevert = false;
+  @Output() confirmSelection = new EventEmitter<void>(); // [Pass]
+  @Output() dismissSelection = new EventEmitter<void>(); // [Make a move] / [OK]
+  @Output() revertSelection = new EventEmitter<void>(); // [Undo]
 
   @Input() lockConfirmRequest: { rowColor: Color } | null = null;
   @Output() lockYes = new EventEmitter<void>();
@@ -35,8 +36,11 @@ export class RowClosureModalComponent {
   onConfirm() {
     this.confirmSelection.emit();
   }
-  onChangeSelection() {
-    this.changeSelection.emit();
+  onDismiss() {
+    this.dismissSelection.emit();
+  }
+  onRevert() {
+    this.revertSelection.emit();
   }
   onLockYes() {
     this.lockYes.emit();

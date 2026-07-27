@@ -13,57 +13,54 @@ describe('RowClosureModalService', () => {
   it('starts with empty requests and no callbacks', () => {
     expect(service.requests()).toEqual([]);
     expect(service.confirmFn).toBeNull();
-    expect(service.changeFn).toBeNull();
+    expect(service.dismissFn).toBeNull();
+    expect(service.revertFn).toBeNull();
   });
 
+  const noop = () => {};
+
   it('show() sets requests signal', () => {
-    service.show(
-      [{ playerName: 'Alice', rowColor: Color.RED }],
-      () => {},
-      () => {},
-    );
+    service.show([{ playerName: 'Alice', rowColor: Color.RED }], noop, noop, noop);
     expect(service.requests()).toHaveLength(1);
     expect(service.requests()[0]!.playerName).toBe('Alice');
   });
 
-  it('show() sets confirm and change callbacks', () => {
+  it('show() sets confirm, dismiss and revert callbacks', () => {
     const onConfirm = vi.fn();
-    const onChange = vi.fn();
-    service.show([{ playerName: 'A', rowColor: Color.BLUE }], onConfirm, onChange);
+    const onDismiss = vi.fn();
+    const onRevert = vi.fn();
+    service.show([{ playerName: 'A', rowColor: Color.BLUE }], onConfirm, onDismiss, onRevert);
 
     service.confirmFn!();
     expect(onConfirm).toHaveBeenCalledOnce();
 
-    service.changeFn!();
-    expect(onChange).toHaveBeenCalledOnce();
+    service.dismissFn!();
+    expect(onDismiss).toHaveBeenCalledOnce();
+
+    service.revertFn!();
+    expect(onRevert).toHaveBeenCalledOnce();
   });
 
   it('clear() empties requests and nulls callbacks', () => {
-    service.show(
-      [{ playerName: 'A', rowColor: Color.GREEN }],
-      () => {},
-      () => {},
-    );
+    service.show([{ playerName: 'A', rowColor: Color.GREEN }], noop, noop, noop);
     service.clear();
 
     expect(service.requests()).toEqual([]);
     expect(service.confirmFn).toBeNull();
-    expect(service.changeFn).toBeNull();
+    expect(service.dismissFn).toBeNull();
+    expect(service.revertFn).toBeNull();
   });
 
   it('replaces previous requests on a second show()', () => {
-    service.show(
-      [{ playerName: 'A', rowColor: Color.RED }],
-      () => {},
-      () => {},
-    );
+    service.show([{ playerName: 'A', rowColor: Color.RED }], noop, noop, noop);
     service.show(
       [
         { playerName: 'B', rowColor: Color.BLUE },
         { playerName: 'C', rowColor: Color.GREEN },
       ],
-      () => {},
-      () => {},
+      noop,
+      noop,
+      noop,
     );
     expect(service.requests()).toHaveLength(2);
     expect(service.requests()[0]!.playerName).toBe('B');

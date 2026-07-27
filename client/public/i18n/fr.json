@@ -115,13 +115,12 @@
   "rowClosure": {
     "wantsToCloseThe": "veut fermer la",
     "row": "ligne",
-    "confirmQuestion": "Voulez-vous modifier votre dernière sélection ?",
-    "confirmButton": "Confirmer la dernière sélection",
-    "changeButton": "Modifier la dernière sélection",
     "okButton": "OK",
     "selfClose": "Voulez-vous fermer cette ligne ?",
     "yes": "Oui",
-    "no": "Non"
+    "no": "Non",
+    "makeAMove": "Jouer un coup",
+    "undoButton": "Annuler"
   },
   "bonusB": {
     "fewestTwo": "✕✕ dans votre rangée la plus basse",

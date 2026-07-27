@@ -432,16 +432,11 @@ describe('BoardComponent — punishment / pass', () => {
 
   // ── onConfirmRowClosure ────────────────────────────────────────────────────
 
-  describe('onConfirmRowClosure', () => {
-    it('sends PASS when the passive player has a pending cross', () => {
+  describe('onConfirmRowClosure (Pass)', () => {
+    it('sends PASS for a recipient still in the passive queue — role-based, not from a pending cross', () => {
       component.gameState.set(
         makeState({
-          turnState: {
-            activePlayerId: OTHER_ID,
-            phase: TurnPhase.PASSIVE_MOVE,
-            passivePlayerQueue: [PLAYER_ID],
-            pendingCrosses: { [PLAYER_ID]: ['some-cell'] },
-          },
+          turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.PASSIVE_MOVE, passivePlayerQueue: [PLAYER_ID] },
         }),
       );
       component.sessionId.set('s1');
@@ -453,6 +448,19 @@ describe('BoardComponent — punishment / pass', () => {
         PLAYER_ID,
         expect.objectContaining({ moveType: MoveType.PASS }),
       );
+    });
+
+    it('does NOT send a move for an observer not in the queue (dismiss only)', () => {
+      component.gameState.set(
+        makeState({
+          turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.PASSIVE_MOVE, passivePlayerQueue: [] },
+        }),
+      );
+      component.sessionId.set('s1');
+
+      component.onConfirmRowClosure();
+
+      expect(movesService.makeMove).not.toHaveBeenCalled();
     });
   });
 
@@ -486,26 +494,13 @@ describe('BoardComponent — punishment / pass', () => {
       );
     });
 
-    it('onChangeRowClosure with a pending cross sends UNDO_LAST_CROSS', () => {
+    it('onDismissRowClosure hides the notice without any server call — even with a pending cross', () => {
+      // A pending cross (e.g. an X-Change exchange) must never turn a dismiss into a move; the
+      // player keeps crossing and ends only via a deliberate Pass.
       component.gameState.set(stateInPassiveMove());
       component.sessionId.set('s1');
 
-      (component as any).onChangeRowClosure();
-
-      expect(movesService.makeMove).toHaveBeenCalledWith(
-        's1',
-        PLAYER_ID,
-        expect.objectContaining({ moveType: MoveType.UNDO_LAST_CROSS }),
-      );
-    });
-
-    it('onChangeRowClosure without a pending cross dismisses the modal locally without a server call', () => {
-      // No pending cross — "Change" means "let me pick a cell", not "reset state".
-      // The modal is dismissed client-side so the player can click the board.
-      component.gameState.set(stateInPassiveMove(false));
-      component.sessionId.set('s1');
-
-      (component as any).onChangeRowClosure();
+      (component as any).onDismissRowClosure();
 
       expect(movesService.makeMove).not.toHaveBeenCalled();
     });
@@ -1325,17 +1320,11 @@ describe('BoardComponent — row-closure modal delegation', () => {
   // Instead we verify the behaviour through the component's public methods,
   // which are exactly what the service callbacks invoke.
 
-  it('onConfirmRowClosure sends a PASS move when there is a pending cross', () => {
+  it('onConfirmRowClosure sends a PASS move for an in-queue recipient', () => {
     component.sessionId.set('sess1');
-    // Give the player a pending cross so hasPendingPassiveCross() is true.
     component.gameState.set(
       makeState({
-        turnState: {
-          activePlayerId: OTHER_ID,
-          phase: TurnPhase.PASSIVE_MOVE,
-          passivePlayerQueue: [PLAYER_ID],
-          pendingCrosses: { [PLAYER_ID]: ['some-cell'] },
-        },
+        turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.PASSIVE_MOVE, passivePlayerQueue: [PLAYER_ID] },
       } as unknown as Partial<GameState>),
     );
     (component as any).onConfirmRowClosure();
@@ -1346,17 +1335,26 @@ describe('BoardComponent — row-closure modal delegation', () => {
     );
   });
 
-  it('onChangeRowClosure with no pending cross dismisses the modal without a server call', () => {
-    // No pending cross (default state) — modal is dismissed locally so the player
-    // can interact with the board. No RESET_TURN should be sent.
+  it('onDismissRowClosure dismisses the notice without a server call', () => {
     component.sessionId.set('sess1');
-    (component as any).onChangeRowClosure();
+    (component as any).onDismissRowClosure();
     expect(movesService.makeMove).not.toHaveBeenCalled();
+  });
+
+  it('onRevertRowClosure sends RESET_TURN (deliberate revert)', () => {
+    component.sessionId.set('sess1');
+    (component as any).onRevertRowClosure();
+    expect(movesService.makeMove).toHaveBeenCalledWith(
+      'sess1',
+      PLAYER_ID,
+      expect.objectContaining({ moveType: MoveType.RESET_TURN }),
+    );
   });
 
   it('clears the service on destroy', () => {
     modalService.show(
       [{ playerName: 'P2', rowColor: Color.BLUE }],
+      () => {},
       () => {},
       () => {},
     );
@@ -1463,9 +1461,10 @@ describe('BoardComponent — row-closure modal delegation', () => {
       expect(modalService.requests()).toHaveLength(0);
     });
 
-    it('re-shows the notification modal after a regular cross (no lock confirmation)', () => {
-      // Passive crossed a regular (non-closing) cell after dismissing the notification.
-      // The modal re-appears so they can confirm their cross.
+    it('does NOT re-show the notice after a cross once dismissed (ending is a deliberate Pass)', () => {
+      // Passive dismissed the notice ("Make a move"), then crossed a cell (e.g. an X-Change
+      // exchange). The notice must NOT re-appear — a cross never re-arms it; the player ends their
+      // turn only via a deliberate Pass, so a not-yet-committed cross can't be turned into a PASS.
       const stateBase = stateWithRequests({
         declarantName: 'P2',
         activeId: OTHER_ID,
@@ -1478,12 +1477,10 @@ describe('BoardComponent — row-closure modal delegation', () => {
           pendingCrosses: { [PLAYER_ID]: ['cell-regular'] },
         },
       } as GameState);
-      (component as any).suppressModal.set(true); // simulate prior OK click
-      // No pendingAutoLock — regular cross, not a lock confirmation.
+      (component as any).suppressModal.set(true); // simulate prior dismiss ("Make a move")
       (component as any).autoLock.pending.set(null);
       TestBed.tick();
-      // Modal re-appears (hasPendingCross=true) so the passive can confirm their cross.
-      expect(modalService.requests()).toHaveLength(1);
+      expect(modalService.requests()).toHaveLength(0);
     });
   });
 });

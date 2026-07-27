@@ -115,13 +115,12 @@
   "rowClosure": {
     "wantsToCloseThe": "wil de",
     "row": "rij sluiten",
-    "confirmQuestion": "Wil je je laatste selectie wijzigen?",
-    "confirmButton": "Laatste selectie bevestigen",
-    "changeButton": "Laatste selectie wijzigen",
     "okButton": "OK",
     "selfClose": "Wil je deze rij sluiten?",
     "yes": "Ja",
-    "no": "Nee"
+    "no": "Nee",
+    "makeAMove": "Doe een zet",
+    "undoButton": "Ongedaan maken"
   },
   "bonusB": {
     "fewestTwo": "✕✕ in je laagste rij",

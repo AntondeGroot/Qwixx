@@ -11,32 +11,39 @@ export interface ClosureNotification {
 @Injectable({ providedIn: 'root' })
 export class RowClosureModalService {
   readonly requests = signal<ClosureNotification[]>([]);
-  readonly hasPendingCross = signal(false);
-  // false for active players (Confirm = dismiss, continue turn) vs true for passive (Confirm = EndTurn)
-  readonly confirmEndsRound = signal(false);
-  confirmFn: (() => void) | null = null;
-  changeFn: (() => void) | null = null;
+  // Role flags picking the notice's button set (never derived from a pending cross):
+  //   canAct    → in the passive queue: [Make a move] + [Pass]
+  //   canRevert → already ended their turn but can revert: [Undo] + [OK]
+  //   neither   → observer: a single [OK]
+  readonly canAct = signal(false);
+  readonly canRevert = signal(false);
+  confirmFn: (() => void) | null = null; // [Pass] — deliberately end the turn
+  dismissFn: (() => void) | null = null; // [Make a move] / [OK] — hide the notice
+  revertFn: (() => void) | null = null; // [Undo] — RESET_TURN to react again
 
   show(
     requests: ClosureNotification[],
     onConfirm: () => void,
-    onChange: () => void,
-    hasPendingCross = false,
-    confirmEndsRound = hasPendingCross,
+    onDismiss: () => void,
+    onRevert: () => void,
+    canAct = false,
+    canRevert = false,
   ) {
     this.requests.set(requests);
-    this.hasPendingCross.set(hasPendingCross);
-    this.confirmEndsRound.set(confirmEndsRound);
+    this.canAct.set(canAct);
+    this.canRevert.set(canRevert);
     this.confirmFn = onConfirm;
-    this.changeFn = onChange;
+    this.dismissFn = onDismiss;
+    this.revertFn = onRevert;
   }
 
   clear() {
     this.requests.set([]);
-    this.hasPendingCross.set(false);
-    this.confirmEndsRound.set(false);
+    this.canAct.set(false);
+    this.canRevert.set(false);
     this.confirmFn = null;
-    this.changeFn = null;
+    this.dismissFn = null;
+    this.revertFn = null;
   }
 
   // ── Self-initiated lock confirmation ──────────────────────────────────────

@@ -63,6 +63,7 @@ class GameStateMapper {
                 .activeDiceColors(mapActiveDiceColors(board))
                 .bonusNumbers(mapBonusNumbers(state))
                 .closureNotifications(mapClosureNotifications(state, session))
+                .punishmentNotifications(mapPunishmentNotifications(state, session))
                 .pendingClosures(mapPendingClosures(state))
                 .availableMoves(mapAvailableMoves(state, session))
                 .seeOtherCards(session.settings().seeOtherCards())
@@ -368,6 +369,19 @@ class GameStateMapper {
                     return new ClosureNotificationDto(
                             name,
                             ColorDto.fromValue(req.rowColor().name()));
+                })
+                .toList();
+    }
+
+    private static List<PunishmentNotificationDto> mapPunishmentNotifications(
+            GameState state, GameSession session) {
+        Map<UUID, Player> playerIndex = session.players().stream()
+                .collect(Collectors.toMap(Player::id, Function.identity()));
+        return state.punishmentNotifications().stream()
+                .map(req -> {
+                    Player p = playerIndex.get(req.playerId());
+                    String name = p != null ? p.name() : req.playerId().toString();
+                    return new PunishmentNotificationDto(name);
                 })
                 .toList();
     }

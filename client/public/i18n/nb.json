@@ -118,7 +118,8 @@
     "yes": "Ja",
     "no": "Nei",
     "makeAMove": "Gjør et trekk",
-    "undoButton": "Angre"
+    "undoButton": "Angre",
+    "punishmentGameEnd": "{{name}} krysset av sin 4. straff — spillet avsluttes."
   },
   "bonusB": {
     "fewestTwo": "✕✕ i din laveste rad",

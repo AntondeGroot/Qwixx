@@ -1,16 +1,18 @@
 import { Injectable, signal } from '@angular/core';
 import { Color } from '../../generated/model/models';
 
-/** A pending row-closure request shown to other players. Owned by the service (the closure-state
- *  authority) rather than the modal component, so the service never depends on the UI layer. */
-export interface ClosureNotification {
+/** A notice shown to other players about a game-affecting event by `playerName`: either they want to
+ *  close a row (`kind: 'closure'`, with `rowColor`), or they reached max punishments so the game will
+ *  end (`kind: 'punishment'`). Owned by the service so it never depends on the UI layer. */
+export interface NoticeRequest {
   playerName: string;
-  rowColor: Color;
+  kind: 'closure' | 'punishment';
+  rowColor?: Color; // present only for a row-closure notice
 }
 
 @Injectable({ providedIn: 'root' })
 export class RowClosureModalService {
-  readonly requests = signal<ClosureNotification[]>([]);
+  readonly requests = signal<NoticeRequest[]>([]);
   // Role flags picking the notice's button set (never derived from a pending cross):
   //   canAct    → in the passive queue: [Make a move] + [Pass]
   //   canRevert → already ended their turn but can revert: [Undo] + [OK]
@@ -22,7 +24,7 @@ export class RowClosureModalService {
   revertFn: (() => void) | null = null; // [Undo] — RESET_TURN to react again
 
   show(
-    requests: ClosureNotification[],
+    requests: NoticeRequest[],
     onConfirm: () => void,
     onDismiss: () => void,
     onRevert: () => void,

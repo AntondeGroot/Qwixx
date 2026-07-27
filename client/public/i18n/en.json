@@ -120,7 +120,8 @@
     "yes": "Yes",
     "no": "No",
     "makeAMove": "Make a move",
-    "undoButton": "Undo"
+    "undoButton": "Undo",
+    "punishmentGameEnd": "{{name}} reached their 4th punishment — the game will end."
   },
   "bonusB": {
     "fewestTwo": "✕✕ in your lowest row",

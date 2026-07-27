@@ -34,6 +34,7 @@ import nl.adg.qwixx.data.RollResult;
 import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.state.ActiveTurnState;
 import nl.adg.qwixx.state.GameState;
+import nl.adg.qwixx.state.PunishmentNotification;
 import nl.adg.qwixx.state.RowState;
 import nl.adg.qwixx.state.SheetLayout;
 import nl.adg.qwixx.state.SheetProgress;
@@ -376,6 +377,13 @@ public class StandardTurnRules implements TurnRules {
         cancelPlayerRowClosure(state, playerId);
         state.sheetProgress(playerId).addPunishment();
 
+        // A game-ending punishment is deferred like a row closure: the passive window still runs
+        // (evaluate/game-over happen only once the queue drains), so notify the other players that the
+        // game will end, giving them a final look to make a last move or revert one.
+        if (state.sheetProgress(playerId).punishments() >= MAX_PUNISHMENTS) {
+            state.punishmentNotifications().add(new PunishmentNotification(playerId));
+        }
+
         evaluateOrTransitionToPassiveMove(state, turn);
     }
 
@@ -474,6 +482,7 @@ public class StandardTurnRules implements TurnRules {
 
         state.pendingClosures().clear();
         state.closureNotifications().clear();
+        state.punishmentNotifications().clear();
         Objects.requireNonNull(state.turnState()).undoBuffer().clear();
 
         if (isGameOver(state)) {

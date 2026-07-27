@@ -120,7 +120,8 @@
     "yes": "Ja",
     "no": "Nein",
     "makeAMove": "Zug machen",
-    "undoButton": "Rückgängig"
+    "undoButton": "Rückgängig",
+    "punishmentGameEnd": "{{name}} hat den 4. Minuspunkt angekreuzt — das Spiel endet."
   },
   "bonusB": {
     "fewestTwo": "✕✕ in deiner niedrigsten Reihe",

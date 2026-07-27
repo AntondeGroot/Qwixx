@@ -20,6 +20,7 @@ import nl.adg.qwixx.generated.model.TurnPhaseDto;
 import nl.adg.qwixx.state.CardMode;
 import nl.adg.qwixx.state.ClosureNotification;
 import nl.adg.qwixx.state.GameState;
+import nl.adg.qwixx.state.PunishmentNotification;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -186,6 +187,18 @@ class GameStateMapperTest {
         var dto = toDto();
         assertNotNull(dto.getClosureNotifications());
         assertTrue(dto.getClosureNotifications().isEmpty());
+    }
+
+    @Test
+    void toDtoPunishmentNotificationsMappedWithPlayerName() {
+        var state = GameRegistry.getGame(sessionId).currentState();
+        state.punishmentNotifications().add(new PunishmentNotification(alice.id()));
+
+        var dto = GameStateMapper.toDto(state, GameRegistry.getGame(sessionId));
+
+        assertNotNull(dto.getPunishmentNotifications());
+        assertEquals(1, dto.getPunishmentNotifications().size());
+        assertEquals("Alice", dto.getPunishmentNotifications().getFirst().getPlayerName());
     }
 
     @Test

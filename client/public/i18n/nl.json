@@ -120,7 +120,8 @@
     "yes": "Ja",
     "no": "Nee",
     "makeAMove": "Doe een zet",
-    "undoButton": "Ongedaan maken"
+    "undoButton": "Ongedaan maken",
+    "punishmentGameEnd": "{{name}} heeft een 4e strafpunt aangekruist - het spel zal eindigen."
   },
   "bonusB": {
     "fewestTwo": "✕✕ in je laagste rij",

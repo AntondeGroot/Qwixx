@@ -1353,7 +1353,7 @@ describe('BoardComponent — row-closure modal delegation', () => {
 
   it('clears the service on destroy', () => {
     modalService.show(
-      [{ playerName: 'P2', rowColor: Color.BLUE }],
+      [{ playerName: 'P2', rowColor: Color.BLUE, kind: 'closure' }],
       () => {},
       () => {},
       () => {},
@@ -1370,7 +1370,7 @@ describe('BoardComponent — row-closure modal delegation', () => {
   describe('notification routing via _modalSync', () => {
     function stateWithRequests(opts: { declarantName: string; activeId: string; passiveQueue: string[] }): GameState {
       return makeState({
-        closureNotifications: [{ playerName: opts.declarantName, rowColor: Color.BLUE }],
+        closureNotifications: [{ playerName: opts.declarantName, rowColor: Color.BLUE, kind: 'closure' }],
         turnState: {
           activePlayerId: opts.activeId,
           phase: TurnPhase.ACTIVE_MOVE,
@@ -1405,6 +1405,37 @@ describe('BoardComponent — row-closure modal delegation', () => {
       TestBed.tick();
       expect(modalService.requests()).toHaveLength(1);
       expect(modalService.requests()[0]!.rowColor).toBe(Color.BLUE);
+    });
+
+    it('shows a max-punishment game-end notice from another player', () => {
+      component.gameState.set(
+        makeState({
+          punishmentNotifications: [{ playerName: 'P2' }],
+          turnState: {
+            activePlayerId: OTHER_ID,
+            phase: TurnPhase.PASSIVE_MOVE,
+            passivePlayerQueue: [PLAYER_ID],
+          },
+        } as unknown as Partial<GameState>),
+      );
+      TestBed.tick();
+      expect(modalService.requests()).toHaveLength(1);
+      expect(modalService.requests()[0]!.kind).toBe('punishment');
+    });
+
+    it('does not show a player their own punishment notice', () => {
+      component.gameState.set(
+        makeState({
+          punishmentNotifications: [{ playerName: 'P1' }], // PLAYER_ID's own name
+          turnState: {
+            activePlayerId: OTHER_ID,
+            phase: TurnPhase.PASSIVE_MOVE,
+            passivePlayerQueue: [PLAYER_ID],
+          },
+        } as unknown as Partial<GameState>),
+      );
+      TestBed.tick();
+      expect(modalService.requests()).toHaveLength(0);
     });
 
     it('shows the modal to the active player when a passive declares intent', () => {

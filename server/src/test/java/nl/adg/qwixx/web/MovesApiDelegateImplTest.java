@@ -216,6 +216,47 @@ class MovesApiDelegateImplTest {
     }
 
     @Test
+    void offlineUncrossCellRemovesTheCross() throws Exception {
+        String sid = offlineSession();
+        Player bob = offlinePlayer(sid);
+        SheetLayout layout =
+                GameRegistry.getGame(sid).currentState().sheetLayouts().get(bob.id());
+        Row row   = layout.rows().getFirst();
+        Cell cell = row.cells().getFirst();
+
+        move(sid, bob.id(), """
+                {"moveType":"CROSS_WHITE_WHITE","rowId":"%s","cellId":"%s"}
+                """.formatted(row.id(), cell.id()))
+                .andExpect(status().isOk());
+
+        move(sid, bob.id(), """
+                {"moveType":"UNCROSS_CELL","rowId":"%s","cellId":"%s"}
+                """.formatted(row.id(), cell.id()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result").value("ACCEPTED"));
+
+        assertFalse(GameRegistry.getGame(sid).currentState().sheetProgress(bob.id())
+                .rowStates().get(0).crossedCells().contains(cell.id()));
+    }
+
+    @Test
+    void offlineUncrossCellWhenNotCrossedReturns400() throws Exception {
+        String sid = offlineSession();
+        Player bob = offlinePlayer(sid);
+        SheetLayout layout =
+                GameRegistry.getGame(sid).currentState().sheetLayouts().get(bob.id());
+        Row row   = layout.rows().getFirst();
+        Cell cell = row.cells().getFirst();
+
+        mvc.perform(post("/moves/{sid}/{pid}", sid, bob.id())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"moveType":"UNCROSS_CELL","rowId":"%s","cellId":"%s"}
+                                """.formatted(row.id(), cell.id())))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void offlineRollIsRejected() throws Exception {
         String sid = offlineSession();
         Player bob = offlinePlayer(sid);

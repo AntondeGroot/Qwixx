@@ -6,14 +6,17 @@ import static nl.adg.qwixx.rules.CellCrosser.isReachableCell;
 import static nl.adg.qwixx.rules.RowClosureEvaluator.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import nl.adg.qwixx.action.CrossCellAction;
 import nl.adg.qwixx.action.DeclareLockIntentAction;
 import nl.adg.qwixx.action.DiceCombination;
 import nl.adg.qwixx.action.GameAction;
 import nl.adg.qwixx.action.TakePunishmentAction;
+import nl.adg.qwixx.action.UncrossCellAction;
 import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.state.GameState;
@@ -68,6 +71,7 @@ public class OfflineTurnRules extends StandardTurnRules {
             case CrossCellAction a         -> applyOfflineCrossCell(state, a);
             case DeclareLockIntentAction a -> applyOfflineDeclareClose(state, a);
             case TakePunishmentAction a    -> applyOfflinePunishment(state, a);
+            case UncrossCellAction a       -> applyOfflineUncrossCell(state, a);
             default -> throw new IllegalMoveException(
                     action.getClass().getSimpleName() + " is not valid in offline mode");
         }
@@ -106,6 +110,32 @@ public class OfflineTurnRules extends StandardTurnRules {
     private void applyOfflinePunishment(GameState state, TakePunishmentAction action) {
         state.sheetProgress(action.playerId()).addPunishment();
         if (isGameOver(state)) state.setGameOver(true);
+    }
+
+    // Undo an accidental cross: remove the single cell. If it had closed/locked the row, reopen it
+    // (clear the lock cross and the global closure). Auto-crosses the original cross triggered are
+    // left in place — matching the offline undo scope. gameOver is recomputed so reopening a row can
+    // lift a game-over that only this closure had reached.
+    private void applyOfflineUncrossCell(GameState state, UncrossCellAction action) {
+        UUID playerId     = action.playerId();
+        int rowIndex      = action.rowIndex();
+        SheetProgress prog = state.sheetProgress(playerId);
+        RowState rowState  = getRowState(prog, rowIndex);
+        if (!rowState.crossedCells().contains(action.cellId()))
+            throw new IllegalMoveException("cell is not crossed: " + action.cellId());
+
+        Set<String> updated = new HashSet<>(rowState.crossedCells());
+        updated.remove(action.cellId());
+
+        Row row = state.sheetLayout(playerId).rows().get(rowIndex);
+        boolean reopen = rowState.lockCrossed() && row.hasLock()
+                && row.lock().closingCells().contains(action.cellId());
+        prog.updateRowState(rowIndex, new RowState(updated, reopen ? false : rowState.lockCrossed()));
+
+        if (reopen && playerId.equals(state.boardState().closedRows().get(rowIndex))) {
+            state.boardState().closedRows().remove(rowIndex);
+        }
+        state.setGameOver(isGameOver(state));
     }
 
     // No closedRows check: a player qualifies to lock based only on their own progress.

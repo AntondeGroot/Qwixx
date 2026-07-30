@@ -25,6 +25,10 @@ export class RowClosureModalComponent {
   @Output() lockYes = new EventEmitter<void>();
   @Output() lockNo = new EventEmitter<void>();
 
+  @Input() undoConfirm = false;
+  @Output() undoYes = new EventEmitter<void>();
+  @Output() undoNo = new EventEmitter<void>();
+
   t(key: string, params?: object): string {
     return this.translate.instant(key, params);
   }
@@ -47,5 +51,11 @@ export class RowClosureModalComponent {
   }
   onLockNo() {
     this.lockNo.emit();
+  }
+  onUndoYes() {
+    this.undoYes.emit();
+  }
+  onUndoNo() {
+    this.undoNo.emit();
   }
 }

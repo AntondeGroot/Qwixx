@@ -14,6 +14,7 @@ import nl.adg.qwixx.action.CrossCellAction;
 import nl.adg.qwixx.action.DeclareLockIntentAction;
 import nl.adg.qwixx.action.DiceCombination;
 import nl.adg.qwixx.action.TakePunishmentAction;
+import nl.adg.qwixx.action.UncrossCellAction;
 import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.CellTag;
 import nl.adg.qwixx.data.Color;
@@ -188,6 +189,86 @@ class OfflineTurnRulesTest {
         rules.apply(state, new DeclareLockIntentAction(p1, 0));
         assertThrows(IllegalMoveException.class,
                 () -> rules.apply(state, new DeclareLockIntentAction(p1, 0)));
+    }
+
+    // --- apply: UncrossCellAction ---
+
+    @Test
+    void uncrossCellRemovesTheCross() {
+        GameState state = buildState(p1, p2);
+        String cellId = layout(state, p1).rows().getFirst().cells().getFirst().id();
+        rules.apply(state, new CrossCellAction(p1, 0, cellId, DiceCombination.WHITE_WHITE));
+        rules.apply(state, new UncrossCellAction(p1, 0, cellId));
+        assertFalse(state.boardState().sheetProgress().get(p1).rowStates().get(0).crossedCells().contains(cellId));
+    }
+
+    @Test
+    void uncrossCellThrowsWhenCellNotCrossed() {
+        GameState state = buildState(p1, p2);
+        String cellId = layout(state, p1).rows().getFirst().cells().getFirst().id();
+        assertThrows(IllegalMoveException.class,
+                () -> rules.apply(state, new UncrossCellAction(p1, 0, cellId)));
+    }
+
+    @Test
+    void uncrossingClosingCellReopensTheLockedRow() {
+        GameState state = buildState(p1, p2);
+        crossEnoughForLock(state, p1, 0);
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+        assertTrue(state.isRowClosed(0));
+
+        String closing = layout(state, p1).rows().getFirst().lock().closingCells().getFirst();
+        rules.apply(state, new UncrossCellAction(p1, 0, closing));
+
+        RowState rowState = state.boardState().sheetProgress().get(p1).rowStates().get(0);
+        assertFalse(rowState.lockCrossed(), "lock cross must clear when the closing cell is undone");
+        assertFalse(state.isRowClosed(0), "row must reopen when the closing cell is undone");
+        assertFalse(rowState.crossedCells().contains(closing));
+    }
+
+    @Test
+    void uncrossingNonClosingCellLeavesTheRowClosed() {
+        // Undoing a non-closing cell of an already-locked row removes that cross but does NOT reopen
+        // the row (only the closing cell reopens it) — matching the per-cell undo scope.
+        GameState state = buildState(p1, p2);
+        crossEnoughForLock(state, p1, 0);
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+        String nonClosing = layout(state, p1).rows().getFirst().cells().getFirst().id();
+
+        rules.apply(state, new UncrossCellAction(p1, 0, nonClosing));
+
+        RowState rowState = state.boardState().sheetProgress().get(p1).rowStates().get(0);
+        assertTrue(state.isRowClosed(0), "row stays closed when a non-closing cell is undone");
+        assertTrue(rowState.lockCrossed(), "lock stays crossed when a non-closing cell is undone");
+        assertFalse(rowState.crossedCells().contains(nonClosing));
+    }
+
+    @Test
+    void uncrossingClosingCellRecomputesGameOver() {
+        // Rule-level: reopening a closed row clears the game-over flag. (The session lifecycle blocks
+        // moves once a game is actually finished; this verifies the rule keeps gameOver == isGameOver.)
+        GameState state = buildState(p1, p2);
+        crossEnoughForLock(state, p1, 0);
+        crossEnoughForLock(state, p1, 1);
+        rules.apply(state, new DeclareLockIntentAction(p1, 0));
+        rules.apply(state, new DeclareLockIntentAction(p1, 1));
+        assertTrue(state.gameOver());
+
+        String closing = layout(state, p1).rows().getFirst().lock().closingCells().getFirst();
+        rules.apply(state, new UncrossCellAction(p1, 0, closing));
+
+        assertFalse(state.gameOver(), "reopening a row must lift the game-over flag");
+        assertFalse(state.isRowClosed(0));
+    }
+
+    @Test
+    void uncrossCellIncrementsTheStateVersion() {
+        GameState state = buildState(p1, p2);
+        String cellId = layout(state, p1).rows().getFirst().cells().getFirst().id();
+        rules.apply(state, new CrossCellAction(p1, 0, cellId, DiceCombination.WHITE_WHITE));
+        long before = state.version();
+        rules.apply(state, new UncrossCellAction(p1, 0, cellId));
+        assertEquals(before + 1, state.version());
     }
 
     // --- apply: TakePunishmentAction ---

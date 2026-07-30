@@ -10,7 +10,8 @@ public sealed interface GameAction permits
         GiveUpAction,
         ResetTurnAction,
         EndTurnAction,
-        TakePunishmentAction {
+        TakePunishmentAction,
+        UncrossCellAction {
 
     UUID playerId();
 }

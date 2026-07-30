@@ -14,6 +14,7 @@ import nl.adg.qwixx.action.GiveUpAction;
 import nl.adg.qwixx.action.ResetTurnAction;
 import nl.adg.qwixx.action.RollAction;
 import nl.adg.qwixx.action.TakePunishmentAction;
+import nl.adg.qwixx.action.UncrossCellAction;
 import nl.adg.qwixx.action.UndoLastCrossAction;
 import nl.adg.qwixx.data.Row;
 import nl.adg.qwixx.game.GameRegistry;
@@ -92,6 +93,8 @@ public class MovesApiDelegateImpl implements MovesApiDelegate {
             case RESET_TURN        -> new ResetTurnAction(pid);
             case GIVE_UP           -> new GiveUpAction(pid);
             case UNDO_LAST_CROSS   -> new UndoLastCrossAction(pid);
+            case UNCROSS_CELL      -> new UncrossCellAction(
+                    pid, parseRowIndex(req.getRowId(), session, pid), requireCellId(req.getCellId()));
             case CROSS_LUCKY_CROSS -> new CrossCellAction(
                     pid, parseRowIndex(req.getRowId(), session, pid), requireCellId(req.getCellId()), DiceCombination.WHITE_WHITE);
             case CROSS_LOCK        -> throw new IllegalMoveException("CROSS_LOCK is no longer a valid move type");

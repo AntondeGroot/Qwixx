@@ -55,11 +55,14 @@
     [canAct]="modal.canAct()"
     [canRevert]="modal.canRevert()"
     [lockConfirmRequest]="modal.lockConfirmRequest()"
+    [undoConfirm]="modal.undoConfirmRequest()"
     (confirmSelection)="modal.confirmFn?.()"
     (dismissSelection)="modal.dismissFn?.()"
     (revertSelection)="modal.revertFn?.()"
     (lockYes)="modal.lockConfirmYesFn?.()"
     (lockNo)="modal.lockConfirmNoFn?.()"
+    (undoYes)="modal.undoConfirmYesFn?.()"
+    (undoNo)="modal.undoConfirmNoFn?.()"
   >
   </app-row-closure-modal>
   @if (exitConfirm.visible()) {

@@ -464,6 +464,23 @@ describe('BoardComponent — punishment / pass', () => {
     });
   });
 
+  // ── turn-bar closure reminder ────────────────────────────────────────────
+
+  describe('pendingClosureNotices', () => {
+    it('still lists a declaration after its notice modal was dismissed, so the turn bar keeps reminding', () => {
+      component.gameState.set(
+        makeState({
+          turnState: { activePlayerId: OTHER_ID, phase: TurnPhase.PASSIVE_MOVE, passivePlayerQueue: [PLAYER_ID] },
+          closureNotifications: [{ playerName: 'P2', rowColor: Color.RED }],
+        }),
+      );
+
+      component.onDismissRowClosure();
+
+      expect(component.pendingClosureNotices()).toEqual([{ playerName: 'P2', rowColor: Color.RED }]);
+    });
+  });
+
   // ── passive undo during PASSIVE_MOVE ─────────────────────────────────────
 
   describe('passive player undo during PASSIVE_MOVE', () => {

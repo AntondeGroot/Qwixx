@@ -22,9 +22,18 @@
     <div class="right-column">
       @if (state.turnState; as turn) {
         <div class="turn-bar" [class.my-turn]="isMyTurn() || isInPassiveQueue()">
-          <span class="turn-label">
-            {{ isMyTurn() ? t('yourTurn') : t('playerTurn', { name: playerName(turn.activePlayerId) }) }}
-          </span>
+          <div class="turn-info">
+            <span class="turn-label">
+              {{ isMyTurn() ? t('yourTurn') : t('playerTurn', { name: playerName(turn.activePlayerId) }) }}
+            </span>
+            @for (notice of pendingClosureNotices(); track notice.playerName + notice.rowColor) {
+              <span class="closure-line">
+                <span>{{ notice.playerName }} {{ t('rowClosure.wantsToCloseThe') }}</span>
+                <span [class]="rowColorClass(notice.rowColor)" class="closure-color"></span>
+                <span>{{ t('rowClosure.row') }}</span>
+              </span>
+            }
+          </div>
 
           @if (turn.currentRoll || canRoll() || isInPassiveQueue()) {
             <div class="dice-area">

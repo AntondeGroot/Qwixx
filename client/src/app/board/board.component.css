@@ -77,12 +77,53 @@
   background: #e8f0fe;
 }
 
+/* Stacks the turn label and the pending row-closure lines below it. */
+.turn-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
 .turn-label {
   font-size: 14px;
   font-weight: 600;
   color: #333;
-  flex: 1;
-  min-width: 0;
+}
+
+/* Persistent reminder of a declared row closure: "<name> wants to close the [colour] row". */
+.closure-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #555;
+}
+
+.closure-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+.cell-red {
+  background: #d32f2f;
+}
+
+.cell-yellow {
+  background: #f9a825;
+}
+
+.cell-green {
+  background: #388e3c;
+}
+
+.cell-blue {
+  background: #1565c0;
 }
 
 .dice-area {

@@ -345,6 +345,15 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     return (this.gameState()?.closureNotifications ?? []).some((r) => r.playerName === myName);
   });
 
+  // Every pending closure declaration (including this player's own), shown as a persistent line
+  // under the turn label: the notice modal is dismissable, so without it players lose track of
+  // which row is about to close.
+  pendingClosureNotices = computed(() => this.gameState()?.closureNotifications ?? []);
+
+  rowColorClass(color: Color): string {
+    return `cell-${color.toLowerCase()}`;
+  }
+
   // Row IDs where this player is the pending declarant — used to show the lock ✕
   // even when the undo buffer is empty (no cell crossed this turn).
   declarantPendingLockRowIds = computed((): Set<string> => {

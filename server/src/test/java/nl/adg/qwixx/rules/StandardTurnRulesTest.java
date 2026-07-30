@@ -1466,6 +1466,13 @@ class StandardTurnRulesTest {
     }
 
     @Test
+    void uncrossCellActionIsRejected() {
+        // UncrossCellAction is offline-only; the online rules must reject it.
+        GameState state = stateAfterRoll(p1, p1, p2);
+        assertThrows(IllegalMoveException.class, () -> rules.apply(state, new UncrossCellAction(p1, 0, "any-cell")));
+    }
+
+    @Test
     void resetTurn_fromPassiveMove_revertsToActiveMove_clearsPendingCross() {
         // When the active player EndTurns (→ PASSIVE_MOVE) and then sees a passive declare a
         // row they could also close, RESET_TURN must revert the phase to ACTIVE_MOVE AND

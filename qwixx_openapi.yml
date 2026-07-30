@@ -418,6 +418,7 @@ components:
         - GIVE_UP
         - UNDO_LAST_CROSS
         - CROSS_LUCKY_CROSS
+        - UNCROSS_CELL
 
     AvailableMove:
       type: object
@@ -498,7 +499,7 @@ components:
         moveType:
           $ref: '#/components/schemas/MoveType'
         cellId:
-          description: The ID of the cell to cross. Required for CROSS_WHITE_WHITE and CROSS_COLOR_DIE moves.
+          description: The ID of the cell to cross. Required for CROSS_WHITE_WHITE, CROSS_COLOR_DIE and UNCROSS_CELL moves.
           type: string
         rowId:
           description: The ID of the row containing the cell.

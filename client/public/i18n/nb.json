@@ -115,6 +115,7 @@
     "row": "raden",
     "okButton": "OK",
     "selfClose": "Vil du lukke denne raden?",
+    "undoCrossConfirm": "Angre dette krysset?",
     "yes": "Ja",
     "no": "Nei",
     "makeAMove": "Gjør et trekk",

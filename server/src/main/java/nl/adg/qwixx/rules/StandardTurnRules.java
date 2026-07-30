@@ -26,6 +26,7 @@ import nl.adg.qwixx.action.GiveUpAction;
 import nl.adg.qwixx.action.ResetTurnAction;
 import nl.adg.qwixx.action.RollAction;
 import nl.adg.qwixx.action.TakePunishmentAction;
+import nl.adg.qwixx.action.UncrossCellAction;
 import nl.adg.qwixx.action.UndoLastCrossAction;
 import nl.adg.qwixx.data.Cell;
 import nl.adg.qwixx.data.CellTag;
@@ -148,6 +149,7 @@ public class StandardTurnRules implements TurnRules {
             case ResetTurnAction a         -> applyResetTurn(state, a);
             case EndTurnAction a           -> applyEndTurn(state, a);
             case TakePunishmentAction _    -> throw new IllegalMoveException("TakePunishmentAction only valid in offline mode");
+            case UncrossCellAction _       -> throw new IllegalMoveException("UncrossCellAction only valid in offline mode");
         }
         state.incrementVersion();
         return state;

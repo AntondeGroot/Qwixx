@@ -65,4 +65,22 @@ export class RowClosureModalService {
     this.lockConfirmYesFn = null;
     this.lockConfirmNoFn = null;
   }
+
+  // ── Undo-a-cross confirmation (offline) ───────────────────────────────────
+
+  readonly undoConfirmRequest = signal(false);
+  undoConfirmYesFn: (() => void) | null = null;
+  undoConfirmNoFn: (() => void) | null = null;
+
+  showUndoConfirm(onYes: () => void, onNo: () => void) {
+    this.undoConfirmRequest.set(true);
+    this.undoConfirmYesFn = onYes;
+    this.undoConfirmNoFn = onNo;
+  }
+
+  clearUndoConfirm() {
+    this.undoConfirmRequest.set(false);
+    this.undoConfirmYesFn = null;
+    this.undoConfirmNoFn = null;
+  }
 }

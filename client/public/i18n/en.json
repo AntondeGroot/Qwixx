@@ -117,6 +117,7 @@
     "row": "row",
     "okButton": "OK",
     "selfClose": "Do you want to close this row?",
+    "undoCrossConfirm": "Undo this cross?",
     "yes": "Yes",
     "no": "No",
     "makeAMove": "Make a move",

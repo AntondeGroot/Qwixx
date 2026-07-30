@@ -20,6 +20,24 @@
   </div>
 }
 
+@if (undoConfirm) {
+  <div class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-body">
+        <p class="confirm-question">{{ t('rowClosure.undoCrossConfirm') }}</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary btn-undo-no" (click)="onUndoNo()">
+          {{ t('rowClosure.no') }}
+        </button>
+        <button class="btn btn-primary btn-undo-yes" (click)="onUndoYes()">
+          {{ t('rowClosure.yes') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
 @if (requests.length > 0) {
   <div class="modal-overlay">
     <div class="modal-content">

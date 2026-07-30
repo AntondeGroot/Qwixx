@@ -75,6 +75,11 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   // clears, so a cross never re-shows the notice (ending a move is always a deliberate Pass press).
   private readonly suppressModal = signal(false);
 
+  // Offline auto-lock: clicking the last closing cell arms this; once the fresh state confirms the
+  // row is lock-eligible we fire DECLARE_LOCK_INTENT so the row closes without a separate lock click
+  // (offline has no turnState/pending phase, so AutoLockService — which reads pendingCrosses — can't be used).
+  private readonly offlineLockPending = signal<{ pid: string; rowId: string } | null>(null);
+
   private eventSource?: EventSource;
   private moveSub?: Subscription;
   private stateSub?: Subscription;
@@ -465,8 +470,50 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   onCellClicked(rowId: string, cellId: string, ownerPid?: string) {
     if (this.isOffline()) {
       const pid = ownerPid ?? this.playerId();
-      this.audio.play(AudioService.CROSS);
-      this.sendMoveAs(pid, { moveType: MoveType.CROSS_WHITE_WHITE, rowId, cellId });
+
+      // Clicking an already-crossed cell offers to undo it (an accidental cross). Confirm first, then
+      // send UNCROSS_CELL — the server removes the cross and reopens the row if that cell had locked it.
+      if (this.isCellCrossed(pid, rowId, cellId)) {
+        this.rowClosureModal.showUndoConfirm(
+          () => {
+            this.rowClosureModal.clearUndoConfirm();
+            this.audio.play(AudioService.UNDO_CROSS);
+            this.sendMoveAs(pid, { moveType: MoveType.UNCROSS_CELL, rowId, cellId });
+          },
+          () => this.rowClosureModal.clearUndoConfirm(),
+        );
+        return;
+      }
+
+      const row = this.gameState()?.sheetLayouts[pid]?.rows.find((r) => r.id === rowId);
+      const closing = row?.lock?.closingCells ?? [];
+
+      // LONGO: clicking the second-to-last closing cell ("15"/"3") asks YES/NO whether to close now —
+      // the player may prefer to keep going to the last cell first. YES arms the declare then crosses;
+      // NO just crosses (the lock stays clickable, so they can still close later).
+      if (closing.length > 1 && cellId === closing[closing.length - 2]) {
+        const rowColor = (row!.lock!.color ?? row!.cells[0]?.color) as Color;
+        this.rowClosureModal.showLockConfirm(
+          rowColor,
+          () => {
+            this.rowClosureModal.clearLockConfirm();
+            this.offlineLockPending.set({ pid, rowId });
+            this.sendOfflineCross(pid, rowId, cellId);
+          },
+          () => {
+            this.rowClosureModal.clearLockConfirm();
+            this.sendOfflineCross(pid, rowId, cellId);
+          },
+        );
+        return;
+      }
+
+      // Clicking the last closing cell should also close the row (like the online auto-lock), so the
+      // game can end via row closures. Arm here; applyState fires the declare once the cross is persisted.
+      if (this.offlineClosesRow(pid, rowId, cellId)) {
+        this.offlineLockPending.set({ pid, rowId });
+      }
+      this.sendOfflineCross(pid, rowId, cellId);
       return;
     }
 
@@ -565,7 +612,44 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
   offlineClickableCellIds(pid: string): Set<string> {
     const state = this.gameState();
     if (!state) return this.emptySet;
-    return this.highlight.offlineClickable(state, pid);
+    // Reachable cells (to cross) plus every crossed cell (to undo an accidental cross — including
+    // cells in an already-closed row, so its closing cell can be un-crossed to reopen the row).
+    const clickable = new Set(this.highlight.offlineClickable(state, pid));
+    for (const row of state.sheetLayouts[pid]?.rows ?? []) {
+      for (const id of state.sheetProgress[pid]?.rowStates[row.id]?.crossedCells ?? []) {
+        clickable.add(id);
+      }
+    }
+    return clickable;
+  }
+
+  private isCellCrossed(pid: string, rowId: string, cellId: string): boolean {
+    return this.gameState()?.sheetProgress[pid]?.rowStates[rowId]?.crossedCells?.includes(cellId) ?? false;
+  }
+
+  private sendOfflineCross(pid: string, rowId: string, cellId: string): void {
+    this.audio.play(AudioService.CROSS);
+    this.sendMoveAs(pid, { moveType: MoveType.CROSS_WHITE_WHITE, rowId, cellId });
+  }
+
+  // Offline: true when cellId is the last closing cell of a lockable, not-yet-locked row — i.e. the
+  // click that should close the row. The actual eligibility (min crosses) is confirmed by isLockEligible
+  // against the persisted state before the declare fires.
+  private offlineClosesRow(pid: string, rowId: string, cellId: string): boolean {
+    const row = this.gameState()?.sheetLayouts[pid]?.rows.find((r) => r.id === rowId);
+    const closing = row?.lock?.closingCells;
+    return !!closing && closing.length > 0 && cellId === closing[closing.length - 1];
+  }
+
+  // Fires the armed offline lock declaration once the triggering cross is persisted and the row is
+  // confirmed lock-eligible. Clears the arm either way (a rejected cross leaves the row ineligible).
+  private consumeOfflineLock(): void {
+    const pending = this.offlineLockPending();
+    if (!pending) return;
+    this.offlineLockPending.set(null);
+    if (this.isLockEligible(pending.pid, pending.rowId)) {
+      this.sendMoveAs(pending.pid, { moveType: MoveType.DECLARE_LOCK_INTENT, rowId: pending.rowId });
+    }
   }
 
   isLockEligible(pid: string, rowId: string): boolean {
@@ -582,10 +666,18 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     const permanent = new Set(rowState?.crossedCells ?? []);
     if (permanent.size < row.lock.minCrosses) return false;
 
+    const closing = row.lock.closingCells;
+
+    // Offline has no turn/pending phase, so a closing cell only ever counts once it is a permanent
+    // cross. Any crossed closing cell qualifies — mirrors OfflineTurnRules.canCrossLock
+    // (playerHasCrossedAClosingCell), including Longo's second-to-last "15"/"3" cell.
+    if (this.isOffline()) {
+      return closing.some((id) => permanent.has(id));
+    }
+
     // Mirror LongoTurnRules.canCrossLock / StandardTurnRules.canCrossLock:
     // Any ONE closing cell (permanent or pending) qualifies for the lock.
     const pending = this.pendingCellIds();
-    const closing = row.lock.closingCells;
     const lastCell = closing[closing.length - 1];
     if (lastCell === undefined) return false; // no closing cells → not lock-eligible
 
@@ -665,8 +757,12 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     } else {
       // Apply state immediately so dice area and values are visible right away.
       this.gameState.set(s);
-      const lockMove = this.autoLock.checkAndConsume(s, this.playerId());
-      if (lockMove) this.sendMove(lockMove);
+      if (this.isOffline()) {
+        this.consumeOfflineLock();
+      } else {
+        const lockMove = this.autoLock.checkAndConsume(s, this.playerId());
+        if (lockMove) this.sendMove(lockMove);
+      }
       // If a roll animation is in progress (passive player watching), clear it after the window.
       if (this.rollingDice()) setTimeout(() => this.settleDice(), remaining);
     }

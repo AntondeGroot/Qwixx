@@ -184,6 +184,275 @@ describe('BoardComponent — punishment / pass', () => {
     });
   });
 
+  // ── onCellClicked (offline lock closing) ──────────────────────────────────
+
+  describe('onCellClicked — offline lock closing', () => {
+    const ROW_ID = 'row-red';
+    const LOCK_CELL = 'red-2'; // the single (last) closing cell of this row
+
+    // An offline state whose red row is one crossed closing cell away from being lockable — i.e.
+    // the state getGameState returns *after* the closing-cell cross has persisted.
+    function offlineLockEligibleState(crossedCells: string[]): GameState {
+      return makeState({
+        turnState: undefined,
+        sheetLayouts: {
+          [PLAYER_ID]: {
+            rows: [
+              {
+                id: ROW_ID,
+                cells: [],
+                lock: { id: 'lock-red', color: Color.RED, closingCells: [LOCK_CELL], minCrosses: 5 },
+              },
+            ],
+          },
+          [OTHER_ID]: { rows: [] },
+        },
+        sheetProgress: {
+          [PLAYER_ID]: { punishments: 0, rowStates: { [ROW_ID]: { crossedCells, lockCrossed: false } } },
+          [OTHER_ID]: { punishments: 0, rowStates: {} },
+        },
+      });
+    }
+
+    function stubGetGameState(state: GameState): void {
+      const gs = TestBed.inject(GamestatesService);
+      gs.getGameState = vi.fn(() => of(state)) as unknown as GamestatesService['getGameState'];
+    }
+
+    beforeEach(() => {
+      component.sessionId.set('s1');
+    });
+
+    it('auto-declares the lock when the last closing cell is clicked offline', () => {
+      // At click time the closing cell is not yet crossed; getGameState returns the post-cross state.
+      component.gameState.set(offlineLockEligibleState(['a', 'b', 'c', 'd', 'e']));
+      stubGetGameState(offlineLockEligibleState(['a', 'b', 'c', 'd', 'e', LOCK_CELL]));
+
+      component.onCellClicked(ROW_ID, LOCK_CELL, PLAYER_ID);
+
+      expect(movesService.makeMove).toHaveBeenCalledWith(
+        's1',
+        PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.CROSS_WHITE_WHITE, rowId: ROW_ID, cellId: LOCK_CELL }),
+      );
+      expect(movesService.makeMove).toHaveBeenCalledWith(
+        's1',
+        PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.DECLARE_LOCK_INTENT, rowId: ROW_ID }),
+      );
+    });
+
+    it('does not declare the lock when the closing cell leaves the row below minCrosses', () => {
+      // After the cross only the closing cell is set → size 1 < minCrosses 5 → isLockEligible stays false.
+      component.gameState.set(offlineLockEligibleState([]));
+      stubGetGameState(offlineLockEligibleState([LOCK_CELL]));
+
+      component.onCellClicked(ROW_ID, LOCK_CELL, PLAYER_ID);
+
+      expect(movesService.makeMove).not.toHaveBeenCalledWith(
+        's1',
+        PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.DECLARE_LOCK_INTENT }),
+      );
+    });
+
+    it('does not declare the lock when a non-closing cell is clicked offline', () => {
+      const eligible = offlineLockEligibleState(['a', 'b', 'c', 'd', 'e']);
+      component.gameState.set(eligible);
+      stubGetGameState(eligible);
+
+      component.onCellClicked(ROW_ID, 'red-7', PLAYER_ID);
+
+      expect(movesService.makeMove).not.toHaveBeenCalledWith(
+        's1',
+        PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.DECLARE_LOCK_INTENT }),
+      );
+    });
+  });
+
+  // ── onCellClicked (offline Longo closing) ─────────────────────────────────
+
+  describe('onCellClicked — offline Longo closing', () => {
+    const ROW_ID = 'row-red';
+    const SECOND = 'red-15'; // second-to-last closing cell
+    const LAST = 'red-16'; // last closing cell
+
+    // A Longo offline state: the red row has two closing cells (second-to-last + last).
+    function longoState(crossedCells: string[]): GameState {
+      return makeState({
+        turnState: undefined,
+        sheetLayouts: {
+          [PLAYER_ID]: {
+            rows: [
+              {
+                id: ROW_ID,
+                cells: [],
+                lock: { id: 'lock-red', color: Color.RED, closingCells: [SECOND, LAST], minCrosses: 5 },
+              },
+            ],
+          },
+          [OTHER_ID]: { rows: [] },
+        },
+        sheetProgress: {
+          [PLAYER_ID]: { punishments: 0, rowStates: { [ROW_ID]: { crossedCells, lockCrossed: false } } },
+          [OTHER_ID]: { punishments: 0, rowStates: {} },
+        },
+      });
+    }
+
+    function stubGetGameState(state: GameState): void {
+      const gs = TestBed.inject(GamestatesService);
+      gs.getGameState = vi.fn(() => of(state)) as unknown as GamestatesService['getGameState'];
+    }
+
+    let modal: RowClosureModalService;
+
+    beforeEach(() => {
+      component.sessionId.set('s1');
+      modal = TestBed.inject(RowClosureModalService);
+      modal.clearLockConfirm();
+    });
+
+    it('shows a YES/NO confirm (and does not cross yet) when the second-to-last closing cell is clicked', () => {
+      const st = longoState(['a', 'b', 'c', 'd', 'e']);
+      component.gameState.set(st);
+      stubGetGameState(st);
+
+      component.onCellClicked(ROW_ID, SECOND, PLAYER_ID);
+
+      expect(modal.lockConfirmRequest()).toEqual({ rowColor: Color.RED });
+      expect(movesService.makeMove).not.toHaveBeenCalled();
+    });
+
+    it('crosses then auto-declares the lock when the confirm is answered YES', () => {
+      // After the YES cross persists, the second-to-last closing cell is permanent → lock-eligible.
+      const eligible = longoState(['a', 'b', 'c', 'd', 'e', SECOND]);
+      component.gameState.set(longoState(['a', 'b', 'c', 'd', 'e']));
+      stubGetGameState(eligible);
+
+      component.onCellClicked(ROW_ID, SECOND, PLAYER_ID);
+      modal.lockConfirmYesFn!();
+
+      expect(movesService.makeMove).toHaveBeenCalledWith(
+        's1',
+        PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.CROSS_WHITE_WHITE, cellId: SECOND }),
+      );
+      expect(movesService.makeMove).toHaveBeenCalledWith(
+        's1',
+        PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.DECLARE_LOCK_INTENT, rowId: ROW_ID }),
+      );
+    });
+
+    it('crosses without declaring when the confirm is answered NO', () => {
+      const eligible = longoState(['a', 'b', 'c', 'd', 'e', SECOND]);
+      component.gameState.set(longoState(['a', 'b', 'c', 'd', 'e']));
+      stubGetGameState(eligible);
+
+      component.onCellClicked(ROW_ID, SECOND, PLAYER_ID);
+      modal.lockConfirmNoFn!();
+
+      expect(movesService.makeMove).toHaveBeenCalledWith(
+        's1',
+        PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.CROSS_WHITE_WHITE, cellId: SECOND }),
+      );
+      expect(movesService.makeMove).not.toHaveBeenCalledWith(
+        's1',
+        PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.DECLARE_LOCK_INTENT }),
+      );
+    });
+
+    it('auto-declares without a confirm when the last closing cell is clicked', () => {
+      component.gameState.set(longoState(['a', 'b', 'c', 'd', 'e']));
+      stubGetGameState(longoState(['a', 'b', 'c', 'd', 'e', LAST]));
+
+      component.onCellClicked(ROW_ID, LAST, PLAYER_ID);
+
+      expect(modal.lockConfirmRequest()).toBeNull();
+      expect(movesService.makeMove).toHaveBeenCalledWith(
+        's1',
+        PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.DECLARE_LOCK_INTENT, rowId: ROW_ID }),
+      );
+    });
+
+    it('reports the row lock-eligible offline once the second-to-last closing cell is permanent', () => {
+      component.gameState.set(longoState(['a', 'b', 'c', 'd', 'e', SECOND]));
+      expect(component.isLockEligible(PLAYER_ID, ROW_ID)).toBe(true);
+    });
+  });
+
+  // ── onCellClicked (offline undo a cross) ──────────────────────────────────
+
+  describe('onCellClicked — offline undo', () => {
+    const ROW_ID = 'row-red';
+    const CROSSED = 'red-8';
+
+    function offlineStateWith(crossedCells: string[]): GameState {
+      return makeState({
+        turnState: undefined,
+        sheetLayouts: {
+          [PLAYER_ID]: { rows: [{ id: ROW_ID, cells: [], lock: undefined }] },
+          [OTHER_ID]: { rows: [] },
+        },
+        sheetProgress: {
+          [PLAYER_ID]: { punishments: 0, rowStates: { [ROW_ID]: { crossedCells, lockCrossed: false } } },
+          [OTHER_ID]: { punishments: 0, rowStates: {} },
+        },
+      });
+    }
+
+    let modal: RowClosureModalService;
+
+    beforeEach(() => {
+      component.sessionId.set('s1');
+      modal = TestBed.inject(RowClosureModalService);
+      modal.clearUndoConfirm();
+    });
+
+    it('shows an undo confirm (and does not move) when an already-crossed cell is clicked', () => {
+      component.gameState.set(offlineStateWith([CROSSED]));
+
+      component.onCellClicked(ROW_ID, CROSSED, PLAYER_ID);
+
+      expect(modal.undoConfirmRequest()).toBe(true);
+      expect(movesService.makeMove).not.toHaveBeenCalled();
+    });
+
+    it('sends UNCROSS_CELL when the undo confirm is accepted', () => {
+      component.gameState.set(offlineStateWith([CROSSED]));
+
+      component.onCellClicked(ROW_ID, CROSSED, PLAYER_ID);
+      modal.undoConfirmYesFn!();
+
+      expect(modal.undoConfirmRequest()).toBe(false);
+      expect(movesService.makeMove).toHaveBeenCalledWith(
+        's1',
+        PLAYER_ID,
+        expect.objectContaining({ moveType: MoveType.UNCROSS_CELL, rowId: ROW_ID, cellId: CROSSED }),
+      );
+    });
+
+    it('sends no move when the undo confirm is cancelled', () => {
+      component.gameState.set(offlineStateWith([CROSSED]));
+
+      component.onCellClicked(ROW_ID, CROSSED, PLAYER_ID);
+      modal.undoConfirmNoFn!();
+
+      expect(modal.undoConfirmRequest()).toBe(false);
+      expect(movesService.makeMove).not.toHaveBeenCalled();
+    });
+
+    it('keeps crossed cells clickable so they can be undone', () => {
+      component.gameState.set(offlineStateWith([CROSSED]));
+      expect(component.offlineClickableCellIds(PLAYER_ID).has(CROSSED)).toBe(true);
+    });
+  });
+
   // ── canPassActive ─────────────────────────────────────────────────────────
 
   describe('canPassActive', () => {

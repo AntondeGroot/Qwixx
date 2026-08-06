@@ -74,47 +74,4 @@ describe('PlayerListComponent', () => {
       expect(component.initials('alice')).toBe('A');
     });
   });
-
-  describe('isRowClosed', () => {
-    it('returns true when row is in closedRows', () => {
-      TestBed.runInInjectionContext(() => {
-        (component as any).closedRows = () => ({ 'row-1': 'p1' });
-      });
-      expect(component.isRowClosed('row-1')).toBe(true);
-    });
-
-    it('returns false when row is not closed', () => {
-      TestBed.runInInjectionContext(() => {
-        (component as any).closedRows = () => ({});
-      });
-      expect(component.isRowClosed('row-1')).toBe(false);
-    });
-  });
-
-  describe('isCrossed', () => {
-    it('returns true when cell is in crossedCells', () => {
-      TestBed.runInInjectionContext(() => {
-        (component as any).sheetProgress = () => ({
-          p2: { rowStates: { r1: { crossedCells: ['c1'], lockCrossed: false } }, punishments: 0 },
-        });
-      });
-      expect(component.isCrossed('p2', 'r1', 'c1')).toBe(true);
-    });
-
-    it('returns false when cell is not crossed', () => {
-      TestBed.runInInjectionContext(() => {
-        (component as any).sheetProgress = () => ({
-          p2: { rowStates: { r1: { crossedCells: [], lockCrossed: false } }, punishments: 0 },
-        });
-      });
-      expect(component.isCrossed('p2', 'r1', 'c1')).toBe(false);
-    });
-
-    it('returns false when player has no progress', () => {
-      TestBed.runInInjectionContext(() => {
-        (component as any).sheetProgress = () => ({});
-      });
-      expect(component.isCrossed('p2', 'r1', 'c1')).toBe(false);
-    });
-  });
 });

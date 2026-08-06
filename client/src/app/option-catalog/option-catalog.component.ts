@@ -1,13 +1,10 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { forkJoin, map } from 'rxjs';
-// TODO(boundaries): move this data access behind an app service so the component doesn't inject the
-// generated API layer directly. Existing debt — the rule forbids any NEW component → generated-api edge.
-// eslint-disable-next-line boundaries/dependencies
-import { GamesService } from '../../generated/api/api';
-import { GameOption, SheetLayout } from '../../generated/model/models';
+import { map } from 'rxjs';
+import { SheetLayout } from '../../generated/model/models';
 import { connectorTargetIds } from '../connector-overlay/connector-links.util';
 import { ConnectorOverlayComponent } from '../connector-overlay/connector-overlay.component';
 import { RowComponent } from '../row/row.component';
+import { VariantCatalogService } from '../services/variant-catalog.service';
 
 interface CatalogItem {
   key: string;
@@ -31,45 +28,27 @@ interface CatalogItem {
   styleUrl: './option-catalog.component.css',
 })
 export class OptionCatalogComponent implements OnInit {
-  private readonly gamesService = inject(GamesService);
+  private readonly variantCatalog = inject(VariantCatalogService);
 
   readonly items = signal<CatalogItem[]>([]);
   // The generator waits on [data-catalog-ready] before screenshotting.
   readonly ready = computed(() => this.items().length > 0);
 
   ngOnInit(): void {
-    this.gamesService.getGameOptions().subscribe((opts) => {
-      // Only MODE options change the sheet and have a meaningful preview (base + variant toggles).
-      const modeOptions = opts.filter((o) => o.category === GameOption.CategoryEnum.MODE);
-      forkJoin(
-        this.catalogEntries(modeOptions).map((e) =>
-          this.gamesService.previewLayout(e.request).pipe(
-            map((layout) => ({
-              key: e.key,
-              layout,
-              doubleVariant: this.doubleVariantFor(e.key),
-              bonusNumbers: layout.bonusNumbers ?? [],
-              targetIds: connectorTargetIds(layout),
-            })),
-          ),
-        ),
-      ).subscribe((items) => this.items.set(items));
-    });
+    this.variantCatalog
+      .layouts()
+      .pipe(map((variants) => variants.map((v) => this.toCatalogItem(v.key, v.layout))))
+      .subscribe((items) => this.items.set(items));
   }
 
-  // The Variant option becomes two entries (standard, longo); every other MODE option is a
-  // boolean toggled on over the standard sheet. Order matches the README catalog.
-  private catalogEntries(modeOptions: GameOption[]): { key: string; request: Record<string, unknown> }[] {
-    const entries: { key: string; request: Record<string, unknown> }[] = [];
-    for (const o of modeOptions) {
-      if (o.key === 'base') {
-        entries.push({ key: 'standard', request: { base: 'STANDARD' } });
-        entries.push({ key: 'longo', request: { base: 'LONGO' } });
-      } else {
-        entries.push({ key: o.key, request: { base: 'STANDARD', [o.key]: true } });
-      }
-    }
-    return entries;
+  private toCatalogItem(key: string, layout: SheetLayout): CatalogItem {
+    return {
+      key,
+      layout,
+      doubleVariant: this.doubleVariantFor(key),
+      bonusNumbers: layout.bonusNumbers ?? [],
+      targetIds: connectorTargetIds(layout),
+    };
   }
 
   private doubleVariantFor(key: string): 'A' | 'B' | null {

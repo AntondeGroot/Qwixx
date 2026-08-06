@@ -1,0 +1,248 @@
+:host {
+  display: block;
+}
+
+.mini-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mini-row {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  opacity: 1;
+  transition: opacity 0.2s;
+}
+
+.mini-row.row-closed {
+  opacity: 0.4;
+}
+
+.mini-row.mini-row-xchange {
+  gap: 3px;
+}
+
+.mini-row.mini-row-lucky-number {
+  gap: 3px;
+}
+
+/* Color bands */
+.mini-row[data-color='RED'] .mini-cell {
+  background: #d32f2f;
+}
+.mini-row[data-color='YELLOW'] .mini-cell {
+  background: #f9a825;
+}
+.mini-row[data-color='GREEN'] .mini-cell {
+  background: #388e3c;
+}
+.mini-row[data-color='BLUE'] .mini-cell {
+  background: #1565c0;
+}
+
+/* Bonus A bonus bar & Mixed colours: colour each mini-cell by its own colour, not the row's first cell. */
+.mini-row-bonus-bar .mini-cell[data-color='RED'],
+.mini-row-mixed .mini-cell[data-color='RED'] {
+  background: #d32f2f;
+}
+.mini-row-bonus-bar .mini-cell[data-color='YELLOW'],
+.mini-row-mixed .mini-cell[data-color='YELLOW'] {
+  background: #f9a825;
+}
+.mini-row-bonus-bar .mini-cell[data-color='GREEN'],
+.mini-row-mixed .mini-cell[data-color='GREEN'] {
+  background: #388e3c;
+}
+.mini-row-bonus-bar .mini-cell[data-color='BLUE'],
+.mini-row-mixed .mini-cell[data-color='BLUE'] {
+  background: #1565c0;
+}
+
+/* One cell per column, plus its stacked Double A/B twin when it has one. */
+.mini-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+/* A row of stacked twins is taller than its neighbours, so — as on the full board — it hangs its
+   columns from the top, keeping the primaries on the same line as the other rows' cells. */
+.mini-row.mini-row-double {
+  align-items: flex-start;
+}
+
+.mini-cell {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* The twin below a primary: smaller and hollow, the same ~0.6 scale the board draws it at. */
+.mini-row .mini-cell.mini-cell-twin {
+  width: 6px;
+  height: 6px;
+  background: transparent;
+  border: 1px solid var(--mini-twin);
+  border-radius: 1px;
+}
+
+/* An uncrossed twin is already the lightest mark in the row, so the usual white "crossed" wash has
+   nothing to lighten. A crossed twin fills in instead — same reading as an earned Bonus B mark. */
+.mini-row .mini-cell.mini-cell-twin.crossed {
+  background: var(--mini-twin);
+}
+
+.mini-cell.mini-cell-twin.crossed::after {
+  display: none;
+}
+
+/* ── Bonus B strip: the general shape, not a coloured box ──────────────────────
+   The strip is neutral (its cells are all tagged RED only because they need a colour), so it gets
+   the bare silhouette — left triangle, plus, shield — in gold, the same shapes the full board uses.
+   clip-path over an SVG: at 9px only the outline survives anyway, and percentages scale with the
+   box. The shield is a hexagon here; its curves are invisible at this size. */
+.mini-row-bstrip {
+  gap: 3px;
+}
+
+.mini-cell[data-bb-shape] {
+  background: var(--silver-edge);
+  border-radius: 0;
+}
+
+.mini-cell[data-bb-shape='triangle'] {
+  clip-path: polygon(0% 50%, 100% 4%, 100% 96%);
+}
+
+.mini-cell[data-bb-shape='plus'] {
+  clip-path: polygon(
+    34% 0%,
+    66% 0%,
+    66% 34%,
+    100% 34%,
+    100% 66%,
+    66% 66%,
+    66% 100%,
+    34% 100%,
+    34% 66%,
+    0% 66%,
+    0% 34%,
+    34% 34%
+  );
+}
+
+.mini-cell[data-bb-shape='shield'] {
+  clip-path: polygon(50% 0%, 100% 14%, 100% 55%, 50% 100%, 0% 55%, 0% 14%);
+}
+
+/* A crossed indicator means the bonus was earned, so it goes green — the usual white "crossed off"
+   wash would only make an earned bonus look spent. */
+.mini-cell[data-bb-shape].crossed {
+  background: #1e7d54;
+  opacity: 1;
+}
+
+.mini-cell[data-bb-shape].crossed::after {
+  display: none;
+}
+
+/* Big Points bonus cells: circle with diagonal primary/secondary colour split */
+.mini-row .mini-cell.mini-cell-big-points {
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--mini-primary) 50%, var(--mini-secondary) 50%);
+}
+
+/* X-Change cells: diamond (rotated square) with purple border and white fill */
+.mini-row .mini-cell.mini-cell-xchange {
+  width: 6px;
+  height: 6px;
+  background: white;
+  border: 1.5px solid #7b1fa2;
+  border-radius: 1px;
+  gap: 5px !important;
+  transform: rotate(45deg);
+}
+
+/* Lucky Number cells: diamond (rotated square) with orange fill */
+.mini-row .mini-cell.mini-cell-lucky-number {
+  width: 6px;
+  height: 6px;
+  background: #f57c00;
+  border: 1.5px solid #e65100;
+  border-radius: 1px;
+  gap: 5px !important;
+  transform: rotate(45deg);
+}
+
+/* Lucky Cross mini cells: same orange diamond, ~50% the size */
+.mini-row .mini-cell.mini-cell-lucky-cross {
+  width: 4px;
+  height: 4px;
+  background: #f57c00;
+  border: 1px solid #e65100;
+  border-radius: 1px;
+  transform: rotate(45deg);
+}
+
+/* Vertical divider between the last normal cell and the closing-eligible cell(s) */
+.mini-closing-divider {
+  width: 1.5px;
+  align-self: stretch;
+  background: rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+  border-radius: 1px;
+  margin: 0 1px;
+}
+
+/* Closing-eligible cells get a slightly lighter shade via opacity */
+.mini-cell.closing-eligible {
+  opacity: 0.75;
+}
+
+/* Crossed = white overlay covering the cell */
+.mini-cell.crossed::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: inherit;
+}
+
+/* X-Change diamonds are white, so the white "crossed" wash above is invisible on them.
+   Fill a crossed X-Change with its own purple instead so it reads as crossed. */
+.mini-cell.mini-cell-xchange.crossed::after {
+  background: #7b1fa2;
+}
+
+/* ── Mini lock ───────────────────────────────────────────────── */
+
+.mini-lock {
+  width: 10px;
+  height: 10px;
+  margin-left: 2px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mini-lock-icon {
+  width: 10px;
+  height: 10px;
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+
+/* A crossed lock turns gold: sepia warms the grey body, then brightness lifts it and
+   saturate pushes it to gold. The white keyhole clips back to white, so the icon keeps
+   its shape at 10px instead of becoming a blob. */
+.mini-lock-icon.lock-crossed {
+  opacity: 1;
+  filter: sepia(1) brightness(2.2) saturate(3);
+}

@@ -1,0 +1,27 @@
+<div class="catalog">
+  <h1>Mini-sheet catalog</h1>
+  <p class="hint">
+    The player-list thumbnail for every sheet variant — left: pristine, right: every other cell crossed, every lock
+    crossed, last lockable row closed.
+  </p>
+
+  @for (entry of entries(); track entry.key) {
+    <div class="variant">
+      <h2>{{ entry.key }}</h2>
+      <!-- The docs generator screenshots this block per variant, so it holds the sheets and nothing else. -->
+      <div class="states" [attr.data-opt-key]="entry.key">
+        <figure class="player-card">
+          <app-mini-sheet [rows]="entry.rows" />
+          <figcaption>pristine</figcaption>
+        </figure>
+        <figure class="player-card">
+          <app-mini-sheet [rows]="entry.rows" [progress]="entry.played" [closedRows]="entry.closedRows" />
+          <figcaption>played</figcaption>
+        </figure>
+      </div>
+    </div>
+  }
+</div>
+@if (ready()) {
+  <div data-catalog-ready="true"></div>
+}

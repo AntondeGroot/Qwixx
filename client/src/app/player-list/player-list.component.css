@@ -311,9 +311,12 @@
   filter: grayscale(1);
 }
 
+/* A crossed lock turns gold: sepia warms the grey body, then brightness lifts it and
+   saturate pushes it to gold. The white keyhole clips back to white, so the icon keeps
+   its shape at 10px instead of becoming a blob. */
 .mini-lock-icon.lock-crossed {
-  opacity: 0.9;
-  filter: none;
+  opacity: 1;
+  filter: sepia(1) brightness(2.2) saturate(3);
 }
 
 /* ── Mini punishments ────────────────────────────────────────── */

@@ -1,17 +1,19 @@
 cd client && npm run build && npm test -- --watch=false || exit 1
 cd ..
 
-# Regenerate the game-option preview docs and block the push if they're now out of date — i.e. an
-# option's styling or the option list changed without refreshing docs/option-previews + the README
-# block. Generation is local-only (CI never touches these files), and previews use a fixed seed so
-# a clean tree regenerates byte-identical images.
+# Regenerate the sheet preview docs and block the push if they're now out of date — i.e. an option's
+# styling or the option list changed without refreshing docs/option-previews + the README block, or
+# the mini sheet changed without refreshing docs/mini-sheet-previews + docs/MINI_SHEETS.md.
+# Generation is local-only (CI never touches these files), and previews use a fixed seed so a clean
+# tree regenerates byte-identical images.
+DOCS="docs/option-previews README.md docs/mini-sheet-previews docs/MINI_SHEETS.md"
 ./scripts/generate-option-docs.sh || exit 1
-if [ -n "$(git status --porcelain docs/option-previews README.md)" ]; then
+if [ -n "$(git status --porcelain $DOCS)" ]; then
   echo ""
-  echo "❌ Game-option preview docs are out of date — they were just regenerated."
+  echo "❌ Sheet preview docs are out of date — they were just regenerated."
   echo "   Review, then commit the refresh and push again:"
-  echo "     git add docs/option-previews README.md && git commit -m 'docs: refresh option previews'"
+  echo "     git add $DOCS && git commit -m 'docs: refresh sheet previews'"
   echo ""
-  git status --short docs/option-previews README.md
+  git status --short $DOCS
   exit 1
 fi

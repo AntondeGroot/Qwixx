@@ -42,5 +42,11 @@ export const routes: Routes = [
     path: 'option-catalog',
     loadComponent: () => import('./option-catalog/option-catalog.component').then((m) => m.OptionCatalogComponent),
   },
+  {
+    // Not linked from the UI — debug view of the player-list mini sheet across every sheet variant.
+    path: 'mini-catalog',
+    loadComponent: () =>
+      import('./mini-sheet-catalog/mini-sheet-catalog.component').then((m) => m.MiniSheetCatalogComponent),
+  },
   { path: '**', redirectTo: 'settings' },
 ];

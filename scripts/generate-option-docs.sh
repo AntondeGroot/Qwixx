@@ -13,11 +13,11 @@ set -e
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT/server"
 
-echo "🖼  Generating option previews + README block (builds the Angular bundle, boots Spring, screenshots)…"
+echo "🖼  Generating option previews + README block and the mini-sheet doc (builds the Angular bundle, boots Spring, screenshots)…"
 ./mvnw -B test-compile failsafe:integration-test failsafe:verify \
-  -Dit.test=OptionPreviewGeneratorIT \
+  -Dit.test=OptionPreviewGeneratorIT,MiniSheetPreviewGeneratorIT \
   -Dgenerate.option.previews=true \
   -DfailIfNoTests=false
 
 echo "✅ Done. Review the changes:"
-echo "   git status docs/option-previews README.md"
+echo "   git status docs/option-previews docs/mini-sheet-previews docs/MINI_SHEETS.md README.md"

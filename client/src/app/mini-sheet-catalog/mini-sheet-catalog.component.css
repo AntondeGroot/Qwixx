@@ -1,0 +1,65 @@
+:host {
+  display: block;
+  background: #f0f0f0;
+  min-height: 100vh;
+}
+
+/* Freeze every animation/transition so the docs screenshots are byte-deterministic — the same
+   reason /option-catalog does it. A row's opacity transition would otherwise be caught mid-flight. */
+:host ::ng-deep *,
+:host ::ng-deep *::before,
+:host ::ng-deep *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+.catalog {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+h1 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.hint {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+  max-width: 640px;
+}
+
+h2 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #444;
+  margin: 0 0 6px;
+}
+
+.states {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+/* Same card the player list draws the thumbnail on, so the contrast is the one that ships. */
+.player-card {
+  background: white;
+  border-radius: 10px;
+  border: 2px solid #e0e0e0;
+  padding: 8px 10px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+figcaption {
+  font-size: 10px;
+  color: #999;
+}

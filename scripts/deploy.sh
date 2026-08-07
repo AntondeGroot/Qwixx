@@ -26,6 +26,13 @@ port_pids=$(lsof -ti:5300 2>/dev/null || true); [ -n "$port_pids" ] && kill -9 $
 # Reap the unique per-instance profile dirs these tests create (chrome-user-data-<nanoTime>).
 rm -rf /tmp/chrome-user-data-* 2>/dev/null || true
 
+# The client's lint/test/e2e steps below read src/generated, which is gitignored and therefore only
+# as fresh as the last local generate. The Maven build regenerates it too, but not until after those
+# steps have already run — so a spec change would fail them against a stale tree. Lint the spec
+# first: a structurally broken spec makes codegen emit wrong types rather than fail outright.
+echo "🔨 Linting OpenAPI spec and regenerating the client API..."
+(cd client && npm run lint:openapi && npm run generate)
+
 echo "🔨 Linting client..."
 (cd client && npm run lint)
 
@@ -42,7 +49,9 @@ echo "📦 Uploading..."
 $SCP server/target/server-1.0-SNAPSHOT.jar $TARGET:/home/ubuntu/qwixx.jar
 
 echo "📁 Installing..."
-$SSH "sudo mkdir -p /opt/qwixx && sudo mv /home/ubuntu/qwixx.jar /opt/qwixx/qwixx.jar"
+# The log dir must be ubuntu-owned: the service runs as ubuntu and writes its rotating log there.
+$SSH "sudo mkdir -p /opt/qwixx/logs && sudo chown ubuntu:ubuntu /opt/qwixx/logs \
+  && sudo mv /home/ubuntu/qwixx.jar /opt/qwixx/qwixx.jar"
 
 echo "⚙️  Ensuring systemd service exists..."
 $SSH "
@@ -69,6 +78,17 @@ $SSH "
 if [ ! -f /opt/qwixx/application-override.yaml ]; then
   sudo tee /opt/qwixx/application-override.yaml > /dev/null << 'EOF'
 # no context-path: Qwixx serves at root, nginx strips /qwixx/ prefix before forwarding
+EOF
+fi
+# Append the log destination to an override written before file logging existed. Guarded by the key
+# itself so repeat deploys don't stack duplicates, and so a hand-edited path is never overwritten.
+if ! grep -q 'logging:' /opt/qwixx/application-override.yaml; then
+  sudo tee -a /opt/qwixx/application-override.yaml > /dev/null << 'EOF'
+
+# Activates the rotation caps packaged in application.properties (10MB/file, 100MB total).
+logging:
+  file:
+    name: /opt/qwixx/logs/qwixx.log
 EOF
 fi"
 

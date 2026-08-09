@@ -123,6 +123,18 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* Passing on a row closure gives up your turn and lets the row close — the costly choice of the
+   two, so it reads red instead of sharing the green of the YES / OK confirmations. [Make a move]
+   beside it stays the neutral secondary style. Doubled class so it outranks .btn-primary on
+   specificity rather than on source order. */
+.btn.btn-notification-pass {
+  background: #d32f2f;
+}
+
+.btn.btn-notification-pass:hover {
+  background: #b71c1c;
+}
+
 .btn:active {
   transform: translateY(0);
 }

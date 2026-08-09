@@ -88,6 +88,9 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Fallback design height used before the game state has rendered.
   private readonly MOBILE_DESIGN_H = 541;
+  // :host has padding:16px on all four sides, so the board's usable box is the viewport
+  // minus BOTH edges on each axis — subtracting only one let the board overrun the bottom.
+  private readonly HOST_PADDING_PX = 16;
   private readonly ROLL_ANIM_MIN_MS = 2800;
 
   readonly emptySet = new Set<string>();
@@ -181,16 +184,42 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.applyMobileScale();
   }
 
+  /**
+   * The viewport the board is actually laid out in.
+   *
+   * NOT window.innerWidth/innerHeight: those are the 100vw/100vh box, which includes the
+   * browser's collapsible chrome and the scrollbar gutter. The CSS sizes the board with
+   * 100dvw/100dvh, and documentElement.clientWidth/clientHeight is the matching box.
+   * On an emulated Pixel 7 held horizontally the two differ by 50x21px — enough that
+   * scaling to innerHeight pushed the last row (X-Change) off the bottom of the screen.
+   */
+  private get viewportWidth(): number {
+    return document.documentElement.clientWidth || window.innerWidth;
+  }
+
+  private get viewportHeight(): number {
+    return document.documentElement.clientHeight || window.innerHeight;
+  }
+
+  /** Viewport space the board can actually occupy, once :host's padding is removed. */
+  private get availableWidth(): number {
+    return this.viewportWidth - 2 * this.HOST_PADDING_PX;
+  }
+
+  private get availableHeight(): number {
+    return this.viewportHeight - 2 * this.HOST_PADDING_PX;
+  }
+
   @HostListener('window:resize')
   applyMobileScale() {
     const el = this.host.nativeElement as HTMLElement;
-    const isPortrait = window.innerHeight > window.innerWidth;
+    const isPortrait = this.viewportHeight > this.viewportWidth;
     const layout = el.querySelector('.board-layout') as HTMLElement | null;
     if (!layout) {
       // Game state not yet rendered — use the fallback constant (portrait only).
       el.style.setProperty(
         '--mobile-scale',
-        isPortrait ? Math.min((window.innerWidth - 16) / this.MOBILE_DESIGN_H, 1).toFixed(4) : '1',
+        isPortrait ? Math.min(this.availableWidth / this.MOBILE_DESIGN_H, 1).toFixed(4) : '1',
       );
       return;
     }
@@ -208,14 +237,14 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
       // scaleH: fit the board's DOM height into the viewport's width (short side).
       // scaleW: fit the board's DOM width into the viewport's height (long side) —
       //         needed when wide variants (e.g. Longo) exceed 100dvh.
-      const scaleH = h > 0 ? (window.innerWidth - 16) / h : (window.innerWidth - 16) / this.MOBILE_DESIGN_H;
-      const scaleW = w > 0 ? (window.innerHeight - 16) / w : 1;
+      const scaleH = h > 0 ? this.availableWidth / h : this.availableWidth / this.MOBILE_DESIGN_H;
+      const scaleW = w > 0 ? this.availableHeight / w : 1;
       scale = Math.min(scaleH, scaleW, 1);
     } else {
       // Landscape (or desktop): DOM dimensions map directly to visual dimensions.
       // Only zoom when the content overflows — on a large desktop Math.min clips to 1.
-      const scaleH = h > 0 ? (window.innerHeight - 16) / h : 1;
-      const scaleW = w > 0 ? (window.innerWidth - 16) / w : 1;
+      const scaleH = h > 0 ? this.availableHeight / h : 1;
+      const scaleW = w > 0 ? this.availableWidth / w : 1;
       scale = Math.min(scaleH, scaleW, 1);
     }
     el.style.setProperty('--mobile-scale', scale.toFixed(4));

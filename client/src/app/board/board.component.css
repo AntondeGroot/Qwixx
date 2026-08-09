@@ -20,15 +20,6 @@
     transform: rotate(90deg);
     transform-origin: 50% 50%;
   }
-
-  .board-layout {
-    /* width:fit-content caps at the available space (100dvh = 844px in portrait),
-       which squeezes the auto column too narrow for wide variants like Longo.
-       min-width:max-content overrides that cap so the 3-column grid can expand
-       to its natural size (~1114px); applyMobileScale() then scales the whole
-       board down via zoom so it still fits within the rotated viewport. */
-    min-width: max-content;
-  }
 }
 
 .board-layout {
@@ -37,6 +28,18 @@
   gap: 16px;
   align-items: start;
   width: fit-content;
+  /* width:fit-content caps at the available space, which squeezes the auto column too
+     narrow for wide variants like Longo. min-width:max-content overrides that cap so the
+     3-column grid can expand to its natural size (~1114px); applyMobileScale() then scales
+     the whole board down via zoom so it still fits.
+
+     This must hold in EVERY orientation, not just portrait. applyMobileScale() measures the
+     board at zoom 1 and then applies the resulting zoom — but the zoom changes how much
+     width max-width:100% grants, which changes the height, which invalidates the very
+     measurement the zoom was derived from. Pinning the width to max-content breaks that
+     circularity: the board measures the same size it renders at. Without it, a phone held
+     horizontally scaled the board too large and cut the last row (X-Change) off the bottom. */
+  min-width: max-content;
   max-width: 100%;
   margin: 0 auto;
 }

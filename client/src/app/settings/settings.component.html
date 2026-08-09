@@ -11,7 +11,21 @@
 
 <form [formGroup]="form" (ngSubmit)="startGame()" [attr.translate]="'no'">
   @for (group of groupedOptions(); track group.labelKey) {
-    <h2 class="settings-section">{{ t(group.labelKey) }}</h2>
+    <div class="settings-section-bar">
+      <h2 class="settings-section">{{ t(group.labelKey) }}</h2>
+      <!-- Rerolls the sheet variant only; general settings above are left untouched. -->
+      @if (group.category === CategoryEnum.MODE) {
+        <button type="button" class="btn-random" (click)="randomizeVariant()">
+          <svg class="btn-random-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="4" fill="none" stroke="currentColor" stroke-width="2" />
+            <circle cx="8.5" cy="8.5" r="1.6" fill="currentColor" />
+            <circle cx="15.5" cy="15.5" r="1.6" fill="currentColor" />
+            <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+          </svg>
+          {{ t('randomGame') }}
+        </button>
+      }
+    </div>
     @for (opt of group.options; track opt.key) {
       <div [class.option-disabled]="form.get(opt.key)?.disabled" [class.option-variant]="opt.key === 'base'">
         <div class="option-header">

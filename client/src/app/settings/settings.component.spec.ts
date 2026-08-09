@@ -294,3 +294,86 @@ describe('SettingsComponent — Variant chip toggle', () => {
     expect(standard!.classList.contains('selected')).toBe(false);
   });
 });
+
+/**
+ * The "random game" button rerolls the sheet variant only. These use a variant-rich option
+ * set — makeOptions() above deliberately has no mode toggles — including two mutually
+ * exclusive pairs so the exclusion wiring is exercised by the reroll.
+ */
+const MODE_KEYS = ['bigPoints', 'randomOrder', 'xChange', 'luckyNumber', 'doubleA', 'doubleB'];
+
+function variantOptions(): GameOption[] {
+  const mode = (key: string, incompatibleWith: string[] = []): GameOption =>
+    ({
+      key,
+      labelKey: `gameOption.${key}`,
+      type: GameOption.TypeEnum.BOOLEAN,
+      defaultValue: 'false',
+      adminOnly: false,
+      incompatibleWith,
+    }) as GameOption;
+
+  return [
+    {
+      key: 'base',
+      labelKey: 'gameOption.base',
+      type: GameOption.TypeEnum.ENUM,
+      defaultValue: 'STANDARD',
+      choices: ['STANDARD', 'LONGO'],
+      adminOnly: false,
+      incompatibleWith: [],
+    } as GameOption,
+    {
+      key: 'seeOtherCards',
+      labelKey: 'gameOption.seeOtherCards',
+      type: GameOption.TypeEnum.BOOLEAN,
+      defaultValue: 'true',
+      category: GameOption.CategoryEnum.GENERAL,
+      adminOnly: false,
+      incompatibleWith: [],
+    } as GameOption,
+    {
+      key: 'botCount',
+      labelKey: 'gameOption.botCount',
+      type: GameOption.TypeEnum.INTEGER,
+      defaultValue: '0',
+      minValue: 0,
+      maxValue: 3,
+      category: GameOption.CategoryEnum.GENERAL,
+      adminOnly: false,
+      incompatibleWith: [],
+    } as GameOption,
+    mode('bigPoints', ['randomOrder']),
+    mode('randomOrder', ['bigPoints']),
+    mode('xChange'),
+    mode('luckyNumber'),
+    mode('doubleA', ['doubleB']),
+    mode('doubleB', ['doubleA']),
+  ];
+}
+
+describe('SettingsComponent — random game button', () => {
+  it('enables exactly one extra mode and clears the others', async () => {
+    const fixture = await createFixture({}, variantOptions());
+    const component = fixture.componentInstance;
+
+    // Start with modes already on so the reroll has to clear previous picks rather than
+    // stack on top of them.
+    component.form.get('xChange')!.setValue(true);
+    component.form.get('luckyNumber')!.setValue(true);
+
+    // randomizeVariant() draws from Math.random, so loop rather than stub: the invariant
+    // must hold for every possible draw, not one lucky one.
+    for (let roll = 0; roll < 25; roll++) {
+      component.randomizeVariant();
+
+      // getRawValue, not value: Angular omits disabled controls from form.value, but
+      // buildGameOptions() sends getRawValue() to the server — so a mode left true while
+      // disabled by an exclusion would still reach the game and must be counted here.
+      const raw = component.form.getRawValue();
+      const modesOn = MODE_KEYS.filter((key) => raw[key] === true);
+
+      expect(modesOn, `roll ${roll} enabled [${modesOn.join(', ')}]`).toHaveLength(1);
+    }
+  });
+});

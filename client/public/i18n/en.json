@@ -11,6 +11,7 @@
   "endTurn": "End Turn",
   "changeLanguage": "Change language",
   "startGame": "Start game",
+  "randomGame": "Random game",
   "starting": "Starting…",
   "gameOption": {
     "section": { "general": "General settings", "modes": "Game variants" },

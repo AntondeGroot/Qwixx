@@ -11,6 +11,7 @@
   "endTurn": "Fin du tour",
   "changeLanguage": "Changer de langue",
   "startGame": "Démarrer le jeu",
+  "randomGame": "Partie aléatoire",
   "starting": "Démarrage en cours…",
   "gameOption": {
     "section": { "general": "Paramètres généraux", "modes": "Variantes de jeu" },

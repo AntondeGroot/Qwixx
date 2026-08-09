@@ -11,6 +11,7 @@
   "endTurn": "Avslutt Tur",
   "changeLanguage": "Endre språk",
   "startGame": "Start spillet",
+  "randomGame": "Tilfeldig spill",
   "starting": "Starter…",
   "gameOption": {
     "section": { "general": "Generelle innstillinger", "modes": "Spillvarianter" },

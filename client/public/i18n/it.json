@@ -11,6 +11,7 @@
   "endTurn": "Fine Turno",
   "changeLanguage": "Cambia lingua",
   "startGame": "Inizia partita",
+  "randomGame": "Partita casuale",
   "starting": "Avvio in corso…",
   "gameOption": {
     "section": { "general": "Impostazioni generali", "modes": "Varianti di gioco" },

@@ -65,6 +65,21 @@ export class MiniSheetComponent {
     return rowId in this.closedRows();
   }
 
+  /** Colours whose row has locked — Bonus A greys out the bar cells of those colours. */
+  private readonly closedColors = computed((): Set<string> => {
+    const closed = new Set<string>();
+    for (const row of this.rows()) {
+      const color = row.cells[0]?.color;
+      if (color && this.isRowClosed(row.id)) closed.add(color);
+    }
+    return closed;
+  });
+
+  /** Bonus A: unavailable once its colour locks, but never crossed — see RowComponent. */
+  isGreyedOutBarCell(row: SheetRow, cell: SheetCell): boolean {
+    return row.bonusBar === true && this.closedColors().has(cell.color ?? '') && !this.isCrossed(row.id, cell.id);
+  }
+
   readonly colorHex: Record<string, string> = {
     RED: '#d32f2f',
     YELLOW: '#f9a825',

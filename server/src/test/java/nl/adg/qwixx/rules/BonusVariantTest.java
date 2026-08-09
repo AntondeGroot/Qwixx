@@ -83,21 +83,17 @@ class BonusVariantTest {
     }
 
     @Test
-    void lockingARowForfeitsItsBonusBarCells() {
+    void lockingARowGreysOutItsBarCellsWithoutCrossingThem() {
         List<Row> rows = board();
         // Bar: green, green, red, green — three green cells + one red.
         GameState state = stateWithBar(rows, List.of(Color.GREEN, Color.GREEN, Color.RED, Color.GREEN));
 
         RowClosureEvaluator.closeRowGlobally(state, p1, GREEN);
 
-        Set<String> bar = crossed(state, BAR);
-        for (Cell c : rows.get(BAR).cells()) {
-            if (c.color() == Color.GREEN) {
-                assertTrue(bar.contains(c.id()), "green bar cell must be forfeited when green locks");
-            } else {
-                assertFalse(bar.contains(c.id()), "non-green bar cells are untouched");
-            }
-        }
+        // Greyed out is a *derived* state, read from the closed row — closing writes nothing to
+        // the bar. A cross here would score as a consumed cell and would block the cells left of
+        // it, which is exactly the behaviour this rule change removes.
+        assertTrue(crossed(state, BAR).isEmpty(), "locking a colour must not cross any bar cell");
     }
 
     @Test
@@ -184,7 +180,7 @@ class BonusVariantTest {
     }
 
     @Test
-    void forfeitAppliesToEveryPlayer() {
+    void lockingARowCrossesNoBarCellForAnyPlayer() {
         UUID p2 = UUID.randomUUID();
         List<Row> rows = board();
         rows.add(bonusBar(List.of(Color.GREEN, Color.RED, Color.GREEN)));
@@ -200,21 +196,19 @@ class BonusVariantTest {
         RowClosureEvaluator.closeRowGlobally(state, p1, GREEN);
 
         for (UUID pid : List.of(p1, p2)) {
-            Set<String> bar = state.boardState().sheetProgress().get(pid).rowStates().get(BAR).crossedCells();
-            for (Cell c : rows.get(BAR).cells()) {
-                assertEquals(c.color() == Color.GREEN, bar.contains(c.id()),
-                        "player " + pid + " forfeits only the green bar cells");
-            }
+            RowState barState = state.boardState().sheetProgress().get(pid).rowStates().get(BAR);
+            Set<String> bar = barState != null ? barState.crossedCells() : Set.of();
+            assertTrue(bar.isEmpty(), "player " + pid + " keeps an uncrossed bar when green locks");
         }
     }
 
     @Test
-    void closingARowForfeitsThatColourForEveryoneAndBlocksRetrigger() {
+    void closingARowGreysOutThatColourForEveryoneAndBlocksRetrigger() {
         UUID p2 = UUID.randomUUID();
         List<Row> rows = board();
         Cell redBonus = rows.get(RED).cells().get(5);
         addBonusBox(redBonus);
-        // Bar: yellow first, then green. If the forfeited yellow were NOT skipped, the next bonus
+        // Bar: yellow first, then green. If the greyed-out yellow were NOT skipped, the next bonus
         // cross would wrongly target the (now closed) yellow row; it must skip to green instead.
         rows.add(bonusBar(List.of(Color.YELLOW, Color.GREEN, Color.RED)));
 
@@ -241,18 +235,16 @@ class BonusVariantTest {
         // Close yellow through the real close entry point (as the turn evaluation does).
         RowClosureEvaluator.applyRowClosure(state, YELLOW, Set.of(p1), 5);
 
-        // (1) yellow is closed, and BOTH players forfeit their yellow bonus-bar cells.
+        // (1) yellow is closed, and NEITHER player has a crossed bar cell — the yellow cells are
+        //     greyed out, which is derived from the closed row rather than written into the bar.
         assertTrue(state.isRowClosed(YELLOW), "yellow row is closed");
         for (UUID pid : List.of(p1, p2)) {
-            Set<String> bar = state.boardState().sheetProgress().get(pid).rowStates().get(BAR).crossedCells();
-            for (Cell c : rows.get(BAR).cells()) {
-                if (c.color() == Color.YELLOW) {
-                    assertTrue(bar.contains(c.id()), pid + " must forfeit the yellow bonus-bar cell");
-                }
-            }
+            RowState barState = state.boardState().sheetProgress().get(pid).rowStates().get(BAR);
+            Set<String> bar = barState != null ? barState.crossedCells() : Set.of();
+            assertTrue(bar.isEmpty(), pid + " must not have the yellow bar cell crossed");
         }
 
-        // (2) p1 now crosses the red bonus box: the forfeited yellow cell is skipped, the chain
+        // (2) p1 now crosses the red bonus box: the greyed-out yellow cell is skipped, the chain
         //     consumes the next open (green) cell and forces a green cross — the closed yellow row
         //     is never re-triggered.
         rules.apply(state, new RollAction(p1));
@@ -357,7 +349,7 @@ class BonusVariantTest {
     }
 
     @Test
-    void consumptionContinuesRightOfTheRightmostCross() {
+    void consumptionLandsLeftOfGreyedOutCells() {
         List<Row> rows = board();
         Cell greenBonus = rows.get(GREEN).cells().get(5); // green "7", crossable via WW
         addBonusBox(greenBonus);
@@ -365,21 +357,23 @@ class BonusVariantTest {
         GameState state = stateWithBar(rows, List.of(
                 Color.RED, Color.YELLOW, Color.GREEN, Color.BLUE, Color.GREEN, Color.RED,
                 Color.BLUE, Color.YELLOW, Color.RED, Color.YELLOW, Color.BLUE, Color.GREEN));
-        // Close red early (nothing consumed yet): forfeits the red bar cells at 0, 5, 8 — so the
-        // right-most crossed cell becomes index 8.
+        // Close red early (nothing consumed yet): greys out the red bar cells at 0, 5 and 8
+        // without crossing any of them.
         RowClosureEvaluator.closeRowGlobally(state, p1, RED);
         List<Cell> bar = rows.get(BAR).cells();
-        assertTrue(crossed(state, BAR).containsAll(List.of(bar.getFirst().id(), bar.get(5).id(), bar.get(8).id())),
-                "all red bar cells are forfeited when red closes");
+        assertTrue(crossed(state, BAR).isEmpty(), "greying out red crosses nothing");
 
         rules.apply(state, new RollAction(p1));
         rules.apply(state, new CrossCellAction(p1, GREEN, greenBonus.id(), DiceCombination.WHITE_WHITE));
 
-        // Like a normal row, the next consumable cell is the first one to the RIGHT of the
-        // right-most cross (index 8) — index 9. Cells to the left of 8 are now unavailable.
-        assertTrue(crossed(state, BAR).contains(bar.get(9).id()), "consumes the next cell right of the cross (index 9)");
-        assertFalse(crossed(state, BAR).contains(bar.get(1).id()), "cells left of the right-most cross stay unavailable");
-        assertEquals(1, crossed(state, YELLOW).size(), "index 9 is yellow → forces one yellow cross");
+        // The heart of the rule change. Greyed-out cells no longer block: the bonus takes the
+        // left-most available cell (index 1), which sits to the LEFT of the greyed cells at 5 and
+        // 8. Under the old "first cell right of the right-most cross" rule this landed on index 9.
+        assertTrue(crossed(state, BAR).contains(bar.get(1).id()),
+                "consumes the left-most available cell (index 1), left of the greyed cells at 5 and 8");
+        assertFalse(crossed(state, BAR).contains(bar.get(9).id()), "index 9 is no longer where a bonus lands");
+        assertEquals(1, crossed(state, BAR).size(), "exactly one bar cell consumed");
+        assertEquals(1, crossed(state, YELLOW).size(), "index 1 is yellow → forces one yellow cross");
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────

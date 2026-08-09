@@ -42,6 +42,14 @@
   background: #1565c0;
 }
 
+/* Bonus A: the colour locked, so this bar cell is out of play — greyed, never crossed.
+   Qualified with [data-color] so it outranks the per-colour backgrounds below on specificity
+   rather than on source order. */
+.mini-row-bonus-bar .mini-cell.mini-cell-greyed-out[data-color] {
+  background: #d6d6d6;
+  opacity: 0.55;
+}
+
 /* Bonus A bonus bar & Mixed colours: colour each mini-cell by its own colour, not the row's first cell. */
 .mini-row-bonus-bar .mini-cell[data-color='RED'],
 .mini-row-mixed .mini-cell[data-color='RED'] {

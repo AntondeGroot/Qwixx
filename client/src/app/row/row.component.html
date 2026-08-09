@@ -12,9 +12,10 @@
   [style.width]="xChangeRowWidth()"
 >
   @if (isBonusBar()) {
-    <!-- Bonus A bonus bar: 12 small coloured cells, crossed automatically by the chain. -->
+    <!-- Bonus A bonus bar: 12 small coloured cells, crossed automatically by the chain.
+         Cells whose colour has locked are greyed out — skipped by a bonus, never crossed. -->
     @for (cell of row().cells; track cell.id) {
-      <span class="bonus-bar-cell" [attr.data-color]="cell.color">
+      <span class="bonus-bar-cell" [attr.data-color]="cell.color" [class.greyed-out]="isGreyedOut(cell)">
         @if (isCrossed(cell.id)) {
           <span class="cell-cross">✕</span>
         }

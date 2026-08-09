@@ -90,7 +90,7 @@ A few cells can be crossed off twice.
 
 ### 14. Bonus A
 
-12 bonus boxes (gold ring) sit in the coloured rows. Crossing one forces you to cross the next cell of the bonus bar below; its colour forces a cross in that row's next box — which can chain. When a row locks, its remaining bonus-bar cells are forfeited.
+12 bonus boxes (gold ring) sit in the coloured rows. Crossing one takes the left-most still-available cell of the bonus bar below; its colour forces a cross in that row's next box — which can chain. When a row locks, its bonus-bar cells are greyed out: they are never crossed, just skipped, so a later bonus can still land to their left.
 
 ![Bonus A](docs/option-previews/bonusA.png)
 

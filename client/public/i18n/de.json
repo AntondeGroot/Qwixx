@@ -11,6 +11,7 @@
   "endTurn": "Zug beenden",
   "changeLanguage": "Sprache ändern",
   "startGame": "Spiel starten",
+  "randomGame": "Zufälliges Spiel",
   "starting": "Wird gestartet…",
   "gameOption": {
     "section": { "general": "Allgemeine Einstellungen", "modes": "Spielvarianten" },

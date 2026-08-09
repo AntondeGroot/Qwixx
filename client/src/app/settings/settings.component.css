@@ -29,9 +29,22 @@ label {
   letter-spacing: 0.05em;
 }
 
-/* Section header that groups options (General settings / Game variants): a blue pill. */
+/* Header row for a group of options: the section pill, plus the random-game button on the
+   game-variants section. Overrides the blanket `div { flex-direction: column }` above. */
+.settings-section-bar {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+/* Extra breathing room above every section after the first (the form gap spaces the first). */
+.settings-section-bar:not(:first-child) {
+  margin-top: 10px;
+}
+
+/* Section header that groups options (General settings / Game variants): a blue pill.
+   Sits in a row flex container, so it hugs its text without needing align-self. */
 .settings-section {
-  align-self: flex-start; /* hug the text instead of stretching full width */
   margin: 0;
   font-size: 12px;
   font-weight: 800;
@@ -43,9 +56,39 @@ label {
   border-radius: 999px;
   box-shadow: 0 1px 3px rgba(21, 101, 192, 0.35);
 }
-/* Extra breathing room above every section after the first (the form gap spaces the first). */
-.settings-section:not(:first-child) {
-  margin-top: 10px;
+
+/* Rerolls the sheet variant. Outlined rather than solid so it reads as secondary to the
+   blue section pill it sits beside, and to the solid Start game button below. */
+.btn-random {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: #fff;
+  color: #1565c0;
+  border: 1.5px solid #1565c0;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.btn-random:hover {
+  background: #1565c0;
+  color: #fff;
+}
+
+.btn-random-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
 }
 
 input[type='text'],

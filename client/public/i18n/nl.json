@@ -11,6 +11,7 @@
   "endTurn": "Einde Beurt",
   "changeLanguage": "Taal wijzigen",
   "startGame": "Spel starten",
+  "randomGame": "Willekeurig spel",
   "starting": "Aan het starten…",
   "gameOption": {
     "section": { "general": "Algemene instellingen", "modes": "Spelvarianten" },

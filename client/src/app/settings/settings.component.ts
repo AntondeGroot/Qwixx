@@ -27,6 +27,7 @@ import { RowComponent } from '../row/row.component';
 import { SilverMarkComponent } from '../silver-mark/silver-mark.component';
 import { LobbyService } from '../services/lobby.service';
 import { EmbedModeService } from '../services/embed-mode.service';
+import { BASE_VARIANT_KEY, pickRandomVariant } from './random-variant.util';
 
 // Qwixx seats at most 5 players total (humans + bots). Bots are added on top of the human
 // seats server-side, so this — not the room's human capacity — bounds how many bots may be added.
@@ -73,11 +74,20 @@ export class SettingsComponent implements OnInit, OnDestroy {
     const opts = this.availableGameOptions();
     return this.optionSections
       .map((section) => ({
+        category: section.category,
         labelKey: section.labelKey,
         options: opts.filter((o) => (o.category ?? GameOption.CategoryEnum.MODE) === section.category),
       }))
       .filter((group) => group.options.length > 0);
   });
+
+  /** The extra game modes — every toggleable sheet variant, which is what "random" draws from. */
+  readonly extraModeKeys = computed(() =>
+    this.availableGameOptions()
+      .filter((o) => (o.category ?? GameOption.CategoryEnum.MODE) === GameOption.CategoryEnum.MODE)
+      .filter((o) => o.type === GameOption.TypeEnum.BOOLEAN)
+      .map((o) => o.key),
+  );
   lobbyPlayers = signal<{ id: string; name: string }[]>([]);
   previewLayout = signal<SheetLayout | null>(null);
   // Connected B target cells that get the dotted ring (a CSS pseudo on the cell), same as the board.
@@ -103,6 +113,28 @@ export class SettingsComponent implements OnInit, OnDestroy {
     this.form.get(key)?.setValue(value);
   }
 
+  /**
+   * "Random game": rerolls the sheet only — a base variant plus exactly one extra mode.
+   *
+   * General settings (see other cards, card mode, bot count, ...) are deliberately left
+   * alone; this button changes what the sheet looks like, not how the match is set up.
+   */
+  randomizeVariant(): void {
+    const { base, extraMode } = pickRandomVariant(this.extraModeKeys());
+
+    this.form.get(BASE_VARIANT_KEY)?.setValue(base, { emitEvent: false });
+    for (const key of this.extraModeKeys()) {
+      this.form.get(key)?.setValue(key === extraMode, { emitEvent: false });
+    }
+
+    // The setValue calls above suppressed events so the form settles in one go. Re-enforce
+    // the exclusions by hand (as applyLobbyOptions does), then emit exactly once — that
+    // single emission refreshes the preview and pushes to the lobby / host frame one time
+    // rather than once per option touched.
+    this.enforceMutualExclusions();
+    this.form.updateValueAndValidity();
+  }
+
   /** Index of the currently-selected choice — drives the slider thumb's position. */
   variantIndex(opt: GameOption): number {
     return Math.max(0, (opt.choices ?? []).indexOf(this.form.get(opt.key)?.value));
@@ -118,6 +150,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
   form!: FormGroup;
 
   readonly TypeEnum = GameOption.TypeEnum;
+  readonly CategoryEnum = GameOption.CategoryEnum;
 
   constructor() {
     afterEveryRender(() => {

@@ -33,6 +33,7 @@
             [class.mini-cell-lucky-cross]="isLuckyCross(cell)"
             [class.crossed]="isCrossed(row.id, cell.id)"
             [class.closing-eligible]="cell.closingEligible"
+            [class.mini-cell-greyed-out]="isGreyedOutBarCell(row, cell)"
           ></div>
           @if (twinOf(cell); as twin) {
             <div

@@ -42,7 +42,7 @@
     "mixedColors": "Gemischte Farben",
     "mixedColorsDescription": "Die Zahlen jeder Reihe sind in Farbblöcke aufgeteilt. Ein farbiger Würfel kreuzt ein passendes Feld in jeder Reihe an; eine Reihe wird weiterhin als Ganzes geschlossen.",
     "bonusA": "Bonus A",
-    "bonusADescription": "12 Bonusfelder (goldener Ring) liegen in den farbigen Reihen. Kreuzt du eines an, musst du das nächste Feld der Bonusleiste darunter ankreuzen; dessen Farbe erzwingt ein Kreuz im nächsten Feld dieser Reihe – das kann sich verketten. Wird eine Reihe gesperrt, verfallen ihre restlichen Bonusleisten-Felder.",
+    "bonusADescription": "12 Bonusfelder (goldener Ring) liegen in den farbigen Reihen. Kreuzt du eines an, nimmst du das am weitesten links liegende noch verfügbare Feld der Bonusleiste darunter; dessen Farbe erzwingt ein Kreuz im nächsten Feld dieser Reihe – das kann sich verketten. Wird eine Reihe gesperrt, werden die Bonusleisten-Felder dieser Farbe ausgegraut: Sie werden nie angekreuzt, nur übersprungen, sodass ein späterer Bonus noch links davon landen kann.",
     "bonusB": "Bonus B",
     "bonusBDescription": "5 Boni. Jeden musst du zweimal ankreuzen, um ihn zu erhalten.\n- 2 Kreuze in deiner niedrigsten Reihe\n- ein Kreuz in jeder Reihe\n- die Punkte deiner niedrigsten Reihe werden verdoppelt\n- 13 Extrapunkte\n- Strafpunkte werden 0",
     "xChange": "X-Tausch",

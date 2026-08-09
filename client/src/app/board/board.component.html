@@ -75,6 +75,7 @@
                 [isPendingAutoLock]="pendingAutoLockRowId() === row.id"
                 [lockClickable]="isLockEligible(playerId(), row.id)"
                 [maxedColors]="maxedColors()"
+                [closedColors]="closedColors()"
                 (cellClicked)="onCellClicked(row.id, $event, playerId())"
                 [showLuckyCrossHint]="row.luckyRow === true && hasLuckyCross()"
                 [doubleVariant]="state.doubleA ? 'A' : state.doubleB ? 'B' : null"

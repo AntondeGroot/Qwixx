@@ -376,4 +376,27 @@ describe('SettingsComponent — random game button', () => {
       expect(modesOn, `roll ${roll} enabled [${modesOn.join(', ')}]`).toHaveLength(1);
     }
   });
+
+  it('leaves general settings untouched', async () => {
+    const fixture = await createFixture({}, variantOptions());
+    const component = fixture.componentInstance;
+    const generalKeys = variantOptions()
+      .filter((o) => o.category === GameOption.CategoryEnum.GENERAL)
+      .map((o) => o.key);
+    const generalValues = () => generalKeys.map((key) => component.form.getRawValue()[key]);
+
+    // Run from both values of seeOtherCards. Starting `true` catches a reroll that clears
+    // every boolean it can find; starting `false` catches one that treats a general option
+    // as an extra mode and switches it on. Either would rewrite a setting the player chose.
+    for (const seeOtherCards of [true, false]) {
+      component.form.get('seeOtherCards')!.setValue(seeOtherCards);
+      component.form.get('botCount')!.setValue(3);
+      const before = generalValues();
+
+      for (let roll = 0; roll < 25; roll++) {
+        component.randomizeVariant();
+        expect(generalValues(), `roll ${roll} changed a general setting`).toEqual(before);
+      }
+    }
+  });
 });

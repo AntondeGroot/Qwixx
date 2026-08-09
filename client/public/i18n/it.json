@@ -42,7 +42,7 @@
     "mixedColors": "Colori misti",
     "mixedColorsDescription": "I numeri di ogni riga sono divisi in blocchi di colore. Un dado colorato sbarra una casella corrispondente in qualsiasi riga; una riga si chiude comunque per intero.",
     "bonusA": "Bonus A",
-    "bonusADescription": "12 caselle bonus (anello dorato) si trovano nelle righe colorate. Sbarrarne una obbliga a sbarrare la casella successiva della barra bonus in basso; il suo colore forza una croce nella casella successiva di quella riga — e può concatenarsi. Quando una riga viene chiusa, le sue caselle bonus rimanenti sono perdute.",
+    "bonusADescription": "12 caselle bonus (anello dorato) si trovano nelle righe colorate. Sbarrarne una prende la casella disponibile più a sinistra della barra bonus in basso; il suo colore forza una croce nella casella successiva di quella riga — e può concatenarsi. Quando una riga viene chiusa, le caselle bonus di quel colore diventano grigie: non vengono mai sbarrate, solo saltate, quindi un bonus successivo può ancora finire alla loro sinistra.",
     "bonusB": "Bonus B",
     "bonusBDescription": "5 bonus. Sbarra ciascuno due volte per ottenerlo.\n- 2 croci nella tua riga più bassa\n- una croce in ogni riga\n- il punteggio della tua riga più bassa è raddoppiato\n- 13 punti in più\n- i punti di penalità diventano 0",
     "xChange": "X-Cambio",

@@ -374,6 +374,20 @@
   color: #fff;
 }
 
+/* Bonus A: the colour's row has locked, so this cell can never be taken. Greyed rather than
+   crossed — a cross would read as "you scored this", and it is still passed over left-to-right
+   when a bonus looks for the next available cell. Wins over the [data-color] rules above. */
+.bonus-bar-cell.greyed-out[data-color] {
+  background: #d6d6d6;
+  border-color: rgba(0, 0, 0, 0.12);
+  opacity: 0.55;
+}
+
+.bonus-bar-cell.greyed-out::before {
+  border-color: #b9b0a0;
+  box-shadow: none;
+}
+
 /* Gold ring — same accent as the bonus boxes in the coloured rows. */
 .bonus-bar-cell::before {
   content: '';

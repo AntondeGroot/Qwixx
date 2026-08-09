@@ -483,6 +483,22 @@ export class BoardComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.highlight.maxedColors(state, this.playerId());
   });
 
+  /**
+   * Colours whose row has locked. Bonus A greys out the bonus-bar cells of those colours; the
+   * bar row itself is never in closedRows (it has no lock), so it contributes nothing here.
+   */
+  closedColors = computed((): Set<string> => {
+    const closedRows = this.gameState()?.closedRows;
+    const layout = this.layoutFor(this.playerId());
+    if (!closedRows || !layout) return this.emptySet;
+    const colors = new Set<string>();
+    for (const row of layout.rows) {
+      const color = row.cells[0]?.color;
+      if (color && row.id in closedRows) colors.add(color);
+    }
+    return colors;
+  });
+
   coloredDiceEntries = computed(() => {
     const roll = this.turnState()?.currentRoll;
     const active = this.gameState()?.activeDiceColors ?? [];

@@ -42,7 +42,7 @@
     "mixedColors": "Couleurs mélangées",
     "mixedColorsDescription": "Les numéros de chaque rangée sont répartis en blocs de couleur. Un dé coloré coche une case correspondante dans n'importe quelle rangée ; une rangée se ferme toujours en entier.",
     "bonusA": "Bonus A",
-    "bonusADescription": "12 cases bonus (anneau doré) sont réparties dans les rangées colorées. En cocher une force à cocher la case suivante de la barre bonus en dessous ; sa couleur force une croix dans la case suivante de cette rangée — ce qui peut s'enchaîner. Quand une rangée est fermée, ses cases bonus restantes sont perdues.",
+    "bonusADescription": "12 cases bonus (anneau doré) sont réparties dans les rangées colorées. En cocher une prend la case disponible la plus à gauche de la barre bonus en dessous ; sa couleur force une croix dans la case suivante de cette rangée — ce qui peut s'enchaîner. Quand une rangée est fermée, les cases bonus de cette couleur sont grisées : elles ne sont jamais cochées, seulement ignorées, donc un bonus ultérieur peut encore se placer à leur gauche.",
     "bonusB": "Bonus B",
     "bonusBDescription": "5 bonus. Cochez chacun deux fois pour l'obtenir.\n- 2 croix dans votre rangée la plus basse\n- une croix dans chaque rangée\n- le score de votre rangée la plus basse est doublé\n- 13 points en plus\n- les points de pénalité deviennent 0",
     "xChange": "X-Échange",

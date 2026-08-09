@@ -42,7 +42,7 @@
     "mixedColors": "Gemengde kleuren",
     "mixedColorsDescription": "De getallen in elke rij zijn verdeeld in kleurenblokken. Een gekleurde dobbelsteen kruist een bijpassend vakje in elke rij; een rij sluit nog steeds als geheel.",
     "bonusA": "Bonus A",
-    "bonusADescription": "12 bonusvakjes (gouden ring) staan in de gekleurde rijen. Kruis je er één, dan moet je het volgende vakje van de bonusbalk eronder kruisen; de kleur ervan dwingt een kruis in het volgende vakje van die rij — wat kan doorschakelen. Wanneer een rij wordt gesloten, vervallen de resterende bonusbalk-vakjes.",
+    "bonusADescription": "12 bonusvakjes (gouden ring) staan in de gekleurde rijen. Kruis je er één, dan neem je het meest linkse nog beschikbare vakje van de bonusbalk eronder; de kleur ervan dwingt een kruis in het volgende vakje van die rij — wat kan doorschakelen. Wanneer een rij wordt gesloten, worden de bonusbalk-vakjes van die kleur grijs: ze worden nooit gekruist, alleen overgeslagen, dus een latere bonus kan er nog links van landen.",
     "bonusB": "Bonus B",
     "bonusBDescription": "5 bonussen. Iedere bonus moet je twee keer afstrepen om hem te behalen.\n- 2 kruisjes in je laagste rij\n- in iedere rij een kruisje\n- de score van je laagste rij wordt verdubbeld\n- 13 punten erbij\n- strafpunten worden 0",
     "xChange": "X-Wissel",

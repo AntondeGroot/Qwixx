@@ -42,7 +42,7 @@
     "mixedColors": "Mixed colours",
     "mixedColorsDescription": "Each row's numbers are split into colour blocks. A coloured die crosses a matching cell in any row; a row still closes as a whole.",
     "bonusA": "Bonus A",
-    "bonusADescription": "12 bonus boxes (gold ring) sit in the coloured rows. Crossing one forces you to cross the next cell of the bonus bar below; its colour forces a cross in that row's next box — which can chain. When a row locks, its remaining bonus-bar cells are forfeited.",
+    "bonusADescription": "12 bonus boxes (gold ring) sit in the coloured rows. Crossing one takes the left-most still-available cell of the bonus bar below; its colour forces a cross in that row's next box — which can chain. When a row locks, its bonus-bar cells are greyed out: they are never crossed, just skipped, so a later bonus can still land to their left.",
     "bonusB": "Bonus B",
     "bonusBDescription": "5 bonuses. Cross each one off twice to earn it.\n- 2 crosses in your lowest row\n- one cross in every row\n- your lowest row's score is doubled\n- 13 extra points\n- penalty points become 0",
     "xChange": "X-Change",

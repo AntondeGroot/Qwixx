@@ -38,6 +38,8 @@ export class RowComponent {
 
   lockClickable = input(false);
   maxedColors = input<Set<string>>(new Set());
+  /** Colours whose row is locked — Bonus A greys out the bonus-bar cells of those colours. */
+  closedColors = input<Set<string>>(new Set());
 
   cellClicked = output<string>();
   lockClicked = output<void>();
@@ -119,6 +121,15 @@ export class RowComponent {
 
   isCrossed(cellId: string): boolean {
     return this.rowState()?.crossedCells.includes(cellId) ?? false;
+  }
+
+  /**
+   * Bonus A: once a colour's row locks, its bonus-bar cells are greyed out — no longer available
+   * to a bonus, but never crossed. A cell consumed before the lock keeps its cross and colour,
+   * since it was legitimately scored.
+   */
+  isGreyedOut(cell: SheetCell): boolean {
+    return this.closedColors().has(cell.color ?? '') && !this.isCrossed(cell.id);
   }
 
   // ── Double B: the whole diagonal cell is one click target ──────────────────

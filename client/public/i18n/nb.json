@@ -42,7 +42,7 @@
     "mixedColors": "Blandede farger",
     "mixedColorsDescription": "Tallene i hver rad er delt inn i fargeblokker. En farget terning krysser av en tilsvarende rute i hvilken som helst rad; en rad lukkes fortsatt som helhet.",
     "bonusA": "Bonus A",
-    "bonusADescription": "12 bonusruter (gullring) ligger i de fargede radene. Krysser du av én, må du krysse av neste rute i bonuslinjen under; fargen tvinger fram et kryss i neste rute i den raden – som kan gi kjedetrekk. Når en rad låses, går de resterende bonuslinje-rutene tapt.",
+    "bonusADescription": "12 bonusruter (gullring) ligger i de fargede radene. Krysser du av én, tar du den første tilgjengelige ruten fra venstre i bonuslinjen under; fargen tvinger fram et kryss i neste rute i den raden – som kan gi kjedetrekk. Når en rad låses, blir bonuslinje-rutene i den fargen grå: de krysses aldri av, bare hoppes over, så en senere bonus kan fortsatt havne til venstre for dem.",
     "bonusB": "Bonus B",
     "bonusBDescription": "5 bonuser. Kryss av hver av dem to ganger for å oppnå den.\n- 2 kryss i din laveste rad\n- ett kryss i hver rad\n- poengsummen for din laveste rad dobles\n- 13 ekstra poeng\n- straffepoeng blir 0",
     "xChange": "X-Bytte",

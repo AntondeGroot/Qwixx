@@ -314,32 +314,46 @@ class CellCrosser {
         }
         if (bar == null) return;
 
-        // The bonus bar follows the normal row-progression rule: only the next cell to the RIGHT
-        // of the right-most crossed cell can be consumed. Forfeits crossed further right therefore
-        // make the cells between them unavailable (skipped), exactly like a regular colour row.
+        // A bonus takes the left-most cell that is still available: not already consumed, and not
+        // greyed out. Unlike a colour row there is no "must be further right" rule — greyed-out
+        // cells are never crossed, so they do not block; a bonus can land to the LEFT of one.
         RowState barState = getRowState(prog, barIndex);
-        int rightmost = rightmostCrossedPosition(bar, barState);
+        SheetLayout barLayout = layout;
         Cell barCell = bar.cells().stream()
-                .filter(c -> c.position() > rightmost && !barState.crossedCells().contains(c.id()))
+                .filter(c -> !barState.crossedCells().contains(c.id()))
+                .filter(c -> !isGreyedOut(state, barLayout, c))
                 .findFirst().orElse(null);
-        if (barCell == null) return; // no cell left to the right of the right-most cross
+        if (barCell == null) return; // every remaining cell is consumed or greyed out
 
         Set<String> newBar = new HashSet<>(barState.crossedCells());
         newBar.add(barCell.id());
         prog.updateRowState(barIndex, new RowState(newBar, barState.lockCrossed()));
         crossed.computeIfAbsent(barIndex, k -> new HashSet<>()).add(barCell.id());
 
-        // The bonus-bar cell's colour picks the row that receives the forced cross.
+        // The bonus-bar cell's colour picks the row that receives the forced cross. That row is
+        // guaranteed open — a locked one would have greyed this cell out of the selection above.
         Color color = barCell.color();
         for (int i = 0; i < layout.rows().size(); i++) {
             Row row = layout.rows().get(i);
             if (row.isBonusBar() || !row.hasLock() || row.cells().isEmpty()) continue;
             if (row.cells().getFirst().color() != color) continue;
-            if (state.isRowClosed(i)) return; // row locked → forfeited already, nothing to cross
             Cell forced = nextForcedBox(row, getRowState(prog, i));
             if (forced != null) crossRecursive(state, playerId, i, forced.id(), crossed, true);
             return;
         }
+    }
+
+    /**
+     * Bonus A: a bar cell is greyed out once its colour's row is locked. It is never crossed — it
+     * simply stops being available, and a later bonus skips over it to the next open cell.
+     */
+    private static boolean isGreyedOut(GameState state, SheetLayout layout, Cell barCell) {
+        for (int i = 0; i < layout.rows().size(); i++) {
+            Row row = layout.rows().get(i);
+            if (row.isBonusBar() || !row.hasLock() || row.cells().isEmpty()) continue;
+            if (row.cells().getFirst().color() == barCell.color()) return state.isRowClosed(i);
+        }
+        return false;
     }
 
     // Bonus B: once both boxes of a kind are crossed, mark its strip indicator and fire the

@@ -8,7 +8,13 @@ export class EmbedModeService {
   /** Call once when ?embed=1 is detected. Registers the message listener and cleans it up on destroy. */
   enable(onOverrides: (overrides: Record<string, unknown>) => void, destroyRef: DestroyRef): void {
     this.isActive.set(true);
+    let hostOrigin: string | undefined;
     const handler = (event: MessageEvent) => {
+      // Only the embedding page may drive us. Its origin is unknown up front, so pin the
+      // first one it sends from and ignore anything from another origin afterwards.
+      if (event.source !== window.parent) return;
+      hostOrigin ??= event.origin;
+      if (event.origin !== hostOrigin) return;
       const data = event.data;
       if (!data) return;
       if (data.type === 'qwixx-options-set') {

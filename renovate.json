@@ -6,10 +6,56 @@
   "packageRules": [
     {
       "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "all minor and patch updates",
       "automerge": true,
       "automergeType": "pr",
       "automergeStrategy": "squash"
+    },
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchManagers": ["npm"],
+      "groupName": "client minor and patch updates"
+    },
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchManagers": ["maven", "maven-wrapper"],
+      "groupName": "server minor and patch updates"
+    },
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions minor and patch updates"
+    },
+    {
+      "description": "Linters tighten rules in minor releases; keep them out of the library bumps so a red build points at one tool",
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchPackageNames": [
+        "eslint",
+        "@eslint/**",
+        "eslint-plugin-*",
+        "angular-eslint",
+        "typescript-eslint",
+        "prettier",
+        "@redocly/cli"
+      ],
+      "groupName": "client lint tooling"
+    },
+    {
+      "description": "Static-analysis and quality gates; same reasoning as the client lint tooling",
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchPackageNames": [
+        "com.puppycrawl.tools:checkstyle",
+        "org.apache.maven.plugins:maven-checkstyle-plugin",
+        "org.apache.maven.plugins:maven-pmd-plugin",
+        "net.sourceforge.pmd:**",
+        "com.github.spotbugs:**",
+        "com.diffplug.spotless:**",
+        "com.google.errorprone:**",
+        "com.uber.nullaway:**",
+        "com.tngtech.archunit:**",
+        "org.jacoco:**",
+        "org.pitest:**"
+      ],
+      "groupName": "server quality-gate tooling"
     },
     {
       "matchUpdateTypes": ["major"],

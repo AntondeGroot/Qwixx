@@ -1,16 +1,16 @@
 #!/bin/bash
 SSH="ssh -i ~/.ssh/pi_deploy_key my-pi-ext"
 
-echo "=== systemd service status ==="
-$SSH "systemctl status qwixx --no-pager" 2>&1 || true
+echo "=== Tomcat status (Qwixx runs as qwixx.war inside it) ==="
+$SSH "systemctl status tomcat10 --no-pager" 2>&1 || true
 
 echo ""
 echo "=== last 50 log lines ==="
-$SSH "journalctl -u qwixx -n 50 --no-pager" 2>&1 || true
+$SSH "sudo tail -n 50 /var/log/tomcat10/qwixx.log" 2>&1 || true
 
 echo ""
 echo "=== recent errors (newest first) ==="
-$SSH "journalctl -u qwixx -n 5000 --no-pager -o cat | awk '
+$SSH "sudo tail -n 5000 /var/log/tomcat10/qwixx.log | awk '
   /Z[[:space:]]+(ERROR|WARN)[[:space:]]+[0-9]+/ { errs[++n] = NR }
   { L[NR] = \$0 }
   END {
@@ -29,8 +29,8 @@ $SSH "journalctl -u qwixx -n 5000 --no-pager -o cat | awk '
 '" 2>&1 || true
 
 echo ""
-echo "=== jar file ==="
-$SSH "ls -lh /opt/qwixx/qwixx.jar" 2>&1 || true
+echo "=== war file ==="
+$SSH "ls -lh /var/lib/tomcat10/webapps/qwixx.war" 2>&1 || true
 
 echo ""
 echo "=== override config ==="

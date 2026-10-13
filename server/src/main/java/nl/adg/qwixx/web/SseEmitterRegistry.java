@@ -1,5 +1,6 @@
 package nl.adg.qwixx.web;
 
+import jakarta.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -112,6 +113,16 @@ public class SseEmitterRegistry {
         if (list != null) list.forEach(SseEmitter::complete);
         ExecutorService sender = senders.remove(sessionId);
         if (sender != null) sender.shutdown(); // lets any queued frames flush, then stops the thread
+    }
+
+    /**
+     * Stops every per-session sender when the app is undeployed. Inside a shared Tomcat the JVM
+     * outlives the app, so a lingering sender thread would keep the old version's classes in memory.
+     */
+    @PreDestroy
+    void shutdown() {
+        senders.values().forEach(ExecutorService::shutdownNow);
+        senders.clear();
     }
 
     private void remove(String sessionId, SseEmitter emitter) {

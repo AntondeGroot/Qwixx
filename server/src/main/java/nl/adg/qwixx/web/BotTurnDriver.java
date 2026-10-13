@@ -1,6 +1,7 @@
 package nl.adg.qwixx.web;
 
 import jakarta.annotation.Nullable;
+import jakarta.annotation.PreDestroy;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -36,6 +37,15 @@ public class BotTurnDriver {
 
     private final ExecutorService executor = Executors.newCachedThreadPool();
     private final Set<String> running = ConcurrentHashMap.newKeySet();
+
+    /**
+     * Stops in-flight bot loops when the app is undeployed. Inside a shared Tomcat the JVM outlives
+     * the app, so a lingering loop thread would keep the old version's classes in memory.
+     */
+    @PreDestroy
+    void shutdown() {
+        executor.shutdownNow();
+    }
 
     /**
      * Ensures pending bot turns for this session are being driven, then returns immediately.

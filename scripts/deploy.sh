@@ -45,54 +45,65 @@ echo "🔨 Running client e2e (Playwright)..."
 echo "🔨 Building frontend and running all tests..."
 mvn clean verify -P frontend --file server/pom.xml
 
-echo "📦 Uploading..."
-$SCP server/target/server-1.0-SNAPSHOT.jar $TARGET:/home/ubuntu/qwixx.jar
+# Tomcat itself is provisioned by the GameRoom project (setup-tomcat.sh); this script only drops
+# the WAR in. qwixx.war is served at /qwixx, the prefix the client is built for.
+WEBAPPS=/var/lib/tomcat10/webapps
+TOMCAT_URL=http://127.0.0.1:8090
+LOG_FILE=/var/log/tomcat10/qwixx.log
 
-echo "📁 Installing..."
-# The log dir must be ubuntu-owned: the service runs as ubuntu and writes its rotating log there.
-$SSH "sudo mkdir -p /opt/qwixx/logs && sudo chown ubuntu:ubuntu /opt/qwixx/logs \
-  && sudo mv /home/ubuntu/qwixx.jar /opt/qwixx/qwixx.jar"
-
-echo "⚙️  Ensuring systemd service exists..."
-$SSH "
-if [ ! -f /etc/systemd/system/qwixx.service ]; then
-  sudo tee /etc/systemd/system/qwixx.service > /dev/null << 'EOF'
-[Unit]
-Description=Qwixx game server
-After=network.target
-
-[Service]
-User=ubuntu
-ExecStart=/usr/bin/java -jar /opt/qwixx/qwixx.jar
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-EOF
-  sudo systemctl daemon-reload
-  sudo systemctl enable qwixx
-fi"
+if ! $SSH "test -d $WEBAPPS"; then
+  echo "❌ No Tomcat on $TARGET. Run ./setup-tomcat.sh in the GameRoom project first."
+  exit 1
+fi
 
 echo "⚙️  Ensuring application override config exists..."
+# Tomcat's unit only lets the JVM write under /var/log/tomcat10, so the log lives there.
 $SSH "
+sudo mkdir -p /opt/qwixx
 if [ ! -f /opt/qwixx/application-override.yaml ]; then
   sudo tee /opt/qwixx/application-override.yaml > /dev/null << 'EOF'
-# no context-path: Qwixx serves at root, nginx strips /qwixx/ prefix before forwarding
-EOF
-fi
-# Append the log destination to an override written before file logging existed. Guarded by the key
-# itself so repeat deploys don't stack duplicates, and so a hand-edited path is never overwritten.
-if ! grep -q 'logging:' /opt/qwixx/application-override.yaml; then
-  sudo tee -a /opt/qwixx/application-override.yaml > /dev/null << 'EOF'
-
 # Activates the rotation caps packaged in application.properties (10MB/file, 100MB total).
 logging:
   file:
-    name: /opt/qwixx/logs/qwixx.log
+    name: $LOG_FILE
 EOF
-fi"
+fi
+# Migrate an override written for the old standalone service: its log dir isn't writable from Tomcat.
+sudo sed -i -e 's|/opt/qwixx/logs/qwixx.log|$LOG_FILE|' -e '/nginx strips \/qwixx\/ prefix/d' \
+  /opt/qwixx/application-override.yaml"
 
-echo "🔄 Restarting..."
-$SSH "sudo systemctl restart qwixx"
+echo "📦 Uploading..."
+$SCP server/target/qwixx.war $TARGET:/home/ubuntu/qwixx.war
+
+echo "🚀 Deploying to Tomcat..."
+# Copy under a name Tomcat ignores, then rename: a same-filesystem mv is atomic, so Tomcat never
+# picks up a half-written WAR. Its autodeployer notices the new file and redeploys the app.
+$SSH "sudo install -o tomcat -g tomcat -m 644 /home/ubuntu/qwixx.war $WEBAPPS/.qwixx.war.tmp \
+  && sudo mv $WEBAPPS/.qwixx.war.tmp $WEBAPPS/qwixx.war && rm /home/ubuntu/qwixx.war"
+
+# The exploded dir is recreated on redeploy, so 'newer than the WAR' rules out the old version
+# still answering; then wait until Spring has started and serves the app.
+$SSH "for i in \$(seq 1 90); do
+  if [ $WEBAPPS/qwixx -nt $WEBAPPS/qwixx.war ] && curl -sf -o /dev/null $TOMCAT_URL/qwixx/; then exit 0; fi
+  sleep 2
+done
+echo '❌ Qwixx did not come up in Tomcat. See $LOG_FILE and journalctl -u tomcat10.'
+exit 1"
+
+echo "🧹 Retiring the standalone service..."
+# One-time migration. Only once nginx forwards /qwixx/ to Tomcat (GameRoom's nginx.conf); stopping
+# it earlier would take the game offline.
+$SSH "
+if [ -f /etc/systemd/system/qwixx.service ]; then
+  if grep -q '127.0.0.1:8090/qwixx/' /etc/nginx/sites-enabled/gameroom; then
+    sudo systemctl disable --now qwixx
+    sudo rm /etc/systemd/system/qwixx.service /opt/qwixx/qwixx.jar
+    sudo rm -rf /opt/qwixx/logs
+    sudo systemctl daemon-reload
+  else
+    echo '⚠️  nginx still forwards /qwixx/ to the standalone service; leaving it running.'
+    echo '   Deploy the GameRoom nginx.conf, then run this script again to retire it.'
+  fi
+fi"
 
 echo "✅ Done."

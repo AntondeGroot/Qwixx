@@ -222,11 +222,11 @@ paths:
         - Roll the dice (ROLL phase)
         - Cross a cell using the white+white dice sum (ACTIVE_MOVE phase)
         - Cross a cell using white+color dice sum (ACTIVE_MOVE phase)
-        - Pass without taking a punishment (ACTIVE_MOVE phase, only if white+white was already used)
+        - Pass and take a punishment (ACTIVE_MOVE phase, only if white+white was already used)
 
         Passive players can:
         - Cross a cell using the white+white dice sum (PASSIVE_MOVE phase)
-        - Pass and take a punishment (PASSIVE_MOVE phase)
+        - Pass without taking a punishment (PASSIVE_MOVE phase)
       operationId: makeMove
       tags:
         - moves

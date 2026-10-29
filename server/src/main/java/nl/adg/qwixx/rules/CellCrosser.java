@@ -155,7 +155,8 @@ class CellCrosser {
     private static DiceCombination resolveXChangeCombo(RollResult roll, CellTag.XChange xc, @Nullable ActiveTurnState ats, boolean isActive) {
         int ww = roll.white1() + roll.white2();
         if (ww != xc.a() && ww != xc.b()) return null;
-        if (isActive && ats != null && ats.whiteWhiteUsed()) return null;
+        // White+white is spent, or forfeited once the color die is used: nothing left to exchange.
+        if (isActive && ats != null && (ats.whiteWhiteUsed() || ats.colorDieUsed())) return null;
         return DiceCombination.WHITE_WHITE;
     }
 

@@ -245,6 +245,8 @@ public class StandardTurnRules implements TurnRules {
 
     private void applyXChangeCross(GameState state, TurnState turn, UUID playerId,
                                    CrossCellAction action, CellTag.XChange xChangeTag) {
+        if (playerId.equals(turn.activePlayerId()) && turn.activeTurnState().colorDieUsed())
+            throw new IllegalMoveException("x-change is not allowed after the color die has been used");
         Map<Integer, Set<String>> crossed = crossCellWithAutoTags(state, playerId, action.rowIndex(), action.cellId());
         savePendingCrosses(turn, playerId, crossed);
         int actualWW    = turn.currentRoll().white1() + turn.currentRoll().white2();

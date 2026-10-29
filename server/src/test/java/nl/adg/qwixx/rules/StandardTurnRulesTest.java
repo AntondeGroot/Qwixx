@@ -1873,6 +1873,22 @@ class StandardTurnRulesTest {
     }
 
     @Test
+    void xChange_notOfferedAfterActivePlayerUsedWhiteColor() {
+        GameState state = stateWithXChangeAfterRoll(p1, p1, p2);
+        CrossCellAction whiteColor = rules.getValidActions(state, p1).stream()
+                .filter(a -> a instanceof CrossCellAction cc && cc.combination() == DiceCombination.WHITE_COLOR)
+                .map(a -> (CrossCellAction) a)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no white+color cross offered"));
+        rules.apply(state, whiteColor);
+        assertFalse(rules.getValidActions(state, p1).stream()
+                .filter(a -> a instanceof CrossCellAction)
+                .map(a -> (CrossCellAction) a)
+                .anyMatch(cc -> isXChangeCell(state, p1, cc)),
+                "X-change must not be offered once white+color is used: white+white is forfeited");
+    }
+
+    @Test
     void xChange_effectiveWWStoredAfterCross() {
         GameState state = stateWithXChangeAfterRoll(p1, p1, p2);
         rules.apply(state, xChangeCrossForPair(state, p1, 9, 7));

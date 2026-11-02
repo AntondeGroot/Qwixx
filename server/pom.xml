@@ -28,7 +28,7 @@
     <checkstyle-tool.version>14.4.0</checkstyle-tool.version>
     <pmd.version>3.28.0</pmd.version>
     <spotless.version>3.10.4</spotless.version>
-    <errorprone.version>2.51.0</errorprone.version>
+    <errorprone.version>2.52.0</errorprone.version>
     <nullaway.version>0.14.3</nullaway.version>
     <!-- Pinned above the Spring Boot BOM's managed version: Java 25 is non-LTS and older JaCoCo
          cannot instrument its class files. -->

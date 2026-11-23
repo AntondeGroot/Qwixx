@@ -11,13 +11,17 @@ import nl.adg.qwixx.e2e.utils.SheetVariantCatalog.Variant;
 import nl.adg.qwixx.e2e.utils.TestUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.OutputType;
 import org.openqa.selenium.WebDriver;
 
 /**
  * Docs generator (not a normal test): renders the /option-catalog page against the real
  * Spring-served SPA, screenshots each option's sheet preview into docs/option-previews/, and
  * rewrites the auto-generated game-options block in the repo README. Because it renders the live
- * components, the images always track the current styling.
+ * components, the images always track the current styling. Last, it renders the repo's social
+ * preview (docs/social-preview.html) from those previews into docs/social-preview.png.
  *
  * <p>Guarded by a system property so the regular {@code verify} run never triggers it. Run with:
  * {@code ./mvnw failsafe:integration-test failsafe:verify -Dit.test=OptionPreviewGeneratorIT
@@ -30,6 +34,7 @@ class OptionPreviewGeneratorIT extends BaseIntegrationTest {
             Path.of(System.getProperty("user.dir")).resolve("..").normalize();
     private static final Path IMG_DIR = REPO_ROOT.resolve("docs/option-previews");
     private static final Path README = REPO_ROOT.resolve("README.md");
+    private static final Path SOCIAL_PREVIEW = REPO_ROOT.resolve("docs/social-preview.html");
     private static final String IMG_REL = "docs/option-previews";
     private static final String START_MARKER = "<!-- OPTIONS:START -->";
     private static final String END_MARKER = "<!-- OPTIONS:END -->";
@@ -40,10 +45,34 @@ class OptionPreviewGeneratorIT extends BaseIntegrationTest {
         WebDriver driver = TestUtils.createDriver();
         try {
             CatalogPageCapture.capture(driver, "/option-catalog", variants.stream().map(Variant::key).toList(), IMG_DIR);
+            captureSocialPreview(driver, variants.size());
         } finally {
             driver.quit();
         }
         rewriteReadme(variants);
+    }
+
+    /**
+     * The page shows the option previews just taken, so it is rendered after them. The PNG is
+     * uploaded by hand in the repo's settings on GitHub.
+     */
+    private void captureSocialPreview(WebDriver driver, int sheetCount) throws Exception {
+        driver.get(SOCIAL_PREVIEW.toUri().toString());
+        assertSheetCountMatches(driver, sheetCount);
+        ((JavascriptExecutor) driver).executeAsyncScript(
+                "document.fonts.ready.then(arguments[arguments.length - 1]);");
+        byte[] png = driver.findElement(By.className("preview")).getScreenshotAs(OutputType.BYTES);
+        Files.write(SOCIAL_PREVIEW.resolveSibling("social-preview.png"), png);
+    }
+
+    /** The preview's "N sheet variants" is typed into the page by hand, so check it here. */
+    private static void assertSheetCountMatches(WebDriver driver, int sheetCount) {
+        String claim = driver.findElement(By.id("sheet-count")).getText();
+        String expected = sheetCount + " sheet variants";
+        if (!claim.equals(expected)) {
+            throw new IllegalStateException("docs/social-preview.html says \"" + claim
+                    + "\", but the game has " + sheetCount + " sheet variants: update the page.");
+        }
     }
 
     private void rewriteReadme(List<Variant> variants) throws Exception {

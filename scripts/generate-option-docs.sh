@@ -1,6 +1,6 @@
 #!/bin/bash
-# Regenerates the game-option preview images (docs/option-previews/*.png) and the auto-generated
-# options block in README.md by running the OptionPreviewGeneratorIT against the real Spring-served
+# Regenerates the game-option preview images (docs/option-previews/*.png), the social preview
+# (docs/social-preview.png) and the auto-generated options block in README.md by running the OptionPreviewGeneratorIT against the real Spring-served
 # SPA. Because it screenshots the live components, the images always track the current styling.
 #
 # Previews are rendered with a fixed random seed (see ConfigurableGameStyleFactory.deterministic),
@@ -20,4 +20,4 @@ echo "🖼  Generating option previews + README block and the mini-sheet doc (bu
   -DfailIfNoTests=false
 
 echo "✅ Done. Review the changes:"
-echo "   git status docs/option-previews docs/mini-sheet-previews docs/MINI_SHEETS.md README.md"
+echo "   git status docs/option-previews docs/mini-sheet-previews docs/MINI_SHEETS.md docs/social-preview.png README.md"
